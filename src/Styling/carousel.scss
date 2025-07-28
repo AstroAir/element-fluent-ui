@@ -1,0 +1,435 @@
+// src/Styling/carousel.scss
+// Fluent UI Carousel Component Styles
+// This SCSS file provides additional styling that can be converted to Qt StyleSheets
+
+// Fluent Design System Variables
+$fluent-accent: #0078d4;
+$fluent-accent-light: #106ebe;
+$fluent-accent-dark: #005a9e;
+
+$fluent-neutral-primary: #323130;
+$fluent-neutral-secondary: #605e5c;
+$fluent-neutral-tertiary: #a19f9d;
+$fluent-neutral-quaternary: #c8c6c4;
+$fluent-neutral-light: #edebe9;
+$fluent-neutral-lighter: #f3f2f1;
+
+$fluent-surface: #ffffff;
+$fluent-surface-dark: #1e1e1e;
+
+// Spacing Scale
+$spacing-xs: 2px;
+$spacing-s: 4px;
+$spacing-m: 8px;
+$spacing-l: 12px;
+$spacing-xl: 16px;
+$spacing-xxl: 20px;
+$spacing-xxxl: 24px;
+
+// Border Radius
+$border-radius-small: 2px;
+$border-radius-medium: 4px;
+$border-radius-large: 8px;
+
+// Animation Timing
+$animation-fast: 150ms;
+$animation-normal: 300ms;
+$animation-slow: 500ms;
+
+// Easing Functions
+$ease-out-cubic: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+$ease-in-cubic: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+$ease-in-out-cubic: cubic-bezier(0.645, 0.045, 0.355, 1);
+
+// Base Carousel Styles
+.fluent-carousel {
+  background-color: $fluent-surface;
+  border: 1px solid $fluent-neutral-quaternary;
+  border-radius: $border-radius-medium;
+  padding: $spacing-m;
+  position: relative;
+  overflow: hidden;
+  
+  &:focus {
+    outline: none;
+    border-color: $fluent-accent;
+    box-shadow: 0 0 0 2px rgba($fluent-accent, 0.3);
+  }
+  
+  &:hover {
+    border-color: $fluent-neutral-tertiary;
+  }
+  
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// Dark theme support
+.fluent-carousel.dark-theme {
+  background-color: $fluent-surface-dark;
+  border-color: #484644;
+  color: #ffffff;
+}
+
+// Navigation Buttons
+.fluent-carousel-nav-button {
+  background-color: $fluent-neutral-lighter;
+  border: 1px solid $fluent-neutral-quaternary;
+  border-radius: $border-radius-small;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all $animation-fast $ease-out-cubic;
+  
+  &:hover {
+    background-color: $fluent-neutral-light;
+    border-color: $fluent-neutral-tertiary;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    background-color: $fluent-neutral-quaternary;
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: $fluent-accent;
+    box-shadow: 0 0 0 2px rgba($fluent-accent, 0.3);
+  }
+  
+  &:disabled {
+    background-color: $fluent-neutral-quaternary;
+    border-color: $fluent-neutral-quaternary;
+    color: $fluent-neutral-tertiary;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .icon {
+    width: 16px;
+    height: 16px;
+    fill: $fluent-neutral-primary;
+    transition: fill $animation-fast;
+  }
+  
+  &:hover .icon {
+    fill: $fluent-neutral-secondary;
+  }
+  
+  &:disabled .icon {
+    fill: $fluent-neutral-tertiary;
+  }
+}
+
+// Indicator Styles
+.fluent-carousel-indicators {
+  display: flex;
+  gap: $spacing-m;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-m;
+  
+  &.vertical {
+    flex-direction: column;
+  }
+  
+  &.overlay {
+    position: absolute;
+    bottom: $spacing-xl;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: $border-radius-large;
+    padding: $spacing-s $spacing-l;
+  }
+}
+
+// Dot Indicators
+.fluent-carousel-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: $fluent-neutral-tertiary;
+  cursor: pointer;
+  transition: all $animation-normal $ease-out-cubic;
+  
+  &:hover {
+    background-color: $fluent-accent-light;
+    transform: scale(1.2);
+  }
+  
+  &.active {
+    background-color: $fluent-accent;
+    transform: scale(1.3);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($fluent-accent, 0.5);
+  }
+  
+  &:disabled {
+    background-color: $fluent-neutral-quaternary;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+// Line Indicators
+.fluent-carousel-indicator-line {
+  width: 24px;
+  height: 4px;
+  border-radius: $border-radius-small;
+  background-color: $fluent-neutral-tertiary;
+  cursor: pointer;
+  transition: all $animation-normal $ease-out-cubic;
+  
+  &:hover {
+    background-color: $fluent-accent-light;
+  }
+  
+  &.active {
+    background-color: $fluent-accent;
+    width: 32px;
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px rgba($fluent-accent, 0.5);
+  }
+}
+
+// Number Indicators
+.fluent-carousel-indicator-number {
+  width: 24px;
+  height: 24px;
+  border-radius: $border-radius-small;
+  background-color: transparent;
+  border: 1px solid $fluent-neutral-tertiary;
+  color: $fluent-neutral-tertiary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all $animation-normal $ease-out-cubic;
+  
+  &:hover {
+    border-color: $fluent-accent-light;
+    color: $fluent-accent-light;
+  }
+  
+  &.active {
+    background-color: $fluent-accent;
+    border-color: $fluent-accent;
+    color: white;
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($fluent-accent, 0.3);
+  }
+}
+
+// Thumbnail Indicators
+.fluent-carousel-indicator-thumbnail {
+  width: 48px;
+  height: 32px;
+  border-radius: $border-radius-medium;
+  border: 1px solid $fluent-neutral-quaternary;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all $animation-normal $ease-out-cubic;
+  
+  &:hover {
+    border-color: $fluent-accent-light;
+    transform: scale(1.05);
+  }
+  
+  &.active {
+    border-color: $fluent-accent;
+    border-width: 3px;
+    transform: scale(1.1);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($fluent-accent, 0.3);
+  }
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// Progress Indicators
+.fluent-carousel-progress {
+  height: 4px;
+  background-color: $fluent-neutral-lighter;
+  border-radius: $border-radius-small;
+  overflow: hidden;
+  
+  .progress-bar {
+    height: 100%;
+    background-color: $fluent-accent;
+    border-radius: $border-radius-small;
+    transition: width $animation-normal $ease-out-cubic;
+  }
+}
+
+// Circular Progress
+.fluent-carousel-progress-circular {
+  width: 32px;
+  height: 32px;
+  
+  circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    
+    &.background {
+      stroke: $fluent-neutral-lighter;
+    }
+    
+    &.progress {
+      stroke: $fluent-accent;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      transition: stroke-dashoffset $animation-normal $ease-out-cubic;
+    }
+  }
+}
+
+// Touch Feedback
+.fluent-carousel-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: rgba($fluent-accent, 0.3);
+  pointer-events: none;
+  animation: ripple $animation-normal $ease-out-cubic;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+// Drag Indicator
+.fluent-carousel-drag-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba($fluent-accent, 0.1);
+  pointer-events: none;
+  transition: transform $animation-fast $ease-out-cubic;
+}
+
+// Edge Glow Effects
+.fluent-carousel-edge-glow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  pointer-events: none;
+  
+  &.left {
+    left: 0;
+    background: linear-gradient(to right, rgba($fluent-accent, 0.5), transparent);
+  }
+  
+  &.right {
+    right: 0;
+    background: linear-gradient(to left, rgba($fluent-accent, 0.5), transparent);
+  }
+}
+
+// Responsive Design
+@media (max-width: 480px) {
+  .fluent-carousel {
+    padding: $spacing-s;
+  }
+  
+  .fluent-carousel-nav-button {
+    width: 28px;
+    height: 28px;
+    
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  .fluent-carousel-indicators {
+    gap: $spacing-s;
+    padding: $spacing-s;
+  }
+  
+  .fluent-carousel-indicator-thumbnail {
+    width: 40px;
+    height: 26px;
+  }
+}
+
+@media (max-width: 768px) {
+  .fluent-carousel-indicators {
+    gap: $spacing-s;
+  }
+}
+
+// High Contrast Mode
+@media (prefers-contrast: high) {
+  .fluent-carousel {
+    border-width: 2px;
+    border-color: ButtonText;
+  }
+  
+  .fluent-carousel-nav-button {
+    border-width: 2px;
+    border-color: ButtonText;
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+  
+  .fluent-carousel-indicator-dot.active,
+  .fluent-carousel-indicator-line.active,
+  .fluent-carousel-indicator-number.active {
+    background-color: Highlight;
+    border-color: Highlight;
+  }
+}
+
+// Reduced Motion
+@media (prefers-reduced-motion: reduce) {
+  .fluent-carousel,
+  .fluent-carousel-nav-button,
+  .fluent-carousel-indicator-dot,
+  .fluent-carousel-indicator-line,
+  .fluent-carousel-indicator-number,
+  .fluent-carousel-indicator-thumbnail,
+  .fluent-carousel-progress .progress-bar,
+  .fluent-carousel-progress-circular circle.progress,
+  .fluent-carousel-drag-indicator {
+    transition: none;
+    animation: none;
+  }
+}

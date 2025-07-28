@@ -1,0 +1,1102 @@
+// src/Components/FluentButton.cpp
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Styling/FluentTheme.h"
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Accessibility/FluentAccessible.h"
+
+#include <QPainter>
+#include <QPainterPath>
+#include <QFontMetrics>
+#include <QApplication>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QStyle>
+#include <QStyleOption>
+#include <QAccessible>
+#include <QGraphicsDropShadowEffect>
+#include <QtMath>
+#include <algorithm>
+
+namespace FluentQt::Components {
+
+FluentButton::FluentButton(QWidget* parent)
+    : Core::FluentComponent(parent)
+    , m_clickTimer(std::make_unique<QTimer>(this))
+{
+    setFocusPolicy(Qt::StrongFocus);
+    setCursor(Qt::PointingHandCursor);
+    setAttribute(Qt::WA_Hover);
+    
+    // Single shot timer for click animation
+    m_clickTimer->setSingleShot(true);
+    m_clickTimer->setInterval(150);
+    
+    // Connect to theme changes
+    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
+            this, &FluentButton::onThemeChanged);
+    
+    updateAccessibility();
+    updateGeometry();
+}
+
+FluentButton::FluentButton(const QString& text, QWidget* parent)
+    : FluentButton(parent)
+{
+    setText(text);
+}
+
+FluentButton::FluentButton(const QIcon& icon, const QString& text, QWidget* parent)
+    : FluentButton(parent)
+{
+    setIcon(icon);
+    setText(text);
+}
+
+FluentButton::~FluentButton() = default;
+
+void FluentButton::setText(const QString& text) {
+    if (m_text != text) {
+        m_text = text;
+        m_sizeHintValid = false;
+        updateGeometry();
+        updateAccessibility();
+        update();
+        emit textChanged(text);
+    }
+}
+
+void FluentButton::setIcon(const QIcon& icon) {
+    if (m_icon.cacheKey() != icon.cacheKey()) {
+        m_icon = icon;
+        m_sizeHintValid = false;
+        updateGeometry();
+        update();
+        emit iconChanged(icon);
+    }
+}
+
+void FluentButton::setIconPosition(FluentIconPosition position) {
+    if (m_iconPosition != position) {
+        m_iconPosition = position;
+        m_sizeHintValid = false;
+        updateGeometry();
+        update();
+        emit iconPositionChanged(position);
+    }
+}
+
+void FluentButton::setButtonStyle(FluentButtonStyle style) {
+    if (m_buttonStyle != style) {
+        m_buttonStyle = style;
+        updateStateStyle();
+        emit styleChanged(style);
+    }
+}
+
+void FluentButton::setButtonSize(FluentButtonSize size) {
+    if (m_buttonSize != size) {
+        m_buttonSize = size;
+        m_sizeHintValid = false;
+        updateGeometry();
+        emit sizeChanged(size);
+    }
+}
+
+void FluentButton::setFlat(bool flat) {
+    if (m_flat != flat) {
+        m_flat = flat;
+        update();
+    }
+}
+
+void FluentButton::setLoading(bool loading) {
+    if (m_loading != loading) {
+        m_loading = loading;
+        
+        if (loading) {
+            startLoadingAnimation();
+        } else {
+            stopLoadingAnimation();
+        }
+        
+        setEnabled(!loading);
+        update();
+        emit loadingChanged(loading);
+    }
+}
+
+void FluentButton::setCheckable(bool checkable) {
+    if (m_checkable != checkable) {
+        m_checkable = checkable;
+        if (!checkable) {
+            setChecked(false);
+        }
+        updateAccessibility();
+    }
+}
+
+void FluentButton::setChecked(bool checked) {
+    if (m_checkable && m_checked != checked) {
+        m_checked = checked;
+        updateStateStyle();
+        updateAccessibility();
+        emit checkedChanged(checked);
+        emit toggled(checked);
+    }
+}
+
+void FluentButton::setBackgroundOpacity(qreal opacity) {
+    if (!qFuzzyCompare(m_backgroundOpacity, opacity)) {
+        m_backgroundOpacity = qBound(0.0, opacity, 1.0);
+        update();
+    }
+}
+
+QSize FluentButton::sizeHint() const {
+    FLUENT_PROFILE("FluentButton::sizeHint");
+    
+    if (m_sizeHintValid) {
+        return m_cachedSizeHint;
+    }
+    
+    const QSize iconSize = calculateIconSize();
+    const QSize textSize = calculateTextSize();
+    
+    int contentWidth = 0;
+    int contentHeight = 0;
+    
+    // Calculate content dimensions based on icon position
+    switch (m_iconPosition) {
+        case FluentIconPosition::Left:
+        case FluentIconPosition::Right:
+            contentWidth = iconSize.width() + textSize.width();
+            if (!m_icon.isNull() && !m_text.isEmpty()) {
+                contentWidth += getIconTextSpacing();
+            }
+            contentHeight = std::max(iconSize.height(), textSize.height());
+            break;
+            
+        case FluentIconPosition::Top:
+        case FluentIconPosition::Bottom:
+            contentWidth = std::max(iconSize.width(), textSize.width());
+            contentHeight = iconSize.height() + textSize.height();
+            if (!m_icon.isNull() && !m_text.isEmpty()) {
+                contentHeight += getIconTextSpacing();
+            }
+            break;
+    }
+    
+    // Add padding
+    const int horizontalPadding = 2 * getHorizontalPadding();
+    const int verticalPadding = 2 * getVerticalPadding();
+    
+    // Minimum size constraints
+    int minWidth = 32;  // Minimum touch target
+    int minHeight = 32;
+    
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            minHeight = 24;
+            break;
+        case FluentButtonSize::Medium:
+            minHeight = 32;
+            break;
+        case FluentButtonSize::Large:
+            minHeight = 40;
+            break;
+        case FluentButtonSize::ExtraLarge:
+            minHeight = 48;
+            break;
+    }
+    
+    const QSize result(
+        std::max(minWidth, contentWidth + horizontalPadding),
+        std::max(minHeight, contentHeight + verticalPadding)
+    );
+    
+    m_cachedSizeHint = result;
+    m_sizeHintValid = true;
+    
+    return result;
+}
+
+QSize FluentButton::minimumSizeHint() const {
+    return QSize(32, 24); // Minimum touch-friendly size
+}
+
+void FluentButton::paintEvent(QPaintEvent* event) {
+    FLUENT_PROFILE("FluentButton::paintEvent");
+    
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    
+    const QRect rect = this->rect().adjusted(0, 0, -1, -1);
+    
+    // Paint background
+    if (!m_flat || state() != Core::FluentState::Normal) {
+        paintBackground(painter, rect);
+    }
+    
+    // Paint border
+    if (m_buttonStyle == FluentButtonStyle::Outline || hasFocus()) {
+        paintBorder(painter, rect);
+    }
+    
+    // Paint reveal effect
+    if (m_revealProgress > 0.0) {
+        paintRevealEffect(painter, rect);
+    }
+    
+    // Paint content
+    paintContent(painter, rect);
+    
+    // Paint focus ring
+    if (hasFocus() && !m_pressed) {
+        paintFocusRing(painter, rect);
+    }
+}
+
+void FluentButton::paintBackground(QPainter& painter, const QRect& rect) {
+    const QColor backgroundColor = getBackgroundColor();
+    
+    if (backgroundColor.alpha() == 0) {
+        return;
+    }
+    
+    // Create path with rounded corners
+    QPainterPath path;
+    const int radius = cornerRadius();
+    path.addRoundedRect(rect, radius, radius);
+    
+    // Apply opacity animation
+    QColor finalColor = backgroundColor;
+    finalColor.setAlphaF(finalColor.alphaF() * m_backgroundOpacity);
+    
+    // Add subtle gradient for depth
+    if (m_buttonStyle == FluentButtonStyle::Primary || 
+        m_buttonStyle == FluentButtonStyle::Accent) {
+        
+        QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+        gradient.setColorAt(0.0, finalColor.lighter(105));
+        gradient.setColorAt(1.0, finalColor.darker(105));
+        painter.fillPath(path, gradient);
+    } else {
+        painter.fillPath(path, finalColor);
+    }
+    
+    // Add subtle shadow for elevated buttons
+    if (state() == Core::FluentState::Hovered && 
+        (m_buttonStyle == FluentButtonStyle::Default || 
+         m_buttonStyle == FluentButtonStyle::Primary)) {
+        
+        painter.save();
+        painter.setPen(Qt::NoPen);
+        
+        QColor shadowColor = Qt::black;
+        shadowColor.setAlphaF(0.1);
+        
+        QPainterPath shadowPath;
+        shadowPath.addRoundedRect(rect.adjusted(0, 1, 0, 1), radius, radius);
+        painter.fillPath(shadowPath, shadowColor);
+        
+        painter.restore();
+    }
+}
+
+void FluentButton::paintBorder(QPainter& painter, const QRect& rect) {
+    if (m_buttonStyle != FluentButtonStyle::Outline && !hasFocus()) {
+        return;
+    }
+    
+    painter.save();
+    
+    const QPen borderPen = getBorderPen();
+    painter.setPen(borderPen);
+    
+    const int radius = cornerRadius();
+    const QRectF borderRect = rect.adjusted(0.5, 0.5, -0.5, -0.5);
+    
+    painter.drawRoundedRect(borderRect, radius, radius);
+    
+    painter.restore();
+}
+
+void FluentButton::paintContent(QPainter& painter, const QRect& rect) {
+    if (m_loading) {
+        paintLoadingIndicator(painter, rect);
+        return;
+    }
+    
+    const QRect contentRect = calculateContentRect();
+    const QRect iconRect = calculateIconRect();
+    const QRect textRect = calculateTextRect();
+    
+    // Paint icon
+    if (!m_icon.isNull()) {
+        paintIcon(painter, iconRect);
+    }
+    
+    // Paint text
+    if (!m_text.isEmpty()) {
+        paintText(painter, textRect);
+    }
+}
+
+void FluentButton::paintIcon(QPainter& painter, const QRect& iconRect) {
+    const QIcon::Mode iconMode = isEnabled() ? 
+        (state() == Core::FluentState::Pressed ? QIcon::Selected : QIcon::Normal) :
+        QIcon::Disabled;
+    
+    const QIcon::State iconState = m_checked ? QIcon::On : QIcon::Off;
+    
+    m_icon.paint(&painter, iconRect, Qt::AlignCenter, iconMode, iconState);
+}
+
+void FluentButton::paintText(QPainter& painter, const QRect& textRect) {
+    painter.save();
+    
+    painter.setFont(getFont());
+    painter.setPen(getTextColor());
+    
+    const Qt::Alignment alignment = Qt::AlignCenter;
+    const int flags = alignment | Qt::TextShowMnemonic;
+    
+    painter.drawText(textRect, flags, m_text);
+    
+    painter.restore();
+}
+
+void FluentButton::paintLoadingIndicator(QPainter& painter, const QRect& rect) {
+    painter.save();
+    
+    const QPointF center = rect.center();
+    const qreal radius = std::min(rect.width(), rect.height()) * 0.15;
+    
+    painter.translate(center);
+    painter.rotate(m_loadingRotation);
+    
+    const QColor color = getTextColor();
+    const int dotCount = 8;
+    const qreal dotRadius = radius * 0.3;
+    
+    for (int i = 0; i < dotCount; ++i) {
+        painter.save();
+        
+        const qreal angle = (360.0 / dotCount) * i;
+        painter.rotate(angle);
+        
+        QColor dotColor = color;
+        dotColor.setAlphaF(0.3 + 0.7 * (i / static_cast<qreal>(dotCount - 1)));
+        
+        painter.setBrush(dotColor);
+        painter.setPen(Qt::NoPen);
+        painter.drawEllipse(QPointF(radius, 0), dotRadius, dotRadius);
+        
+        painter.restore();
+    }
+    
+    painter.restore();
+}
+
+void FluentButton::paintFocusRing(QPainter& painter, const QRect& rect) {
+    if (!hasFocus()) {
+        return;
+    }
+    
+    painter.save();
+    
+    const QColor focusColor = getFocusColor();
+    QPen focusPen(focusColor, 2);
+    focusPen.setStyle(Qt::SolidLine);
+    
+    painter.setPen(focusPen);
+    painter.setBrush(Qt::NoBrush);
+    
+    const int radius = cornerRadius() + 2;
+    const QRect focusRect = rect.adjusted(-2, -2, 2, 2);
+    
+    painter.drawRoundedRect(focusRect, radius, radius);
+    
+    painter.restore();
+}
+
+void FluentButton::paintRevealEffect(QPainter& painter, const QRect& rect) {
+    if (m_revealProgress <= 0.0) {
+        return;
+    }
+    
+    painter.save();
+    
+    const QColor revealColor = getTextColor();
+    QColor effectColor = revealColor;
+    effectColor.setAlphaF(0.1 * m_revealProgress);
+    
+    const qreal maxRadius = std::sqrt(rect.width() * rect.width() + rect.height() * rect.height());
+    const qreal currentRadius = maxRadius * m_revealProgress;
+    
+    QRadialGradient gradient(m_revealCenter, currentRadius);
+    gradient.setColorAt(0.0, effectColor);
+    gradient.setColorAt(1.0, Qt::transparent);
+    
+    QPainterPath clipPath;
+    clipPath.addRoundedRect(rect, cornerRadius(), cornerRadius());
+    painter.setClipPath(clipPath);
+    
+    painter.fillRect(rect, gradient);
+    
+    painter.restore();
+}
+
+void FluentButton::mousePressEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton) {
+        m_pressed = true;
+        m_revealCenter = event->position().toPoint();
+        
+        setState(Core::FluentState::Pressed);
+        
+        if (isAnimated()) {
+            startRevealAnimation(m_revealCenter);
+        }
+        
+        emit pressed();
+    }
+    
+    Core::FluentComponent::mousePressEvent(event);
+}
+
+void FluentButton::mouseReleaseEvent(QMouseEvent* event) {
+    if (event->button() == Qt::LeftButton && m_pressed) {
+        m_pressed = false;
+        
+        const bool wasInside = rect().contains(event->position().toPoint());
+        
+        if (wasInside) {
+            if (m_checkable) {
+                setChecked(!m_checked);
+            }
+            
+            emit clicked(m_checked);
+            emit released();
+            
+            // Brief click animation
+            if (isAnimated()) {
+                animateClick();
+            }
+        }
+        
+        setState(rect().contains(event->position().toPoint()) ? 
+                 Core::FluentState::Hovered : Core::FluentState::Normal);
+    }
+    
+    Core::FluentComponent::mouseReleaseEvent(event);
+}
+
+void FluentButton::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return) {
+        if (!event->isAutoRepeat()) {
+            m_spacePressedOnButton = true;
+            m_pressed = true;
+            setState(Core::FluentState::Pressed);
+            emit pressed();
+            
+            if (isAnimated()) {
+                m_revealCenter = rect().center();
+                startRevealAnimation(m_revealCenter);
+            }
+        }
+        event->accept();
+        return;
+    }
+    
+    Core::FluentComponent::keyPressEvent(event);
+}
+
+void FluentButton::keyReleaseEvent(QKeyEvent* event) {
+    if ((event->key() == Qt::Key_Space || event->key() == Qt::Key_Return) && 
+        m_spacePressedOnButton && !event->isAutoRepeat()) {
+        
+        m_spacePressedOnButton = false;
+        m_pressed = false;
+        
+        if (m_checkable) {
+            setChecked(!m_checked);
+        }
+        
+        emit clicked(m_checked);
+        emit released();
+        
+        setState(Core::FluentState::Focused);
+        
+        if (isAnimated()) {
+            animateClick();
+        }
+        
+        event->accept();
+        return;
+    }
+    
+    Core::FluentComponent::keyReleaseEvent(event);
+}
+
+void FluentButton::focusInEvent(QFocusEvent* event) {
+    setState(Core::FluentState::Focused);
+    update();
+    Core::FluentComponent::focusInEvent(event);
+}
+
+void FluentButton::focusOutEvent(QFocusEvent* event) {
+    setState(underMouse() ? Core::FluentState::Hovered : Core::FluentState::Normal);
+    update();
+    Core::FluentComponent::focusOutEvent(event);
+}
+
+void FluentButton::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::EnabledChange ||
+        event->type() == QEvent::FontChange ||
+        event->type() == QEvent::StyleChange) {
+        updateStateStyle();
+        updateAccessibility();
+        update();
+    }
+    Core::FluentComponent::changeEvent(event);
+}
+
+void FluentButton::updateStateStyle() {
+    if (!isAnimated()) {
+        update();
+        return;
+    }
+    
+    createBackgroundAnimation();
+}
+
+void FluentButton::performStateTransition(Core::FluentState from, Core::FluentState to) {
+    if (isAnimated()) {
+        startStateTransitionAnimation(from, to);
+    } else {
+        update();
+    }
+}
+
+// Color calculation methods
+QColor FluentButton::getBackgroundColor() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+    
+    // Handle checked state for toggle buttons
+    const bool effectivePressed = m_pressed || (m_checkable && m_checked);
+    
+    switch (m_buttonStyle) {
+        case FluentButtonStyle::Primary:
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.accentDark1 : palette.accent;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.accentDark2 : palette.accentLight1;
+                case Core::FluentState::Pressed:
+                    return palette.accentDark1;
+                case Core::FluentState::Disabled:
+                    return palette.neutralQuaternary;
+                default:
+                    return palette.accent;
+            }
+            
+        case FluentButtonStyle::Accent:
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.accentDark1 : palette.accent;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.accentDark2 : palette.accentLight1;
+                case Core::FluentState::Pressed:
+                    return palette.accentDark1;
+                case Core::FluentState::Disabled:
+                    return palette.neutralQuaternary;
+                default:
+                    return palette.accent;
+            }
+            
+        case FluentButtonStyle::Subtle:
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.neutralQuaternaryAlt : Qt::transparent;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.neutralQuaternary : palette.neutralLight;
+                case Core::FluentState::Pressed:
+                    return palette.neutralQuaternaryAlt;
+                case Core::FluentState::Disabled:
+                    return Qt::transparent;
+                default:
+                    return Qt::transparent;
+            }
+            
+        case FluentButtonStyle::Outline:
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.neutralLight : Qt::transparent;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.neutralQuaternaryAlt : palette.neutralLighter;
+                case Core::FluentState::Pressed:
+                    return palette.neutralLight;
+                case Core::FluentState::Disabled:
+                    return Qt::transparent;
+                default:
+                    return Qt::transparent;
+            }
+            
+        case FluentButtonStyle::Hyperlink:
+            return Qt::transparent;
+            
+        default: // FluentButtonStyle::Default
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.neutralQuaternaryAlt : palette.neutralLighter;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.neutralQuaternary : palette.neutralLight;
+                case Core::FluentState::Pressed:
+                    return palette.neutralQuaternaryAlt;
+                case Core::FluentState::Disabled:
+                    return palette.neutralLighter;
+                default:
+                    return palette.neutralLighter;
+            }
+    }
+}
+
+QColor FluentButton::getTextColor() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+    
+    switch (m_buttonStyle) {
+        case FluentButtonStyle::Primary:
+        case FluentButtonStyle::Accent:
+            switch (state()) {
+                case Core::FluentState::Disabled:
+                    return palette.neutralTertiary;
+                default:
+                    return Qt::white;
+            }
+            
+        case FluentButtonStyle::Hyperlink:
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return palette.accent;
+                case Core::FluentState::Hovered:
+                    return palette.accentLight1;
+                case Core::FluentState::Pressed:
+                    return palette.accentDark1;
+                case Core::FluentState::Disabled:
+                    return palette.neutralTertiary;
+                default:
+                    return palette.accent;
+            }
+            
+        default:
+            switch (state()) {
+                case Core::FluentState::Disabled:
+                    return palette.neutralTertiary;
+                default:
+                    return palette.neutralPrimary;
+            }
+    }
+}
+
+QColor FluentButton::getBorderColor() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+    
+    switch (state()) {
+        case Core::FluentState::Normal:
+            return palette.neutralSecondary;
+        case Core::FluentState::Hovered:
+            return palette.neutralPrimary;
+        case Core::FluentState::Pressed:
+        case Core::FluentState::Focused:
+            return palette.accent;
+        case Core::FluentState::Disabled:
+            return palette.neutralTertiaryAlt;
+        default:
+            return palette.neutralSecondary;
+    }
+}
+
+QColor FluentButton::getFocusColor() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    return theme.currentPalette().accent;
+}
+
+QPen FluentButton::getBorderPen() const {
+    return QPen(getBorderColor(), getBorderWidth());
+}
+
+QFont FluentButton::getFont() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            return theme.captionFont();
+        case FluentButtonSize::Large:
+        case FluentButtonSize::ExtraLarge:
+            return theme.subtitleFont();
+        default:
+            return theme.bodyFont();
+    }
+}
+
+// Size and spacing calculations
+int FluentButton::getHorizontalPadding() const {
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            return 8;
+        case FluentButtonSize::Medium:
+            return 12;
+        case FluentButtonSize::Large:
+            return 16;
+        case FluentButtonSize::ExtraLarge:
+            return 20;
+        default:
+            return 12;
+    }
+}
+
+int FluentButton::getVerticalPadding() const {
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            return 4;
+        case FluentButtonSize::Medium:
+            return 6;
+        case FluentButtonSize::Large:
+            return 8;
+        case FluentButtonSize::ExtraLarge:
+            return 12;
+        default:
+            return 6;
+    }
+}
+
+int FluentButton::getIconTextSpacing() const {
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            return 4;
+        case FluentButtonSize::Medium:
+            return 6;
+        case FluentButtonSize::Large:
+        case FluentButtonSize::ExtraLarge:
+            return 8;
+        default:
+            return 6;
+    }
+}
+
+int FluentButton::getBorderWidth() const {
+    return 1;
+}
+
+// Rect calculations
+QRect FluentButton::calculateContentRect() const {
+    const int hPadding = getHorizontalPadding();
+    const int vPadding = getVerticalPadding();
+    return rect().adjusted(hPadding, vPadding, -hPadding, -vPadding);
+}
+
+QRect FluentButton::calculateIconRect() const {
+    if (m_icon.isNull()) {
+        return QRect();
+    }
+    
+    const QRect contentRect = calculateContentRect();
+    const QSize iconSize = calculateIconSize();
+    const QSize textSize = calculateTextSize();
+    
+    QPoint iconPos;
+    
+    switch (m_iconPosition) {
+        case FluentIconPosition::Left:
+            iconPos = QPoint(
+                contentRect.left(),
+                contentRect.center().y() - iconSize.height() / 2
+            );
+            break;
+            
+        case FluentIconPosition::Right:
+            iconPos = QPoint(
+                contentRect.right() - iconSize.width(),
+                contentRect.center().y() - iconSize.height() / 2
+            );
+            break;
+            
+        case FluentIconPosition::Top:
+            iconPos = QPoint(
+                contentRect.center().x() - iconSize.width() / 2,
+                contentRect.top()
+            );
+            break;
+            
+        case FluentIconPosition::Bottom:
+            iconPos = QPoint(
+                contentRect.center().x() - iconSize.width() / 2,
+                contentRect.bottom() - iconSize.height()
+            );
+            break;
+    }
+    
+    return QRect(iconPos, iconSize);
+}
+
+QRect FluentButton::calculateTextRect() const {
+    if (m_text.isEmpty()) {
+        return QRect();
+    }
+    
+    const QRect contentRect = calculateContentRect();
+    const QSize iconSize = m_icon.isNull() ? QSize() : calculateIconSize();
+    const QSize textSize = calculateTextSize();
+    
+    QPoint textPos;
+    QSize availableSize;
+    
+    switch (m_iconPosition) {
+        case FluentIconPosition::Left:
+            textPos = QPoint(
+                contentRect.left() + iconSize.width() + (iconSize.isNull() ? 0 : getIconTextSpacing()),
+                contentRect.center().y() - textSize.height() / 2
+            );
+            availableSize = QSize(
+                contentRect.width() - iconSize.width() - (iconSize.isNull() ? 0 : getIconTextSpacing()),
+                textSize.height()
+            );
+            break;
+            
+        case FluentIconPosition::Right:
+            textPos = QPoint(
+                contentRect.left(),
+                contentRect.center().y() - textSize.height() / 2
+            );
+            availableSize = QSize(
+                contentRect.width() - iconSize.width() - (iconSize.isNull() ? 0 : getIconTextSpacing()),
+                textSize.height()
+            );
+            break;
+            
+        case FluentIconPosition::Top:
+            textPos = QPoint(
+                contentRect.center().x() - textSize.width() / 2,
+                contentRect.top() + iconSize.height() + (iconSize.isNull() ? 0 : getIconTextSpacing())
+            );
+            availableSize = textSize;
+            break;
+            
+        case FluentIconPosition::Bottom:
+            textPos = QPoint(
+                contentRect.center().x() - textSize.width() / 2,
+                contentRect.top()
+            );
+            availableSize = QSize(
+                textSize.width(),
+                contentRect.height() - iconSize.height() - (iconSize.isNull() ? 0 : getIconTextSpacing())
+            );
+            break;
+    }
+    
+    return QRect(textPos, availableSize);
+}
+
+QSize FluentButton::calculateIconSize() const {
+    if (m_icon.isNull()) {
+        return QSize();
+    }
+    
+    int iconSize;
+    switch (m_buttonSize) {
+        case FluentButtonSize::Small:
+            iconSize = 12;
+            break;
+        case FluentButtonSize::Medium:
+            iconSize = 16;
+            break;
+        case FluentButtonSize::Large:
+            iconSize = 20;
+            break;
+        case FluentButtonSize::ExtraLarge:
+            iconSize = 24;
+            break;
+        default:
+            iconSize = 16;
+    }
+    
+    return QSize(iconSize, iconSize);
+}
+
+QSize FluentButton::calculateTextSize() const {
+    if (m_text.isEmpty()) {
+        return QSize();
+    }
+    
+    const QFontMetrics fm(getFont());
+    return fm.size(Qt::TextShowMnemonic, m_text);
+}
+
+// Animation methods
+void FluentButton::startStateTransitionAnimation(Core::FluentState from, Core::FluentState to) {
+    Q_UNUSED(from)
+    Q_UNUSED(to)
+    
+    createBackgroundAnimation();
+}
+
+void FluentButton::createBackgroundAnimation() {
+    if (!m_backgroundAnimation) {
+        m_backgroundAnimation = std::make_unique<QPropertyAnimation>(this, "backgroundOpacity");
+        connect(m_backgroundAnimation.get(), &QPropertyAnimation::finished,
+                this, &FluentButton::onBackgroundAnimationFinished);
+    }
+    
+    m_backgroundAnimation->stop();
+    m_backgroundAnimation->setDuration(150);
+    m_backgroundAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_backgroundAnimation->setStartValue(m_backgroundOpacity);
+    m_backgroundAnimation->setEndValue(1.0);
+    m_backgroundAnimation->start();
+}
+
+void FluentButton::startLoadingAnimation() {
+    if (!m_loadingAnimation) {
+        m_loadingAnimation = std::make_unique<QPropertyAnimation>(this, "loadingRotation");
+        m_loadingAnimation->setDuration(1000);
+        m_loadingAnimation->setLoopCount(-1);
+        m_loadingAnimation->setStartValue(0.0);
+        m_loadingAnimation->setEndValue(360.0);
+        m_loadingAnimation->setEasingCurve(QEasingCurve::Linear);
+        
+        connect(m_loadingAnimation.get(), &QPropertyAnimation::valueChanged,
+                this, &FluentButton::onLoadingAnimationValueChanged);
+    }
+    
+    m_loadingAnimation->start();
+}
+
+void FluentButton::stopLoadingAnimation() {
+    if (m_loadingAnimation) {
+        m_loadingAnimation->stop();
+        m_loadingRotation = 0.0;
+    }
+}
+
+void FluentButton::startRevealAnimation(const QPoint& center) {
+    m_revealCenter = center;
+    
+    if (!m_revealAnimation) {
+        m_revealAnimation = std::make_unique<QSequentialAnimationGroup>(this);
+        
+        auto expandAnim = new QPropertyAnimation(this, "revealProgress");
+        expandAnim->setDuration(300);
+        expandAnim->setEasingCurve(QEasingCurve::OutCubic);
+        expandAnim->setStartValue(0.0);
+        expandAnim->setEndValue(1.0);
+        
+        auto fadeAnim = new QPropertyAnimation(this, "revealProgress");
+        fadeAnim->setDuration(200);
+        fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
+        fadeAnim->setStartValue(1.0);
+        fadeAnim->setEndValue(0.0);
+        
+        m_revealAnimation->addAnimation(expandAnim);
+        m_revealAnimation->addAnimation(fadeAnim);
+    }
+    
+    m_revealAnimation->start();
+}
+
+void FluentButton::animateClick() {
+    if (!m_clickTimer->isActive()) {
+        const qreal originalOpacity = m_backgroundOpacity;
+        
+        auto clickAnim = std::make_unique<QPropertyAnimation>(this, "backgroundOpacity");
+        clickAnim->setDuration(75);
+        clickAnim->setStartValue(originalOpacity);
+        clickAnim->setEndValue(0.7);
+        clickAnim->setEasingCurve(QEasingCurve::OutCubic);
+        
+        connect(clickAnim.get(), &QPropertyAnimation::finished, [this, originalOpacity]() {
+            auto restoreAnim = std::make_unique<QPropertyAnimation>(this, "backgroundOpacity");
+            restoreAnim->setDuration(75);
+            restoreAnim->setStartValue(0.7);
+            restoreAnim->setEndValue(originalOpacity);
+            restoreAnim->setEasingCurve(QEasingCurve::OutCubic);
+            restoreAnim->start();
+        });
+        
+        clickAnim->start();
+        m_clickTimer->start();
+    }
+}
+
+void FluentButton::toggle() {
+    if (m_checkable) {
+        setChecked(!m_checked);
+    }
+}
+
+// Slots
+void FluentButton::onLoadingAnimationValueChanged(const QVariant& value) {
+    m_loadingRotation = value.toReal();
+    update();
+}
+
+void FluentButton::onBackgroundAnimationFinished() {
+    // Animation completed
+}
+
+void FluentButton::onThemeChanged() {
+    updateStateStyle();
+}
+
+// Utility methods
+void FluentButton::updateGeometry() {
+    QWidget::updateGeometry();
+    if (parentWidget()) {
+        parentWidget()->updateGeometry();
+    }
+}
+
+void FluentButton::updateAccessibility() {
+    Accessibility::setAccessibleName(this, m_text.isEmpty() ? "Button" : m_text);
+    
+    QString description = m_text;
+    if (m_checkable) {
+        description += m_checked ? " (checked)" : " (unchecked)";
+    }
+    if (m_loading) {
+        description += " (loading)";
+    }
+    
+    Accessibility::setAccessibleDescription(this, description);
+    Accessibility::setAccessibleRole(this, 
+        m_checkable ? QAccessible::CheckBox : QAccessible::Button);
+}
+
+// Static convenience methods
+FluentButton* FluentButton::createPrimaryButton(const QString& text, QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Primary);
+    return button;
+}
+
+FluentButton* FluentButton::createAccentButton(const QString& text, QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Accent);
+    return button;
+}
+
+FluentButton* FluentButton::createIconButton(const QIcon& icon, QWidget* parent) {
+    auto* button = new FluentButton(parent);
+    button->setIcon(icon);
+    button->setFlat(true);
+    return button;
+}
+
+} // namespace FluentQt::Components
+
+// Required for Q_PROPERTY animations
+#include "FluentButton.moc"

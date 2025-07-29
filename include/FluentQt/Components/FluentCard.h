@@ -48,6 +48,7 @@ class FluentCard : public Core::FluentComponent {
     Q_PROPERTY(bool headerVisible READ isHeaderVisible WRITE setHeaderVisible)
     Q_PROPERTY(bool footerVisible READ isFooterVisible WRITE setFooterVisible)
     Q_PROPERTY(qreal shadowOpacity READ shadowOpacity WRITE setShadowOpacity)
+    Q_PROPERTY(qreal expansionProgress READ expansionProgress WRITE setExpansionProgress)
 
 public:
     explicit FluentCard(QWidget* parent = nullptr);
@@ -77,6 +78,9 @@ public:
 
     qreal shadowOpacity() const noexcept { return m_shadowOpacity; }
     void setShadowOpacity(qreal opacity);
+
+    qreal expansionProgress() const noexcept { return m_expansionProgress; }
+    void setExpansionProgress(qreal progress);
 
     // Selection properties
     bool isSelectable() const noexcept { return m_selectable; }

@@ -138,6 +138,21 @@ void FluentCard::setShadowOpacity(qreal opacity) {
     }
 }
 
+void FluentCard::setExpansionProgress(qreal progress) {
+    if (!qFuzzyCompare(m_expansionProgress, progress)) {
+        m_expansionProgress = qBound(0.0, progress, 1.0);
+
+        // Update height based on expansion progress
+        if (m_expandedHeight > 0 && m_collapsedHeight > 0) {
+            const int targetHeight = m_collapsedHeight +
+                static_cast<int>((m_expandedHeight - m_collapsedHeight) * m_expansionProgress);
+            setFixedHeight(targetHeight);
+        }
+
+        update();
+    }
+}
+
 void FluentCard::setSelectable(bool selectable) {
     if (m_selectable != selectable) {
         m_selectable = selectable;
@@ -944,5 +959,3 @@ void FluentCardFooter::paintEvent(QPaintEvent* event) {
 }
 
 } // namespace FluentQt::Components
-
-#include "FluentCard.moc"

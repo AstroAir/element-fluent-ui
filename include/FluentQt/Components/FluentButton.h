@@ -48,6 +48,11 @@ class FluentButton : public Core::FluentComponent {
     Q_PROPERTY(bool loading READ isLoading WRITE setLoading NOTIFY loadingChanged)
     Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable)
     Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged)
+
+    // Animation properties
+    Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
+    Q_PROPERTY(qreal loadingRotation READ loadingRotation WRITE setLoadingRotation)
+    Q_PROPERTY(qreal revealProgress READ revealProgress WRITE setRevealProgress)
     Q_PROPERTY(bool flat READ isFlat WRITE setFlat)
     Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
 
@@ -90,6 +95,12 @@ public:
     // Animation properties
     qreal backgroundOpacity() const noexcept { return m_backgroundOpacity; }
     void setBackgroundOpacity(qreal opacity);
+
+    qreal loadingRotation() const noexcept { return m_loadingRotation; }
+    void setLoadingRotation(qreal rotation);
+
+    qreal revealProgress() const noexcept { return m_revealProgress; }
+    void setRevealProgress(qreal progress);
 
     // Size calculations
     QSize sizeHint() const override;

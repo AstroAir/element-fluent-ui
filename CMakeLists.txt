@@ -49,12 +49,23 @@ set(FLUENTQT_SOURCES
     src/Components/FluentAutoCarousel.cpp
     src/Components/FluentIndicatorCarousel.cpp
     src/Components/FluentTouchCarousel.cpp
+    src/Components/FluentTimeline.cpp
+    src/Components/FluentTimelineItem.cpp
+    src/Components/FluentToast.cpp
+    src/Components/FluentToastManager.cpp
+    src/Components/FluentSelect.cpp
+    src/Components/FluentSelectItem.cpp
+    src/Components/FluentSelectDropdown.cpp
+    src/Components/FluentResizable.cpp
+    src/Components/FluentScrollArea.cpp
+    src/Components/FluentSheet.cpp
     src/Styling/FluentCarouselStyles.cpp
     src/Accessibility/FluentAccessible.cpp
 )
 
 set(FLUENTQT_HEADERS
     include/FluentQt/Core/FluentComponent.h
+    include/FluentQt/Core/FluentState.h
     include/FluentQt/Core/FluentPerformance.h
     include/FluentQt/Styling/FluentTheme.h
     include/FluentQt/Animation/FluentAnimator.h
@@ -73,6 +84,16 @@ set(FLUENTQT_HEADERS
     include/FluentQt/Components/FluentAutoCarousel.h
     include/FluentQt/Components/FluentIndicatorCarousel.h
     include/FluentQt/Components/FluentTouchCarousel.h
+    include/FluentQt/Components/FluentTimeline.h
+    include/FluentQt/Components/FluentTimelineItem.h
+    include/FluentQt/Components/FluentToast.h
+    include/FluentQt/Components/FluentToastManager.h
+    include/FluentQt/Components/FluentSelect.h
+    include/FluentQt/Components/FluentSelectItem.h
+    include/FluentQt/Components/FluentSelectDropdown.h
+    include/FluentQt/Components/FluentResizable.h
+    include/FluentQt/Components/FluentScrollArea.h
+    include/FluentQt/Components/FluentSheet.h
     include/FluentQt/Styling/FluentCarouselStyles.h
     include/FluentQt/Accessibility/FluentAccessible.h
 )
@@ -119,6 +140,17 @@ target_link_libraries(FluentQtDemo FluentQt)
 # Carousel showcase example
 add_executable(CarouselShowcase examples/CarouselShowcaseExample.cpp)
 target_link_libraries(CarouselShowcase FluentQt)
+
+# Timeline examples
+add_executable(TimelineShowcase examples/TimelineShowcaseExample.cpp)
+target_link_libraries(TimelineShowcase FluentQt)
+
+add_executable(SimpleTimeline examples/SimpleTimelineExample.cpp)
+target_link_libraries(SimpleTimeline FluentQt)
+
+# Toast and Select demo
+add_executable(ToastAndSelectDemo examples/ToastAndSelectDemo/main.cpp)
+target_link_libraries(ToastAndSelectDemo FluentQt)
 
 # Tests (will be added later)
 # enable_testing()

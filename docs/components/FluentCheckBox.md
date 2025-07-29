@@ -510,6 +510,322 @@ void clicked(bool checked);
 void textChanged(const QString& text);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Settings Panel with Grouped Checkboxes
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QLabel>
+#include <QSettings>
+#include "FluentQt/Components/FluentCheckBox.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCard.h"
+
+class SettingsPanel : public QWidget {
+    Q_OBJECT
+public:
+    SettingsPanel(QWidget* parent = nullptr) : QWidget(parent) {
+        m_settings = new QSettings("MyApp", "Settings", this);
+        setupUI();
+        loadSettings();
+        connectSignals();
+    }
+
+private slots:
+    void saveSettings() {
+        // Notifications
+        m_settings->setValue("notifications/email", m_emailNotifications->isChecked());
+        m_settings->setValue("notifications/push", m_pushNotifications->isChecked());
+        m_settings->setValue("notifications/sound", m_soundNotifications->isChecked());
+
+        // Privacy
+        m_settings->setValue("privacy/analytics", m_analytics->isChecked());
+        m_settings->setValue("privacy/location", m_location->isChecked());
+        m_settings->setValue("privacy/cookies", m_cookies->isChecked());
+
+        // Accessibility
+        m_settings->setValue("accessibility/highContrast", m_highContrast->isChecked());
+        m_settings->setValue("accessibility/largeText", m_largeText->isChecked());
+        m_settings->setValue("accessibility/animations", m_animations->isChecked());
+
+        m_saveButton->setText("✓ Settings Saved");
+        m_saveButton->setButtonStyle(FluentButtonStyle::Accent);
+
+        QTimer::singleShot(2000, [this]() {
+            m_saveButton->setText("Save Settings");
+            m_saveButton->setButtonStyle(FluentButtonStyle::Primary);
+        });
+    }
+
+    void resetToDefaults() {
+        // Set default values
+        m_emailNotifications->setChecked(true);
+        m_pushNotifications->setChecked(true);
+        m_soundNotifications->setChecked(false);
+
+        m_analytics->setChecked(false);
+        m_location->setChecked(false);
+        m_cookies->setChecked(true);
+
+        m_highContrast->setChecked(false);
+        m_largeText->setChecked(false);
+        m_animations->setChecked(true);
+
+        updateMasterCheckboxes();
+    }
+
+    void updateMasterCheckboxes() {
+        // Update notification master checkbox
+        updateMasterCheckbox(m_notificationsMaster, {
+            m_emailNotifications, m_pushNotifications, m_soundNotifications
+        });
+
+        // Update privacy master checkbox
+        updateMasterCheckbox(m_privacyMaster, {
+            m_analytics, m_location, m_cookies
+        });
+
+        // Update accessibility master checkbox
+        updateMasterCheckbox(m_accessibilityMaster, {
+            m_highContrast, m_largeText, m_animations
+        });
+    }
+
+    void updateMasterCheckbox(FluentCheckBox* master, const QList<FluentCheckBox*>& children) {
+        int checkedCount = 0;
+        for (auto* child : children) {
+            if (child->isChecked()) checkedCount++;
+        }
+
+        if (checkedCount == 0) {
+            master->setCheckState(Qt::Unchecked);
+        } else if (checkedCount == children.size()) {
+            master->setCheckState(Qt::Checked);
+        } else {
+            master->setCheckState(Qt::PartiallyChecked);
+        }
+    }
+
+    void toggleGroup(FluentCheckBox* master, const QList<FluentCheckBox*>& children) {
+        bool shouldCheck = (master->checkState() != Qt::Checked);
+        for (auto* child : children) {
+            child->setChecked(shouldCheck);
+        }
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Title
+        auto* title = new QLabel("Application Settings");
+        title->setStyleSheet("font-size: 20px; font-weight: bold; margin-bottom: 20px;");
+
+        // Notifications group
+        auto* notificationsCard = new FluentCard;
+        auto* notificationsLayout = new QVBoxLayout(notificationsCard);
+
+        m_notificationsMaster = new FluentCheckBox("Notifications");
+        m_notificationsMaster->setTristate(true);
+        m_notificationsMaster->setStyleSheet("font-weight: bold;");
+
+        m_emailNotifications = new FluentCheckBox("Email notifications");
+        m_pushNotifications = new FluentCheckBox("Push notifications");
+        m_soundNotifications = new FluentCheckBox("Sound notifications");
+
+        // Indent child checkboxes
+        auto* emailLayout = new QHBoxLayout;
+        emailLayout->addSpacing(30);
+        emailLayout->addWidget(m_emailNotifications);
+
+        auto* pushLayout = new QHBoxLayout;
+        pushLayout->addSpacing(30);
+        pushLayout->addWidget(m_pushNotifications);
+
+        auto* soundLayout = new QHBoxLayout;
+        soundLayout->addSpacing(30);
+        soundLayout->addWidget(m_soundNotifications);
+
+        notificationsLayout->addWidget(m_notificationsMaster);
+        notificationsLayout->addLayout(emailLayout);
+        notificationsLayout->addLayout(pushLayout);
+        notificationsLayout->addLayout(soundLayout);
+
+        // Privacy group
+        auto* privacyCard = new FluentCard;
+        auto* privacyLayout = new QVBoxLayout(privacyCard);
+
+        m_privacyMaster = new FluentCheckBox("Privacy & Data");
+        m_privacyMaster->setTristate(true);
+        m_privacyMaster->setStyleSheet("font-weight: bold;");
+
+        m_analytics = new FluentCheckBox("Share analytics data");
+        m_location = new FluentCheckBox("Allow location tracking");
+        m_cookies = new FluentCheckBox("Accept cookies");
+
+        auto* analyticsLayout = new QHBoxLayout;
+        analyticsLayout->addSpacing(30);
+        analyticsLayout->addWidget(m_analytics);
+
+        auto* locationLayout = new QHBoxLayout;
+        locationLayout->addSpacing(30);
+        locationLayout->addWidget(m_location);
+
+        auto* cookiesLayout = new QHBoxLayout;
+        cookiesLayout->addSpacing(30);
+        cookiesLayout->addWidget(m_cookies);
+
+        privacyLayout->addWidget(m_privacyMaster);
+        privacyLayout->addLayout(analyticsLayout);
+        privacyLayout->addLayout(locationLayout);
+        privacyLayout->addLayout(cookiesLayout);
+
+        // Accessibility group
+        auto* accessibilityCard = new FluentCard;
+        auto* accessibilityLayout = new QVBoxLayout(accessibilityCard);
+
+        m_accessibilityMaster = new FluentCheckBox("Accessibility");
+        m_accessibilityMaster->setTristate(true);
+        m_accessibilityMaster->setStyleSheet("font-weight: bold;");
+
+        m_highContrast = new FluentCheckBox("High contrast mode");
+        m_largeText = new FluentCheckBox("Large text");
+        m_animations = new FluentCheckBox("Enable animations");
+
+        auto* contrastLayout = new QHBoxLayout;
+        contrastLayout->addSpacing(30);
+        contrastLayout->addWidget(m_highContrast);
+
+        auto* textLayout = new QHBoxLayout;
+        textLayout->addSpacing(30);
+        textLayout->addWidget(m_largeText);
+
+        auto* animationsLayout = new QHBoxLayout;
+        animationsLayout->addSpacing(30);
+        animationsLayout->addWidget(m_animations);
+
+        accessibilityLayout->addWidget(m_accessibilityMaster);
+        accessibilityLayout->addLayout(contrastLayout);
+        accessibilityLayout->addLayout(textLayout);
+        accessibilityLayout->addLayout(animationsLayout);
+
+        // Action buttons
+        auto* buttonLayout = new QHBoxLayout;
+
+        auto* resetButton = new FluentButton("Reset to Defaults");
+        resetButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(resetButton, &FluentButton::clicked, this, &SettingsPanel::resetToDefaults);
+
+        m_saveButton = new FluentButton("Save Settings");
+        m_saveButton->setButtonStyle(FluentButtonStyle::Primary);
+
+        buttonLayout->addWidget(resetButton);
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(m_saveButton);
+
+        layout->addWidget(title);
+        layout->addWidget(notificationsCard);
+        layout->addWidget(privacyCard);
+        layout->addWidget(accessibilityCard);
+        layout->addLayout(buttonLayout);
+    }
+
+    void loadSettings() {
+        // Load saved settings or use defaults
+        m_emailNotifications->setChecked(m_settings->value("notifications/email", true).toBool());
+        m_pushNotifications->setChecked(m_settings->value("notifications/push", true).toBool());
+        m_soundNotifications->setChecked(m_settings->value("notifications/sound", false).toBool());
+
+        m_analytics->setChecked(m_settings->value("privacy/analytics", false).toBool());
+        m_location->setChecked(m_settings->value("privacy/location", false).toBool());
+        m_cookies->setChecked(m_settings->value("privacy/cookies", true).toBool());
+
+        m_highContrast->setChecked(m_settings->value("accessibility/highContrast", false).toBool());
+        m_largeText->setChecked(m_settings->value("accessibility/largeText", false).toBool());
+        m_animations->setChecked(m_settings->value("accessibility/animations", true).toBool());
+
+        updateMasterCheckboxes();
+    }
+
+    void connectSignals() {
+        // Connect child checkboxes to update master checkboxes
+        auto notificationChildren = QList<FluentCheckBox*>{
+            m_emailNotifications, m_pushNotifications, m_soundNotifications
+        };
+        auto privacyChildren = QList<FluentCheckBox*>{
+            m_analytics, m_location, m_cookies
+        };
+        auto accessibilityChildren = QList<FluentCheckBox*>{
+            m_highContrast, m_largeText, m_animations
+        };
+
+        for (auto* child : notificationChildren) {
+            connect(child, &FluentCheckBox::toggled, this, &SettingsPanel::updateMasterCheckboxes);
+        }
+        for (auto* child : privacyChildren) {
+            connect(child, &FluentCheckBox::toggled, this, &SettingsPanel::updateMasterCheckboxes);
+        }
+        for (auto* child : accessibilityChildren) {
+            connect(child, &FluentCheckBox::toggled, this, &SettingsPanel::updateMasterCheckboxes);
+        }
+
+        // Connect master checkboxes to toggle groups
+        connect(m_notificationsMaster, &FluentCheckBox::clicked, [this]() {
+            toggleGroup(m_notificationsMaster, {m_emailNotifications, m_pushNotifications, m_soundNotifications});
+        });
+        connect(m_privacyMaster, &FluentCheckBox::clicked, [this]() {
+            toggleGroup(m_privacyMaster, {m_analytics, m_location, m_cookies});
+        });
+        connect(m_accessibilityMaster, &FluentCheckBox::clicked, [this]() {
+            toggleGroup(m_accessibilityMaster, {m_highContrast, m_largeText, m_animations});
+        });
+
+        // Save button
+        connect(m_saveButton, &FluentButton::clicked, this, &SettingsPanel::saveSettings);
+    }
+
+    QSettings* m_settings;
+
+    // Master checkboxes
+    FluentCheckBox* m_notificationsMaster;
+    FluentCheckBox* m_privacyMaster;
+    FluentCheckBox* m_accessibilityMaster;
+
+    // Notification checkboxes
+    FluentCheckBox* m_emailNotifications;
+    FluentCheckBox* m_pushNotifications;
+    FluentCheckBox* m_soundNotifications;
+
+    // Privacy checkboxes
+    FluentCheckBox* m_analytics;
+    FluentCheckBox* m_location;
+    FluentCheckBox* m_cookies;
+
+    // Accessibility checkboxes
+    FluentCheckBox* m_highContrast;
+    FluentCheckBox* m_largeText;
+    FluentCheckBox* m_animations;
+
+    FluentButton* m_saveButton;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    SettingsPanel panel;
+    panel.show();
+
+    return app.exec();
+}
+
+#include "settings_panel.moc"
+```
+
 ## See Also
 
 - [FluentRadioButton](FluentRadioButton.md) - For exclusive selection options

@@ -12,6 +12,7 @@
 #include <QPixmap>
 #include <QPainter>
 #include <QRandomGenerator>
+#include <QComboBox>
 
 // FluentQt Carousel Components
 #include "FluentQt/Components/FluentCarousel.h"
@@ -43,7 +44,7 @@ public:
         
         // Apply Fluent theme
         auto& theme = FluentQt::Styling::FluentTheme::instance();
-        theme.setTheme(FluentQt::Styling::FluentThemeMode::Light);
+        theme.setMode(FluentQt::Styling::FluentThemeMode::Light);
     }
 
 private slots:
@@ -56,7 +57,7 @@ private slots:
 
     void onAutoPlayToggled() {
         if (m_autoCarousel) {
-            if (m_autoCarousel->autoPlayActive()) {
+            if (m_autoCarousel->isAutoPlayActive()) {
                 m_autoCarousel->stopAutoPlay();
             } else {
                 m_autoCarousel->startAutoPlay();
@@ -129,10 +130,12 @@ private:
         m_basicCarousel->setFixedSize(600, 300);
         
         // Configure
-        m_basicCarousel->setTransition(FluentCarouselTransition::Slide);
-        m_basicCarousel->setTransitionDuration(300);
-        m_basicCarousel->setWrapAround(false);
-        m_basicCarousel->setShowNavigationButtons(true);
+        FluentCarouselConfig config = m_basicCarousel->config();
+        config.transition = FluentCarouselTransition::Slide;
+        config.transitionDuration = std::chrono::milliseconds(300);
+        config.infinite = false;
+        config.showNavigation = true;
+        m_basicCarousel->setConfig(config);
         
         // Add content
         QStringList colors = {"#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD"};
@@ -174,12 +177,13 @@ private:
         m_autoCarousel->setFixedSize(600, 300);
         
         // Configure auto-play
-        m_autoCarousel->setAutoPlayInterval(2500);
-        m_autoCarousel->setPauseOnHover(true);
-        m_autoCarousel->setShowPlayPauseButton(true);
-        m_autoCarousel->setShowProgressIndicator(true);
-        m_autoCarousel->setTransition(FluentCarouselTransition::Fade);
-        m_autoCarousel->setTransitionDuration(500);
+        FluentCarouselConfig config = m_autoCarousel->config();
+        config.autoPlay = FluentCarouselAutoPlay::Forward;
+        config.autoPlayInterval = std::chrono::milliseconds(2500);
+        config.pauseOnHover = true;
+        config.transition = FluentCarouselTransition::Fade;
+        config.transitionDuration = std::chrono::milliseconds(500);
+        m_autoCarousel->setConfig(config);
         
         // Add image-like content
         QStringList imageData = {
@@ -239,11 +243,11 @@ private:
         m_indicatorCarousel->setFixedSize(600, 300);
         
         // Configure indicators
-        m_indicatorCarousel->setIndicatorStyle(FluentCarouselIndicatorStyle::Dots);
-        m_indicatorCarousel->setIndicatorPosition(FluentCarouselIndicatorPosition::Bottom);
-        m_indicatorCarousel->setShowIndicators(true);
-        m_indicatorCarousel->setTransition(FluentCarouselTransition::Scale);
-        m_indicatorCarousel->setTransitionDuration(400);
+        FluentCarouselConfig config = m_indicatorCarousel->config();
+        config.showIndicators = true;
+        config.transition = FluentCarouselTransition::Scale;
+        config.transitionDuration = std::chrono::milliseconds(400);
+        m_indicatorCarousel->setConfig(config);
         
         // Add product-like content
         QStringList products = {"Wireless Headphones", "Smart Watch", "Tablet Device", "Gaming Mouse", "Bluetooth Speaker"};
@@ -284,14 +288,15 @@ private:
         
         // Configure touch behavior
         FluentCarouselTouchConfig touchConfig;
-        touchConfig.swipeThreshold = 50;
-        touchConfig.gestureSensitivity = FluentCarouselGestureSensitivity::Medium;
-        touchConfig.momentumScrolling = true;
-        touchConfig.edgeBehavior = FluentCarouselEdgeBehavior::Resistance;
-        m_touchCarousel->setTouchConfiguration(touchConfig);
-        
-        m_touchCarousel->setTransition(FluentCarouselTransition::Slide);
-        m_touchCarousel->setTransitionDuration(250);
+        touchConfig.swipeDistanceThreshold = 50.0;
+        touchConfig.edgeBehavior = FluentCarouselEdgeBehavior::Resist;
+        m_touchCarousel->setTouchConfig(touchConfig);
+
+        // Configure carousel
+        FluentCarouselConfig config = m_touchCarousel->config();
+        config.transition = FluentCarouselTransition::Slide;
+        config.transitionDuration = std::chrono::milliseconds(250);
+        m_touchCarousel->setConfig(config);
         
         // Add touch-optimized content
         QStringList touchItems = {"Swipe Left", "Drag to Navigate", "Touch Friendly", "Momentum Scroll", "Edge Resistance", "Gesture Support"};
@@ -332,14 +337,15 @@ private:
         // Configure with advanced settings
         FluentCarouselConfig config;
         config.transition = FluentCarouselTransition::Coverflow;
-        config.transitionDuration = 600;
-        config.autoPlay = FluentCarouselAutoPlay::PauseOnHover;
-        config.autoPlayInterval = 4000;
-        config.wrapAround = true;
-        config.showNavigationButtons = true;
-        config.keyboardNavigation = true;
-        
-        m_advancedCarousel->setConfiguration(config);
+        config.transitionDuration = std::chrono::milliseconds(600);
+        config.autoPlay = FluentCarouselAutoPlay::Forward;
+        config.autoPlayInterval = std::chrono::milliseconds(4000);
+        config.pauseOnHover = true;
+        config.infinite = true;
+        config.showNavigation = true;
+        config.enableKeyboard = true;
+
+        m_advancedCarousel->setConfig(config);
         
         // Add diverse content
         for (int i = 0; i < 8; ++i) {

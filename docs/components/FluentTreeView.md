@@ -750,6 +750,452 @@ void itemDropped(const QModelIndex& index, const QMimeData* data);
 void itemMoved(const QModelIndex& from, const QModelIndex& to);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: File Explorer Interface
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QSplitter>
+#include <QStandardItemModel>
+#include <QHeaderView>
+#include <QDir>
+#include <QFileInfo>
+#include <QTimer>
+#include <QProgressBar>
+#include "FluentQt/Components/FluentTreeView.h"
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentPanel.h"
+
+class FileExplorerWidget : public QWidget {
+    Q_OBJECT
+public:
+    FileExplorerWidget(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        loadFileSystem();
+        connectSignals();
+    }
+
+private slots:
+    void onItemClicked(const QModelIndex& index) {
+        if (!index.isValid()) return;
+
+        auto* item = m_model->itemFromIndex(index);
+        if (!item) return;
+
+        QString path = item->data(Qt::UserRole).toString();
+        updateFileDetails(path);
+
+        // If it's a directory, load its contents
+        if (QFileInfo(path).isDir()) {
+            loadDirectoryContents(item, path);
+        }
+    }
+
+    void onItemDoubleClicked(const QModelIndex& index) {
+        auto* item = m_model->itemFromIndex(index);
+        if (!item) return;
+
+        QString path = item->data(Qt::UserRole).toString();
+        QFileInfo fileInfo(path);
+
+        if (fileInfo.isDir()) {
+            // Expand/collapse directory
+            if (m_treeView->isExpanded(index)) {
+                m_treeView->collapse(index);
+            } else {
+                m_treeView->expand(index);
+            }
+        } else {
+            // Open file (simulate)
+            m_statusLabel->setText(QString("Opening: %1").arg(fileInfo.fileName()));
+            QTimer::singleShot(2000, [this]() {
+                m_statusLabel->setText("Ready");
+            });
+        }
+    }
+
+    void performSearch() {
+        QString searchTerm = m_searchInput->text().toLower();
+
+        if (searchTerm.isEmpty()) {
+            // Show all items
+            showAllItems(m_model->invisibleRootItem());
+            m_statusLabel->setText("Ready");
+            return;
+        }
+
+        // Hide items that don't match search
+        int matchCount = filterItems(m_model->invisibleRootItem(), searchTerm);
+        m_statusLabel->setText(QString("Found %1 matches for '%2'").arg(matchCount).arg(searchTerm));
+    }
+
+    void refreshFileSystem() {
+        m_refreshButton->setLoading(true);
+        m_refreshButton->setText("Refreshing...");
+
+        // Simulate refresh delay
+        QTimer::singleShot(1500, [this]() {
+            m_model->clear();
+            setupModelHeaders();
+            loadFileSystem();
+
+            m_refreshButton->setLoading(false);
+            m_refreshButton->setText("Refresh");
+            m_statusLabel->setText("File system refreshed");
+        });
+    }
+
+    void navigateUp() {
+        // Navigate to parent directory
+        auto current = m_treeView->currentIndex();
+        if (current.isValid()) {
+            auto parent = current.parent();
+            if (parent.isValid()) {
+                m_treeView->setCurrentIndex(parent);
+                onItemClicked(parent);
+            }
+        }
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Toolbar
+        auto* toolbarCard = new FluentCard;
+        auto* toolbarLayout = new QHBoxLayout;
+
+        // Navigation buttons
+        auto* upButton = new FluentButton("↑ Up");
+        upButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(upButton, &FluentButton::clicked, this, &FileExplorerWidget::navigateUp);
+
+        m_refreshButton = new FluentButton("🔄 Refresh");
+        m_refreshButton->setButtonStyle(FluentButtonStyle::Subtle);
+
+        // Search
+        m_searchInput = new FluentTextInput();
+        m_searchInput->setPlaceholderText("Search files and folders...");
+        m_searchInput->setInputType(FluentTextInputType::Search);
+        m_searchInput->setMaximumWidth(300);
+
+        auto* searchButton = new FluentButton("Search");
+        searchButton->setButtonStyle(FluentButtonStyle::Primary);
+        searchButton->setButtonSize(FluentButtonSize::Small);
+
+        toolbarLayout->addWidget(upButton);
+        toolbarLayout->addWidget(m_refreshButton);
+        toolbarLayout->addStretch();
+        toolbarLayout->addWidget(m_searchInput);
+        toolbarLayout->addWidget(searchButton);
+
+        toolbarCard->setContentWidget(new QWidget);
+        toolbarCard->contentWidget()->setLayout(toolbarLayout);
+
+        // Main content splitter
+        auto* splitter = new QSplitter(Qt::Horizontal);
+
+        // Left side - Tree view
+        auto* treeCard = new FluentCard("File Explorer");
+        auto* treeLayout = new QVBoxLayout;
+
+        m_treeView = new FluentTreeView;
+        m_model = new QStandardItemModel(this);
+        setupModelHeaders();
+        m_treeView->setModel(m_model);
+
+        // Configure tree view
+        m_treeView->setAlternatingRowColors(true);
+        m_treeView->setAnimated(true);
+        m_treeView->setSortingEnabled(true);
+        m_treeView->header()->setStretchLastSection(false);
+        m_treeView->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+
+        treeLayout->addWidget(m_treeView);
+        treeCard->setContentWidget(new QWidget);
+        treeCard->contentWidget()->setLayout(treeLayout);
+
+        // Right side - File details
+        auto* detailsCard = new FluentCard("Properties");
+        detailsCard->setMinimumWidth(250);
+
+        auto* detailsLayout = new QVBoxLayout;
+
+        m_fileNameLabel = new QLabel("No file selected");
+        m_fileNameLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+
+        m_fileTypeLabel = new QLabel;
+        m_fileSizeLabel = new QLabel;
+        m_fileModifiedLabel = new QLabel;
+        m_filePathLabel = new QLabel;
+        m_filePathLabel->setWordWrap(true);
+        m_filePathLabel->setStyleSheet("color: gray; font-size: 11px;");
+
+        // File preview area
+        m_previewLabel = new QLabel;
+        m_previewLabel->setMinimumHeight(100);
+        m_previewLabel->setStyleSheet("border: 1px solid gray; background-color: #f5f5f5;");
+        m_previewLabel->setAlignment(Qt::AlignCenter);
+        m_previewLabel->setText("No preview available");
+
+        detailsLayout->addWidget(m_fileNameLabel);
+        detailsLayout->addWidget(m_fileTypeLabel);
+        detailsLayout->addWidget(m_fileSizeLabel);
+        detailsLayout->addWidget(m_fileModifiedLabel);
+        detailsLayout->addWidget(new QLabel("Preview:"));
+        detailsLayout->addWidget(m_previewLabel);
+        detailsLayout->addWidget(new QLabel("Path:"));
+        detailsLayout->addWidget(m_filePathLabel);
+        detailsLayout->addStretch();
+
+        detailsCard->setContentWidget(new QWidget);
+        detailsCard->contentWidget()->setLayout(detailsLayout);
+
+        splitter->addWidget(treeCard);
+        splitter->addWidget(detailsCard);
+        splitter->setSizes({400, 250});
+
+        // Status bar
+        auto* statusPanel = new FluentPanel;
+        statusPanel->setPanelType(FluentPanelType::Surface);
+        statusPanel->setMaximumHeight(30);
+
+        auto* statusLayout = statusPanel->createHorizontalLayout();
+        m_statusLabel = new QLabel("Ready");
+        m_statusLabel->setStyleSheet("color: gray; font-size: 12px;");
+
+        auto* progressBar = new QProgressBar;
+        progressBar->setVisible(false);
+        progressBar->setMaximumWidth(200);
+
+        statusLayout->addWidget(m_statusLabel);
+        statusLayout->addStretch();
+        statusLayout->addWidget(progressBar);
+
+        layout->addWidget(toolbarCard);
+        layout->addWidget(splitter);
+        layout->addWidget(statusPanel);
+
+        connect(searchButton, &FluentButton::clicked, this, &FileExplorerWidget::performSearch);
+    }
+
+    void setupModelHeaders() {
+        m_model->setHorizontalHeaderLabels({"Name", "Type", "Size", "Modified"});
+    }
+
+    void loadFileSystem() {
+        // Load root directories (simplified for example)
+        QStringList rootPaths;
+
+#ifdef Q_OS_WIN
+        // Windows drives
+        QFileInfoList drives = QDir::drives();
+        for (const QFileInfo& drive : drives) {
+            rootPaths << drive.absolutePath();
+        }
+#else
+        // Unix-like systems
+        rootPaths << QDir::homePath() << "/usr" << "/etc" << "/var";
+#endif
+
+        for (const QString& path : rootPaths) {
+            QFileInfo info(path);
+            if (info.exists()) {
+                auto* item = createFileItem(info);
+                m_model->appendRow(item);
+
+                // Add placeholder for lazy loading
+                if (info.isDir()) {
+                    item->appendRow(new QStandardItem("Loading..."));
+                }
+            }
+        }
+
+        m_treeView->expandToDepth(0);
+    }
+
+    QList<QStandardItem*> createFileItem(const QFileInfo& info) {
+        auto* nameItem = new QStandardItem(info.fileName().isEmpty() ? info.absolutePath() : info.fileName());
+        auto* typeItem = new QStandardItem(info.isDir() ? "Folder" : info.suffix().toUpper() + " File");
+        auto* sizeItem = new QStandardItem(info.isDir() ? "" : formatFileSize(info.size()));
+        auto* modifiedItem = new QStandardItem(info.lastModified().toString("yyyy-MM-dd hh:mm"));
+
+        // Set icon based on file type
+        if (info.isDir()) {
+            nameItem->setIcon(QIcon(":/icons/folder.png"));
+        } else {
+            nameItem->setIcon(getFileIcon(info.suffix()));
+        }
+
+        // Store full path in user data
+        nameItem->setData(info.absoluteFilePath(), Qt::UserRole);
+
+        return {nameItem, typeItem, sizeItem, modifiedItem};
+    }
+
+    void loadDirectoryContents(QStandardItem* parentItem, const QString& dirPath) {
+        // Remove placeholder
+        if (parentItem->rowCount() == 1 &&
+            parentItem->child(0)->text() == "Loading...") {
+            parentItem->removeRow(0);
+        }
+
+        // Don't reload if already loaded
+        if (parentItem->rowCount() > 0) return;
+
+        QDir dir(dirPath);
+        QFileInfoList entries = dir.entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot,
+                                                 QDir::DirsFirst | QDir::Name);
+
+        for (const QFileInfo& entry : entries) {
+            auto items = createFileItem(entry);
+            parentItem->appendRow(items);
+
+            // Add placeholder for subdirectories
+            if (entry.isDir()) {
+                items[0]->appendRow(new QStandardItem("Loading..."));
+            }
+        }
+    }
+
+    void updateFileDetails(const QString& path) {
+        QFileInfo info(path);
+
+        m_fileNameLabel->setText(info.fileName().isEmpty() ? info.absolutePath() : info.fileName());
+        m_fileTypeLabel->setText(QString("Type: %1").arg(info.isDir() ? "Folder" : info.suffix().toUpper() + " File"));
+        m_fileSizeLabel->setText(QString("Size: %1").arg(info.isDir() ? "—" : formatFileSize(info.size())));
+        m_fileModifiedLabel->setText(QString("Modified: %1").arg(info.lastModified().toString("yyyy-MM-dd hh:mm:ss")));
+        m_filePathLabel->setText(info.absoluteFilePath());
+
+        // Update preview
+        if (info.isDir()) {
+            QDir dir(path);
+            int fileCount = dir.entryList(QDir::Files).count();
+            int dirCount = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot).count();
+            m_previewLabel->setText(QString("📁\n%1 files, %2 folders").arg(fileCount).arg(dirCount));
+        } else if (info.suffix().toLower() == "txt") {
+            // Show text file preview
+            QFile file(path);
+            if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                QString content = QString::fromUtf8(file.readAll()).left(200);
+                m_previewLabel->setText(content + (content.length() >= 200 ? "..." : ""));
+            }
+        } else {
+            m_previewLabel->setText("📄\nNo preview available");
+        }
+    }
+
+    QString formatFileSize(qint64 bytes) {
+        const qint64 KB = 1024;
+        const qint64 MB = KB * 1024;
+        const qint64 GB = MB * 1024;
+
+        if (bytes >= GB) {
+            return QString::number(bytes / GB, 'f', 1) + " GB";
+        } else if (bytes >= MB) {
+            return QString::number(bytes / MB, 'f', 1) + " MB";
+        } else if (bytes >= KB) {
+            return QString::number(bytes / KB, 'f', 1) + " KB";
+        } else {
+            return QString::number(bytes) + " bytes";
+        }
+    }
+
+    QIcon getFileIcon(const QString& extension) {
+        // Return appropriate icon based on file extension
+        static QMap<QString, QString> iconMap = {
+            {"txt", ":/icons/text.png"},
+            {"pdf", ":/icons/pdf.png"},
+            {"jpg", ":/icons/image.png"},
+            {"png", ":/icons/image.png"},
+            {"mp3", ":/icons/audio.png"},
+            {"mp4", ":/icons/video.png"}
+        };
+
+        return QIcon(iconMap.value(extension.toLower(), ":/icons/file.png"));
+    }
+
+    void showAllItems(QStandardItem* parent) {
+        for (int i = 0; i < parent->rowCount(); ++i) {
+            auto* child = parent->child(i);
+            m_treeView->setRowHidden(i, parent->index(), false);
+            showAllItems(child);
+        }
+    }
+
+    int filterItems(QStandardItem* parent, const QString& searchTerm) {
+        int matchCount = 0;
+
+        for (int i = 0; i < parent->rowCount(); ++i) {
+            auto* child = parent->child(i);
+            bool matches = child->text().toLower().contains(searchTerm);
+
+            // Recursively check children
+            int childMatches = filterItems(child, searchTerm);
+            matches = matches || (childMatches > 0);
+
+            m_treeView->setRowHidden(i, parent->index(), !matches);
+
+            if (matches) {
+                matchCount++;
+                // Expand parent if child matches
+                if (childMatches > 0) {
+                    m_treeView->expand(child->index());
+                }
+            }
+        }
+
+        return matchCount;
+    }
+
+    void connectSignals() {
+        connect(m_treeView, &QTreeView::clicked, this, &FileExplorerWidget::onItemClicked);
+        connect(m_treeView, &QTreeView::doubleClicked, this, &FileExplorerWidget::onItemDoubleClicked);
+        connect(m_refreshButton, &FluentButton::clicked, this, &FileExplorerWidget::refreshFileSystem);
+
+        // Search with debouncing
+        auto* searchTimer = new QTimer(this);
+        searchTimer->setSingleShot(true);
+        searchTimer->setInterval(300);
+        connect(searchTimer, &QTimer::timeout, this, &FileExplorerWidget::performSearch);
+
+        connect(m_searchInput, &FluentTextInput::textChanged, [searchTimer]() {
+            searchTimer->start();
+        });
+    }
+
+    FluentTreeView* m_treeView;
+    QStandardItemModel* m_model;
+    FluentTextInput* m_searchInput;
+    FluentButton* m_refreshButton;
+    QLabel* m_fileNameLabel;
+    QLabel* m_fileTypeLabel;
+    QLabel* m_fileSizeLabel;
+    QLabel* m_fileModifiedLabel;
+    QLabel* m_filePathLabel;
+    QLabel* m_previewLabel;
+    QLabel* m_statusLabel;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    FileExplorerWidget explorer;
+    explorer.resize(1000, 700);
+    explorer.show();
+
+    return app.exec();
+}
+
+#include "file_explorer.moc"
+```
+
 ## See Also
 
 - [FluentNavigationView](FluentNavigationView.md) - For navigation trees

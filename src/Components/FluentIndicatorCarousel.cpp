@@ -251,7 +251,8 @@ void FluentIndicatorCarousel::paintEvent(QPaintEvent* event) {
         painter.setRenderHint(QPainter::Antialiasing);
         
         // Draw semi-transparent background for overlay indicators
-        QRect overlayRect = calculateIndicatorContainerSize();
+        QSize containerSize = calculateIndicatorContainerSize();
+        QRect overlayRect(0, 0, containerSize.width(), containerSize.height());
         overlayRect.moveCenter(rect().center());
         overlayRect.moveBottom(rect().bottom() - 20);
         
@@ -411,9 +412,9 @@ QAbstractButton* FluentIndicatorCarousel::createIndicatorButton(int index) {
     button->setAccessibleName(QString("Item %1").arg(index + 1));
     button->setAccessibleDescription(QString("Navigate to carousel item %1").arg(index + 1));
     
-    // Connect hover signal
-    connect(button, &FluentCarouselIndicatorButton::entered,
-            this, &FluentIndicatorCarousel::onIndicatorHovered);
+    // Connect hover signal - TODO: implement hover signal
+    // connect(button, &FluentCarouselIndicatorButton::entered,
+    //         this, &FluentIndicatorCarousel::onIndicatorHovered);
     
     return button;
 }

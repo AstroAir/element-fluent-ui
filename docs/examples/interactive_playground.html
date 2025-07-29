@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluentQt Interactive Component Playground</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .playground-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 400px;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas: 
+                "header header header"
+                "sidebar preview code";
+            height: 100vh;
+            gap: 1px;
+            background: #fff;
+        }
+
+        .header {
+            grid-area: header;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: #f8f9fa;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .preview-area {
+            grid-area: preview;
+            background: white;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+
+        .code-panel {
+            grid-area: code;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            overflow: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .component-category {
+            margin-bottom: 25px;
+        }
+
+        .category-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .component-list {
+            list-style: none;
+        }
+
+        .component-item {
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .component-item:hover {
+            background: #e9ecef;
+            border-left-color: #007bff;
+            transform: translateX(5px);
+        }
+
+        .component-item.active {
+            background: #007bff;
+            color: white;
+            border-left-color: #0056b3;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .preview-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+        }
+
+        .control-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .component-demo {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .properties-panel {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .property-group {
+            margin-bottom: 15px;
+        }
+
+        .property-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        .code-title {
+            color: #569cd6;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+
+        .code-block {
+            background: #2d2d30;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        .comment { color: #6a9955; }
+        .number { color: #b5cea8; }
+        .type { color: #4ec9b0; }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .playground-container {
+                grid-template-columns: 250px 1fr 350px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .playground-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px auto auto auto;
+                grid-template-areas: 
+                    "header"
+                    "sidebar"
+                    "preview"
+                    "code";
+            }
+            
+            .sidebar {
+                max-height: 200px;
+            }
+        }
+
+        /* FluentQt Component Styles */
+        .fluent-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .fluent-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .fluent-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .fluent-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .fluent-button:hover::before {
+            left: 100%;
+        }
+
+        .fluent-textbox {
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+            width: 250px;
+        }
+
+        .fluent-textbox:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .fluent-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #f0f0f0;
+        }
+
+        .fluent-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .fluent-toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .fluent-toggle.checked {
+            background: #667eea;
+        }
+
+        .fluent-toggle::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .fluent-toggle.checked::before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="playground-container">
+        <header class="header">
+            <h1>🎨 FluentQt Interactive Playground</h1>
+        </header>
+
+        <aside class="sidebar">
+            <div class="component-category">
+                <h3 class="category-title">Basic Components</h3>
+                <ul class="component-list">
+                    <li class="component-item active" data-component="button">FluentButton</li>
+                    <li class="component-item" data-component="textbox">FluentTextBox</li>
+                    <li class="component-item" data-component="toggle">FluentToggle</li>
+                    <li class="component-item" data-component="card">FluentCard</li>
+                    <li class="component-item" data-component="progressbar">FluentProgressBar</li>
+                </ul>
+            </div>
+
+            <div class="component-category">
+                <h3 class="category-title">Navigation</h3>
+                <ul class="component-list">
+                    <li class="component-item" data-component="navigationview">FluentNavigationView</li>
+                    <li class="component-item" data-component="tabview">FluentTabView</li>
+                    <li class="component-item" data-component="breadcrumb">FluentBreadcrumb</li>
+                </ul>
+            </div>
+
+            <div class="component-category">
+                <h3 class="category-title">Data Display</h3>
+                <ul class="component-list">
+                    <li class="component-item" data-component="listview">FluentListView</li>
+                    <li class="component-item" data-component="treeview">FluentTreeView</li>
+                    <li class="component-item" data-component="datagrid">FluentDataGrid</li>
+                </ul>
+            </div>
+
+            <div class="component-category">
+                <h3 class="category-title">Feedback</h3>
+                <ul class="component-list">
+                    <li class="component-item" data-component="dialog">FluentDialog</li>
+                    <li class="component-item" data-component="notification">FluentNotification</li>
+                    <li class="component-item" data-component="tooltip">FluentTooltip</li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="preview-area">
+            <div class="preview-header">
+                <h2 class="preview-title" id="component-title">FluentButton</h2>
+                <div class="preview-controls">
+                    <button class="control-btn active" data-theme="light">Light</button>
+                    <button class="control-btn" data-theme="dark">Dark</button>
+                    <button class="control-btn" data-theme="high-contrast">High Contrast</button>
+                </div>
+            </div>
+
+            <div class="component-demo" id="demo-area">
+                <button class="fluent-button" id="demo-button">Click me!</button>
+            </div>
+
+            <div class="properties-panel">
+                <h3>Properties</h3>
+                <div id="properties-container">
+                    <!-- Properties will be dynamically generated -->
+                </div>
+            </div>
+        </main>
+
+        <aside class="code-panel">
+            <div class="code-header">
+                <h3 class="code-title">C++ Code</h3>
+                <button class="copy-btn" onclick="copyCode()">Copy</button>
+            </div>
+            <div class="code-block" id="cpp-code">
+                <!-- C++ code will be dynamically generated -->
+            </div>
+
+            <div class="code-header" style="margin-top: 20px;">
+                <h3 class="code-title">QML Code</h3>
+                <button class="copy-btn" onclick="copyQMLCode()">Copy</button>
+            </div>
+            <div class="code-block" id="qml-code">
+                <!-- QML code will be dynamically generated -->
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Component definitions with properties and code examples
+        const components = {
+            button: {
+                title: 'FluentButton',
+                properties: {
+                    text: { type: 'text', value: 'Click me!', label: 'Text' },
+                    enabled: { type: 'checkbox', value: true, label: 'Enabled' },
+                    primary: { type: 'checkbox', value: true, label: 'Primary Style' },
+                    icon: { type: 'text', value: '', label: 'Icon (optional)' }
+                },
+                cppCode: `#include "FluentQt/Components/FluentButton.h"
+
+auto* button = new FluentButton("{{text}}", this);
+button->setEnabled({{enabled}});
+button->setPrimary({{primary}});
+{{#if icon}}button->setIcon(QIcon("{{icon}}"));{{/if}}
+
+// Connect signal
+connect(button, &FluentButton::clicked, this, [=]() {
+    qDebug() << "Button clicked!";
+});
+
+// Add to layout
+layout->addWidget(button);`,
+                qmlCode: `import FluentQt 1.0
+
+FluentButton {
+    text: "{{text}}"
+    enabled: {{enabled}}
+    primary: {{primary}}
+    {{#if icon}}icon: "{{icon}}"{{/if}}
+    
+    onClicked: {
+        console.log("Button clicked!")
+    }
+}`
+            },
+            textbox: {
+                title: 'FluentTextBox',
+                properties: {
+                    placeholder: { type: 'text', value: 'Enter text...', label: 'Placeholder' },
+                    text: { type: 'text', value: '', label: 'Text' },
+                    enabled: { type: 'checkbox', value: true, label: 'Enabled' },
+                    readOnly: { type: 'checkbox', value: false, label: 'Read Only' }
+                },
+                cppCode: `#include "FluentQt/Components/FluentTextBox.h"
+
+auto* textBox = new FluentTextBox(this);
+textBox->setPlaceholderText("{{placeholder}}");
+textBox->setText("{{text}}");
+textBox->setEnabled({{enabled}});
+textBox->setReadOnly({{readOnly}});
+
+// Connect signals
+connect(textBox, &FluentTextBox::textChanged, this, [=](const QString& text) {
+    qDebug() << "Text changed:" << text;
+});
+
+layout->addWidget(textBox);`,
+                qmlCode: `import FluentQt 1.0
+
+FluentTextBox {
+    placeholderText: "{{placeholder}}"
+    text: "{{text}}"
+    enabled: {{enabled}}
+    readOnly: {{readOnly}}
+    
+    onTextChanged: {
+        console.log("Text changed:", text)
+    }
+}`
+            }
+        };
+
+        let currentComponent = 'button';
+        let currentTheme = 'light';
+
+        // Initialize the playground
+        function init() {
+            setupEventListeners();
+            loadComponent(currentComponent);
+        }
+
+        function setupEventListeners() {
+            // Component selection
+            document.querySelectorAll('.component-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    document.querySelector('.component-item.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    currentComponent = e.target.dataset.component;
+                    loadComponent(currentComponent);
+                });
+            });
+
+            // Theme selection
+            document.querySelectorAll('.control-btn[data-theme]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelector('.control-btn.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    currentTheme = e.target.dataset.theme;
+                    applyTheme(currentTheme);
+                });
+            });
+        }
+
+        function loadComponent(componentName) {
+            const component = components[componentName];
+            if (!component) return;
+
+            // Update title
+            document.getElementById('component-title').textContent = component.title;
+
+            // Generate demo
+            generateDemo(component);
+
+            // Generate properties panel
+            generatePropertiesPanel(component);
+
+            // Generate code
+            generateCode(component);
+        }
+
+        function generateDemo(component) {
+            const demoArea = document.getElementById('demo-area');
+            
+            switch (currentComponent) {
+                case 'button':
+                    demoArea.innerHTML = '<button class="fluent-button" id="demo-button">Click me!</button>';
+                    break;
+                case 'textbox':
+                    demoArea.innerHTML = '<input type="text" class="fluent-textbox" placeholder="Enter text..." />';
+                    break;
+                case 'toggle':
+                    demoArea.innerHTML = '<div class="fluent-toggle" onclick="toggleSwitch(this)"></div>';
+                    break;
+                case 'card':
+                    demoArea.innerHTML = `
+                        <div class="fluent-card">
+                            <h3>Card Title</h3>
+                            <p>This is a sample card component with some content.</p>
+                            <button class="fluent-button" style="margin-top: 15px;">Action</button>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+
+        function generatePropertiesPanel(component) {
+            const container = document.getElementById('properties-container');
+            container.innerHTML = '';
+
+            Object.entries(component.properties).forEach(([key, prop]) => {
+                const group = document.createElement('div');
+                group.className = 'property-group';
+
+                const label = document.createElement('label');
+                label.className = 'property-label';
+                label.textContent = prop.label;
+
+                let input;
+                if (prop.type === 'checkbox') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = prop.value;
+                } else {
+                    input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = prop.value;
+                    input.className = 'property-input';
+                }
+
+                input.addEventListener('change', () => updateComponent(key, input));
+
+                group.appendChild(label);
+                group.appendChild(input);
+                container.appendChild(group);
+            });
+        }
+
+        function updateComponent(property, input) {
+            const component = components[currentComponent];
+            const value = input.type === 'checkbox' ? input.checked : input.value;
+            component.properties[property].value = value;
+
+            // Update demo
+            generateDemo(component);
+            generateCode(component);
+        }
+
+        function generateCode(component) {
+            const cppCode = document.getElementById('cpp-code');
+            const qmlCode = document.getElementById('qml-code');
+
+            // Simple template replacement
+            let cpp = component.cppCode;
+            let qml = component.qmlCode;
+
+            Object.entries(component.properties).forEach(([key, prop]) => {
+                const regex = new RegExp(`{{${key}}}`, 'g');
+                cpp = cpp.replace(regex, prop.value);
+                qml = qml.replace(regex, prop.value);
+            });
+
+            // Syntax highlighting (basic)
+            cpp = highlightCpp(cpp);
+            qml = highlightQml(qml);
+
+            cppCode.innerHTML = cpp;
+            qmlCode.innerHTML = qml;
+        }
+
+        function highlightCpp(code) {
+            return code
+                .replace(/\b(auto|const|class|public|private|protected|virtual|override|static|void|int|QString|QWidget|connect|new|delete|this|return|if|else|for|while)\b/g, '<span class="keyword">$1</span>')
+                .replace(/"([^"]*)"/g, '<span class="string">"$1"</span>')
+                .replace(/\/\/.*$/gm, '<span class="comment">$&</span>')
+                .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
+                .replace(/\b(FluentButton|FluentTextBox|QIcon|QDebug)\b/g, '<span class="type">$1</span>');
+        }
+
+        function highlightQml(code) {
+            return code
+                .replace(/\b(import|property|signal|function|onClicked|onTextChanged|console|true|false)\b/g, '<span class="keyword">$1</span>')
+                .replace(/"([^"]*)"/g, '<span class="string">"$1"</span>')
+                .replace(/\/\/.*$/gm, '<span class="comment">$&</span>')
+                .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
+                .replace(/\b(FluentButton|FluentTextBox)\b/g, '<span class="type">$1</span>');
+        }
+
+        function applyTheme(theme) {
+            const demoArea = document.getElementById('demo-area');
+            demoArea.className = `component-demo theme-${theme}`;
+            
+            // Apply theme-specific styles
+            switch (theme) {
+                case 'dark':
+                    demoArea.style.background = '#2c3e50';
+                    demoArea.style.color = 'white';
+                    break;
+                case 'high-contrast':
+                    demoArea.style.background = '#000';
+                    demoArea.style.color = '#fff';
+                    break;
+                default:
+                    demoArea.style.background = '#f8f9fa';
+                    demoArea.style.color = '#333';
+            }
+        }
+
+        function toggleSwitch(element) {
+            element.classList.toggle('checked');
+        }
+
+        function copyCode() {
+            const code = document.getElementById('cpp-code').textContent;
+            navigator.clipboard.writeText(code);
+        }
+
+        function copyQMLCode() {
+            const code = document.getElementById('qml-code').textContent;
+            navigator.clipboard.writeText(code);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

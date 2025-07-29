@@ -480,6 +480,534 @@ void inputStateChanged(FluentTextInputState state);
 void focusChanged(bool hasFocus);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Complete Registration Form with Real-time Validation
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QRegularExpression>
+#include <QTimer>
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCard.h"
+
+class RegistrationForm : public QWidget {
+    Q_OBJECT
+public:
+    RegistrationForm(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        setupValidation();
+        connectSignals();
+    }
+
+private slots:
+    void validateUsername() {
+        QString username = m_usernameInput->text();
+
+        if (username.length() < 3) {
+            m_usernameInput->setInputState(FluentTextInputState::Error);
+            m_usernameInput->setHelperText("Username must be at least 3 characters");
+            return;
+        }
+
+        if (!QRegularExpression("^[a-zA-Z0-9_]+$").match(username).hasMatch()) {
+            m_usernameInput->setInputState(FluentTextInputState::Error);
+            m_usernameInput->setHelperText("Username can only contain letters, numbers, and underscores");
+            return;
+        }
+
+        // Simulate checking username availability
+        m_usernameInput->setInputState(FluentTextInputState::Warning);
+        m_usernameInput->setHelperText("Checking availability...");
+
+        QTimer::singleShot(1000, [this]() {
+            // Simulate API response
+            bool isAvailable = (QRandomGenerator::global()->bounded(2) == 0);
+            if (isAvailable) {
+                m_usernameInput->setInputState(FluentTextInputState::Success);
+                m_usernameInput->setHelperText("Username is available!");
+            } else {
+                m_usernameInput->setInputState(FluentTextInputState::Error);
+                m_usernameInput->setHelperText("Username is already taken");
+            }
+            validateForm();
+        });
+    }
+
+    void validateEmail() {
+        QString email = m_emailInput->text();
+        QRegularExpression emailRegex("^[\\w\\.-]+@[\\w\\.-]+\\.[a-zA-Z]{2,}$");
+
+        if (email.isEmpty()) {
+            m_emailInput->setInputState(FluentTextInputState::Normal);
+            m_emailInput->setHelperText("Enter your email address");
+        } else if (emailRegex.match(email).hasMatch()) {
+            m_emailInput->setInputState(FluentTextInputState::Success);
+            m_emailInput->setHelperText("Valid email address");
+        } else {
+            m_emailInput->setInputState(FluentTextInputState::Error);
+            m_emailInput->setHelperText("Please enter a valid email address");
+        }
+        validateForm();
+    }
+
+    void validatePassword() {
+        QString password = m_passwordInput->text();
+
+        if (password.length() < 8) {
+            m_passwordInput->setInputState(FluentTextInputState::Error);
+            m_passwordInput->setHelperText("Password must be at least 8 characters");
+        } else if (!QRegularExpression("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)").match(password).hasMatch()) {
+            m_passwordInput->setInputState(FluentTextInputState::Warning);
+            m_passwordInput->setHelperText("Password should contain uppercase, lowercase, and numbers");
+        } else {
+            m_passwordInput->setInputState(FluentTextInputState::Success);
+            m_passwordInput->setHelperText("Strong password");
+        }
+        validateConfirmPassword();
+        validateForm();
+    }
+
+    void validateConfirmPassword() {
+        QString password = m_passwordInput->text();
+        QString confirm = m_confirmPasswordInput->text();
+
+        if (confirm.isEmpty()) {
+            m_confirmPasswordInput->setInputState(FluentTextInputState::Normal);
+            m_confirmPasswordInput->setHelperText("Confirm your password");
+        } else if (password == confirm) {
+            m_confirmPasswordInput->setInputState(FluentTextInputState::Success);
+            m_confirmPasswordInput->setHelperText("Passwords match");
+        } else {
+            m_confirmPasswordInput->setInputState(FluentTextInputState::Error);
+            m_confirmPasswordInput->setHelperText("Passwords do not match");
+        }
+        validateForm();
+    }
+
+    void validateForm() {
+        bool isValid =
+            m_usernameInput->inputState() == FluentTextInputState::Success &&
+            m_emailInput->inputState() == FluentTextInputState::Success &&
+            m_passwordInput->inputState() == FluentTextInputState::Success &&
+            m_confirmPasswordInput->inputState() == FluentTextInputState::Success;
+
+        m_submitButton->setEnabled(isValid);
+        if (isValid) {
+            m_submitButton->setButtonStyle(FluentButtonStyle::Primary);
+        } else {
+            m_submitButton->setButtonStyle(FluentButtonStyle::Subtle);
+        }
+    }
+
+    void submitForm() {
+        m_submitButton->setLoading(true);
+        m_submitButton->setText("Creating Account...");
+
+        // Simulate account creation
+        QTimer::singleShot(2000, [this]() {
+            m_submitButton->setLoading(false);
+            m_submitButton->setText("✓ Account Created!");
+            m_submitButton->setButtonStyle(FluentButtonStyle::Accent);
+
+            // Reset form after success
+            QTimer::singleShot(2000, [this]() {
+                resetForm();
+            });
+        });
+    }
+
+    void resetForm() {
+        m_usernameInput->clear();
+        m_emailInput->clear();
+        m_passwordInput->clear();
+        m_confirmPasswordInput->clear();
+
+        m_submitButton->setText("Create Account");
+        m_submitButton->setButtonStyle(FluentButtonStyle::Subtle);
+        m_submitButton->setEnabled(false);
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Form card
+        auto* card = new FluentCard;
+        auto* cardLayout = new QVBoxLayout(card);
+
+        // Title
+        auto* title = new QLabel("Create Account");
+        title->setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;");
+
+        // Username input
+        m_usernameInput = new FluentTextInput();
+        m_usernameInput->setLabelText("Username");
+        m_usernameInput->setPlaceholderText("Choose a unique username");
+        m_usernameInput->setHelperText("3+ characters, letters, numbers, and underscores only");
+
+        // Email input
+        m_emailInput = new FluentTextInput();
+        m_emailInput->setLabelText("Email Address");
+        m_emailInput->setPlaceholderText("Enter your email");
+        m_emailInput->setInputType(FluentTextInputType::Email);
+        m_emailInput->setHelperText("We'll use this to verify your account");
+
+        // Password input
+        m_passwordInput = new FluentTextInput();
+        m_passwordInput->setLabelText("Password");
+        m_passwordInput->setPlaceholderText("Create a strong password");
+        m_passwordInput->setInputType(FluentTextInputType::Password);
+        m_passwordInput->setHelperText("8+ characters with uppercase, lowercase, and numbers");
+
+        // Confirm password input
+        m_confirmPasswordInput = new FluentTextInput();
+        m_confirmPasswordInput->setLabelText("Confirm Password");
+        m_confirmPasswordInput->setPlaceholderText("Re-enter your password");
+        m_confirmPasswordInput->setInputType(FluentTextInputType::Password);
+        m_confirmPasswordInput->setHelperText("Must match the password above");
+
+        // Submit button
+        m_submitButton = new FluentButton("Create Account");
+        m_submitButton->setButtonStyle(FluentButtonStyle::Subtle);
+        m_submitButton->setEnabled(false);
+
+        cardLayout->addWidget(title);
+        cardLayout->addWidget(m_usernameInput);
+        cardLayout->addWidget(m_emailInput);
+        cardLayout->addWidget(m_passwordInput);
+        cardLayout->addWidget(m_confirmPasswordInput);
+        cardLayout->addWidget(m_submitButton);
+
+        layout->addWidget(card);
+    }
+
+    void setupValidation() {
+        // Set up debounced validation timers
+        m_usernameTimer = new QTimer(this);
+        m_usernameTimer->setSingleShot(true);
+        m_usernameTimer->setInterval(500); // 500ms debounce
+        connect(m_usernameTimer, &QTimer::timeout, this, &RegistrationForm::validateUsername);
+
+        m_emailTimer = new QTimer(this);
+        m_emailTimer->setSingleShot(true);
+        m_emailTimer->setInterval(300);
+        connect(m_emailTimer, &QTimer::timeout, this, &RegistrationForm::validateEmail);
+    }
+
+    void connectSignals() {
+        // Debounced validation
+        connect(m_usernameInput, &FluentTextInput::textChanged, [this]() {
+            m_usernameTimer->start();
+        });
+
+        connect(m_emailInput, &FluentTextInput::textChanged, [this]() {
+            m_emailTimer->start();
+        });
+
+        // Immediate validation for passwords
+        connect(m_passwordInput, &FluentTextInput::textChanged,
+                this, &RegistrationForm::validatePassword);
+        connect(m_confirmPasswordInput, &FluentTextInput::textChanged,
+                this, &RegistrationForm::validateConfirmPassword);
+
+        // Form submission
+        connect(m_submitButton, &FluentButton::clicked,
+                this, &RegistrationForm::submitForm);
+    }
+
+    FluentTextInput* m_usernameInput;
+    FluentTextInput* m_emailInput;
+    FluentTextInput* m_passwordInput;
+    FluentTextInput* m_confirmPasswordInput;
+    FluentButton* m_submitButton;
+    QTimer* m_usernameTimer;
+    QTimer* m_emailTimer;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    RegistrationForm form;
+    form.show();
+
+    return app.exec();
+}
+
+#include "registration_form.moc"
+```
+
+### Example 2: Search Interface with Auto-complete
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QListWidget>
+#include <QTimer>
+#include <QStringList>
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentCard.h"
+
+class SearchInterface : public QWidget {
+    Q_OBJECT
+public:
+    SearchInterface(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        setupSearchData();
+        connectSignals();
+    }
+
+private slots:
+    void performSearch() {
+        QString query = m_searchInput->text().toLower();
+
+        if (query.isEmpty()) {
+            m_resultsWidget->clear();
+            m_searchInput->setHelperText("Enter search terms");
+            return;
+        }
+
+        if (query.length() < 2) {
+            m_searchInput->setHelperText("Enter at least 2 characters");
+            return;
+        }
+
+        // Show loading state
+        m_searchInput->setInputState(FluentTextInputState::Warning);
+        m_searchInput->setHelperText("Searching...");
+
+        // Simulate search delay
+        QTimer::singleShot(300, [this, query]() {
+            QStringList results;
+            for (const QString& item : m_searchData) {
+                if (item.toLower().contains(query)) {
+                    results.append(item);
+                }
+            }
+
+            displayResults(results, query);
+        });
+    }
+
+    void displayResults(const QStringList& results, const QString& query) {
+        m_resultsWidget->clear();
+
+        if (results.isEmpty()) {
+            m_searchInput->setInputState(FluentTextInputState::Warning);
+            m_searchInput->setHelperText(QString("No results found for '%1'").arg(query));
+
+            auto* noResultsItem = new QListWidgetItem("No results found");
+            noResultsItem->setFlags(Qt::NoItemFlags);
+            m_resultsWidget->addItem(noResultsItem);
+        } else {
+            m_searchInput->setInputState(FluentTextInputState::Success);
+            m_searchInput->setHelperText(QString("%1 results found").arg(results.size()));
+
+            for (const QString& result : results) {
+                auto* item = new QListWidgetItem(result);
+                m_resultsWidget->addItem(item);
+            }
+        }
+    }
+
+    void selectResult(QListWidgetItem* item) {
+        if (item && item->flags() != Qt::NoItemFlags) {
+            m_searchInput->setText(item->text());
+            m_searchInput->setInputState(FluentTextInputState::Success);
+            m_searchInput->setHelperText("Selected: " + item->text());
+        }
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Search input
+        m_searchInput = new FluentTextInput();
+        m_searchInput->setLabelText("Search");
+        m_searchInput->setPlaceholderText("Type to search...");
+        m_searchInput->setInputType(FluentTextInputType::Search);
+        m_searchInput->setHelperText("Enter at least 2 characters to search");
+
+        // Results list
+        m_resultsWidget = new QListWidget;
+        m_resultsWidget->setMaximumHeight(200);
+
+        layout->addWidget(m_searchInput);
+        layout->addWidget(m_resultsWidget);
+    }
+
+    void setupSearchData() {
+        m_searchData = {
+            "Apple iPhone 14", "Samsung Galaxy S23", "Google Pixel 7",
+            "MacBook Pro", "Dell XPS 13", "HP Spectre x360",
+            "iPad Air", "Surface Pro 9", "Lenovo ThinkPad",
+            "AirPods Pro", "Sony WH-1000XM4", "Bose QuietComfort",
+            "Apple Watch", "Garmin Forerunner", "Fitbit Versa"
+        };
+    }
+
+    void connectSignals() {
+        // Debounced search
+        m_searchTimer = new QTimer(this);
+        m_searchTimer->setSingleShot(true);
+        m_searchTimer->setInterval(300);
+        connect(m_searchTimer, &QTimer::timeout, this, &SearchInterface::performSearch);
+
+        connect(m_searchInput, &FluentTextInput::textChanged, [this]() {
+            m_searchTimer->start();
+        });
+
+        connect(m_resultsWidget, &QListWidget::itemClicked,
+                this, &SearchInterface::selectResult);
+    }
+
+    FluentTextInput* m_searchInput;
+    QListWidget* m_resultsWidget;
+    QStringList m_searchData;
+    QTimer* m_searchTimer;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    SearchInterface search;
+    search.show();
+
+    return app.exec();
+}
+
+#include "search_interface.moc"
+```
+
+### Example 3: Multi-language Input with Character Counter
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QComboBox>
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentCard.h"
+
+class MultiLanguageInput : public QWidget {
+    Q_OBJECT
+public:
+    MultiLanguageInput(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        connectSignals();
+    }
+
+private slots:
+    void updateCharacterCount() {
+        QString text = m_textInput->text();
+        int length = text.length();
+        int maxLength = m_maxCharacters;
+
+        m_characterLabel->setText(QString("%1 / %2 characters").arg(length).arg(maxLength));
+
+        if (length > maxLength) {
+            m_textInput->setInputState(FluentTextInputState::Error);
+            m_textInput->setHelperText("Text exceeds maximum length");
+            m_characterLabel->setStyleSheet("color: red;");
+        } else if (length > maxLength * 0.9) {
+            m_textInput->setInputState(FluentTextInputState::Warning);
+            m_textInput->setHelperText("Approaching character limit");
+            m_characterLabel->setStyleSheet("color: orange;");
+        } else {
+            m_textInput->setInputState(FluentTextInputState::Normal);
+            m_textInput->setHelperText("Enter your message in the selected language");
+            m_characterLabel->setStyleSheet("color: gray;");
+        }
+    }
+
+    void changeLanguage(const QString& language) {
+        if (language == "English") {
+            m_textInput->setPlaceholderText("Enter your message in English...");
+            m_maxCharacters = 280;
+        } else if (language == "中文") {
+            m_textInput->setPlaceholderText("请输入您的中文消息...");
+            m_maxCharacters = 140;
+        } else if (language == "العربية") {
+            m_textInput->setPlaceholderText("أدخل رسالتك باللغة العربية...");
+            m_maxCharacters = 140;
+        } else if (language == "Español") {
+            m_textInput->setPlaceholderText("Ingresa tu mensaje en español...");
+            m_maxCharacters = 280;
+        }
+
+        updateCharacterCount();
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        auto* card = new FluentCard;
+        auto* cardLayout = new QVBoxLayout(card);
+
+        // Language selector
+        auto* langLayout = new QHBoxLayout;
+        auto* langLabel = new QLabel("Language:");
+        m_languageCombo = new QComboBox;
+        m_languageCombo->addItems({"English", "中文", "العربية", "Español"});
+
+        langLayout->addWidget(langLabel);
+        langLayout->addWidget(m_languageCombo);
+        langLayout->addStretch();
+
+        // Text input
+        m_textInput = new FluentTextInput();
+        m_textInput->setLabelText("Message");
+        m_textInput->setInputType(FluentTextInputType::Multiline);
+        m_textInput->setPlaceholderText("Enter your message in English...");
+        m_textInput->setHelperText("Enter your message in the selected language");
+
+        // Character counter
+        m_characterLabel = new QLabel("0 / 280 characters");
+        m_characterLabel->setAlignment(Qt::AlignRight);
+        m_characterLabel->setStyleSheet("color: gray; font-size: 12px;");
+
+        cardLayout->addLayout(langLayout);
+        cardLayout->addWidget(m_textInput);
+        cardLayout->addWidget(m_characterLabel);
+
+        layout->addWidget(card);
+    }
+
+    void connectSignals() {
+        connect(m_textInput, &FluentTextInput::textChanged,
+                this, &MultiLanguageInput::updateCharacterCount);
+        connect(m_languageCombo, &QComboBox::currentTextChanged,
+                this, &MultiLanguageInput::changeLanguage);
+    }
+
+    FluentTextInput* m_textInput;
+    QComboBox* m_languageCombo;
+    QLabel* m_characterLabel;
+    int m_maxCharacters = 280;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    MultiLanguageInput input;
+    input.show();
+
+    return app.exec();
+}
+
+#include "multilanguage_input.moc"
+```
+
 ## See Also
 
 - [FluentButton](FluentButton.md) - For form submission buttons

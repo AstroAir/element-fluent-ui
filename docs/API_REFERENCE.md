@@ -1347,6 +1347,500 @@ connect(&theme, &FluentTheme::themeChanged, [=]() {
 
 ---
 
+## Notification Components
+
+### FluentToast
+
+Modern toast notification component with animations and rich content support.
+
+**Header:** `FluentQt/Components/FluentToast.h`
+
+#### Toast Enums
+
+```cpp
+enum class FluentToastType {
+    Info,           // Information toast (blue theme)
+    Success,        // Success toast (green theme)
+    Warning,        // Warning toast (orange theme)
+    Error,          // Error toast (red theme)
+    Custom          // Custom toast with user-defined styling
+};
+
+enum class FluentToastPosition {
+    TopLeft,        // Top-left corner
+    TopCenter,      // Top center
+    TopRight,       // Top-right corner (default)
+    BottomLeft,     // Bottom-left corner
+    BottomCenter,   // Bottom center
+    BottomRight,    // Bottom-right corner
+    Center          // Screen center
+};
+
+enum class FluentToastAnimation {
+    Fade,           // Fade in/out
+    Slide,          // Slide in/out
+    Scale,          // Scale in/out
+    Bounce          // Bounce effect
+};
+```
+
+#### Toast Methods
+
+```cpp
+// Content
+QString title() const;
+void setTitle(const QString& title);
+
+QString message() const;
+void setMessage(const QString& message);
+
+QIcon icon() const;
+void setIcon(const QIcon& icon);
+
+// Configuration
+FluentToastType toastType() const;
+void setToastType(FluentToastType type);
+
+int duration() const;
+void setDuration(int duration);
+
+bool isClosable() const;
+void setClosable(bool closable);
+
+bool isPauseOnHover() const;
+void setPauseOnHover(bool pause);
+
+bool isShowProgress() const;
+void setShowProgress(bool show);
+
+bool isPersistent() const;
+void setPersistent(bool persistent);
+
+// Actions
+void addAction(const QString& text, std::function<void()> callback, bool primary = false);
+void addAction(const QIcon& icon, const QString& text, std::function<void()> callback, bool primary = false);
+void clearActions();
+
+// Progress
+int progress() const;
+void setProgress(int value);
+void setProgressRange(int minimum, int maximum);
+
+// Display
+void show();
+void hide();
+void showAnimated();
+void hideAnimated();
+void dismiss();
+
+// Timer control
+void pauseTimer();
+void resumeTimer();
+void resetTimer();
+```
+
+#### Toast Signals
+
+```cpp
+void titleChanged(const QString& title);
+void messageChanged(const QString& message);
+void typeChanged(FluentToastType type);
+void iconChanged(const QIcon& icon);
+void durationChanged(int duration);
+void closableChanged(bool closable);
+void pauseOnHoverChanged(bool pause);
+void showProgressChanged(bool show);
+void persistentChanged(bool persistent);
+void progressChanged(int value);
+
+void aboutToShow();
+void shown();
+void aboutToHide();
+void hidden();
+void dismissed();
+void clicked();
+void actionTriggered(const QString& actionText);
+void timerPaused();
+void timerResumed();
+```
+
+#### Static Factory Methods
+
+```cpp
+static FluentToast* createInfo(const QString& title, const QString& message, QWidget* parent = nullptr);
+static FluentToast* createSuccess(const QString& title, const QString& message, QWidget* parent = nullptr);
+static FluentToast* createWarning(const QString& title, const QString& message, QWidget* parent = nullptr);
+static FluentToast* createError(const QString& title, const QString& message, QWidget* parent = nullptr);
+static FluentToast* createCustom(const QIcon& icon, const QString& title, const QString& message, QWidget* parent = nullptr);
+```
+
+### FluentToastManager
+
+Global toast management system with queue handling and positioning.
+
+**Header:** `FluentQt/Components/FluentToastManager.h`
+
+#### Manager Methods
+
+```cpp
+// Singleton access
+static FluentToastManager& instance();
+static void setGlobalInstance(FluentToastManager* manager);
+
+// Configuration
+FluentToastPosition defaultPosition() const;
+void setDefaultPosition(FluentToastPosition position);
+
+int maxVisible() const;
+void setMaxVisible(int max);
+
+int maxQueued() const;
+void setMaxQueued(int max);
+
+int stackSpacing() const;
+void setStackSpacing(int spacing);
+
+int screenMargin() const;
+void setScreenMargin(int margin);
+
+bool allowDuplicates() const;
+void setAllowDuplicates(bool allow);
+
+bool stackToasts() const;
+void setStackToasts(bool stack);
+
+void setParentWidget(QWidget* parent);
+
+// Toast display
+FluentToast* show(FluentToastType type, const QString& title, const QString& message);
+FluentToast* show(FluentToastType type, const QString& title, const QString& message, FluentToastPosition position);
+FluentToast* show(FluentToast* toast);
+FluentToast* show(FluentToast* toast, FluentToastPosition position);
+
+// Convenience methods
+FluentToast* showInfo(const QString& title, const QString& message);
+FluentToast* showSuccess(const QString& title, const QString& message);
+FluentToast* showWarning(const QString& title, const QString& message);
+FluentToast* showError(const QString& title, const QString& message);
+FluentToast* showCustom(const QIcon& icon, const QString& title, const QString& message);
+
+// Positioned variants
+FluentToast* showInfoAt(FluentToastPosition position, const QString& title, const QString& message);
+FluentToast* showSuccessAt(FluentToastPosition position, const QString& title, const QString& message);
+FluentToast* showWarningAt(FluentToastPosition position, const QString& title, const QString& message);
+FluentToast* showErrorAt(FluentToastPosition position, const QString& title, const QString& message);
+
+// Management
+void hide(FluentToast* toast);
+void hideAll();
+void hideAllAt(FluentToastPosition position);
+void clear();
+void clearAt(FluentToastPosition position);
+
+// Queue control
+void pauseQueue();
+void resumeQueue();
+void clearQueue();
+
+// Information
+int visibleCount() const;
+int visibleCountAt(FluentToastPosition position) const;
+int queuedCount() const;
+QList<FluentToast*> visibleToasts() const;
+QList<FluentToast*> visibleToastsAt(FluentToastPosition position) const;
+```
+
+#### Manager Signals
+
+```cpp
+void toastShown(FluentToast* toast);
+void toastHidden(FluentToast* toast);
+void toastDismissed(FluentToast* toast);
+void allToastsHidden();
+void queueProcessed();
+void defaultPositionChanged(FluentToastPosition position);
+void maxVisibleChanged(int max);
+void maxQueuedChanged(int max);
+void stackSpacingChanged(int spacing);
+void screenMarginChanged(int margin);
+void allowDuplicatesChanged(bool allow);
+void stackToastsChanged(bool stack);
+```
+
+---
+
+## Selection Components
+
+### FluentSelect
+
+Advanced dropdown selection component with search, grouping, and multiple selection support.
+
+**Header:** `FluentQt/Components/FluentSelect.h`
+
+#### Select Enums
+
+```cpp
+enum class FluentSelectMode {
+    Single,         // Single item selection
+    Multiple        // Multiple item selection
+};
+
+enum class FluentSelectSearchMode {
+    None,           // No search functionality
+    StartsWith,     // Search items that start with text
+    Contains        // Search items that contain text
+};
+
+enum class FluentSelectSize {
+    Small,          // 28px height
+    Medium,         // 32px height (default)
+    Large           // 40px height
+};
+```
+
+#### Select Methods
+
+```cpp
+// Configuration
+FluentSelectMode selectMode() const;
+void setSelectMode(FluentSelectMode mode);
+
+FluentSelectSearchMode searchMode() const;
+void setSearchMode(FluentSelectSearchMode mode);
+
+FluentSelectSize selectSize() const;
+void setSelectSize(FluentSelectSize size);
+
+QString placeholderText() const;
+void setPlaceholderText(const QString& text);
+
+bool isEditable() const;
+void setEditable(bool editable);
+
+bool isClearable() const;
+void setClearable(bool clearable);
+
+bool isSearchable() const;
+void setSearchable(bool searchable);
+
+// Current selection
+QString currentText() const;
+QVariant currentData() const;
+QVariant currentData(int role) const;
+
+int currentIndex() const;
+void setCurrentIndex(int index);
+
+QModelIndex currentModelIndex() const;
+void setCurrentModelIndex(const QModelIndex& index);
+
+// Multiple selection
+QList<int> selectedIndexes() const;
+void setSelectedIndexes(const QList<int>& indexes);
+
+QModelIndexList selectedModelIndexes() const;
+void setSelectedModelIndexes(const QModelIndexList& indexes);
+
+QStringList selectedTexts() const;
+QVariantList selectedData() const;
+
+// Item management
+void addItem(const QString& text, const QVariant& data = QVariant());
+void addItem(const QIcon& icon, const QString& text, const QVariant& data = QVariant());
+void addItem(const FluentSelectItem& item);
+void addItems(const QStringList& texts);
+
+void insertItem(int index, const QString& text, const QVariant& data = QVariant());
+void insertItem(int index, const QIcon& icon, const QString& text, const QVariant& data = QVariant());
+void insertItem(int index, const FluentSelectItem& item);
+
+void removeItem(int index);
+void clear();
+
+int count() const;
+bool isEmpty() const;
+
+FluentSelectItem itemAt(int index) const;
+void setItemAt(int index, const FluentSelectItem& item);
+
+// Grouping
+void addSeparator();
+void addGroup(const QString& title);
+
+// Search
+int findText(const QString& text, Qt::MatchFlags flags = Qt::MatchContains) const;
+int findData(const QVariant& data, int role = Qt::UserRole, Qt::MatchFlags flags = Qt::MatchExactly) const;
+
+QString searchFilter() const;
+void setSearchFilter(const QString& filter);
+void clearSearchFilter();
+
+// Dropdown control
+bool isDropdownVisible() const;
+void setDropdownVisible(bool visible);
+
+int maxVisibleItems() const;
+void setMaxVisibleItems(int max);
+
+// Validation
+bool isValid() const;
+QString validationError() const;
+void setValidator(std::function<bool(const QVariant&)> validator);
+void setValidationErrorMessage(const QString& message);
+
+// Model access
+QAbstractItemModel* model() const;
+void setModel(QAbstractItemModel* model);
+```
+
+#### Select Signals
+
+```cpp
+void currentIndexChanged(int index, int previous);
+void currentTextChanged(const QString& text);
+void currentDataChanged(const QVariant& data);
+void selectionChanged();
+
+void modeChanged(FluentSelectMode mode);
+void searchModeChanged(FluentSelectSearchMode mode);
+void sizeChanged(FluentSelectSize size);
+void editableChanged(bool editable);
+void clearableChanged(bool clearable);
+void searchableChanged(bool searchable);
+void placeholderChanged(const QString& text);
+void maxVisibleItemsChanged(int max);
+
+void dropdownAboutToShow();
+void dropdownShown();
+void dropdownAboutToHide();
+void dropdownHidden();
+void dropdownVisibilityChanged(bool visible);
+
+void searchFilterChanged(const QString& filter);
+```
+
+#### Static Factory Methods
+
+```cpp
+static FluentSelect* createSingleSelect(QWidget* parent = nullptr);
+static FluentSelect* createMultiSelect(QWidget* parent = nullptr);
+static FluentSelect* createSearchableSelect(QWidget* parent = nullptr);
+static FluentSelect* createEditableSelect(QWidget* parent = nullptr);
+```
+
+### FluentSelectItem
+
+Individual select item with rich content and state management.
+
+**Header:** `FluentQt/Components/FluentSelectItem.h`
+
+#### Item Enums
+
+```cpp
+enum class FluentSelectItemType {
+    Item,           // Regular selectable item
+    Separator,      // Visual separator
+    Group,          // Group header
+    Custom          // Custom item type
+};
+
+enum class FluentSelectItemState {
+    Normal,         // Normal state
+    Disabled,       // Disabled state
+    Selected,       // Selected state
+    Highlighted,    // Highlighted state
+    Checked         // Checked state (for checkable items)
+};
+```
+
+#### Item Methods
+
+```cpp
+// Content
+QString text() const;
+void setText(const QString& text);
+
+QString description() const;
+void setDescription(const QString& description);
+
+QString tooltip() const;
+void setTooltip(const QString& tooltip);
+
+QIcon icon() const;
+void setIcon(const QIcon& icon);
+
+QVariant data() const;
+void setData(const QVariant& data);
+
+QVariant userData() const;
+void setUserData(const QVariant& data);
+
+// Type and state
+FluentSelectItemType type() const;
+void setType(FluentSelectItemType type);
+
+FluentSelectItemState state() const;
+void setState(FluentSelectItemState state);
+
+// Behavior
+bool isEnabled() const;
+void setEnabled(bool enabled);
+
+bool isVisible() const;
+void setVisible(bool visible);
+
+bool isCheckable() const;
+void setCheckable(bool checkable);
+
+bool isChecked() const;
+void setChecked(bool checked);
+
+bool isSeparator() const;
+void setSeparator(bool separator);
+
+bool isGroup() const;
+void setGroup(bool group);
+
+// Visual properties
+QFont font() const;
+void setFont(const QFont& font);
+
+QColor textColor() const;
+void setTextColor(const QColor& color);
+
+QColor backgroundColor() const;
+void setBackgroundColor(const QColor& color);
+
+QIcon statusIcon() const;
+void setStatusIcon(const QIcon& icon);
+
+int indentLevel() const;
+void setIndentLevel(int level);
+
+// Custom properties
+QVariant property(const QString& name) const;
+void setProperty(const QString& name, const QVariant& value);
+bool hasProperty(const QString& name) const;
+void removeProperty(const QString& name);
+
+// Utility
+bool isSelectable() const;
+bool matches(const QString& searchText, Qt::MatchFlags flags = Qt::MatchContains) const;
+QString displayText() const;
+```
+
+#### Static Factory Methods
+
+```cpp
+static FluentSelectItem createSeparator();
+static FluentSelectItem createGroup(const QString& title);
+static FluentSelectItem createCheckableItem(const QString& text, bool checked = false);
+static FluentSelectItem createIconItem(const QIcon& icon, const QString& text, const QVariant& data = QVariant());
+static FluentSelectItem createDisabledItem(const QString& text, const QVariant& data = QVariant());
+```
+
+---
+
 ## Error Handling
 
 ### Validation Errors

@@ -529,6 +529,337 @@ void left();
 void resized();
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Modern Dashboard Layout
+
+```cpp
+#include <QApplication>
+#include <QMainWindow>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QLabel>
+#include <QProgressBar>
+#include <QChart>
+#include <QChartView>
+#include <QLineSeries>
+#include <QTimer>
+#include "FluentQt/Components/FluentPanel.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Styling/FluentTheme.h"
+
+class ModernDashboard : public QMainWindow {
+    Q_OBJECT
+public:
+    ModernDashboard(QWidget* parent = nullptr) : QMainWindow(parent) {
+        setupUI();
+        setupDataUpdates();
+        connectSignals();
+    }
+
+private slots:
+    void updateMetrics() {
+        // Simulate real-time data updates
+        static int counter = 0;
+        counter++;
+
+        // Update statistics
+        m_usersLabel->setText(QString::number(1250 + (counter * 3)));
+        m_revenueLabel->setText(QString("$%1K").arg(45.2 + (counter * 0.1), 0, 'f', 1));
+        m_ordersLabel->setText(QString::number(89 + (counter % 10)));
+
+        // Update progress bars
+        m_cpuProgress->setValue((counter * 2) % 100);
+        m_memoryProgress->setValue((counter * 3) % 100);
+        m_diskProgress->setValue((counter) % 100);
+
+        // Update chart data
+        updateChartData();
+    }
+
+    void updateChartData() {
+        // Add new data point to performance chart
+        static QLineSeries* series = qobject_cast<QLineSeries*>(m_chart->series().first());
+        if (series) {
+            qreal x = series->count();
+            qreal y = 50 + 30 * qSin(x * 0.1) + (QRandomGenerator::global()->bounded(20) - 10);
+            series->append(x, y);
+
+            // Keep only last 50 points
+            if (series->count() > 50) {
+                series->remove(0);
+                // Shift x values
+                for (int i = 0; i < series->count(); ++i) {
+                    QPointF point = series->at(i);
+                    series->replace(i, QPointF(i, point.y()));
+                }
+            }
+        }
+    }
+
+    void toggleTheme() {
+        auto& theme = FluentTheme::instance();
+        auto newMode = (theme.mode() == FluentThemeMode::Light)
+            ? FluentThemeMode::Dark
+            : FluentThemeMode::Light;
+        theme.setMode(newMode);
+
+        // Update panel appearances for theme
+        updatePanelThemes();
+    }
+
+    void refreshData() {
+        m_refreshButton->setLoading(true);
+        m_refreshButton->setText("Refreshing...");
+
+        // Simulate data refresh
+        QTimer::singleShot(2000, [this]() {
+            m_refreshButton->setLoading(false);
+            m_refreshButton->setText("Refresh");
+            updateMetrics();
+        });
+    }
+
+private:
+    void setupUI() {
+        auto* centralWidget = new QWidget;
+        setCentralWidget(centralWidget);
+
+        auto* mainLayout = new QVBoxLayout(centralWidget);
+
+        // Header panel
+        auto* headerPanel = new FluentPanel();
+        headerPanel->setPanelType(FluentPanelType::Surface);
+        headerPanel->setElevation(FluentPanelElevation::Low);
+
+        auto* headerLayout = headerPanel->createHorizontalLayout();
+        auto* titleLabel = new QLabel("Analytics Dashboard");
+        titleLabel->setStyleSheet("font-size: 24px; font-weight: bold;");
+
+        m_refreshButton = new FluentButton("Refresh");
+        m_refreshButton->setButtonStyle(FluentButtonStyle::Subtle);
+
+        auto* themeButton = new FluentButton("Toggle Theme");
+        themeButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(themeButton, &FluentButton::clicked, this, &ModernDashboard::toggleTheme);
+
+        headerLayout->addWidget(titleLabel);
+        headerLayout->addStretch();
+        headerLayout->addWidget(m_refreshButton);
+        headerLayout->addWidget(themeButton);
+
+        // Metrics row
+        auto* metricsLayout = new QHBoxLayout;
+
+        // Users metric
+        auto* usersPanel = createMetricPanel("Active Users", "1,250", "#0078d4");
+        m_usersLabel = usersPanel->findChild<QLabel*>("valueLabel");
+
+        // Revenue metric
+        auto* revenuePanel = createMetricPanel("Revenue", "$45.2K", "#107c10");
+        m_revenueLabel = revenuePanel->findChild<QLabel*>("valueLabel");
+
+        // Orders metric
+        auto* ordersPanel = createMetricPanel("Orders", "89", "#d83b01");
+        m_ordersLabel = ordersPanel->findChild<QLabel*>("valueLabel");
+
+        metricsLayout->addWidget(usersPanel);
+        metricsLayout->addWidget(revenuePanel);
+        metricsLayout->addWidget(ordersPanel);
+
+        // Content row
+        auto* contentLayout = new QHBoxLayout;
+
+        // Performance chart panel
+        auto* chartPanel = new FluentPanel("Performance Metrics");
+        chartPanel->setPanelType(FluentPanelType::Card);
+        chartPanel->setElevation(FluentPanelElevation::Medium);
+        chartPanel->setMinimumSize(400, 300);
+
+        m_chart = createPerformanceChart();
+        auto* chartView = new QChartView(m_chart);
+        chartView->setRenderHint(QPainter::Antialiasing);
+
+        auto* chartLayout = chartPanel->createVerticalLayout();
+        chartLayout->addWidget(chartView);
+
+        // System status panel
+        auto* statusPanel = createSystemStatusPanel();
+
+        contentLayout->addWidget(chartPanel, 2);
+        contentLayout->addWidget(statusPanel, 1);
+
+        // Activity panel
+        auto* activityPanel = createActivityPanel();
+
+        mainLayout->addWidget(headerPanel);
+        mainLayout->addLayout(metricsLayout);
+        mainLayout->addLayout(contentLayout);
+        mainLayout->addWidget(activityPanel);
+    }
+
+    FluentPanel* createMetricPanel(const QString& title, const QString& value, const QString& color) {
+        auto* panel = new FluentPanel();
+        panel->setPanelType(FluentPanelType::Card);
+        panel->setElevation(FluentPanelElevation::Low);
+        panel->setMinimumSize(200, 120);
+
+        auto* layout = panel->createVerticalLayout();
+
+        auto* titleLabel = new QLabel(title);
+        titleLabel->setStyleSheet("color: gray; font-size: 14px;");
+
+        auto* valueLabel = new QLabel(value);
+        valueLabel->setObjectName("valueLabel");
+        valueLabel->setStyleSheet(QString("color: %1; font-size: 32px; font-weight: bold;").arg(color));
+
+        auto* changeLabel = new QLabel("↗ +12.5%");
+        changeLabel->setStyleSheet("color: #107c10; font-size: 12px;");
+
+        layout->addWidget(titleLabel);
+        layout->addWidget(valueLabel);
+        layout->addWidget(changeLabel);
+        layout->addStretch();
+
+        return panel;
+    }
+
+    QChart* createPerformanceChart() {
+        auto* chart = new QChart();
+        chart->setTitle("Performance Over Time");
+        chart->setAnimationOptions(QChart::SeriesAnimations);
+
+        auto* series = new QLineSeries();
+        series->setName("Response Time (ms)");
+
+        // Initialize with some data
+        for (int i = 0; i < 20; ++i) {
+            qreal y = 50 + 30 * qSin(i * 0.1) + (QRandomGenerator::global()->bounded(20) - 10);
+            series->append(i, y);
+        }
+
+        chart->addSeries(series);
+        chart->createDefaultAxes();
+        chart->legend()->setVisible(false);
+
+        return chart;
+    }
+
+    FluentPanel* createSystemStatusPanel() {
+        auto* panel = new FluentPanel("System Status");
+        panel->setPanelType(FluentPanelType::Card);
+        panel->setElevation(FluentPanelElevation::Medium);
+        panel->setMinimumSize(250, 300);
+
+        auto* layout = panel->createVerticalLayout();
+
+        // CPU usage
+        auto* cpuLayout = new QHBoxLayout;
+        cpuLayout->addWidget(new QLabel("CPU:"));
+        m_cpuProgress = new QProgressBar;
+        m_cpuProgress->setValue(45);
+        m_cpuProgress->setStyleSheet("QProgressBar::chunk { background-color: #0078d4; }");
+        cpuLayout->addWidget(m_cpuProgress);
+
+        // Memory usage
+        auto* memoryLayout = new QHBoxLayout;
+        memoryLayout->addWidget(new QLabel("Memory:"));
+        m_memoryProgress = new QProgressBar;
+        m_memoryProgress->setValue(67);
+        m_memoryProgress->setStyleSheet("QProgressBar::chunk { background-color: #107c10; }");
+        memoryLayout->addWidget(m_memoryProgress);
+
+        // Disk usage
+        auto* diskLayout = new QHBoxLayout;
+        diskLayout->addWidget(new QLabel("Disk:"));
+        m_diskProgress = new QProgressBar;
+        m_diskProgress->setValue(23);
+        m_diskProgress->setStyleSheet("QProgressBar::chunk { background-color: #d83b01; }");
+        diskLayout->addWidget(m_diskProgress);
+
+        layout->addLayout(cpuLayout);
+        layout->addLayout(memoryLayout);
+        layout->addLayout(diskLayout);
+        layout->addStretch();
+
+        return panel;
+    }
+
+    FluentPanel* createActivityPanel() {
+        auto* panel = new FluentPanel("Recent Activity");
+        panel->setPanelType(FluentPanelType::Card);
+        panel->setElevation(FluentPanelElevation::Low);
+        panel->setMaximumHeight(200);
+
+        auto* layout = panel->createVerticalLayout();
+
+        QStringList activities = {
+            "User john.doe@company.com logged in",
+            "New order #12345 received",
+            "System backup completed successfully",
+            "Payment processed for order #12344",
+            "User jane.smith@company.com updated profile"
+        };
+
+        for (const QString& activity : activities) {
+            auto* activityLayout = new QHBoxLayout;
+            auto* timeLabel = new QLabel("2 min ago");
+            timeLabel->setStyleSheet("color: gray; font-size: 12px;");
+            timeLabel->setMinimumWidth(80);
+
+            auto* activityLabel = new QLabel(activity);
+            activityLabel->setStyleSheet("font-size: 14px;");
+
+            activityLayout->addWidget(timeLabel);
+            activityLayout->addWidget(activityLabel);
+            activityLayout->addStretch();
+
+            layout->addLayout(activityLayout);
+        }
+
+        return panel;
+    }
+
+    void setupDataUpdates() {
+        // Update metrics every 3 seconds
+        auto* timer = new QTimer(this);
+        connect(timer, &QTimer::timeout, this, &ModernDashboard::updateMetrics);
+        timer->start(3000);
+    }
+
+    void connectSignals() {
+        connect(m_refreshButton, &FluentButton::clicked, this, &ModernDashboard::refreshData);
+    }
+
+    void updatePanelThemes() {
+        // Panels automatically update with theme changes
+        // This method can be used for custom theme adjustments
+    }
+
+    FluentButton* m_refreshButton;
+    QLabel* m_usersLabel;
+    QLabel* m_revenueLabel;
+    QLabel* m_ordersLabel;
+    QChart* m_chart;
+    QProgressBar* m_cpuProgress;
+    QProgressBar* m_memoryProgress;
+    QProgressBar* m_diskProgress;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    ModernDashboard dashboard;
+    dashboard.resize(1200, 800);
+    dashboard.show();
+
+    return app.exec();
+}
+
+#include "modern_dashboard.moc"
+```
+
 ## See Also
 
 - [FluentCard](FluentCard.md) - For specialized card containers

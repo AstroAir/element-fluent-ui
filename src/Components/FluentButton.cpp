@@ -153,6 +153,22 @@ void FluentButton::setBackgroundOpacity(qreal opacity) {
     }
 }
 
+void FluentButton::setLoadingRotation(qreal rotation) {
+    if (!qFuzzyCompare(m_loadingRotation, rotation)) {
+        m_loadingRotation = rotation;
+        if (m_loading) {
+            update();
+        }
+    }
+}
+
+void FluentButton::setRevealProgress(qreal progress) {
+    if (!qFuzzyCompare(m_revealProgress, progress)) {
+        m_revealProgress = qBound(0.0, progress, 1.0);
+        update();
+    }
+}
+
 QSize FluentButton::sizeHint() const {
     FLUENT_PROFILE("FluentButton::sizeHint");
     
@@ -1097,6 +1113,3 @@ FluentButton* FluentButton::createIconButton(const QIcon& icon, QWidget* parent)
 }
 
 } // namespace FluentQt::Components
-
-// Required for Q_PROPERTY animations
-#include "FluentButton.moc"

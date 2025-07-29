@@ -136,6 +136,12 @@ private:
     void onPaneToggleRequested();
     void setIsPaneOpen(bool open);
 
+    // Enhanced animation methods
+    void animateNavigationItems(bool expanding);
+    void animateNavigationItem(QWidget* item, bool expanding);
+    void animatePageTransition(QWidget* fromPage, QWidget* toPage);
+    void animateItemSelection(QWidget* item, bool selected);
+
 private:
     FluentNavigationDisplayMode m_displayMode{FluentNavigationDisplayMode::Auto};
     bool m_isPaneOpen{true};

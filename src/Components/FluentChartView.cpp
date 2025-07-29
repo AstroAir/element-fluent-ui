@@ -702,4 +702,4 @@ QPointF FluentChartView::mapFromChart(const QPointF& point) const {
     return m_chartView->chart()->mapToPosition(point);
 }
 
-#include "FluentChartView.moc"
+

@@ -326,8 +326,8 @@ void FluentNavigationView::updateItemVisibility() {
 void FluentNavigationView::animatePaneTransition() {
     if (!m_paneAnimation) {
         m_paneAnimation = new QPropertyAnimation(this, "paneWidth");
-        m_paneAnimation->setDuration(250);
-        m_paneAnimation->setEasingCurve(QEasingCurve::OutCubic);
+        m_paneAnimation->setDuration(400); // Increased for smoother animation
+        m_paneAnimation->setEasingCurve(QEasingCurve::OutBack); // Spring-like easing
     }
 
     int currentWidth = m_splitter->sizes().first();
@@ -343,9 +343,173 @@ void FluentNavigationView::animatePaneTransition() {
             });
 
     connect(m_paneAnimation, &QPropertyAnimation::finished,
-            this, &FluentNavigationView::updateItemVisibility);
+            this, [this]() {
+                updateItemVisibility();
+                animateNavigationItems(m_isPaneOpen);
+                m_paneAnimation->disconnect();
+            });
+
+    // Start with staggered item animations if expanding
+    if (m_isPaneOpen) {
+        animateNavigationItems(true);
+    }
 
     m_paneAnimation->start();
+}
+
+void FluentNavigationView::animateNavigationItems(bool expanding) {
+    const int staggerDelay = 50; // 50ms between each item
+    int delay = 0;
+
+    for (auto it = m_itemButtons.begin(); it != m_itemButtons.end(); ++it) {
+        auto* navButton = it.value();
+
+        QTimer::singleShot(delay, [this, navButton, expanding]() {
+            animateNavigationItem(navButton, expanding);
+        });
+
+        delay += staggerDelay;
+    }
+}
+
+void FluentNavigationView::animateNavigationItem(QWidget* item, bool expanding) {
+    if (!item) return;
+
+    // Create opacity animation
+    QGraphicsOpacityEffect* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(item->graphicsEffect());
+
+    if (!opacityEffect) {
+        opacityEffect = new QGraphicsOpacityEffect(item);
+        item->setGraphicsEffect(opacityEffect);
+    }
+
+    auto opacityAnim = new QPropertyAnimation(opacityEffect, "opacity", this);
+    opacityAnim->setDuration(300);
+    opacityAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+    if (expanding) {
+        // Fade in with slide
+        opacityEffect->setOpacity(0.0);
+        opacityAnim->setStartValue(0.0);
+        opacityAnim->setEndValue(1.0);
+
+        // Add slide animation using position
+        QPoint originalPos = item->pos();
+        item->move(originalPos.x() - 20, originalPos.y());
+
+        auto slideAnim = new QPropertyAnimation(item, "pos", this);
+        slideAnim->setStartValue(item->pos());
+        slideAnim->setEndValue(originalPos);
+        slideAnim->setDuration(300);
+        slideAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+        auto group = new QParallelAnimationGroup(this);
+        group->addAnimation(opacityAnim);
+        group->addAnimation(slideAnim);
+        group->start(QAbstractAnimation::DeleteWhenStopped);
+    } else {
+        // Fade out
+        opacityAnim->setStartValue(1.0);
+        opacityAnim->setEndValue(0.3);
+        opacityAnim->start(QAbstractAnimation::DeleteWhenStopped);
+    }
+}
+
+void FluentNavigationView::animatePageTransition(QWidget* fromPage, QWidget* toPage) {
+    if (!fromPage || !toPage) return;
+
+    // Create slide transition between pages
+    QGraphicsOpacityEffect* fromOpacity = new QGraphicsOpacityEffect(fromPage);
+    QGraphicsOpacityEffect* toOpacity = new QGraphicsOpacityEffect(toPage);
+
+    fromPage->setGraphicsEffect(fromOpacity);
+    toPage->setGraphicsEffect(toOpacity);
+
+    // Setup initial states
+    fromOpacity->setOpacity(1.0);
+    toOpacity->setOpacity(0.0);
+    toPage->show();
+
+    // Create animations
+    auto fromFadeAnim = new QPropertyAnimation(fromOpacity, "opacity", this);
+    fromFadeAnim->setStartValue(1.0);
+    fromFadeAnim->setEndValue(0.0);
+    fromFadeAnim->setDuration(300);
+    fromFadeAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+    auto toFadeAnim = new QPropertyAnimation(toOpacity, "opacity", this);
+    toFadeAnim->setStartValue(0.0);
+    toFadeAnim->setEndValue(1.0);
+    toFadeAnim->setDuration(300);
+    toFadeAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Add slide effect
+    QPoint toOriginalPos = toPage->pos();
+    toPage->move(toOriginalPos.x() + 50, toOriginalPos.y());
+
+    auto slideAnim = new QPropertyAnimation(toPage, "pos", this);
+    slideAnim->setStartValue(toPage->pos());
+    slideAnim->setEndValue(toOriginalPos);
+    slideAnim->setDuration(300);
+    slideAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Create parallel group
+    auto group = new QParallelAnimationGroup(this);
+    group->addAnimation(fromFadeAnim);
+    group->addAnimation(toFadeAnim);
+    group->addAnimation(slideAnim);
+
+    // Cleanup when finished
+    connect(group, &QParallelAnimationGroup::finished, [fromPage, toPage]() {
+        fromPage->setGraphicsEffect(nullptr);
+        toPage->setGraphicsEffect(nullptr);
+    });
+
+    group->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void FluentNavigationView::animateItemSelection(QWidget* item, bool selected) {
+    if (!item) return;
+
+    // Create scale animation for selection feedback
+    QPropertyAnimation* scaleAnim = new QPropertyAnimation(item, "geometry", this);
+
+    QRect currentGeometry = item->geometry();
+    QRect targetGeometry = currentGeometry;
+
+    if (selected) {
+        // Slightly scale up when selected
+        targetGeometry.adjust(-2, -1, 2, 1);
+    }
+
+    scaleAnim->setStartValue(currentGeometry);
+    scaleAnim->setEndValue(targetGeometry);
+    scaleAnim->setDuration(150);
+    scaleAnim->setEasingCurve(QEasingCurve::OutQuad);
+
+    // Add glow effect for selection
+    if (selected) {
+        // Add subtle glow animation
+        QGraphicsDropShadowEffect* glowEffect = new QGraphicsDropShadowEffect(item);
+        glowEffect->setBlurRadius(8);
+        glowEffect->setColor(QColor(0, 120, 215, 100));
+        glowEffect->setOffset(0, 0);
+        item->setGraphicsEffect(glowEffect);
+
+        // Animate glow intensity
+        auto glowAnim = new QPropertyAnimation(glowEffect, "color", this);
+        glowAnim->setStartValue(QColor(0, 120, 215, 0));
+        glowAnim->setEndValue(QColor(0, 120, 215, 100));
+        glowAnim->setDuration(200);
+        glowAnim->setEasingCurve(QEasingCurve::OutCubic);
+        glowAnim->start(QAbstractAnimation::DeleteWhenStopped);
+    } else {
+        // Remove glow effect
+        item->setGraphicsEffect(nullptr);
+    }
+
+    scaleAnim->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
 void FluentNavigationView::onItemClicked(const QString& tag) {

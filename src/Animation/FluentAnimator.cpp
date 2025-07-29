@@ -118,33 +118,40 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleIn(
     if (!target) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::scaleIn");
-    
-    // Store original size
-    const QSize originalSize = target->size();
-    target->setProperty("originalSize", originalSize);
-    
-    auto animation = std::make_unique<QPropertyAnimation>(target, "size");
-    
-    // Set initial state (very small)
-    const QSize startSize(originalSize.width() / 10, originalSize.height() / 10);
-    target->resize(startSize);
+
+    // Store original geometry for restoration
+    const QRect originalGeometry = target->geometry();
+    target->setProperty("originalGeometry", originalGeometry);
+
+    // Calculate scaled geometry (centered scaling)
+    const QPoint center = originalGeometry.center();
+    const QSize scaledSize(originalGeometry.width() / 10, originalGeometry.height() / 10);
+    const QRect startGeometry(center.x() - scaledSize.width() / 2,
+                             center.y() - scaledSize.height() / 2,
+                             scaledSize.width(), scaledSize.height());
+
+    // Set initial state
+    target->setGeometry(startGeometry);
     target->show();
-    
+
+    // Create animation for geometry (more predictable than size)
+    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
+
     // Configure animation
-    animation->setStartValue(startSize);
-    animation->setEndValue(originalSize);
+    animation->setStartValue(startGeometry);
+    animation->setEndValue(originalGeometry);
     setupAnimation(animation.get(), config);
-    
-    // Use custom easing for scale animation
+
+    // Use Fluent Design easing for scale animation
     FluentAnimationConfig scaleConfig = config;
     if (scaleConfig.easing == FluentEasing::EaseOut) {
-        scaleConfig.easing = FluentEasing::Back;
+        scaleConfig.easing = FluentEasing::BackOut; // More appropriate for scale-in
     }
-    
+
     animation->setEasingCurve(toQtEasing(scaleConfig.easing));
-    
+
     return animation;
 }
 
@@ -158,24 +165,36 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleOut(
 
     FLUENT_PROFILE("FluentAnimator::scaleOut");
 
-    // Get current size
-    const QSize currentSize = target->size();
-    const QSize endSize(currentSize.width() / 10, currentSize.height() / 10);
+    // Get current geometry
+    const QRect currentGeometry = target->geometry();
+    const QPoint center = currentGeometry.center();
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "size");
+    // Calculate scaled geometry (centered scaling)
+    const QSize scaledSize(currentGeometry.width() / 10, currentGeometry.height() / 10);
+    const QRect endGeometry(center.x() - scaledSize.width() / 2,
+                           center.y() - scaledSize.height() / 2,
+                           scaledSize.width(), scaledSize.height());
 
-    // Configure animation
-    animation->setStartValue(currentSize);
-    animation->setEndValue(endSize);
+    // Create animation for geometry
+    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
+
+    // Configure animation to scale down
+    animation->setStartValue(currentGeometry);
+    animation->setEndValue(endGeometry);
     setupAnimation(animation.get(), config);
 
-    // Use custom easing for scale animation
+    // Use Fluent Design easing for scale-out
     FluentAnimationConfig scaleConfig = config;
     if (scaleConfig.easing == FluentEasing::EaseOut) {
-        scaleConfig.easing = FluentEasing::EaseIn;
+        scaleConfig.easing = FluentEasing::BackIn; // More appropriate for scale-out
     }
 
     animation->setEasingCurve(toQtEasing(scaleConfig.easing));
+
+    // Hide widget when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target]() {
+        target->hide();
+    });
 
     return animation;
 }
@@ -316,14 +335,25 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideUp(
 
     FLUENT_PROFILE("FluentAnimator::slideUp");
 
-    QRect startGeometry = target->geometry();
-    QRect endGeometry = startGeometry;
-    endGeometry.moveTop(startGeometry.top() - distance);
+    // Store original position for restoration
+    const QPoint originalPos = target->pos();
+    target->setProperty("originalPos", originalPos);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
-    animation->setStartValue(startGeometry);
-    animation->setEndValue(endGeometry);
+    // Set start position (moved down by distance)
+    const QPoint startPos = originalPos + QPoint(0, distance);
+    target->move(startPos);
+
+    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
+    animation->setStartValue(startPos);
+    animation->setEndValue(originalPos);
     setupAnimation(animation.get(), config);
+
+    // Use appropriate easing for slide up (entrance)
+    FluentAnimationConfig slideConfig = config;
+    if (slideConfig.easing == FluentEasing::EaseOut) {
+        slideConfig.easing = FluentEasing::EaseOutCubic; // Fluent standard for entrances
+    }
+    animation->setEasingCurve(toQtEasing(slideConfig.easing));
 
     return animation;
 }
@@ -339,14 +369,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideDown(
 
     FLUENT_PROFILE("FluentAnimator::slideDown");
 
-    QRect startGeometry = target->geometry();
-    QRect endGeometry = startGeometry;
-    endGeometry.moveTop(startGeometry.top() + distance);
+    // Get current position
+    const QPoint currentPos = target->pos();
+    const QPoint endPos = currentPos + QPoint(0, distance);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
-    animation->setStartValue(startGeometry);
-    animation->setEndValue(endGeometry);
+    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
+    animation->setStartValue(currentPos);
+    animation->setEndValue(endPos);
     setupAnimation(animation.get(), config);
+
+    // Use appropriate easing for slide down (exit)
+    FluentAnimationConfig slideConfig = config;
+    if (slideConfig.easing == FluentEasing::EaseOut) {
+        slideConfig.easing = FluentEasing::EaseInCubic; // Fluent standard for exits
+    }
+    animation->setEasingCurve(toQtEasing(slideConfig.easing));
 
     return animation;
 }
@@ -417,8 +454,7 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::revealAnimation(
     // Create reveal mask animation (simplified version)
     // In a full implementation, this would use custom rendering
     auto scalePhase = std::make_unique<QPropertyAnimation>(target, "geometry");
-    
-    QRect startGeometry = target->geometry();
+
     QPoint actualCenter = center.isNull() ? target->rect().center() : center;
     
     // Start from a small rect at the center point
@@ -591,18 +627,19 @@ void FluentAnimator::setupAnimation(
     const FluentAnimationConfig& config
 ) {
     if (!animation) return;
-    
-    // Check if we should skip animations for performance
-    if (Core::FluentPerformanceMonitor::instance().shouldSkipAnimation()) {
+
+    // Check if we should skip animations for performance or accessibility
+    if (Core::FluentPerformanceMonitor::instance().shouldSkipAnimation() ||
+        (config.respectReducedMotion && shouldRespectReducedMotion())) {
         animation->setDuration(0);
         return;
     }
-    
+
     // Apply configuration
     animation->setDuration(config.duration.count());
     animation->setEasingCurve(toQtEasing(config.easing));
     animation->setLoopCount(config.loops);
-    
+
     // Apply delay if specified
     if (config.delay.count() > 0) {
         auto* group = new QSequentialAnimationGroup();
@@ -610,15 +647,21 @@ void FluentAnimator::setupAnimation(
         group->addAnimation(pause);
         group->addAnimation(animation);
     }
-    
+
     // Apply reverse on complete
     if (config.reverseOnComplete && config.loops == 1) {
         animation->setLoopCount(2);
         animation->setProperty("direction", QAbstractAnimation::Backward);
     }
-    
-    // Note: Performance monitoring would need to be handled by the caller
-    // since this is a static method and cannot emit signals
+
+    // Enable hardware acceleration hints if requested
+    if (config.useHardwareAcceleration) {
+        // Set hints for the graphics system to use GPU acceleration
+        animation->setProperty("hardwareAccelerated", true);
+    }
+
+    // Register animation with performance monitor
+    FluentAnimationManager::instance().registerAnimation(animation);
 }
 
 std::unique_ptr<QPropertyAnimation> FluentAnimator::hoverEffect(
@@ -631,10 +674,28 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::hoverEffect(
 
     FLUENT_PROFILE("FluentAnimator::hoverEffect");
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "windowOpacity");
-    animation->setStartValue(1.0);
-    animation->setEndValue(0.8);
-    setupAnimation(animation.get(), config);
+    // Use opacity effect for better performance and visual consistency
+    QGraphicsOpacityEffect* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
+
+    if (!opacityEffect) {
+        opacityEffect = new QGraphicsOpacityEffect(target);
+        opacityEffect->setOpacity(1.0);
+        target->setGraphicsEffect(opacityEffect);
+    }
+
+    auto animation = std::make_unique<QPropertyAnimation>(opacityEffect, "opacity");
+
+    // Fluent Design hover: subtle opacity change
+    animation->setStartValue(opacityEffect->opacity());
+    animation->setEndValue(0.9); // More subtle than 0.8
+
+    // Use faster duration for micro-interactions
+    FluentAnimationConfig hoverConfig = config;
+    hoverConfig.duration = std::chrono::milliseconds(150); // Fluent standard for hover
+    hoverConfig.easing = FluentEasing::EaseOutQuad; // Smooth but quick
+
+    setupAnimation(animation.get(), hoverConfig);
 
     return animation;
 }
@@ -649,7 +710,33 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::pressEffect(
 
     FLUENT_PROFILE("FluentAnimator::pressEffect");
 
-    auto animation = scaleOut(target, config);
+    // Create a subtle scale-down effect for press feedback
+    const QRect currentGeometry = target->geometry();
+    const QPoint center = currentGeometry.center();
+
+    // Scale down to 98% (subtle press feedback)
+    const qreal scaleFactor = 0.98;
+    const QSize scaledSize(currentGeometry.width() * scaleFactor,
+                          currentGeometry.height() * scaleFactor);
+    const QRect pressedGeometry(center.x() - scaledSize.width() / 2,
+                               center.y() - scaledSize.height() / 2,
+                               scaledSize.width(), scaledSize.height());
+
+    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
+    animation->setStartValue(currentGeometry);
+    animation->setEndValue(pressedGeometry);
+
+    // Use very fast duration for press feedback
+    FluentAnimationConfig pressConfig = config;
+    pressConfig.duration = std::chrono::milliseconds(100); // Fluent standard for press
+    pressConfig.easing = FluentEasing::EaseOutQuart; // Sharp response
+
+    setupAnimation(animation.get(), pressConfig);
+
+    // Auto-reverse the animation for press feedback
+    animation->setLoopCount(2);
+    animation->setProperty("direction", QAbstractAnimation::Backward);
+
     return animation;
 }
 
@@ -681,13 +768,91 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::pulseEffect(
 
     FLUENT_PROFILE("FluentAnimator::pulseEffect");
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "windowOpacity");
+    // Use opacity effect for better performance
+    QGraphicsOpacityEffect* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
+
+    if (!opacityEffect) {
+        opacityEffect = new QGraphicsOpacityEffect(target);
+        opacityEffect->setOpacity(1.0);
+        target->setGraphicsEffect(opacityEffect);
+    }
+
+    auto animation = std::make_unique<QPropertyAnimation>(opacityEffect, "opacity");
     animation->setStartValue(1.0);
-    animation->setEndValue(0.5);
+    animation->setEndValue(0.6); // More subtle pulse
     animation->setLoopCount(-1); // Infinite
-    setupAnimation(animation.get(), config);
+
+    // Use appropriate timing for pulse
+    FluentAnimationConfig pulseConfig = config;
+    pulseConfig.duration = std::chrono::milliseconds(1000); // Slower pulse
+    pulseConfig.easing = FluentEasing::EaseInOutSine; // Smooth pulse
+
+    setupAnimation(animation.get(), pulseConfig);
 
     return animation;
+}
+
+std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::rippleEffect(
+    QWidget* target,
+    const QPoint& center,
+    const FluentAnimationConfig& config
+) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::rippleEffect");
+    Q_UNUSED(config); // Future use for customization
+
+    auto group = std::make_unique<QSequentialAnimationGroup>();
+
+    // Create a temporary widget for the ripple effect
+    QWidget* rippleWidget = new QWidget(target);
+    rippleWidget->setAttribute(Qt::WA_TransparentForMouseEvents);
+    rippleWidget->setStyleSheet("background-color: rgba(255, 255, 255, 100); border-radius: 50%;");
+
+    // Position the ripple at the click center
+    QPoint actualCenter = center.isNull() ? target->rect().center() : center;
+    const int startSize = 10;
+    const int endSize = qMax(target->width(), target->height()) * 2;
+
+    rippleWidget->setGeometry(actualCenter.x() - startSize/2, actualCenter.y() - startSize/2,
+                             startSize, startSize);
+    rippleWidget->show();
+
+    // Phase 1: Expand the ripple
+    auto expandAnim = std::make_unique<QPropertyAnimation>(rippleWidget, "geometry");
+    QRect startRect(actualCenter.x() - startSize/2, actualCenter.y() - startSize/2,
+                   startSize, startSize);
+    QRect endRect(actualCenter.x() - endSize/2, actualCenter.y() - endSize/2,
+                 endSize, endSize);
+
+    expandAnim->setStartValue(startRect);
+    expandAnim->setEndValue(endRect);
+    expandAnim->setDuration(400); // Fluent ripple duration
+    expandAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Phase 2: Fade out the ripple
+    QGraphicsOpacityEffect* rippleOpacity = new QGraphicsOpacityEffect(rippleWidget);
+    rippleWidget->setGraphicsEffect(rippleOpacity);
+
+    auto fadeAnim = std::make_unique<QPropertyAnimation>(rippleOpacity, "opacity");
+    fadeAnim->setStartValue(1.0);
+    fadeAnim->setEndValue(0.0);
+    fadeAnim->setDuration(200);
+    fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
+
+    // Add animations to group
+    group->addAnimation(expandAnim.release());
+    group->addAnimation(fadeAnim.release());
+
+    // Cleanup when finished
+    QObject::connect(group.get(), &QSequentialAnimationGroup::finished, [rippleWidget]() {
+        rippleWidget->deleteLater();
+    });
+
+    return group;
 }
 
 void FluentAnimator::applyMicroInteractionSettings(

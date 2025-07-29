@@ -5,6 +5,8 @@
 #include <QGestureEvent>
 #include <QPanGesture>
 #include <QSwipeGesture>
+#include <QTapGesture>
+#include <QTapAndHoldGesture>
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QPropertyAnimation>
@@ -120,7 +122,7 @@ void FluentTouchCarousel::setTouchConfig(const FluentCarouselTouchConfig& config
     m_touchConfig = config;
     
     // Update gesture recognition
-    setupGestureRecognization();
+    setupGestureRecognition();
     
     // Update momentum scrolling
     setupMomentumScrolling();
@@ -333,12 +335,16 @@ bool FluentTouchCarousel::gestureEvent(QGestureEvent* event) {
     }
     
     if (QGesture* tap = event->gesture(Qt::TapGesture)) {
-        handleTapGesture(tap->position());
+        if (QTapGesture* tapGesture = qobject_cast<QTapGesture*>(tap)) {
+            handleTapGesture(tapGesture->position());
+        }
         handled = true;
     }
-    
+
     if (QGesture* longPress = event->gesture(Qt::TapAndHoldGesture)) {
-        handleLongPressGesture(longPress->position());
+        if (QTapAndHoldGesture* holdGesture = qobject_cast<QTapAndHoldGesture*>(longPress)) {
+            handleLongPressGesture(holdGesture->position());
+        }
         handled = true;
     }
     

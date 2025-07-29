@@ -324,6 +324,10 @@ protected:
     void updateStateStyle() override;
     void performStateTransition(Core::FluentState from, Core::FluentState to) override;
 
+    // Accessibility helpers
+    void updateAccessibilityInfo();
+    void announceCurrentItem();
+
 private slots:
     void onAutoPlayTimer();
     void onTransitionAnimationValueChanged(const QVariant& value);
@@ -366,10 +370,6 @@ private:
     bool isValidIndex(int index) const;
     QRect getItemRect(int index) const;
     QPoint getItemPosition(int index) const;
-
-    // Accessibility helpers
-    void updateAccessibilityInfo();
-    void announceCurrentItem();
 
 private:
     // Configuration

@@ -724,6 +724,265 @@ void hovered(bool isHovered);
 void focusChanged(bool hasFocus);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Product Configuration Interface
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QLabel>
+#include <QButtonGroup>
+#include <QSpinBox>
+#include "FluentQt/Components/FluentRadioButton.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCard.h"
+
+class ProductConfigurator : public QWidget {
+    Q_OBJECT
+public:
+    ProductConfigurator(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        connectSignals();
+        updatePricing();
+    }
+
+private slots:
+    void updatePricing() {
+        double basePrice = 999.0;
+        double sizeMultiplier = 1.0;
+        double colorMultiplier = 1.0;
+        double storageMultiplier = 1.0;
+
+        // Size pricing
+        if (m_sizeGroup->checkedId() == 1) sizeMultiplier = 1.2; // Medium
+        else if (m_sizeGroup->checkedId() == 2) sizeMultiplier = 1.5; // Large
+
+        // Color pricing
+        if (m_colorGroup->checkedId() == 1) colorMultiplier = 1.1; // Premium color
+        else if (m_colorGroup->checkedId() == 2) colorMultiplier = 1.15; // Special edition
+
+        // Storage pricing
+        if (m_storageGroup->checkedId() == 1) storageMultiplier = 1.3; // 256GB
+        else if (m_storageGroup->checkedId() == 2) storageMultiplier = 1.6; // 512GB
+        else if (m_storageGroup->checkedId() == 3) storageMultiplier = 2.0; // 1TB
+
+        double totalPrice = basePrice * sizeMultiplier * colorMultiplier * storageMultiplier;
+        int quantity = m_quantitySpinBox->value();
+
+        m_priceLabel->setText(QString("Price: $%1 each").arg(totalPrice, 0, 'f', 2));
+        m_totalLabel->setText(QString("Total: $%1").arg(totalPrice * quantity, 0, 'f', 2));
+
+        updateConfigurationSummary();
+    }
+
+    void updateConfigurationSummary() {
+        QStringList config;
+
+        // Size
+        auto* sizeButton = qobject_cast<FluentRadioButton*>(m_sizeGroup->checkedButton());
+        if (sizeButton) config << "Size: " + sizeButton->text();
+
+        // Color
+        auto* colorButton = qobject_cast<FluentRadioButton*>(m_colorGroup->checkedButton());
+        if (colorButton) config << "Color: " + colorButton->text();
+
+        // Storage
+        auto* storageButton = qobject_cast<FluentRadioButton*>(m_storageGroup->checkedButton());
+        if (storageButton) config << "Storage: " + storageButton->text();
+
+        m_configLabel->setText(config.join(" • "));
+    }
+
+    void addToCart() {
+        m_addToCartButton->setLoading(true);
+        m_addToCartButton->setText("Adding to Cart...");
+
+        // Simulate adding to cart
+        QTimer::singleShot(1500, [this]() {
+            m_addToCartButton->setLoading(false);
+            m_addToCartButton->setText("✓ Added to Cart");
+            m_addToCartButton->setButtonStyle(FluentButtonStyle::Accent);
+
+            QTimer::singleShot(2000, [this]() {
+                m_addToCartButton->setText("Add to Cart");
+                m_addToCartButton->setButtonStyle(FluentButtonStyle::Primary);
+            });
+        });
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Product title
+        auto* title = new QLabel("Customize Your Product");
+        title->setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 20px;");
+
+        // Size selection
+        auto* sizeCard = new FluentCard;
+        auto* sizeLayout = new QVBoxLayout(sizeCard);
+        auto* sizeTitle = new QLabel("Size");
+        sizeTitle->setStyleSheet("font-weight: bold; margin-bottom: 10px;");
+
+        m_sizeGroup = new QButtonGroup(this);
+
+        auto* smallSize = new FluentRadioButton("Small (13\")");
+        smallSize->setDescription("Perfect for portability");
+        auto* mediumSize = new FluentRadioButton("Medium (15\")");
+        mediumSize->setDescription("Balanced performance and portability (+$200)");
+        auto* largeSize = new FluentRadioButton("Large (17\")");
+        largeSize->setDescription("Maximum screen real estate (+$500)");
+
+        m_sizeGroup->addButton(smallSize, 0);
+        m_sizeGroup->addButton(mediumSize, 1);
+        m_sizeGroup->addButton(largeSize, 2);
+
+        smallSize->setChecked(true); // Default selection
+
+        sizeLayout->addWidget(sizeTitle);
+        sizeLayout->addWidget(smallSize);
+        sizeLayout->addWidget(mediumSize);
+        sizeLayout->addWidget(largeSize);
+
+        // Color selection
+        auto* colorCard = new FluentCard;
+        auto* colorLayout = new QVBoxLayout(colorCard);
+        auto* colorTitle = new QLabel("Color");
+        colorTitle->setStyleSheet("font-weight: bold; margin-bottom: 10px;");
+
+        m_colorGroup = new QButtonGroup(this);
+
+        auto* silverColor = new FluentRadioButton("Silver");
+        silverColor->setDescription("Classic silver finish");
+        auto* spaceGray = new FluentRadioButton("Space Gray");
+        spaceGray->setDescription("Premium space gray (+$100)");
+        auto* goldColor = new FluentRadioButton("Gold");
+        goldColor->setDescription("Limited edition gold (+$150)");
+
+        m_colorGroup->addButton(silverColor, 0);
+        m_colorGroup->addButton(spaceGray, 1);
+        m_colorGroup->addButton(goldColor, 2);
+
+        silverColor->setChecked(true);
+
+        colorLayout->addWidget(colorTitle);
+        colorLayout->addWidget(silverColor);
+        colorLayout->addWidget(spaceGray);
+        colorLayout->addWidget(goldColor);
+
+        // Storage selection
+        auto* storageCard = new FluentCard;
+        auto* storageLayout = new QVBoxLayout(storageCard);
+        auto* storageTitle = new QLabel("Storage");
+        storageTitle->setStyleSheet("font-weight: bold; margin-bottom: 10px;");
+
+        m_storageGroup = new QButtonGroup(this);
+
+        auto* storage128 = new FluentRadioButton("128GB");
+        storage128->setDescription("Basic storage");
+        auto* storage256 = new FluentRadioButton("256GB");
+        storage256->setDescription("Recommended for most users (+$300)");
+        auto* storage512 = new FluentRadioButton("512GB");
+        storage512->setDescription("For power users (+$600)");
+        auto* storage1TB = new FluentRadioButton("1TB");
+        storage1TB->setDescription("Maximum storage (+$1000)");
+
+        m_storageGroup->addButton(storage128, 0);
+        m_storageGroup->addButton(storage256, 1);
+        m_storageGroup->addButton(storage512, 2);
+        m_storageGroup->addButton(storage1TB, 3);
+
+        storage128->setChecked(true);
+
+        storageLayout->addWidget(storageTitle);
+        storageLayout->addWidget(storage128);
+        storageLayout->addWidget(storage256);
+        storageLayout->addWidget(storage512);
+        storageLayout->addWidget(storage1TB);
+
+        // Quantity and pricing
+        auto* orderCard = new FluentCard;
+        auto* orderLayout = new QVBoxLayout(orderCard);
+
+        auto* quantityLayout = new QHBoxLayout;
+        auto* quantityLabel = new QLabel("Quantity:");
+        m_quantitySpinBox = new QSpinBox;
+        m_quantitySpinBox->setRange(1, 10);
+        m_quantitySpinBox->setValue(1);
+
+        quantityLayout->addWidget(quantityLabel);
+        quantityLayout->addWidget(m_quantitySpinBox);
+        quantityLayout->addStretch();
+
+        m_configLabel = new QLabel;
+        m_configLabel->setStyleSheet("color: gray; margin: 10px 0;");
+
+        m_priceLabel = new QLabel("Price: $999.00 each");
+        m_priceLabel->setStyleSheet("font-size: 16px; font-weight: bold;");
+
+        m_totalLabel = new QLabel("Total: $999.00");
+        m_totalLabel->setStyleSheet("font-size: 18px; font-weight: bold; color: #0078d4;");
+
+        m_addToCartButton = new FluentButton("Add to Cart");
+        m_addToCartButton->setButtonStyle(FluentButtonStyle::Primary);
+
+        orderLayout->addLayout(quantityLayout);
+        orderLayout->addWidget(m_configLabel);
+        orderLayout->addWidget(m_priceLabel);
+        orderLayout->addWidget(m_totalLabel);
+        orderLayout->addWidget(m_addToCartButton);
+
+        layout->addWidget(title);
+        layout->addWidget(sizeCard);
+        layout->addWidget(colorCard);
+        layout->addWidget(storageCard);
+        layout->addWidget(orderCard);
+    }
+
+    void connectSignals() {
+        // Connect all radio button groups to update pricing
+        connect(m_sizeGroup, QOverload<int>::of(&QButtonGroup::idClicked),
+                this, &ProductConfigurator::updatePricing);
+        connect(m_colorGroup, QOverload<int>::of(&QButtonGroup::idClicked),
+                this, &ProductConfigurator::updatePricing);
+        connect(m_storageGroup, QOverload<int>::of(&QButtonGroup::idClicked),
+                this, &ProductConfigurator::updatePricing);
+
+        // Connect quantity changes
+        connect(m_quantitySpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+                this, &ProductConfigurator::updatePricing);
+
+        // Connect add to cart button
+        connect(m_addToCartButton, &FluentButton::clicked,
+                this, &ProductConfigurator::addToCart);
+    }
+
+    QButtonGroup* m_sizeGroup;
+    QButtonGroup* m_colorGroup;
+    QButtonGroup* m_storageGroup;
+    QSpinBox* m_quantitySpinBox;
+    QLabel* m_configLabel;
+    QLabel* m_priceLabel;
+    QLabel* m_totalLabel;
+    FluentButton* m_addToCartButton;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    ProductConfigurator configurator;
+    configurator.show();
+
+    return app.exec();
+}
+
+#include "product_configurator.moc"
+```
+
 ## See Also
 
 - [FluentCheckBox](FluentCheckBox.md) - For multiple selection options

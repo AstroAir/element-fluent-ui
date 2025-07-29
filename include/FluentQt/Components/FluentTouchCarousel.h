@@ -180,8 +180,8 @@ signals:
 protected:
     // Event handling
     bool event(QEvent* event) override;
-    void touchEvent(QTouchEvent* event) override;
-    bool gestureEvent(QGestureEvent* event) override;
+    void touchEvent(QTouchEvent* event);
+    bool gestureEvent(QGestureEvent* event);
     void mousePressEvent(QMouseEvent* event) override;
     void mouseMoveEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;

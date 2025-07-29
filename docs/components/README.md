@@ -1,8 +1,8 @@
-# FluentCarousel Components
+# Element Fluent UI Components
 
 ## Overview
 
-The FluentCarousel component family provides a comprehensive set of carousel implementations for the Element Fluent UI library. These components follow Microsoft's Fluent Design System principles and offer smooth animations, accessibility features, and responsive design.
+This directory contains comprehensive documentation for all Element Fluent UI components. Each component follows Microsoft's Fluent Design System principles and provides modern, accessible, and responsive user interface elements for Qt6 applications.
 
 ## Components
 

@@ -1084,4 +1084,16 @@ void FluentCarousel::announceCurrentItem() {
     setAccessibleDescription(announcement);
 }
 
+void FluentCarousel::updateStateStyle() {
+    // Update visual styling based on current state
+    update();
+}
+
+void FluentCarousel::performStateTransition(Core::FluentState from, Core::FluentState to) {
+    Q_UNUSED(from)
+    Q_UNUSED(to)
+    // Perform any state transition animations or effects
+    updateStateStyle();
+}
+
 } // namespace FluentQt::Components

@@ -17,7 +17,7 @@ public:
     void setText(QAccessible::Text type, const QString& text) override;
     QAccessible::Role role() const override;
     QAccessible::State state() const override;
-    
+
     // Enhanced descriptions for Fluent components
     QString description() const;
     QString help() const;
@@ -27,6 +27,11 @@ protected:
     virtual QAccessible::Role getFluentRole() const;
     virtual QAccessible::State getFluentState() const;
     virtual QString getFluentDescription() const;
+
+    // Safe object access helper methods (protected for testing)
+    QObject* safeObject() const;
+    QWidget* safeWidget() const;
+    bool isObjectValid() const;
 };
 
 // Accessibility helper functions

@@ -438,6 +438,301 @@ void titleChanged(const QString& title);
 void contentChanged();
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Social Media Feed Interface
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QScrollArea>
+#include <QLabel>
+#include <QPixmap>
+#include <QTimer>
+#include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentTextInput.h"
+
+struct PostData {
+    QString author;
+    QString content;
+    QString timestamp;
+    int likes;
+    int comments;
+    QString avatarPath;
+};
+
+class SocialFeedWidget : public QWidget {
+    Q_OBJECT
+public:
+    SocialFeedWidget(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        loadSamplePosts();
+        connectSignals();
+    }
+
+private slots:
+    void createNewPost() {
+        QString content = m_postInput->text().trimmed();
+        if (content.isEmpty()) return;
+
+        PostData newPost;
+        newPost.author = "You";
+        newPost.content = content;
+        newPost.timestamp = "Just now";
+        newPost.likes = 0;
+        newPost.comments = 0;
+        newPost.avatarPath = ":/avatars/user.png";
+
+        auto* postCard = createPostCard(newPost);
+        m_feedLayout->insertWidget(1, postCard); // Insert after compose card
+
+        m_postInput->clear();
+        m_postButton->setText("✓ Posted!");
+        m_postButton->setButtonStyle(FluentButtonStyle::Accent);
+
+        QTimer::singleShot(2000, [this]() {
+            m_postButton->setText("Post");
+            m_postButton->setButtonStyle(FluentButtonStyle::Primary);
+        });
+    }
+
+    void likePost(FluentCard* card, QLabel* likeLabel, int* likeCount) {
+        (*likeCount)++;
+        likeLabel->setText(QString("❤ %1").arg(*likeCount));
+
+        // Add animation effect
+        card->setStyleSheet("FluentCard { border: 2px solid #e74c3c; }");
+        QTimer::singleShot(300, [card]() {
+            card->setStyleSheet("");
+        });
+    }
+
+    void sharePost(const QString& content) {
+        // Simulate sharing functionality
+        qDebug() << "Sharing post:" << content;
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Header
+        auto* headerCard = new FluentCard();
+        headerCard->setCardStyle(FluentCardStyle::Elevated);
+        headerCard->setElevation(FluentCardElevation::Low);
+
+        auto* headerWidget = new QWidget;
+        auto* headerLayout = new QHBoxLayout(headerWidget);
+
+        auto* titleLabel = new QLabel("Social Feed");
+        titleLabel->setStyleSheet("font-size: 24px; font-weight: bold;");
+
+        auto* refreshButton = new FluentButton("Refresh");
+        refreshButton->setButtonStyle(FluentButtonStyle::Subtle);
+
+        headerLayout->addWidget(titleLabel);
+        headerLayout->addStretch();
+        headerLayout->addWidget(refreshButton);
+
+        headerCard->setContentWidget(headerWidget);
+
+        // Compose post card
+        auto* composeCard = createComposeCard();
+
+        // Feed scroll area
+        auto* scrollArea = new QScrollArea;
+        auto* feedWidget = new QWidget;
+        m_feedLayout = new QVBoxLayout(feedWidget);
+        m_feedLayout->setSpacing(10);
+
+        scrollArea->setWidget(feedWidget);
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+        layout->addWidget(headerCard);
+        layout->addWidget(composeCard);
+        layout->addWidget(scrollArea);
+    }
+
+    FluentCard* createComposeCard() {
+        auto* card = new FluentCard("What's on your mind?");
+        card->setCardStyle(FluentCardStyle::Outlined);
+        card->setElevation(FluentCardElevation::Low);
+
+        auto* contentWidget = new QWidget;
+        auto* layout = new QVBoxLayout(contentWidget);
+
+        m_postInput = new FluentTextInput();
+        m_postInput->setPlaceholderText("Share your thoughts...");
+        m_postInput->setInputType(FluentTextInputType::Multiline);
+        m_postInput->setMaximumHeight(100);
+
+        auto* buttonLayout = new QHBoxLayout;
+
+        auto* attachButton = new FluentButton("📎 Attach");
+        attachButton->setButtonStyle(FluentButtonStyle::Subtle);
+        attachButton->setButtonSize(FluentButtonSize::Small);
+
+        auto* emojiButton = new FluentButton("😊 Emoji");
+        emojiButton->setButtonStyle(FluentButtonStyle::Subtle);
+        emojiButton->setButtonSize(FluentButtonSize::Small);
+
+        m_postButton = new FluentButton("Post");
+        m_postButton->setButtonStyle(FluentButtonStyle::Primary);
+        m_postButton->setButtonSize(FluentButtonSize::Small);
+
+        buttonLayout->addWidget(attachButton);
+        buttonLayout->addWidget(emojiButton);
+        buttonLayout->addStretch();
+        buttonLayout->addWidget(m_postButton);
+
+        layout->addWidget(m_postInput);
+        layout->addLayout(buttonLayout);
+
+        card->setContentWidget(contentWidget);
+        return card;
+    }
+
+    FluentCard* createPostCard(const PostData& post) {
+        auto* card = new FluentCard();
+        card->setCardStyle(FluentCardStyle::Default);
+        card->setElevation(FluentCardElevation::Low);
+        card->setSelectable(true);
+
+        auto* contentWidget = new QWidget;
+        auto* layout = new QVBoxLayout(contentWidget);
+
+        // Post header
+        auto* headerLayout = new QHBoxLayout;
+
+        auto* avatarLabel = new QLabel;
+        avatarLabel->setFixedSize(40, 40);
+        avatarLabel->setStyleSheet("border-radius: 20px; background-color: #0078d4;");
+        avatarLabel->setAlignment(Qt::AlignCenter);
+        avatarLabel->setText(post.author.left(1).toUpper());
+        avatarLabel->setStyleSheet(avatarLabel->styleSheet() + " color: white; font-weight: bold;");
+
+        auto* authorInfoLayout = new QVBoxLayout;
+        auto* authorLabel = new QLabel(post.author);
+        authorLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+
+        auto* timestampLabel = new QLabel(post.timestamp);
+        timestampLabel->setStyleSheet("color: gray; font-size: 12px;");
+
+        authorInfoLayout->addWidget(authorLabel);
+        authorInfoLayout->addWidget(timestampLabel);
+        authorInfoLayout->setSpacing(2);
+
+        auto* moreButton = new FluentButton("⋯");
+        moreButton->setButtonStyle(FluentButtonStyle::Subtle);
+        moreButton->setButtonSize(FluentButtonSize::Small);
+        moreButton->setFixedSize(30, 30);
+
+        headerLayout->addWidget(avatarLabel);
+        headerLayout->addLayout(authorInfoLayout);
+        headerLayout->addStretch();
+        headerLayout->addWidget(moreButton);
+
+        // Post content
+        auto* contentLabel = new QLabel(post.content);
+        contentLabel->setWordWrap(true);
+        contentLabel->setStyleSheet("font-size: 14px; margin: 10px 0;");
+
+        // Post actions
+        auto* actionsLayout = new QHBoxLayout;
+
+        auto* likeButton = new FluentButton(QString("❤ %1").arg(post.likes));
+        likeButton->setButtonStyle(FluentButtonStyle::Subtle);
+        likeButton->setButtonSize(FluentButtonSize::Small);
+
+        auto* commentButton = new FluentButton(QString("💬 %1").arg(post.comments));
+        commentButton->setButtonStyle(FluentButtonStyle::Subtle);
+        commentButton->setButtonSize(FluentButtonSize::Small);
+
+        auto* shareButton = new FluentButton("🔗 Share");
+        shareButton->setButtonStyle(FluentButtonStyle::Subtle);
+        shareButton->setButtonSize(FluentButtonSize::Small);
+
+        // Store like count for this post
+        int* likeCount = new int(post.likes);
+        auto* likeLabel = qobject_cast<QLabel*>(likeButton);
+
+        connect(likeButton, &FluentButton::clicked, [this, card, likeButton, likeCount]() {
+            (*likeCount)++;
+            likeButton->setText(QString("❤ %1").arg(*likeCount));
+
+            // Visual feedback
+            card->setStyleSheet("FluentCard { border: 2px solid #e74c3c; }");
+            QTimer::singleShot(300, [card]() {
+                card->setStyleSheet("");
+            });
+        });
+
+        connect(shareButton, &FluentButton::clicked, [this, post]() {
+            sharePost(post.content);
+        });
+
+        actionsLayout->addWidget(likeButton);
+        actionsLayout->addWidget(commentButton);
+        actionsLayout->addWidget(shareButton);
+        actionsLayout->addStretch();
+
+        layout->addLayout(headerLayout);
+        layout->addWidget(contentLabel);
+        layout->addLayout(actionsLayout);
+
+        card->setContentWidget(contentWidget);
+        return card;
+    }
+
+    void loadSamplePosts() {
+        QList<PostData> samplePosts = {
+            {"Alice Johnson", "Just finished an amazing book! 📚 'The Design of Everyday Things' by Don Norman. Highly recommend it to anyone interested in UX design.", "2 hours ago", 15, 3, ""},
+            {"Bob Smith", "Beautiful sunset today! 🌅 Sometimes you need to stop and appreciate the simple things in life.", "4 hours ago", 23, 7, ""},
+            {"Carol Davis", "Excited to announce that I'll be speaking at the upcoming Tech Conference! Looking forward to sharing insights about modern UI frameworks.", "6 hours ago", 42, 12, ""},
+            {"David Wilson", "Coffee and code - the perfect combination for a productive morning! ☕💻 Working on some exciting new features.", "8 hours ago", 18, 5, ""}
+        };
+
+        for (const auto& post : samplePosts) {
+            auto* postCard = createPostCard(post);
+            m_feedLayout->addWidget(postCard);
+        }
+
+        m_feedLayout->addStretch();
+    }
+
+    void connectSignals() {
+        connect(m_postButton, &FluentButton::clicked, this, &SocialFeedWidget::createNewPost);
+
+        // Enable posting when text is entered
+        connect(m_postInput, &FluentTextInput::textChanged, [this](const QString& text) {
+            m_postButton->setEnabled(!text.trimmed().isEmpty());
+        });
+
+        m_postButton->setEnabled(false);
+    }
+
+    QVBoxLayout* m_feedLayout;
+    FluentTextInput* m_postInput;
+    FluentButton* m_postButton;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    SocialFeedWidget feed;
+    feed.resize(600, 800);
+    feed.show();
+
+    return app.exec();
+}
+
+#include "social_feed.moc"
+```
+
 ## See Also
 
 - [FluentPanel](FluentPanel.md) - For general container components

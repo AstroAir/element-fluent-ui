@@ -327,4 +327,84 @@ void FluentBasicCarousel::onItemCountChanged(int count) {
     updateButtonStates();
 }
 
+// FluentCarouselNavigation implementation
+FluentCarouselNavigation::FluentCarouselNavigation(QWidget* parent)
+    : QWidget(parent)
+    , m_layout(new QHBoxLayout(this))
+{
+    initializeNavigation();
+}
+
+void FluentCarouselNavigation::initializeNavigation() {
+    m_previousButton = new FluentButton(this);
+    m_nextButton = new FluentButton(this);
+
+    m_previousButton->setText("Previous");
+    m_nextButton->setText("Next");
+
+    m_layout->addWidget(m_previousButton);
+    m_layout->addWidget(m_nextButton);
+    m_layout->setContentsMargins(0, 0, 0, 0);
+
+    connect(m_previousButton, &FluentButton::clicked,
+            this, &FluentCarouselNavigation::previousClicked);
+    connect(m_nextButton, &FluentButton::clicked,
+            this, &FluentCarouselNavigation::nextClicked);
+}
+
+void FluentCarouselNavigation::setPreviousButtonText(const QString& text) {
+    if (m_previousButton) {
+        m_previousButton->setText(text);
+    }
+}
+
+void FluentCarouselNavigation::setNextButtonText(const QString& text) {
+    if (m_nextButton) {
+        m_nextButton->setText(text);
+    }
+}
+
+void FluentCarouselNavigation::setButtonStyle(FluentButtonStyle style) {
+    if (m_previousButton) {
+        m_previousButton->setButtonStyle(style);
+    }
+    if (m_nextButton) {
+        m_nextButton->setButtonStyle(style);
+    }
+}
+
+void FluentCarouselNavigation::setButtonsEnabled(bool enabled) {
+    if (m_previousButton) {
+        m_previousButton->setEnabled(enabled);
+    }
+    if (m_nextButton) {
+        m_nextButton->setEnabled(enabled);
+    }
+}
+
+void FluentCarouselNavigation::updateButtonStates(bool canGoPrevious, bool canGoNext) {
+    if (m_previousButton) {
+        m_previousButton->setEnabled(canGoPrevious);
+    }
+    if (m_nextButton) {
+        m_nextButton->setEnabled(canGoNext);
+    }
+}
+
+void FluentCarouselNavigation::paintEvent(QPaintEvent* event) {
+    Q_UNUSED(event)
+    QWidget::paintEvent(event);
+}
+
+void FluentCarouselNavigation::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    updateLayout();
+}
+
+void FluentCarouselNavigation::updateLayout() {
+    if (m_layout) {
+        m_layout->setGeometry(rect());
+    }
+}
+
 } // namespace FluentQt::Components

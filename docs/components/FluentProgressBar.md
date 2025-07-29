@@ -549,6 +549,484 @@ void animationFinished();
 void stateChanged(FluentProgressState state);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: File Download Manager
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QTimer>
+#include <QRandomGenerator>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include "FluentQt/Components/FluentProgressBar.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentPanel.h"
+
+struct DownloadItem {
+    QString fileName;
+    QString url;
+    qint64 totalSize;
+    qint64 downloadedSize;
+    int speed; // KB/s
+    QTimer* timer;
+    FluentProgressBar* progressBar;
+    QLabel* statusLabel;
+    QLabel* speedLabel;
+    FluentButton* actionButton;
+    bool isPaused;
+    bool isCompleted;
+    int id;
+};
+
+class DownloadManager : public QWidget {
+    Q_OBJECT
+public:
+    DownloadManager(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        addSampleDownloads();
+        connectSignals();
+    }
+
+private slots:
+    void addNewDownload() {
+        // Simulate adding a new download
+        DownloadItem item;
+        item.id = m_nextId++;
+        item.fileName = QString("File_%1.zip").arg(item.id);
+        item.url = QString("https://example.com/files/file_%1.zip").arg(item.id);
+        item.totalSize = QRandomGenerator::global()->bounded(50, 500) * 1024 * 1024; // 50-500 MB
+        item.downloadedSize = 0;
+        item.speed = 0;
+        item.isPaused = false;
+        item.isCompleted = false;
+
+        addDownloadToList(item);
+        startDownload(item.id);
+    }
+
+    void pauseResumeDownload(int downloadId) {
+        auto it = std::find_if(m_downloads.begin(), m_downloads.end(),
+                              [downloadId](const DownloadItem& item) { return item.id == downloadId; });
+
+        if (it != m_downloads.end()) {
+            if (it->isPaused) {
+                resumeDownload(*it);
+            } else {
+                pauseDownload(*it);
+            }
+        }
+    }
+
+    void cancelDownload(int downloadId) {
+        auto it = std::find_if(m_downloads.begin(), m_downloads.end(),
+                              [downloadId](const DownloadItem& item) { return item.id == downloadId; });
+
+        if (it != m_downloads.end()) {
+            if (it->timer) {
+                it->timer->stop();
+                it->timer->deleteLater();
+            }
+
+            // Remove from UI
+            for (int i = 0; i < m_downloadsList->count(); ++i) {
+                auto* item = m_downloadsList->item(i);
+                if (item->data(Qt::UserRole).toInt() == downloadId) {
+                    delete m_downloadsList->takeItem(i);
+                    break;
+                }
+            }
+
+            m_downloads.erase(it);
+            updateOverallProgress();
+        }
+    }
+
+    void updateDownloadProgress(int downloadId) {
+        auto it = std::find_if(m_downloads.begin(), m_downloads.end(),
+                              [downloadId](const DownloadItem& item) { return item.id == downloadId; });
+
+        if (it != m_downloads.end() && !it->isPaused && !it->isCompleted) {
+            // Simulate download progress
+            int increment = QRandomGenerator::global()->bounded(50, 200); // KB
+            it->downloadedSize += increment * 1024;
+            it->speed = QRandomGenerator::global()->bounded(100, 2000); // KB/s
+
+            if (it->downloadedSize >= it->totalSize) {
+                // Download completed
+                it->downloadedSize = it->totalSize;
+                it->isCompleted = true;
+                it->timer->stop();
+
+                it->progressBar->setValue(100);
+                it->statusLabel->setText("Completed");
+                it->speedLabel->setText("Done");
+                it->actionButton->setText("Open");
+                it->actionButton->setButtonStyle(FluentButtonStyle::Accent);
+
+                updateOverallProgress();
+                return;
+            }
+
+            // Update progress bar
+            double percentage = (double)it->downloadedSize / it->totalSize * 100;
+            it->progressBar->setValue((int)percentage);
+
+            // Update status
+            QString downloaded = formatFileSize(it->downloadedSize);
+            QString total = formatFileSize(it->totalSize);
+            it->statusLabel->setText(QString("%1 / %2").arg(downloaded, total));
+
+            // Update speed
+            it->speedLabel->setText(QString("%1 KB/s").arg(it->speed));
+
+            // Estimate time remaining
+            if (it->speed > 0) {
+                qint64 remaining = it->totalSize - it->downloadedSize;
+                int secondsRemaining = remaining / (it->speed * 1024);
+                QString timeText = formatTime(secondsRemaining);
+                it->speedLabel->setText(QString("%1 KB/s - %2 remaining").arg(it->speed).arg(timeText));
+            }
+
+            updateOverallProgress();
+        }
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QVBoxLayout(this);
+
+        // Header
+        auto* headerCard = new FluentCard("Download Manager");
+        auto* headerLayout = new QHBoxLayout;
+
+        auto* titleLabel = new QLabel("Downloads");
+        titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+
+        auto* addButton = new FluentButton("+ Add Download");
+        addButton->setButtonStyle(FluentButtonStyle::Primary);
+        connect(addButton, &FluentButton::clicked, this, &DownloadManager::addNewDownload);
+
+        auto* pauseAllButton = new FluentButton("⏸ Pause All");
+        pauseAllButton->setButtonStyle(FluentButtonStyle::Subtle);
+
+        auto* clearButton = new FluentButton("🗑 Clear Completed");
+        clearButton->setButtonStyle(FluentButtonStyle::Subtle);
+
+        headerLayout->addWidget(titleLabel);
+        headerLayout->addStretch();
+        headerLayout->addWidget(addButton);
+        headerLayout->addWidget(pauseAllButton);
+        headerLayout->addWidget(clearButton);
+
+        headerCard->setContentWidget(new QWidget);
+        headerCard->contentWidget()->setLayout(headerLayout);
+
+        // Overall progress
+        auto* overallCard = new FluentCard("Overall Progress");
+        auto* overallLayout = new QVBoxLayout;
+
+        m_overallProgress = new FluentProgressBar;
+        m_overallProgress->setProgressStyle(FluentProgressStyle::Linear);
+        m_overallProgress->setRange(0, 100);
+        m_overallProgress->setValue(0);
+        m_overallProgress->setFormat("Overall: %p%");
+
+        m_overallStatusLabel = new QLabel("No active downloads");
+        m_overallStatusLabel->setStyleSheet("color: gray;");
+
+        overallLayout->addWidget(m_overallProgress);
+        overallLayout->addWidget(m_overallStatusLabel);
+
+        overallCard->setContentWidget(new QWidget);
+        overallCard->contentWidget()->setLayout(overallLayout);
+
+        // Downloads list
+        auto* listCard = new FluentCard("Active Downloads");
+        auto* listLayout = new QVBoxLayout;
+
+        m_downloadsList = new QListWidget;
+        m_downloadsList->setAlternatingRowColors(true);
+        m_downloadsList->setMinimumHeight(400);
+
+        listLayout->addWidget(m_downloadsList);
+
+        listCard->setContentWidget(new QWidget);
+        listCard->contentWidget()->setLayout(listLayout);
+
+        layout->addWidget(headerCard);
+        layout->addWidget(overallCard);
+        layout->addWidget(listCard);
+    }
+
+    void addSampleDownloads() {
+        m_nextId = 1;
+
+        // Add some sample downloads in different states
+        DownloadItem item1;
+        item1.id = m_nextId++;
+        item1.fileName = "Ubuntu-22.04.iso";
+        item1.url = "https://ubuntu.com/download/ubuntu-22.04.iso";
+        item1.totalSize = 3.5 * 1024 * 1024 * 1024; // 3.5 GB
+        item1.downloadedSize = 1.2 * 1024 * 1024 * 1024; // 1.2 GB downloaded
+        item1.speed = 1500;
+        item1.isPaused = false;
+        item1.isCompleted = false;
+
+        DownloadItem item2;
+        item2.id = m_nextId++;
+        item2.fileName = "Visual_Studio_Code.exe";
+        item2.url = "https://code.visualstudio.com/download";
+        item2.totalSize = 85 * 1024 * 1024; // 85 MB
+        item2.downloadedSize = 85 * 1024 * 1024; // Completed
+        item2.speed = 0;
+        item2.isPaused = false;
+        item2.isCompleted = true;
+
+        DownloadItem item3;
+        item3.id = m_nextId++;
+        item3.fileName = "Qt_6.5.0_Installer.exe";
+        item3.url = "https://qt.io/download";
+        item3.totalSize = 2.1 * 1024 * 1024 * 1024; // 2.1 GB
+        item3.downloadedSize = 450 * 1024 * 1024; // 450 MB downloaded
+        item3.speed = 0;
+        item3.isPaused = true;
+        item3.isCompleted = false;
+
+        addDownloadToList(item1);
+        addDownloadToList(item2);
+        addDownloadToList(item3);
+
+        // Start active downloads
+        if (!item1.isCompleted && !item1.isPaused) {
+            startDownload(item1.id);
+        }
+
+        updateOverallProgress();
+    }
+
+    void addDownloadToList(const DownloadItem& download) {
+        m_downloads.append(download);
+        auto& item = m_downloads.last();
+
+        // Create download widget
+        auto* widget = new QWidget;
+        auto* layout = new QVBoxLayout(widget);
+
+        // File info row
+        auto* infoLayout = new QHBoxLayout;
+
+        auto* fileNameLabel = new QLabel(item.fileName);
+        fileNameLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
+
+        auto* urlLabel = new QLabel(item.url);
+        urlLabel->setStyleSheet("color: gray; font-size: 11px;");
+        urlLabel->setWordWrap(true);
+
+        infoLayout->addWidget(fileNameLabel);
+        infoLayout->addStretch();
+
+        // Progress row
+        auto* progressLayout = new QHBoxLayout;
+
+        item.progressBar = new FluentProgressBar;
+        item.progressBar->setProgressStyle(FluentProgressStyle::Linear);
+        item.progressBar->setRange(0, 100);
+
+        double percentage = item.totalSize > 0 ? (double)item.downloadedSize / item.totalSize * 100 : 0;
+        item.progressBar->setValue((int)percentage);
+
+        progressLayout->addWidget(item.progressBar);
+
+        // Status row
+        auto* statusLayout = new QHBoxLayout;
+
+        item.statusLabel = new QLabel;
+        item.speedLabel = new QLabel;
+        item.actionButton = new FluentButton;
+
+        if (item.isCompleted) {
+            item.statusLabel->setText("Completed");
+            item.speedLabel->setText("Done");
+            item.actionButton->setText("Open");
+            item.actionButton->setButtonStyle(FluentButtonStyle::Accent);
+        } else if (item.isPaused) {
+            QString downloaded = formatFileSize(item.downloadedSize);
+            QString total = formatFileSize(item.totalSize);
+            item.statusLabel->setText(QString("%1 / %2").arg(downloaded, total));
+            item.speedLabel->setText("Paused");
+            item.actionButton->setText("Resume");
+            item.actionButton->setButtonStyle(FluentButtonStyle::Primary);
+        } else {
+            QString downloaded = formatFileSize(item.downloadedSize);
+            QString total = formatFileSize(item.totalSize);
+            item.statusLabel->setText(QString("%1 / %2").arg(downloaded, total));
+            item.speedLabel->setText(QString("%1 KB/s").arg(item.speed));
+            item.actionButton->setText("Pause");
+            item.actionButton->setButtonStyle(FluentButtonStyle::Subtle);
+        }
+
+        item.actionButton->setButtonSize(FluentButtonSize::Small);
+
+        auto* cancelButton = new FluentButton("Cancel");
+        cancelButton->setButtonStyle(FluentButtonStyle::Subtle);
+        cancelButton->setButtonSize(FluentButtonSize::Small);
+
+        statusLayout->addWidget(item.statusLabel);
+        statusLayout->addWidget(item.speedLabel);
+        statusLayout->addStretch();
+        statusLayout->addWidget(item.actionButton);
+        statusLayout->addWidget(cancelButton);
+
+        layout->addLayout(infoLayout);
+        layout->addWidget(urlLabel);
+        layout->addLayout(progressLayout);
+        layout->addLayout(statusLayout);
+
+        // Add to list
+        auto* listItem = new QListWidgetItem;
+        listItem->setSizeHint(widget->sizeHint());
+        listItem->setData(Qt::UserRole, item.id);
+
+        m_downloadsList->addItem(listItem);
+        m_downloadsList->setItemWidget(listItem, widget);
+
+        // Connect signals
+        connect(item.actionButton, &FluentButton::clicked, [this, item]() {
+            if (item.isCompleted) {
+                // Open file
+                qDebug() << "Opening file:" << item.fileName;
+            } else {
+                pauseResumeDownload(item.id);
+            }
+        });
+
+        connect(cancelButton, &FluentButton::clicked, [this, item]() {
+            cancelDownload(item.id);
+        });
+    }
+
+    void startDownload(int downloadId) {
+        auto it = std::find_if(m_downloads.begin(), m_downloads.end(),
+                              [downloadId](const DownloadItem& item) { return item.id == downloadId; });
+
+        if (it != m_downloads.end()) {
+            it->timer = new QTimer(this);
+            connect(it->timer, &QTimer::timeout, [this, downloadId]() {
+                updateDownloadProgress(downloadId);
+            });
+            it->timer->start(500); // Update every 500ms
+        }
+    }
+
+    void pauseDownload(DownloadItem& item) {
+        if (item.timer) {
+            item.timer->stop();
+        }
+        item.isPaused = true;
+        item.actionButton->setText("Resume");
+        item.actionButton->setButtonStyle(FluentButtonStyle::Primary);
+        item.speedLabel->setText("Paused");
+    }
+
+    void resumeDownload(DownloadItem& item) {
+        item.isPaused = false;
+        item.actionButton->setText("Pause");
+        item.actionButton->setButtonStyle(FluentButtonStyle::Subtle);
+        startDownload(item.id);
+    }
+
+    void updateOverallProgress() {
+        qint64 totalSize = 0;
+        qint64 totalDownloaded = 0;
+        int activeDownloads = 0;
+        int completedDownloads = 0;
+
+        for (const auto& item : m_downloads) {
+            totalSize += item.totalSize;
+            totalDownloaded += item.downloadedSize;
+
+            if (item.isCompleted) {
+                completedDownloads++;
+            } else if (!item.isPaused) {
+                activeDownloads++;
+            }
+        }
+
+        if (totalSize > 0) {
+            double percentage = (double)totalDownloaded / totalSize * 100;
+            m_overallProgress->setValue((int)percentage);
+        }
+
+        QString statusText;
+        if (activeDownloads > 0) {
+            statusText = QString("%1 active, %2 completed").arg(activeDownloads).arg(completedDownloads);
+        } else if (completedDownloads > 0) {
+            statusText = QString("%1 completed").arg(completedDownloads);
+        } else {
+            statusText = "No active downloads";
+        }
+
+        m_overallStatusLabel->setText(statusText);
+    }
+
+    QString formatFileSize(qint64 bytes) {
+        const qint64 KB = 1024;
+        const qint64 MB = KB * 1024;
+        const qint64 GB = MB * 1024;
+
+        if (bytes >= GB) {
+            return QString::number(bytes / (double)GB, 'f', 1) + " GB";
+        } else if (bytes >= MB) {
+            return QString::number(bytes / (double)MB, 'f', 1) + " MB";
+        } else if (bytes >= KB) {
+            return QString::number(bytes / (double)KB, 'f', 1) + " KB";
+        } else {
+            return QString::number(bytes) + " bytes";
+        }
+    }
+
+    QString formatTime(int seconds) {
+        if (seconds < 60) {
+            return QString("%1s").arg(seconds);
+        } else if (seconds < 3600) {
+            return QString("%1m %2s").arg(seconds / 60).arg(seconds % 60);
+        } else {
+            int hours = seconds / 3600;
+            int minutes = (seconds % 3600) / 60;
+            return QString("%1h %2m").arg(hours).arg(minutes);
+        }
+    }
+
+    void connectSignals() {
+        // Additional signal connections can be added here
+    }
+
+    QListWidget* m_downloadsList;
+    FluentProgressBar* m_overallProgress;
+    QLabel* m_overallStatusLabel;
+    QList<DownloadItem> m_downloads;
+    int m_nextId;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    DownloadManager manager;
+    manager.resize(800, 700);
+    manager.show();
+
+    return app.exec();
+}
+
+#include "download_manager.moc"
+```
+
 ## See Also
 
 - [FluentLoadingIndicator](FluentLoadingIndicator.md) - For simple loading states

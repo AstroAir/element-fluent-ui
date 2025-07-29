@@ -27,27 +27,72 @@ namespace FluentQt::Accessibility {
 
 // FluentAccessibleInterface Implementation
 FluentAccessibleInterface::FluentAccessibleInterface(QWidget* widget)
-    : QAccessibleWidget(widget, getFluentRole()) 
+    : QAccessibleWidget(widget, QAccessible::Client) // Use safe default role initially
 {
+    // Validate widget parameter
+    if (!widget) {
+        qWarning() << "FluentAccessibleInterface: Null widget passed to constructor";
+        return;
+    }
+
     // Additional initialization if needed
+    qDebug() << "FluentAccessibleInterface created for widget:" << widget->objectName();
+}
+
+// Safe object access helper methods
+QObject* FluentAccessibleInterface::safeObject() const {
+    QObject* obj = object();
+    if (!obj) {
+        qWarning() << "FluentAccessibleInterface: object() returned null pointer";
+        return nullptr;
+    }
+    return obj;
+}
+
+QWidget* FluentAccessibleInterface::safeWidget() const {
+    QObject* obj = safeObject();
+    if (!obj) {
+        return nullptr;
+    }
+
+    QWidget* widget = qobject_cast<QWidget*>(obj);
+    if (!widget) {
+        qWarning() << "FluentAccessibleInterface: object is not a QWidget";
+        return nullptr;
+    }
+
+    return widget;
+}
+
+bool FluentAccessibleInterface::isObjectValid() const {
+    return safeObject() != nullptr;
 }
 
 QString FluentAccessibleInterface::text(QAccessible::Text type) const {
+    // Early return if object is invalid
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::text: Invalid object, returning empty string";
+        return QString();
+    }
+
     switch (type) {
-        case QAccessible::Name:
-            if (!object()->objectName().isEmpty()) {
-                return object()->objectName();
+        case QAccessible::Name: {
+            QObject* obj = safeObject();
+            if (obj && !obj->objectName().isEmpty()) {
+                return obj->objectName();
             }
             return getFluentDescription();
-            
+        }
+
         case QAccessible::Description:
             return getFluentDescription();
-            
+
         case QAccessible::Help:
             return help();
-            
-        case QAccessible::Accelerator:
-            if (auto* widget = qobject_cast<QWidget*>(object())) {
+
+        case QAccessible::Accelerator: {
+            QWidget* widget = safeWidget();
+            if (widget) {
                 // Extract accelerator from text (e.g., "&Save" -> "Alt+S")
                 const QString text = widget->property("text").toString();
                 const int ampPos = text.indexOf('&');
@@ -57,36 +102,50 @@ QString FluentAccessibleInterface::text(QAccessible::Text type) const {
                 }
             }
             return QString();
-            
-        case QAccessible::Value:
-            if (auto* widget = qobject_cast<QWidget*>(object())) {
+        }
+
+        case QAccessible::Value: {
+            QWidget* widget = safeWidget();
+            if (widget) {
                 // For checkable buttons, return checked state
                 if (widget->property("checkable").toBool()) {
                     return widget->property("checked").toBool() ? "checked" : "unchecked";
                 }
-                
+
                 // For progress indicators, return current value
                 if (widget->inherits("QProgressBar")) {
                     return widget->property("value").toString();
                 }
             }
             return QString();
-            
+        }
+
         default:
             return QAccessibleWidget::text(type);
     }
 }
 
 void FluentAccessibleInterface::setText(QAccessible::Text type, const QString& text) {
+    // Early return if object is invalid
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::setText: Invalid object, cannot set text";
+        return;
+    }
+
+    QObject* obj = safeObject();
+    if (!obj) {
+        return;
+    }
+
     switch (type) {
         case QAccessible::Name:
-            object()->setObjectName(text);
+            obj->setObjectName(text);
             break;
-            
+
         case QAccessible::Description:
-            object()->setProperty("accessibleDescription", text);
+            obj->setProperty("accessibleDescription", text);
             break;
-            
+
         default:
             QAccessibleWidget::setText(type, text);
             break;
@@ -94,6 +153,10 @@ void FluentAccessibleInterface::setText(QAccessible::Text type, const QString& t
 }
 
 QAccessible::Role FluentAccessibleInterface::role() const {
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::role: Invalid object, returning default role";
+        return QAccessible::Client;
+    }
     return getFluentRole();
 }
 
@@ -116,13 +179,22 @@ QString FluentAccessibleInterface::description() const {
 }
 
 QString FluentAccessibleInterface::help() const {
-    const QString helpText = object()->property("accessibleHelp").toString();
-    if (!helpText.isEmpty()) {
-        return helpText;
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::help: Invalid object, returning empty help";
+        return QString();
     }
-    
+
+    QObject* obj = safeObject();
+    if (obj) {
+        const QString helpText = obj->property("accessibleHelp").toString();
+        if (!helpText.isEmpty()) {
+            return helpText;
+        }
+    }
+
     // Generate contextual help based on widget type
-    if (auto* widget = qobject_cast<QWidget*>(object())) {
+    QWidget* widget = safeWidget();
+    if (widget) {
         if (widget->inherits("FluentButton")) {
             return "Press Space or Enter to activate this button";
         } else if (widget->inherits("FluentCard")) {
@@ -133,39 +205,45 @@ QString FluentAccessibleInterface::help() const {
             return "Card containing information and controls";
         }
     }
-    
+
     return QString();
 }
 
 QString FluentAccessibleInterface::keyBindingsDescription() const {
     QStringList bindings;
-    
-    if (auto* widget = qobject_cast<QWidget*>(object())) {
+
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::keyBindingsDescription: Invalid object, returning empty bindings";
+        return QString();
+    }
+
+    QWidget* widget = safeWidget();
+    if (widget) {
         // Common key bindings
         if (widget->focusPolicy() & Qt::TabFocus) {
             bindings << "Tab: Move to next element";
             bindings << "Shift+Tab: Move to previous element";
         }
-        
+
         if (widget->inherits("FluentButton")) {
             bindings << "Space/Enter: Activate button";
-            
+
             if (widget->property("checkable").toBool()) {
                 bindings << "Space: Toggle button state";
             }
         } else if (widget->inherits("FluentCard")) {
             const bool selectable = widget->property("selectable").toBool();
             const bool expandable = widget->property("expandable").toBool();
-            
+
             if (selectable) {
                 bindings << "Space: Select/deselect card";
             }
-            
+
             if (expandable) {
                 bindings << "Enter: Expand/collapse card";
             }
         }
-        
+
         // Extract accelerator keys
         const QString text = widget->property("text").toString();
         const int ampPos = text.indexOf('&');
@@ -174,12 +252,18 @@ QString FluentAccessibleInterface::keyBindingsDescription() const {
             bindings << QString("Alt+%1: Activate").arg(accel.toUpper());
         }
     }
-    
+
     return bindings.join("; ");
 }
 
 QAccessible::Role FluentAccessibleInterface::getFluentRole() const {
-    if (auto* widget = qobject_cast<QWidget*>(object())) {
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::getFluentRole: Invalid object, returning default role";
+        return QAccessible::Client;
+    }
+
+    QWidget* widget = safeWidget();
+    if (widget) {
         if (widget->inherits("FluentButton")) {
             const bool checkable = widget->property("checkable").toBool();
             return checkable ? QAccessible::CheckBox : QAccessible::Button;
@@ -197,21 +281,27 @@ QAccessible::Role FluentAccessibleInterface::getFluentRole() const {
             return QAccessible::ProgressBar;
         }
     }
-    
+
     return QAccessible::Client; // Default fallback
 }
 
 QAccessible::State FluentAccessibleInterface::getFluentState() const {
     QAccessible::State state;
-    
-    if (auto* widget = qobject_cast<QWidget*>(object())) {
+
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::getFluentState: Invalid object, returning default state";
+        return state;
+    }
+
+    QWidget* widget = safeWidget();
+    if (widget) {
         // Checkable state
         state.checkable = widget->property("checkable").toBool();
         state.checked = widget->property("checked").toBool();
-        
+
         // Loading state
         state.busy = widget->property("loading").toBool();
-        
+
         // Expansion state
         if (widget->property("expandable").toBool()) {
             const bool expanded = widget->property("expanded").toBool();
@@ -219,66 +309,72 @@ QAccessible::State FluentAccessibleInterface::getFluentState() const {
             state.expanded = expanded;
             state.collapsed = !expanded;
         }
-        
+
         // Selection state
         if (widget->property("selectable").toBool()) {
             state.selectable = true;
             state.selected = widget->property("selected").toBool();
         }
-        
+
         // Multi-line text
         if (widget->inherits("QTextEdit") || widget->inherits("QPlainTextEdit")) {
             state.multiLine = true;
         }
-        
+
         // Read-only state
         state.readOnly = widget->property("readOnly").toBool();
-        
+
         // Password field
         if (widget->inherits("QLineEdit")) {
             const auto echoMode = widget->property("echoMode").toInt();
             state.passwordEdit = (echoMode == 2); // QLineEdit::Password
         }
     }
-    
+
     return state;
 }
 
 QString FluentAccessibleInterface::getFluentDescription() const {
     QString description;
-    
-    if (auto* widget = qobject_cast<QWidget*>(object())) {
+
+    if (!isObjectValid()) {
+        qWarning() << "FluentAccessibleInterface::getFluentDescription: Invalid object, returning default description";
+        return "UI Element";
+    }
+
+    QWidget* widget = safeWidget();
+    if (widget) {
         // Check for explicit description
         const QString explicitDesc = widget->property("accessibleDescription").toString();
         if (!explicitDesc.isEmpty()) {
             return explicitDesc;
         }
-        
+
         // Generate description based on widget type and properties
         if (widget->inherits("FluentButton")) {
             const QString text = widget->property("text").toString();
             const bool loading = widget->property("loading").toBool();
             const bool checkable = widget->property("checkable").toBool();
             const bool checked = widget->property("checked").toBool();
-            
+
             if (!text.isEmpty()) {
                 description = text;
             } else {
                 description = "Button";
             }
-            
+
             if (loading) {
                 description += " (loading)";
             } else if (checkable) {
                 description += checked ? " (checked)" : " (unchecked)";
             }
-            
+
         } else if (widget->inherits("FluentCard")) {
             const QString title = widget->property("title").toString();
             const QString subtitle = widget->property("subtitle").toString();
             const bool selected = widget->property("selected").toBool();
             const bool expanded = widget->property("expanded").toBool();
-            
+
             if (!title.isEmpty()) {
                 description = title;
                 if (!subtitle.isEmpty()) {
@@ -287,17 +383,17 @@ QString FluentAccessibleInterface::getFluentDescription() const {
             } else {
                 description = "Card";
             }
-            
+
             if (selected) {
                 description += " (selected)";
             }
-            
+
             if (widget->property("expandable").toBool()) {
                 description += expanded ? " (expanded)" : " (collapsed)";
             }
         }
     }
-    
+
     return description.isEmpty() ? "UI Element" : description;
 }
 
@@ -309,7 +405,7 @@ void setAccessibleName(QWidget* widget, const QString& name) {
     widget->setAccessibleName(name);
     
     // Notify screen readers of name change
-    if (QAccessibleInterface* iface = QAccessible::queryAccessibleInterface(widget)) {
+    if (QAccessible::queryAccessibleInterface(widget)) {
         QAccessibleEvent event(widget, QAccessible::NameChanged);
         QAccessible::updateAccessibility(&event);
     }
@@ -322,7 +418,7 @@ void setAccessibleDescription(QWidget* widget, const QString& description) {
     widget->setAccessibleDescription(description);
     
     // Notify screen readers
-    if (QAccessibleInterface* iface = QAccessible::queryAccessibleInterface(widget)) {
+    if (QAccessible::queryAccessibleInterface(widget)) {
         QAccessibleEvent event(widget, QAccessible::DescriptionChanged);
         QAccessible::updateAccessibility(&event);
     }
@@ -515,20 +611,40 @@ void updateForHighContrast(QWidget* widget) {
 class FluentAccessibleFactory {
 public:
     static QAccessibleInterface* create(const QString& classname, QObject* object) {
-        if (!object || !object->isWidgetType()) {
+        // Enhanced validation
+        if (!object) {
+            return nullptr; // Don't log for null objects as this is common
+        }
+
+        // Skip non-widget objects silently (like QApplication)
+        if (!object->isWidgetType()) {
             return nullptr;
         }
-        
+
         QWidget* widget = qobject_cast<QWidget*>(object);
         if (!widget) {
             return nullptr;
         }
-        
-        // Handle FluentQt components
-        if (classname.startsWith("FluentQt::")) {
-            return new FluentAccessibleInterface(widget);
+
+        // Additional safety check - ensure widget is not being destroyed
+        if (widget->testAttribute(Qt::WA_DeleteOnClose) && !widget->isVisible()) {
+            qDebug() << "FluentAccessibleFactory: Widget appears to be in destruction process";
+            return nullptr;
         }
-        
+
+        // Handle FluentQt components only
+        if (classname.startsWith("FluentQt::")) {
+            try {
+                return new FluentAccessibleInterface(widget);
+            } catch (const std::exception& e) {
+                qCritical() << "FluentAccessibleFactory: Exception creating accessibility interface:" << e.what();
+                return nullptr;
+            } catch (...) {
+                qCritical() << "FluentAccessibleFactory: Unknown exception creating accessibility interface";
+                return nullptr;
+            }
+        }
+
         return nullptr;
     }
 };
@@ -537,39 +653,41 @@ public:
 void initializeAccessibility() {
     static bool initialized = false;
     if (initialized) return;
-    
+
     initialized = true;
-    
+
     // Install the factory
     QAccessible::installFactory(FluentAccessibleFactory::create);
-    
-    // Enable accessibility if needed
-    if (!QAccessible::isActive()) {
-        // Check if assistive technology is running
-        const bool hasAT = []() {
+
+    // Always enable accessibility for FluentQt components
+    // This ensures accessibility works even without assistive technology
+    QAccessible::setActive(true);
+
+    // Additional check for assistive technology
+    const bool hasAT = []() {
 #ifdef Q_OS_WIN
-            // Check for common Windows screen readers
-            return FindWindow(L"JAWS", nullptr) != nullptr ||
-                   FindWindow(L"NVDAHelperWindow", nullptr) != nullptr;
+        // Check for common Windows screen readers
+        return FindWindow(L"JAWS", nullptr) != nullptr ||
+               FindWindow(L"NVDAHelperWindow", nullptr) != nullptr ||
+               FindWindow(L"NVDA_controllerClient32", nullptr) != nullptr;
 #endif
 #ifdef Q_OS_MAC
-            // Check for VoiceOver
-            Boolean keyExists = false;
-            Boolean voiceOverEnabled = CFPreferencesGetAppBooleanValue(
-                CFSTR("voiceOverOnOffKey"),
-                CFSTR("com.apple.universalaccess"),
-                &keyExists
-            );
-            return keyExists && voiceOverEnabled;
+        // Check for VoiceOver
+        Boolean keyExists = false;
+        Boolean voiceOverEnabled = CFPreferencesGetAppBooleanValue(
+            CFSTR("voiceOverOnOffKey"),
+            CFSTR("com.apple.universalaccess"),
+            &keyExists
+        );
+        return keyExists && voiceOverEnabled;
 #endif
-            return false;
-        }();
-        
-        if (hasAT) {
-            QAccessible::setActive(true);
-        }
+        return false;
+    }();
+
+    if (hasAT) {
+        qDebug() << "Assistive technology detected";
     }
-    
+
     qDebug() << "FluentQt accessibility initialized - Active:" << QAccessible::isActive();
 }
 

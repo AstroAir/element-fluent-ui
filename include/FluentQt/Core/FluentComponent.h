@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FluentQt/Core/FluentState.h"
 #include <QGraphicsEffect>
 #include <QPropertyAnimation>
 #include <QTimer>
@@ -10,10 +11,6 @@
 
 
 namespace FluentQt::Core {
-
-enum class FluentState { Normal, Hovered, Pressed, Disabled, Focused };
-
-enum class FluentCornerRadius { None = 0, Small = 4, Medium = 8, Large = 16 };
 
 class FluentComponent : public QWidget {
   Q_OBJECT

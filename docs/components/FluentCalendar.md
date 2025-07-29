@@ -608,6 +608,402 @@ void yearChanged(int year);
 void viewModeChanged(FluentCalendarViewMode mode);
 ```
 
+## Standalone Examples Collection
+
+### Example 1: Event Management Calendar
+
+```cpp
+#include <QApplication>
+#include <QWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QTimeEdit>
+#include <QTextEdit>
+#include <QComboBox>
+#include <QListWidget>
+#include "FluentQt/Components/FluentCalendar.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentCard.h"
+
+struct CalendarEvent {
+    QString title;
+    QString description;
+    QDate date;
+    QTime startTime;
+    QTime endTime;
+    QString category;
+    QColor color;
+    int id;
+};
+
+class EventManagementCalendar : public QWidget {
+    Q_OBJECT
+public:
+    EventManagementCalendar(QWidget* parent = nullptr) : QWidget(parent) {
+        setupUI();
+        loadSampleEvents();
+        connectSignals();
+    }
+
+private slots:
+    void onDateSelected(const QDate& date) {
+        m_selectedDate = date;
+        updateEventsList();
+        updateDateInfo();
+    }
+
+    void showAddEventDialog() {
+        auto* dialog = new QDialog(this);
+        dialog->setWindowTitle("Add New Event");
+        dialog->setModal(true);
+        dialog->resize(400, 300);
+
+        auto* layout = new QVBoxLayout(dialog);
+
+        // Event title
+        auto* titleInput = new FluentTextInput();
+        titleInput->setLabelText("Event Title");
+        titleInput->setPlaceholderText("Enter event title");
+
+        // Event description
+        auto* descInput = new QTextEdit;
+        descInput->setPlaceholderText("Event description (optional)");
+        descInput->setMaximumHeight(80);
+
+        // Date and time
+        auto* dateTimeLayout = new QHBoxLayout;
+
+        auto* startTimeEdit = new QTimeEdit(QTime(9, 0));
+        auto* endTimeEdit = new QTimeEdit(QTime(10, 0));
+
+        dateTimeLayout->addWidget(new QLabel("From:"));
+        dateTimeLayout->addWidget(startTimeEdit);
+        dateTimeLayout->addWidget(new QLabel("To:"));
+        dateTimeLayout->addWidget(endTimeEdit);
+
+        // Category
+        auto* categoryCombo = new QComboBox;
+        categoryCombo->addItems({"Work", "Personal", "Meeting", "Appointment", "Other"});
+
+        // Buttons
+        auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+
+        layout->addWidget(titleInput);
+        layout->addWidget(new QLabel("Description:"));
+        layout->addWidget(descInput);
+        layout->addWidget(new QLabel("Time:"));
+        layout->addLayout(dateTimeLayout);
+        layout->addWidget(new QLabel("Category:"));
+        layout->addWidget(categoryCombo);
+        layout->addWidget(buttonBox);
+
+        connect(buttonBox, &QDialogButtonBox::accepted, [=]() {
+            if (!titleInput->text().isEmpty()) {
+                CalendarEvent event;
+                event.id = m_nextEventId++;
+                event.title = titleInput->text();
+                event.description = descInput->toPlainText();
+                event.date = m_selectedDate;
+                event.startTime = startTimeEdit->time();
+                event.endTime = endTimeEdit->time();
+                event.category = categoryCombo->currentText();
+                event.color = getCategoryColor(event.category);
+
+                m_events.append(event);
+                updateCalendarEvents();
+                updateEventsList();
+
+                dialog->accept();
+            }
+        });
+
+        connect(buttonBox, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+
+        dialog->exec();
+        dialog->deleteLater();
+    }
+
+    void editEvent(int eventId) {
+        auto it = std::find_if(m_events.begin(), m_events.end(),
+                              [eventId](const CalendarEvent& e) { return e.id == eventId; });
+
+        if (it != m_events.end()) {
+            // Similar dialog to add event, but pre-filled with existing data
+            showEditEventDialog(*it);
+        }
+    }
+
+    void deleteEvent(int eventId) {
+        m_events.removeIf([eventId](const CalendarEvent& e) { return e.id == eventId; });
+        updateCalendarEvents();
+        updateEventsList();
+    }
+
+    void updateEventsList() {
+        m_eventsList->clear();
+
+        QList<CalendarEvent> dayEvents;
+        for (const auto& event : m_events) {
+            if (event.date == m_selectedDate) {
+                dayEvents.append(event);
+            }
+        }
+
+        // Sort by start time
+        std::sort(dayEvents.begin(), dayEvents.end(),
+                 [](const CalendarEvent& a, const CalendarEvent& b) {
+                     return a.startTime < b.startTime;
+                 });
+
+        if (dayEvents.isEmpty()) {
+            auto* item = new QListWidgetItem("No events for this date");
+            item->setFlags(Qt::NoItemFlags);
+            m_eventsList->addItem(item);
+        } else {
+            for (const auto& event : dayEvents) {
+                auto* widget = createEventListItem(event);
+                auto* item = new QListWidgetItem;
+                item->setSizeHint(widget->sizeHint());
+                m_eventsList->addItem(item);
+                m_eventsList->setItemWidget(item, widget);
+            }
+        }
+    }
+
+    void updateDateInfo() {
+        QString dateText = m_selectedDate.toString("dddd, MMMM d, yyyy");
+        m_dateLabel->setText(dateText);
+
+        int eventCount = 0;
+        for (const auto& event : m_events) {
+            if (event.date == m_selectedDate) {
+                eventCount++;
+            }
+        }
+
+        m_eventCountLabel->setText(QString("%1 event(s)").arg(eventCount));
+    }
+
+private:
+    void setupUI() {
+        auto* layout = new QHBoxLayout(this);
+
+        // Left side - Calendar
+        auto* leftPanel = new FluentCard("Calendar");
+        leftPanel->setMinimumWidth(400);
+
+        auto* leftLayout = new QVBoxLayout;
+
+        m_calendar = new FluentCalendar;
+        m_calendar->setSelectedDate(QDate::currentDate());
+
+        auto* calendarControls = new QHBoxLayout;
+
+        auto* todayButton = new FluentButton("Today");
+        todayButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(todayButton, &FluentButton::clicked, [this]() {
+            m_calendar->setSelectedDate(QDate::currentDate());
+        });
+
+        auto* prevButton = new FluentButton("◀ Previous");
+        prevButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(prevButton, &FluentButton::clicked, [this]() {
+            m_calendar->navigateToPreviousMonth();
+        });
+
+        auto* nextButton = new FluentButton("Next ▶");
+        nextButton->setButtonStyle(FluentButtonStyle::Subtle);
+        connect(nextButton, &FluentButton::clicked, [this]() {
+            m_calendar->navigateToNextMonth();
+        });
+
+        calendarControls->addWidget(todayButton);
+        calendarControls->addStretch();
+        calendarControls->addWidget(prevButton);
+        calendarControls->addWidget(nextButton);
+
+        leftLayout->addWidget(m_calendar);
+        leftLayout->addLayout(calendarControls);
+
+        leftPanel->setContentWidget(new QWidget);
+        leftPanel->contentWidget()->setLayout(leftLayout);
+
+        // Right side - Events
+        auto* rightPanel = new FluentCard("Events");
+        rightPanel->setMinimumWidth(300);
+
+        auto* rightLayout = new QVBoxLayout;
+
+        // Date info
+        m_dateLabel = new QLabel;
+        m_dateLabel->setStyleSheet("font-size: 18px; font-weight: bold;");
+
+        m_eventCountLabel = new QLabel;
+        m_eventCountLabel->setStyleSheet("color: gray;");
+
+        // Add event button
+        auto* addEventButton = new FluentButton("+ Add Event");
+        addEventButton->setButtonStyle(FluentButtonStyle::Primary);
+
+        // Events list
+        m_eventsList = new QListWidget;
+        m_eventsList->setAlternatingRowColors(true);
+
+        rightLayout->addWidget(m_dateLabel);
+        rightLayout->addWidget(m_eventCountLabel);
+        rightLayout->addWidget(addEventButton);
+        rightLayout->addWidget(m_eventsList);
+
+        rightPanel->setContentWidget(new QWidget);
+        rightPanel->contentWidget()->setLayout(rightLayout);
+
+        layout->addWidget(leftPanel);
+        layout->addWidget(rightPanel);
+
+        // Initialize with current date
+        m_selectedDate = QDate::currentDate();
+        updateDateInfo();
+
+        connect(addEventButton, &FluentButton::clicked, this, &EventManagementCalendar::showAddEventDialog);
+    }
+
+    void loadSampleEvents() {
+        m_nextEventId = 1;
+
+        // Add some sample events
+        QDate today = QDate::currentDate();
+
+        m_events = {
+            {1, "Team Meeting", "Weekly team sync", today, QTime(9, 0), QTime(10, 0), "Work", QColor("#0078d4")},
+            {2, "Lunch with Client", "Discuss project requirements", today.addDays(1), QTime(12, 0), QTime(13, 30), "Meeting", QColor("#107c10")},
+            {3, "Doctor Appointment", "Annual checkup", today.addDays(2), QTime(14, 0), QTime(15, 0), "Personal", QColor("#d83b01")},
+            {4, "Project Deadline", "Submit final deliverables", today.addDays(5), QTime(17, 0), QTime(17, 0), "Work", QColor("#0078d4")}
+        };
+
+        m_nextEventId = 5;
+        updateCalendarEvents();
+    }
+
+    void updateCalendarEvents() {
+        // Clear existing events
+        m_calendar->clearEvents();
+
+        // Add events to calendar
+        for (const auto& event : m_events) {
+            FluentCalendarEvent calEvent;
+            calEvent.title = event.title;
+            calEvent.date = event.date;
+            calEvent.color = event.color;
+            calEvent.isAllDay = (event.startTime == event.endTime);
+
+            m_calendar->addEvent(calEvent);
+        }
+    }
+
+    QWidget* createEventListItem(const CalendarEvent& event) {
+        auto* widget = new QWidget;
+        auto* layout = new QHBoxLayout(widget);
+
+        // Color indicator
+        auto* colorLabel = new QLabel;
+        colorLabel->setFixedSize(4, 40);
+        colorLabel->setStyleSheet(QString("background-color: %1; border-radius: 2px;").arg(event.color.name()));
+
+        // Event info
+        auto* infoLayout = new QVBoxLayout;
+
+        auto* titleLabel = new QLabel(event.title);
+        titleLabel->setStyleSheet("font-weight: bold;");
+
+        auto* timeLabel = new QLabel(QString("%1 - %2")
+                                    .arg(event.startTime.toString("h:mm AP"))
+                                    .arg(event.endTime.toString("h:mm AP")));
+        timeLabel->setStyleSheet("color: gray; font-size: 12px;");
+
+        auto* categoryLabel = new QLabel(event.category);
+        categoryLabel->setStyleSheet("color: gray; font-size: 11px;");
+
+        infoLayout->addWidget(titleLabel);
+        infoLayout->addWidget(timeLabel);
+        infoLayout->addWidget(categoryLabel);
+        infoLayout->setSpacing(2);
+
+        // Actions
+        auto* actionsLayout = new QVBoxLayout;
+
+        auto* editButton = new FluentButton("Edit");
+        editButton->setButtonStyle(FluentButtonStyle::Subtle);
+        editButton->setButtonSize(FluentButtonSize::Small);
+        connect(editButton, &FluentButton::clicked, [this, event]() {
+            editEvent(event.id);
+        });
+
+        auto* deleteButton = new FluentButton("Delete");
+        deleteButton->setButtonStyle(FluentButtonStyle::Subtle);
+        deleteButton->setButtonSize(FluentButtonSize::Small);
+        connect(deleteButton, &FluentButton::clicked, [this, event]() {
+            deleteEvent(event.id);
+        });
+
+        actionsLayout->addWidget(editButton);
+        actionsLayout->addWidget(deleteButton);
+
+        layout->addWidget(colorLabel);
+        layout->addLayout(infoLayout);
+        layout->addStretch();
+        layout->addLayout(actionsLayout);
+
+        return widget;
+    }
+
+    void showEditEventDialog(const CalendarEvent& event) {
+        // Implementation similar to showAddEventDialog but pre-filled
+        // For brevity, showing simplified version
+        qDebug() << "Edit event:" << event.title;
+    }
+
+    QColor getCategoryColor(const QString& category) {
+        static QMap<QString, QColor> categoryColors = {
+            {"Work", QColor("#0078d4")},
+            {"Personal", QColor("#d83b01")},
+            {"Meeting", QColor("#107c10")},
+            {"Appointment", QColor("#5c2d91")},
+            {"Other", QColor("#767676")}
+        };
+
+        return categoryColors.value(category, QColor("#767676"));
+    }
+
+    void connectSignals() {
+        connect(m_calendar, &FluentCalendar::dateSelected, this, &EventManagementCalendar::onDateSelected);
+    }
+
+    FluentCalendar* m_calendar;
+    QListWidget* m_eventsList;
+    QLabel* m_dateLabel;
+    QLabel* m_eventCountLabel;
+    QDate m_selectedDate;
+    QList<CalendarEvent> m_events;
+    int m_nextEventId;
+};
+
+int main(int argc, char *argv[]) {
+    QApplication app(argc, argv);
+
+    EventManagementCalendar calendar;
+    calendar.resize(900, 600);
+    calendar.show();
+
+    return app.exec();
+}
+
+#include "event_calendar.moc"
+```
+
 ## See Also
 
 - [FluentTimePicker](FluentTimePicker.md) - For time selection

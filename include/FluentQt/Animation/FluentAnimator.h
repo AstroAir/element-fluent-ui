@@ -282,6 +282,13 @@ public:
         const FluentAnimationConfig& config = {}
     );
 
+    // Ripple effect for buttons and interactive elements
+    static std::unique_ptr<QSequentialAnimationGroup> rippleEffect(
+        QWidget* target,
+        const QPoint& center = {},
+        const FluentAnimationConfig& config = {}
+    );
+
     // Parallax animation
     static std::unique_ptr<QPropertyAnimation> parallaxEffect(
         QWidget* target,

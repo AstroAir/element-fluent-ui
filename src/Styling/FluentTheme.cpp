@@ -89,7 +89,7 @@ void FluentTheme::setAccentColor(FluentAccentColor color) {
     }
 }
 
-const FluentColorPalette& FluentTheme::currentPalette() const {
+const FluentColorPalette& FluentTheme::currentPalette() const noexcept {
     // Handle system mode
     if (m_mode == FluentThemeMode::System) {
         return isSystemDarkMode() ? m_darkPalette : m_lightPalette;

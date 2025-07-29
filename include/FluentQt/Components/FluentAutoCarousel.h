@@ -11,6 +11,16 @@
 namespace FluentQt::Components {
 
 /**
+ * @brief Progress indicator styles for auto carousel
+ */
+enum class FluentAutoCarouselProgressStyle {
+    Bar,        // Traditional progress bar
+    Circular,   // Circular progress indicator
+    Dots,       // Dot-based progress
+    Line        // Thin line progress
+};
+
+/**
  * @brief Auto-playing carousel component with configurable timing
  * 
  * FluentAutoCarousel provides an enhanced carousel with automatic playback:
@@ -98,6 +108,7 @@ signals:
     void playbackStopped();
     void playbackRestarted();
     void intervalCompleted();
+    void progressChanged(qreal progress);
 
 protected:
     void enterEvent(QEnterEvent* event) override;
@@ -125,6 +136,10 @@ private:
     void updateControlsLayout();
     void updatePlayPauseButton();
     void updateProgressIndicator();
+    void updateProgressIndicatorStyle();
+    void updateProgressValue();
+    void updateTimeLabel();
+    int remainingTime() const;
     void updateAutoPlayTimer();
     void handlePauseOnHover();
     void handlePauseOnFocus();
@@ -146,6 +161,7 @@ private:
     // UI configuration
     bool m_showPlayControls{true};
     bool m_showProgressIndicator{true};
+    FluentAutoCarouselProgressStyle m_progressStyle{FluentAutoCarouselProgressStyle::Bar};
     
     // State
     bool m_isPlaying{false};
@@ -153,6 +169,7 @@ private:
     bool m_pausedByHover{false};
     bool m_pausedByFocus{false};
     qreal m_playbackProgress{0.0};
+    qreal m_currentProgress{0.0};
     int m_nextIndex{0};
     bool m_pingPongForward{true};
     
@@ -160,12 +177,16 @@ private:
     std::unique_ptr<QTimer> m_autoPlayTimer;
     std::unique_ptr<QTimer> m_progressTimer;
     std::chrono::steady_clock::time_point m_intervalStartTime;
+    std::chrono::steady_clock::time_point m_progressStartTime;
     
     // UI controls
     FluentButton* m_playPauseButton{nullptr};
     FluentButton* m_stopButton{nullptr};
     QProgressBar* m_progressIndicator{nullptr};
+    QProgressBar* m_progressBar{nullptr};
+    QLabel* m_timeLabel{nullptr};
     QWidget* m_controlsContainer{nullptr};
+    QWidget* m_progressContainer{nullptr};
     QHBoxLayout* m_controlsLayout{nullptr};
     
     // Icons

@@ -307,12 +307,13 @@ public:
         const FluentAnimationConfig& config = {}
     );
 
+    static QEasingCurve::Type toQtEasing(FluentEasing easing);
+
 signals:
     void animationStarted();
     void animationFinished();
 
 private:
-    static QEasingCurve::Type toQtEasing(FluentEasing easing);
     static void setupAnimation(
         QPropertyAnimation* animation,
         const FluentAnimationConfig& config

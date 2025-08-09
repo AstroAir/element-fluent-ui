@@ -1,5 +1,6 @@
 // src/Animation/FluentAnimator.cpp
 #include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Animation/FluentTransformEffect.h"
 #include "FluentQt/Core/FluentPerformance.h"
 
 #include <QWidget>
@@ -17,6 +18,139 @@
 #include <QAccessible>
 
 namespace FluentQt::Animation {
+
+// Advanced animation utilities
+class FluentAnimationManager : public QObject {
+    Q_OBJECT
+
+public:
+    static FluentAnimationManager& instance() {
+        static FluentAnimationManager instance;
+        return instance;
+    }
+
+    void registerAnimation(QAbstractAnimation* animation) {
+        m_activeAnimations.insert(animation);
+
+        connect(animation, &QAbstractAnimation::finished, [this, animation]() {
+            m_activeAnimations.remove(animation);
+        });
+
+        connect(animation, &QAbstractAnimation::destroyed, [this, animation]() {
+            m_activeAnimations.remove(animation);
+        });
+    }
+
+    void pauseAllAnimations() {
+        for (auto* animation : m_activeAnimations) {
+            if (animation->state() == QAbstractAnimation::Running) {
+                animation->pause();
+                m_pausedAnimations.insert(animation);
+            }
+        }
+    }
+
+    void resumeAllAnimations() {
+        for (auto* animation : m_pausedAnimations) {
+            animation->resume();
+        }
+        m_pausedAnimations.clear();
+    }
+
+    void stopAllAnimations() {
+        for (auto* animation : m_activeAnimations) {
+            animation->stop();
+        }
+        m_activeAnimations.clear();
+        m_pausedAnimations.clear();
+    }
+
+    int activeAnimationCount() const {
+        return m_activeAnimations.size();
+    }
+
+private:
+    FluentAnimationManager() = default;
+
+    QSet<QAbstractAnimation*> m_activeAnimations;
+    QSet<QAbstractAnimation*> m_pausedAnimations;
+};
+
+// Specialized animation effects
+namespace Effects {
+
+class FluentSpringEffect : public QObject {
+    Q_OBJECT
+
+public:
+    FluentSpringEffect(QWidget* target, QObject* parent = nullptr)
+        : QObject(parent), m_target(target) {}
+
+    void start(const QVariant& from, const QVariant& to) {
+        if (!m_target) return;
+
+        m_timer = new QTimer(this);
+        m_timer->setInterval(16); // ~60 FPS
+
+        m_startValue = from;
+        m_endValue = to;
+        m_currentValue = from;
+        m_velocity = 0.0;
+        m_time = 0.0;
+
+        connect(m_timer, &QTimer::timeout, this, &FluentSpringEffect::updateSpring);
+        m_timer->start();
+    }
+
+private slots:
+    void updateSpring() {
+        const double dt = 0.016; // 16ms
+        const double springConstant = 200.0;
+        const double damping = 20.0;
+
+        m_time += dt;
+
+        // Simple spring physics
+        const double displacement = m_currentValue.toDouble() - m_endValue.toDouble();
+        const double force = -springConstant * displacement - damping * m_velocity;
+
+        m_velocity += force * dt;
+        double newValue = m_currentValue.toDouble() + m_velocity * dt;
+
+        m_currentValue = newValue;
+
+        // Apply the value to the target
+        if (m_target) {
+            // This would need to be implemented for specific properties
+            // For now, just demonstrate the concept
+        }
+
+        // Check if spring has settled
+        if (std::abs(displacement) < 0.1 && std::abs(m_velocity) < 0.1) {
+            m_timer->stop();
+            m_timer->deleteLater();
+            m_timer = nullptr;
+
+            // Ensure final value is exact
+            m_currentValue = m_endValue;
+            emit finished();
+        }
+    }
+
+signals:
+    void finished();
+
+private:
+    QWidget* m_target;
+    QTimer* m_timer = nullptr;
+    QVariant m_startValue;
+    QVariant m_endValue;
+    QVariant m_currentValue;
+    double m_velocity = 0.0;
+    double m_time = 0.0;
+};
+
+} // namespace Effects
 
 FluentAnimator::FluentAnimator(QObject* parent)
     : QObject(parent)
@@ -38,29 +172,29 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeIn(
     if (!target) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::fadeIn");
-    
+
     // Create or get opacity effect
-    QGraphicsOpacityEffect* opacityEffect = 
+    QGraphicsOpacityEffect* opacityEffect =
         qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
-    
+
     if (!opacityEffect) {
         opacityEffect = new QGraphicsOpacityEffect(target);
         target->setGraphicsEffect(opacityEffect);
     }
-    
+
     auto animation = std::make_unique<QPropertyAnimation>(opacityEffect, "opacity");
-    
+
     // Set initial state
     opacityEffect->setOpacity(0.0);
     target->show();
-    
+
     // Configure animation
     animation->setStartValue(0.0);
     animation->setEndValue(1.0);
     setupAnimation(animation.get(), config);
-    
+
     // Cleanup effect when animation finishes
     QObject::connect(animation.get(), &QPropertyAnimation::finished, [target]() {
         if (auto* effect = target->graphicsEffect()) {
@@ -68,7 +202,7 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeIn(
             effect->deleteLater();
         }
     });
-    
+
     return animation;
 }
 
@@ -79,26 +213,26 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeOut(
     if (!target) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::fadeOut");
-    
+
     // Create or get opacity effect
-    QGraphicsOpacityEffect* opacityEffect = 
+    QGraphicsOpacityEffect* opacityEffect =
         qobject_cast<QGraphicsOpacityEffect*>(target->graphicsEffect());
-    
+
     if (!opacityEffect) {
         opacityEffect = new QGraphicsOpacityEffect(target);
         opacityEffect->setOpacity(1.0);
         target->setGraphicsEffect(opacityEffect);
     }
-    
+
     auto animation = std::make_unique<QPropertyAnimation>(opacityEffect, "opacity");
-    
+
     // Configure animation
     animation->setStartValue(opacityEffect->opacity());
     animation->setEndValue(0.0);
     setupAnimation(animation.get(), config);
-    
+
     // Hide widget and cleanup when animation finishes
     QObject::connect(animation.get(), &QPropertyAnimation::finished, [target]() {
         target->hide();
@@ -107,7 +241,7 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeOut(
             effect->deleteLater();
         }
     });
-    
+
     return animation;
 }
 
@@ -121,27 +255,14 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleIn(
 
     FLUENT_PROFILE("FluentAnimator::scaleIn");
 
-    // Store original geometry for restoration
-    const QRect originalGeometry = target->geometry();
-    target->setProperty("originalGeometry", originalGeometry);
-
-    // Calculate scaled geometry (centered scaling)
-    const QPoint center = originalGeometry.center();
-    const QSize scaledSize(originalGeometry.width() / 10, originalGeometry.height() / 10);
-    const QRect startGeometry(center.x() - scaledSize.width() / 2,
-                             center.y() - scaledSize.height() / 2,
-                             scaledSize.width(), scaledSize.height());
-
-    // Set initial state
-    target->setGeometry(startGeometry);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
     target->show();
 
-    // Create animation for geometry (more predictable than size)
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "scale");
 
-    // Configure animation
-    animation->setStartValue(startGeometry);
-    animation->setEndValue(originalGeometry);
+    animation->setStartValue(0.1);
+    animation->setEndValue(1.0);
     setupAnimation(animation.get(), config);
 
     // Use Fluent Design easing for scale animation
@@ -149,8 +270,13 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleIn(
     if (scaleConfig.easing == FluentEasing::EaseOut) {
         scaleConfig.easing = FluentEasing::BackOut; // More appropriate for scale-in
     }
-
     animation->setEasingCurve(toQtEasing(scaleConfig.easing));
+
+    // Cleanup effect when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -165,22 +291,13 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleOut(
 
     FLUENT_PROFILE("FluentAnimator::scaleOut");
 
-    // Get current geometry
-    const QRect currentGeometry = target->geometry();
-    const QPoint center = currentGeometry.center();
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
 
-    // Calculate scaled geometry (centered scaling)
-    const QSize scaledSize(currentGeometry.width() / 10, currentGeometry.height() / 10);
-    const QRect endGeometry(center.x() - scaledSize.width() / 2,
-                           center.y() - scaledSize.height() / 2,
-                           scaledSize.width(), scaledSize.height());
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "scale");
 
-    // Create animation for geometry
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
-
-    // Configure animation to scale down
-    animation->setStartValue(currentGeometry);
-    animation->setEndValue(endGeometry);
+    animation->setStartValue(1.0);
+    animation->setEndValue(0.1);
     setupAnimation(animation.get(), config);
 
     // Use Fluent Design easing for scale-out
@@ -188,12 +305,13 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::scaleOut(
     if (scaleConfig.easing == FluentEasing::EaseOut) {
         scaleConfig.easing = FluentEasing::BackIn; // More appropriate for scale-out
     }
-
     animation->setEasingCurve(toQtEasing(scaleConfig.easing));
 
-    // Hide widget when animation finishes
-    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target]() {
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
         target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
     });
 
     return animation;
@@ -207,25 +325,25 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideIn(
     if (!target) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::slideIn");
-    
-    // Store original position
-    const QPoint originalPos = target->pos();
-    target->setProperty("originalPos", originalPos);
-    
-    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
-    
-    // Calculate start position
-    QPoint startPos = originalPos + from;
-    target->move(startPos);
+
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
     target->show();
-    
-    // Configure animation
-    animation->setStartValue(startPos);
-    animation->setEndValue(originalPos);
+
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
+
+    animation->setStartValue(from);
+    animation->setEndValue(QPointF(0, 0));
     setupAnimation(animation.get(), config);
-    
+
+    // Cleanup effect when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
+
     return animation;
 }
 
@@ -240,15 +358,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideOut(
 
     FLUENT_PROFILE("FluentAnimator::slideOut");
 
-    // Get current position
-    const QPoint currentPos = target->pos();
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
 
-    // Configure animation
-    animation->setStartValue(currentPos);
+    animation->setStartValue(QPointF(0, 0));
     animation->setEndValue(to);
     setupAnimation(animation.get(), config);
+
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -264,15 +388,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::rotateIn(
 
     FLUENT_PROFILE("FluentAnimator::rotateIn");
 
-    // For now, use a simple opacity animation as a placeholder
-    // In a full implementation, this would use a custom graphics effect
-    auto animation = std::make_unique<QPropertyAnimation>(target, "windowOpacity");
-    animation->setStartValue(0.0);
-    animation->setEndValue(1.0);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
+    target->show();
+
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "rotation");
+
+    animation->setStartValue(fromAngle);
+    animation->setEndValue(0.0);
     setupAnimation(animation.get(), config);
 
-    // TODO: Implement proper rotation using QGraphicsView or custom painting
-    Q_UNUSED(fromAngle)
+    // Cleanup effect when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -288,15 +418,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::rotateOut(
 
     FLUENT_PROFILE("FluentAnimator::rotateOut");
 
-    // For now, use a simple opacity animation as a placeholder
-    // In a full implementation, this would use a custom graphics effect
-    auto animation = std::make_unique<QPropertyAnimation>(target, "windowOpacity");
-    animation->setStartValue(1.0);
-    animation->setEndValue(0.0);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
+
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "rotation");
+
+    animation->setStartValue(0.0);
+    animation->setEndValue(toAngle);
     setupAnimation(animation.get(), config);
 
-    // TODO: Implement proper rotation using QGraphicsView or custom painting
-    Q_UNUSED(toAngle)
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -335,17 +471,14 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideUp(
 
     FLUENT_PROFILE("FluentAnimator::slideUp");
 
-    // Store original position for restoration
-    const QPoint originalPos = target->pos();
-    target->setProperty("originalPos", originalPos);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
+    target->show();
 
-    // Set start position (moved down by distance)
-    const QPoint startPos = originalPos + QPoint(0, distance);
-    target->move(startPos);
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
-    animation->setStartValue(startPos);
-    animation->setEndValue(originalPos);
+    animation->setStartValue(QPointF(0, distance));
+    animation->setEndValue(QPointF(0, 0));
     setupAnimation(animation.get(), config);
 
     // Use appropriate easing for slide up (entrance)
@@ -354,6 +487,12 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideUp(
         slideConfig.easing = FluentEasing::EaseOutCubic; // Fluent standard for entrances
     }
     animation->setEasingCurve(toQtEasing(slideConfig.easing));
+
+    // Cleanup effect when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -369,13 +508,13 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideDown(
 
     FLUENT_PROFILE("FluentAnimator::slideDown");
 
-    // Get current position
-    const QPoint currentPos = target->pos();
-    const QPoint endPos = currentPos + QPoint(0, distance);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "pos");
-    animation->setStartValue(currentPos);
-    animation->setEndValue(endPos);
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
+
+    animation->setStartValue(QPointF(0, 0));
+    animation->setEndValue(QPointF(0, distance));
     setupAnimation(animation.get(), config);
 
     // Use appropriate easing for slide down (exit)
@@ -384,6 +523,13 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideDown(
         slideConfig.easing = FluentEasing::EaseInCubic; // Fluent standard for exits
     }
     animation->setEasingCurve(toQtEasing(slideConfig.easing));
+
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -399,14 +545,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideLeft(
 
     FLUENT_PROFILE("FluentAnimator::slideLeft");
 
-    QRect startGeometry = target->geometry();
-    QRect endGeometry = startGeometry;
-    endGeometry.moveLeft(startGeometry.left() - distance);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
-    animation->setStartValue(startGeometry);
-    animation->setEndValue(endGeometry);
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
+
+    animation->setStartValue(QPointF(0, 0));
+    animation->setEndValue(QPointF(-distance, 0));
     setupAnimation(animation.get(), config);
+
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -422,14 +575,21 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::slideRight(
 
     FLUENT_PROFILE("FluentAnimator::slideRight");
 
-    QRect startGeometry = target->geometry();
-    QRect endGeometry = startGeometry;
-    endGeometry.moveLeft(startGeometry.left() + distance);
+    auto* effect = new FluentTransformEffect(target);
+    target->setGraphicsEffect(effect);
 
-    auto animation = std::make_unique<QPropertyAnimation>(target, "geometry");
-    animation->setStartValue(startGeometry);
-    animation->setEndValue(endGeometry);
+    auto animation = std::make_unique<QPropertyAnimation>(effect, "translation");
+
+    animation->setStartValue(QPointF(0, 0));
+    animation->setEndValue(QPointF(distance, 0));
     setupAnimation(animation.get(), config);
+
+    // Hide widget and cleanup when animation finishes
+    QObject::connect(animation.get(), &QPropertyAnimation::finished, [target, effect]() {
+        target->hide();
+        target->setGraphicsEffect(nullptr);
+        effect->deleteLater();
+    });
 
     return animation;
 }
@@ -442,46 +602,46 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::revealAnimation(
     if (!target) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::revealAnimation");
-    
+
     auto group = std::make_unique<QSequentialAnimationGroup>();
-    
+
     // Phase 1: Quick scale animation from center
     QGraphicsOpacityEffect* opacityEffect = new QGraphicsOpacityEffect(target);
     target->setGraphicsEffect(opacityEffect);
-    
+
     // Create reveal mask animation (simplified version)
     // In a full implementation, this would use custom rendering
     auto scalePhase = std::make_unique<QPropertyAnimation>(target, "geometry");
 
     QPoint actualCenter = center.isNull() ? target->rect().center() : center;
-    
+
     // Start from a small rect at the center point
     QRect startRect(actualCenter.x() - 5, actualCenter.y() - 5, 10, 10);
-    
+
     scalePhase->setStartValue(startRect);
     scalePhase->setEndValue(target->geometry());
     scalePhase->setDuration(config.duration.count() * 0.6); // 60% of total duration
     scalePhase->setEasingCurve(toQtEasing(FluentEasing::EaseOut));
-    
+
     // Phase 2: Fade in effect
     auto fadePhase = std::make_unique<QPropertyAnimation>(opacityEffect, "opacity");
     fadePhase->setStartValue(0.0);
     fadePhase->setEndValue(1.0);
     fadePhase->setDuration(config.duration.count() * 0.4); // 40% of total duration
     fadePhase->setEasingCurve(toQtEasing(FluentEasing::EaseOut));
-    
+
     // Add phases to group
     group->addAnimation(scalePhase.release());
     group->addAnimation(fadePhase.release());
-    
+
     // Cleanup when finished
     QObject::connect(group.get(), &QSequentialAnimationGroup::finished, [target, opacityEffect]() {
         target->setGraphicsEffect(nullptr);
         opacityEffect->deleteLater();
     });
-    
+
     return group;
 }
 
@@ -493,54 +653,54 @@ std::unique_ptr<QParallelAnimationGroup> FluentAnimator::connectedAnimation(
     if (!from || !to) {
         return nullptr;
     }
-    
+
     FLUENT_PROFILE("FluentAnimator::connectedAnimation");
-    
+
     auto group = std::make_unique<QParallelAnimationGroup>();
-    
+
     // Get geometries in global coordinates
     const QRect fromGeometry = QRect(from->mapToGlobal(QPoint(0, 0)), from->size());
     const QRect toGeometry = QRect(to->mapToGlobal(QPoint(0, 0)), to->size());
-    
+
     // Create temporary widget for the connected animation
     QWidget* connector = new QWidget(from->window());
     connector->setStyleSheet(from->styleSheet()); // Copy appearance
     connector->setGeometry(fromGeometry);
     connector->show();
-    
+
     // Fade out the source
     FluentAnimationConfig fadeOutConfig;
     fadeOutConfig.duration = config.duration;
     fadeOutConfig.easing = FluentEasing::EaseIn;
     auto fadeOutAnim = fadeOut(from, fadeOutConfig);
-    
+
     // Move and resize the connector
     auto moveAnim = std::make_unique<QPropertyAnimation>(connector, "geometry");
     moveAnim->setStartValue(fromGeometry);
     moveAnim->setEndValue(toGeometry);
     moveAnim->setDuration(config.duration.count());
     moveAnim->setEasingCurve(toQtEasing(config.easing));
-    
+
     // Fade in the destination
     FluentAnimationConfig fadeInConfig;
     fadeInConfig.duration = std::chrono::milliseconds(config.duration.count() / 2);
     fadeInConfig.easing = FluentEasing::EaseOut;
     fadeInConfig.delay = std::chrono::milliseconds(config.duration.count() / 2);
     auto fadeInAnim = fadeIn(to, fadeInConfig);
-    
+
     // Add delay for destination fade-in
     auto pauseAnim = new QPauseAnimation(config.duration.count() / 2);
     group->addAnimation(pauseAnim);
-    
+
     group->addAnimation(fadeOutAnim.release());
     group->addAnimation(moveAnim.release());
     group->addAnimation(fadeInAnim.release());
-    
+
     // Cleanup connector when finished
     QObject::connect(group.get(), &QParallelAnimationGroup::finished, [connector]() {
         connector->deleteLater();
     });
-    
+
     return group;
 }
 
@@ -897,16 +1057,16 @@ public:
 
     void start(const QVariant& from, const QVariant& to) {
         if (!m_target) return;
-        
+
         m_timer = new QTimer(this);
         m_timer->setInterval(16); // ~60 FPS
-        
+
         m_startValue = from;
         m_endValue = to;
         m_currentValue = from;
         m_velocity = 0.0;
         m_time = 0.0;
-        
+
         connect(m_timer, &QTimer::timeout, this, &FluentSpringEffect::updateSpring);
         m_timer->start();
     }
@@ -916,30 +1076,30 @@ private slots:
         const double dt = 0.016; // 16ms
         const double springConstant = 200.0;
         const double damping = 20.0;
-        
+
         m_time += dt;
-        
+
         // Simple spring physics
         const double displacement = m_currentValue.toDouble() - m_endValue.toDouble();
         const double force = -springConstant * displacement - damping * m_velocity;
-        
+
         m_velocity += force * dt;
         double newValue = m_currentValue.toDouble() + m_velocity * dt;
-        
+
         m_currentValue = newValue;
-        
+
         // Apply the value to the target
         if (m_target) {
             // This would need to be implemented for specific properties
             // For now, just demonstrate the concept
         }
-        
+
         // Check if spring has settled
         if (std::abs(displacement) < 0.1 && std::abs(m_velocity) < 0.1) {
             m_timer->stop();
             m_timer->deleteLater();
             m_timer = nullptr;
-            
+
             // Ensure final value is exact
             m_currentValue = m_endValue;
             emit finished();

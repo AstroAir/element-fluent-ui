@@ -306,7 +306,7 @@ signals:
     void customColorRemoved(const QString& name);
 
 private slots:
-    void onSystemThemeChanged(Qt::ColorScheme colorScheme);
+    void checkSystemTheme();
 
 private:
     FluentTheme();
@@ -314,7 +314,6 @@ private:
     void updateAccentColors();
     void loadSettings();
     void saveSettings();
-    void connectToSystemTheme();
     void initializeSpacingAndSizing();
     void initializeTypography();
     void initializeBorderRadius();
@@ -322,7 +321,6 @@ private:
     void updateEffectiveMode();
     void loadCustomColors(QSettings& settings);
     void saveCustomColors(QSettings& settings);
-    bool isSystemDarkMode() const;
     void updateSystemAccentColor(const QColor& systemColor);
     FluentAccentColor findClosestAccentColor(const QColor& targetColor) const;
 

@@ -125,7 +125,9 @@ FluentAnimation& FluentAnimation::with()
 
 void FluentAnimation::start()
 {
-    connect(m_root, &QSequentialAnimationGroup::finished, this, &FluentAnimation::deleteLater);
+    if (m_autoDelete) {
+        connect(m_root, &QSequentialAnimationGroup::finished, this, &FluentAnimation::deleteLater);
+    }
     m_root->start();
 }
 

@@ -37,7 +37,7 @@ FluentTheme::FluentTheme() {
     
     // Periodically check for system theme changes
     m_systemThemeTimer = new QTimer(this);
-    m_systemThemeTimer->setInterval(1000); // Check every second
+    m_systemThemeTimer->setInterval(5000); // Check every 5 seconds
     connect(m_systemThemeTimer, &QTimer::timeout, this, &FluentTheme::checkSystemTheme);
     m_systemThemeTimer->start();
     

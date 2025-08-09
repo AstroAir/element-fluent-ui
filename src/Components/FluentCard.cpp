@@ -302,6 +302,7 @@ QSize FluentCard::minimumSizeHint() const {
 }
 
 void FluentCard::paintEvent(QPaintEvent* event) {
+    Q_UNUSED(event)
     FLUENT_PROFILE("FluentCard::paintEvent");
     
     QPainter painter(this);

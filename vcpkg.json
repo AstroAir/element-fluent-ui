@@ -1,0 +1,81 @@
+{
+  "name": "element-fluent-ui",
+  "version": "1.0.0",
+  "description": "A modern, comprehensive C++ Qt6 library implementing Microsoft's Fluent Design System",
+  "homepage": "https://github.com/ElementAstro/element-fluent-ui",
+  "documentation": "https://elementastro.github.io/element-fluent-ui/",
+  "license": "MIT",
+  "supports": "!uwp",
+  "dependencies": [
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "gui",
+        "widgets",
+        "printsupport"
+      ]
+    },
+    {
+      "name": "qtcharts",
+      "$comment": "Optional: Enable chart components"
+    }
+  ],
+  "builtin-baseline": "a42af01b72c28a8e1d7b48107b33e4f286a55ef6",
+  "overrides": [
+    {
+      "name": "qtbase",
+      "version": "6.5.0"
+    }
+  ],
+  "features": {
+    "charts": {
+      "description": "Enable chart components using Qt6Charts",
+      "dependencies": [
+        "qtcharts"
+      ]
+    },
+    "multimedia": {
+      "description": "Enable multimedia components using Qt6Multimedia",
+      "dependencies": [
+        "qtmultimedia"
+      ]
+    },
+    "network": {
+      "description": "Enable network components using Qt6Network",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "network"
+          ]
+        }
+      ]
+    },
+    "examples": {
+      "description": "Build example applications"
+    },
+    "tests": {
+      "description": "Build test suite",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "testlib"
+          ]
+        }
+      ]
+    },
+    "docs": {
+      "description": "Build documentation",
+      "dependencies": [
+        {
+          "name": "doxygen",
+          "host": true
+        }
+      ]
+    }
+  }
+}

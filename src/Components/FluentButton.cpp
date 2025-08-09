@@ -242,6 +242,7 @@ QSize FluentButton::minimumSizeHint() const {
 }
 
 void FluentButton::paintEvent(QPaintEvent* event) {
+    Q_UNUSED(event)
     FLUENT_PROFILE("FluentButton::paintEvent");
     
     QPainter painter(this);
@@ -345,7 +346,6 @@ void FluentButton::paintContent(QPainter& painter, const QRect& rect) {
         return;
     }
     
-    const QRect contentRect = calculateContentRect();
     const QRect iconRect = calculateIconRect();
     const QRect textRect = calculateTextRect();
     
@@ -823,7 +823,6 @@ QRect FluentButton::calculateIconRect() const {
     
     const QRect contentRect = calculateContentRect();
     const QSize iconSize = calculateIconSize();
-    const QSize textSize = calculateTextSize();
     
     QPoint iconPos;
     

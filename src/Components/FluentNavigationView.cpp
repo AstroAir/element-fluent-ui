@@ -61,6 +61,7 @@ signals:
 
 protected:
     void paintEvent(QPaintEvent* event) override {
+        Q_UNUSED(event)
         FLUENT_PROFILE("FluentNavButton::paintEvent");
         
         QPainter painter(this);
@@ -293,8 +294,8 @@ void FluentNavigationView::setIsPaneOpen(bool open) {
 }
 
 void FluentNavigationView::updatePaneWidth() {
-    int targetWidth;
-    
+    int targetWidth = 0;
+
     switch (m_displayMode) {
         case FluentNavigationDisplayMode::Minimal:
             targetWidth = 0;

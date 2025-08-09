@@ -124,15 +124,16 @@ void FluentTimelineItem::setUserData(const QVariant& data) {
 
 void FluentTimelineItem::setItemState(FluentTimelineItemState state) {
     if (m_data.state != state) {
-        const FluentTimelineItemState oldState = m_data.state;
+        // Store old state for potential future use (e.g., transition animations)
+        [[maybe_unused]] const FluentTimelineItemState oldState = m_data.state;
         m_data.state = state;
-        
+
         updateColors();
-        
+
         if (isVisible()) {
             animateStateChange(state);
         }
-        
+
         update();
         emit itemStateChanged(state);
         emit stateChanged(state);
@@ -348,7 +349,8 @@ QSize FluentTimelineItem::minimumSizeHint() const {
 }
 
 QSize FluentTimelineItem::calculateSizeHint() const {
-    const auto& theme = FluentTheme::instance();
+    // Theme instance available for future styling calculations
+    [[maybe_unused]] const auto& theme = FluentTheme::instance();
     const QFontMetrics titleMetrics(getTitleFont());
     const QFontMetrics descMetrics(getDescriptionFont());
     const QFontMetrics dateMetrics(getDateTimeFont());
@@ -419,6 +421,9 @@ void FluentTimelineItem::animateExpansion(bool expanded) {
 }
 
 void FluentTimelineItem::animateStateChange(FluentTimelineItemState newState) {
+    // newState parameter available for future state-specific animations
+    [[maybe_unused]] FluentTimelineItemState targetState = newState;
+
     if (!m_stateAnimation) return;
 
     m_stateAnimation->stop();
@@ -530,6 +535,9 @@ void FluentTimelineItem::markPending() {
 
 // Protected event handlers
 void FluentTimelineItem::paintEvent(QPaintEvent* event) {
+    // Event parameter available for future paint optimization
+    [[maybe_unused]] QPaintEvent* paintEvent = event;
+
     FLUENT_PROFILE("FluentTimelineItem::paintEvent");
 
     QPainter painter(this);
@@ -781,7 +789,8 @@ void FluentTimelineItem::paintIndicator(QPainter& painter, const QRect& rect) {
 }
 
 void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
-    const auto& theme = FluentTheme::instance();
+    // Theme instance available for future styling enhancements
+    [[maybe_unused]] const auto& theme = FluentTheme::instance();
     const QColor textColor = getTextColor();
     const QColor secondaryTextColor = getSecondaryTextColor();
 

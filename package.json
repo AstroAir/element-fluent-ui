@@ -1,0 +1,90 @@
+{
+  "name": "element-fluent-ui",
+  "version": "1.0.0",
+  "description": "A modern, comprehensive C++ Qt6 library implementing Microsoft's Fluent Design System",
+  "keywords": [
+    "qt6",
+    "cpp",
+    "fluent-design",
+    "ui-library",
+    "components",
+    "microsoft-fluent",
+    "desktop-ui",
+    "cross-platform"
+  ],
+  "homepage": "https://github.com/ElementAstro/element-fluent-ui",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ElementAstro/element-fluent-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ElementAstro/element-fluent-ui/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Max Qian",
+    "email": "astro_air@126.com"
+  },
+  "contributors": [
+    {
+      "name": "Element Fluent UI Contributors",
+      "url": "https://github.com/ElementAstro/element-fluent-ui/graphs/contributors"
+    }
+  ],
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:serve": "vitepress serve docs",
+    "lint:docs": "markdownlint docs/**/*.md",
+    "lint:fix": "markdownlint docs/**/*.md --fix",
+    "format:check": "prettier --check \"docs/**/*.{md,json,yml,yaml}\"",
+    "format:write": "prettier --write \"docs/**/*.{md,json,yml,yaml}\"",
+    "validate:links": "markdown-link-check docs/**/*.md",
+    "test:docs": "npm run lint:docs && npm run format:check && npm run validate:links",
+    "build:examples": "node scripts/build-examples.js",
+    "generate:api": "node scripts/generate-api-docs.js",
+    "release:prepare": "node scripts/prepare-release.js",
+    "dev": "concurrently \"npm run docs:dev\" \"npm run watch:examples\"",
+    "watch:examples": "nodemon --watch examples --ext cpp,h --exec \"npm run build:examples\"",
+    "clean": "rimraf docs/.vitepress/dist docs/.vitepress/cache",
+    "postinstall": "husky install",
+    "pre-commit": "lint-staged"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "markdown-link-check": "^3.11.2",
+    "markdownlint-cli": "^0.38.0",
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3",
+    "vitepress": "^1.0.0-rc.31"
+  },
+  "lint-staged": {
+    "*.{md,json,yml,yaml}": [
+      "prettier --write",
+      "git add"
+    ],
+    "docs/**/*.md": [
+      "markdownlint --fix",
+      "git add"
+    ]
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/ElementAstro"
+  }
+}

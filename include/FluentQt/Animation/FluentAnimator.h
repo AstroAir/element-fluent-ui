@@ -360,4 +360,24 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::staggerAnimation(
     return group;
 }
 
+// Animation management utility
+class FluentAnimationManager : public QObject {
+    Q_OBJECT
+
+public:
+    static FluentAnimationManager& instance();
+
+    void registerAnimation(QAbstractAnimation* animation);
+    void pauseAllAnimations();
+    void resumeAllAnimations();
+    void stopAllAnimations();
+    int activeAnimationCount() const;
+
+private:
+    FluentAnimationManager() = default;
+
+    QSet<QAbstractAnimation*> m_activeAnimations;
+    QSet<QAbstractAnimation*> m_pausedAnimations;
+};
+
 } // namespace FluentQt::Animation

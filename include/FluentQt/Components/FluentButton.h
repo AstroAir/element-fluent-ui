@@ -54,7 +54,6 @@ class FluentButton : public Core::FluentComponent {
     Q_PROPERTY(qreal loadingRotation READ loadingRotation WRITE setLoadingRotation)
     Q_PROPERTY(qreal revealProgress READ revealProgress WRITE setRevealProgress)
     Q_PROPERTY(bool flat READ isFlat WRITE setFlat)
-    Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
 
 public:
     explicit FluentButton(QWidget* parent = nullptr);

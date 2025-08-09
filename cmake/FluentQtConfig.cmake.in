@@ -1,0 +1,113 @@
+# FluentQtConfig.cmake.in - CMake configuration file for FluentQt
+# This file is used by find_package(FluentQt) to locate and configure the library
+
+@PACKAGE_INIT@
+
+# Version information
+set(FluentQt_VERSION "@PROJECT_VERSION@")
+set(FluentQt_VERSION_MAJOR "@PROJECT_VERSION_MAJOR@")
+set(FluentQt_VERSION_MINOR "@PROJECT_VERSION_MINOR@")
+set(FluentQt_VERSION_PATCH "@PROJECT_VERSION_PATCH@")
+
+# Feature availability
+set(FluentQt_CHARTS_AVAILABLE @FLUENTQT_CHARTS_AVAILABLE@)
+set(FluentQt_MULTIMEDIA_AVAILABLE @FLUENTQT_MULTIMEDIA_AVAILABLE@)
+set(FluentQt_NETWORK_AVAILABLE @FLUENTQT_NETWORK_AVAILABLE@)
+
+# Installation paths
+set_and_check(FluentQt_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set_and_check(FluentQt_LIB_DIR "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+# Find required Qt6 components
+find_dependency(Qt6 REQUIRED COMPONENTS Core Widgets Gui PrintSupport)
+
+# Find optional Qt6 components
+if(FluentQt_CHARTS_AVAILABLE)
+    find_dependency(Qt6 REQUIRED COMPONENTS Charts)
+endif()
+
+if(FluentQt_MULTIMEDIA_AVAILABLE)
+    find_dependency(Qt6 REQUIRED COMPONENTS Multimedia)
+endif()
+
+if(FluentQt_NETWORK_AVAILABLE)
+    find_dependency(Qt6 REQUIRED COMPONENTS Network)
+endif()
+
+# Platform-specific dependencies
+if(WIN32)
+    # Windows-specific libraries are handled by the target
+elseif(APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+elseif(UNIX)
+    # Linux-specific dependencies if needed
+endif()
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/FluentQtTargets.cmake")
+
+# Verify that the targets were created
+if(NOT TARGET FluentQt::FluentQt)
+    message(FATAL_ERROR "FluentQt::FluentQt target not found")
+endif()
+
+# Set the main library variable for compatibility
+set(FluentQt_LIBRARIES FluentQt::FluentQt)
+set(FluentQt_INCLUDE_DIRS ${FluentQt_INCLUDE_DIR})
+
+# Feature check functions
+function(fluentqt_check_feature feature_name)
+    if(feature_name STREQUAL "Charts")
+        if(NOT FluentQt_CHARTS_AVAILABLE)
+            message(FATAL_ERROR "FluentQt was not built with Charts support")
+        endif()
+    elseif(feature_name STREQUAL "Multimedia")
+        if(NOT FluentQt_MULTIMEDIA_AVAILABLE)
+            message(FATAL_ERROR "FluentQt was not built with Multimedia support")
+        endif()
+    elseif(feature_name STREQUAL "Network")
+        if(NOT FluentQt_NETWORK_AVAILABLE)
+            message(FATAL_ERROR "FluentQt was not built with Network support")
+        endif()
+    else()
+        message(WARNING "Unknown FluentQt feature: ${feature_name}")
+    endif()
+endfunction()
+
+# Helper function to add FluentQt to a target
+function(fluentqt_add_to_target target_name)
+    if(NOT TARGET ${target_name})
+        message(FATAL_ERROR "Target ${target_name} does not exist")
+    endif()
+    
+    target_link_libraries(${target_name} PRIVATE FluentQt::FluentQt)
+    
+    # Enable Qt MOC for the target
+    set_target_properties(${target_name} PROPERTIES
+        AUTOMOC ON
+        AUTORCC ON
+        AUTOUIC ON
+    )
+endfunction()
+
+# Compatibility variables
+set(FLUENTQT_FOUND TRUE)
+set(FluentQt_FOUND TRUE)
+
+# Print configuration information
+if(NOT FluentQt_FIND_QUIETLY)
+    message(STATUS "Found FluentQt ${FluentQt_VERSION}")
+    message(STATUS "  Include directory: ${FluentQt_INCLUDE_DIR}")
+    message(STATUS "  Library directory: ${FluentQt_LIB_DIR}")
+    if(FluentQt_CHARTS_AVAILABLE)
+        message(STATUS "  Charts support: enabled")
+    endif()
+    if(FluentQt_MULTIMEDIA_AVAILABLE)
+        message(STATUS "  Multimedia support: enabled")
+    endif()
+    if(FluentQt_NETWORK_AVAILABLE)
+        message(STATUS "  Network support: enabled")
+    endif()
+endif()
+
+check_required_components(FluentQt)

@@ -1,0 +1,240 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible to help us understand your request.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before submitting a feature request
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested before
+          required: true
+        - label: I have checked the roadmap to see if this feature is already planned
+          required: true
+        - label: This feature aligns with the Fluent Design System principles
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A brief, clear summary of the feature you'd like to see
+      placeholder: Summarize the feature in one or two sentences...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which category does this feature belong to?
+      options:
+        - New Component
+        - Component Enhancement
+        - Animation/Transition
+        - Styling/Theming
+        - Accessibility
+        - Performance
+        - Developer Experience
+        - Documentation
+        - Build System
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: |
+        Describe the problem or use case this feature would address...
+        
+        For example:
+        - As a developer, I need...
+        - Currently, users have to...
+        - There's no way to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe your proposed solution in detail
+      placeholder: |
+        Describe how you envision this feature working...
+        
+        Include details about:
+        - API design
+        - User interface
+        - Behavior
+        - Integration with existing components
+    validations:
+      required: true
+
+  - type: textarea
+    id: api-design
+    attributes:
+      label: API Design (if applicable)
+      description: If this is a new component or API, provide a proposed interface
+      render: cpp
+      placeholder: |
+        // Example API design
+        class FluentNewComponent : public FluentComponent {
+        public:
+            FluentNewComponent(QWidget* parent = nullptr);
+            
+            void setProperty(const QString& value);
+            QString property() const;
+            
+        Q_SIGNALS:
+            void propertyChanged(const QString& value);
+        };
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe any alternative solutions or workarounds you've considered
+      placeholder: |
+        What other approaches could solve this problem?
+        Are there existing workarounds?
+        Why is this solution preferred?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Critical (Blocking current project)
+        - High (Would significantly improve workflow)
+        - Medium (Nice to have)
+        - Low (Minor improvement)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple (Small change, minimal impact)
+        - Medium (Moderate change, some impact)
+        - Complex (Large change, significant impact)
+        - Very Complex (Major architectural change)
+        - Unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Requirements
+      description: What requirements should this feature meet?
+      options:
+        - label: Should follow Fluent Design System guidelines
+        - label: Should be accessible (WCAG 2.1 AA compliant)
+        - label: Should support both light and dark themes
+        - label: Should work on all supported platforms (Windows, macOS, Linux)
+        - label: Should include comprehensive documentation
+        - label: Should include unit tests
+        - label: Should include examples
+        - label: Should maintain backward compatibility
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Usage Examples
+      description: Provide examples of how this feature would be used
+      render: cpp
+      placeholder: |
+        // Example 1: Basic usage
+        auto* component = new FluentNewComponent(this);
+        component->setProperty("example");
+        
+        // Example 2: Advanced usage
+        connect(component, &FluentNewComponent::propertyChanged,
+                this, &MyClass::handlePropertyChange);
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups/Screenshots
+      description: If applicable, provide mockups, screenshots, or links to design references
+      placeholder: |
+        Attach images or provide links to:
+        - UI mockups
+        - Design references
+        - Similar implementations in other frameworks
+        - Microsoft Fluent Design examples
+
+  - type: textarea
+    id: breaking-changes
+    attributes:
+      label: Breaking Changes
+      description: Would this feature introduce any breaking changes?
+      placeholder: |
+        Describe any potential breaking changes:
+        - API changes
+        - Behavior changes
+        - Migration requirements
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing Considerations
+      description: How should this feature be tested?
+      placeholder: |
+        Describe testing requirements:
+        - Unit tests needed
+        - Integration tests
+        - Manual testing scenarios
+        - Performance considerations
+
+  - type: textarea
+    id: documentation
+    attributes:
+      label: Documentation Requirements
+      description: What documentation would be needed for this feature?
+      placeholder: |
+        Documentation needed:
+        - API documentation
+        - Usage examples
+        - Migration guide (if breaking changes)
+        - Design guidelines
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to contribute to implementing this feature?
+      options:
+        - label: I would be willing to implement this feature
+        - label: I would be willing to help with design/planning
+        - label: I would be willing to help with testing
+        - label: I would be willing to help with documentation
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, links, or information about the feature request
+      placeholder: |
+        Any additional information:
+        - Links to related issues
+        - References to other implementations
+        - Community feedback
+        - Timeline requirements

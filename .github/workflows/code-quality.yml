@@ -1,0 +1,291 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
+
+env:
+  QT_VERSION: '6.5.0'
+
+jobs:
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        modules: 'qtcharts qtmultimedia'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang-14 \
+          clang++-14 \
+          clang-tidy-14 \
+          clang-format-14 \
+          cppcheck \
+          ninja-build \
+          gcc-11 \
+          g++-11 \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev
+
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_C_COMPILER=clang-14 \
+          -DCMAKE_CXX_COMPILER=clang++-14 \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DFLUENTQT_BUILD_EXAMPLES=ON \
+          -DFLUENTQT_BUILD_TESTS=ON \
+          -DFLUENTQT_ENABLE_CHARTS=ON
+
+    - name: Build for analysis
+      run: cmake --build build --parallel
+
+    - name: Run clang-tidy
+      run: |
+        # Create results directory
+        mkdir -p analysis-results
+        
+        # Run clang-tidy on source files
+        find src -name "*.cpp" | \
+        xargs clang-tidy-14 -p build \
+          --format-style=file \
+          --export-fixes=analysis-results/clang-tidy-fixes.yaml \
+          > analysis-results/clang-tidy-report.txt 2>&1 || true
+
+    - name: Run cppcheck
+      run: |
+        cppcheck \
+          --enable=all \
+          --inconclusive \
+          --xml \
+          --xml-version=2 \
+          --suppress=missingIncludeSystem \
+          --suppress=unmatchedSuppression \
+          --suppress=unusedFunction \
+          --suppress=noExplicitConstructor \
+          --project=build/compile_commands.json \
+          src/ include/ \
+          2> analysis-results/cppcheck-report.xml || true
+
+    - name: Check formatting
+      run: |
+        # Check C++ formatting
+        find src include examples tests -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | \
+        xargs clang-format-14 --dry-run --Werror --style=file > analysis-results/format-check.txt 2>&1 || true
+
+    - name: Upload analysis results
+      uses: actions/upload-artifact@v3
+      with:
+        name: static-analysis-results
+        path: analysis-results/
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🔍 Static Analysis Results\n\n';
+          
+          // Read clang-tidy results
+          try {
+            const clangTidyReport = fs.readFileSync('analysis-results/clang-tidy-report.txt', 'utf8');
+            const lines = clangTidyReport.split('\n').filter(line => line.includes('warning:') || line.includes('error:'));
+            
+            if (lines.length > 0) {
+              comment += '### ⚠️ Clang-Tidy Issues\n';
+              comment += '```\n';
+              comment += lines.slice(0, 20).join('\n'); // Limit to first 20 issues
+              if (lines.length > 20) {
+                comment += `\n... and ${lines.length - 20} more issues\n`;
+              }
+              comment += '```\n\n';
+            } else {
+              comment += '### ✅ Clang-Tidy: No issues found\n\n';
+            }
+          } catch (e) {
+            comment += '### ❌ Clang-Tidy: Analysis failed\n\n';
+          }
+          
+          // Read cppcheck results
+          try {
+            const cppcheckReport = fs.readFileSync('analysis-results/cppcheck-report.xml', 'utf8');
+            const errorCount = (cppcheckReport.match(/severity="error"/g) || []).length;
+            const warningCount = (cppcheckReport.match(/severity="warning"/g) || []).length;
+            
+            comment += `### 📊 Cppcheck Results\n`;
+            comment += `- Errors: ${errorCount}\n`;
+            comment += `- Warnings: ${warningCount}\n\n`;
+          } catch (e) {
+            comment += '### ❌ Cppcheck: Analysis failed\n\n';
+          }
+          
+          // Read format check results
+          try {
+            const formatCheck = fs.readFileSync('analysis-results/format-check.txt', 'utf8');
+            if (formatCheck.trim().length > 0) {
+              comment += '### 🎨 Code Formatting Issues Found\n';
+              comment += 'Please run `clang-format` to fix formatting issues.\n\n';
+            } else {
+              comment += '### ✅ Code Formatting: All files properly formatted\n\n';
+            }
+          } catch (e) {
+            comment += '### ✅ Code Formatting: No issues detected\n\n';
+          }
+          
+          comment += '---\n';
+          comment += '*This comment was automatically generated by the Code Quality workflow.*';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: cpp
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        modules: 'qtcharts'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          ninja-build \
+          gcc-11 \
+          g++-11 \
+          libgl1-mesa-dev
+
+    - name: Configure and build
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DFLUENTQT_BUILD_EXAMPLES=ON \
+          -DFLUENTQT_BUILD_TESTS=ON
+        cmake --build build --parallel
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run npm audit
+      run: npm audit --audit-level=moderate
+
+    - name: Check for outdated packages
+      run: npm outdated || true
+
+    - name: Run license check
+      run: |
+        npx license-checker --summary > license-summary.txt
+        cat license-summary.txt
+
+    - name: Upload dependency report
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-report
+        path: license-summary.txt
+
+  performance-test:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        modules: 'qtcharts'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          ninja-build \
+          gcc-11 \
+          g++-11 \
+          libgl1-mesa-dev \
+          valgrind
+
+    - name: Configure CMake with profiling
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DFLUENTQT_BUILD_EXAMPLES=ON \
+          -DFLUENTQT_BUILD_TESTS=ON \
+          -DFLUENTQT_ENABLE_CHARTS=ON
+
+    - name: Build
+      run: cmake --build build --parallel
+
+    - name: Run performance tests
+      run: |
+        cd build
+        # Run tests with memory checking
+        valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all \
+          --xml=yes --xml-file=../valgrind-report.xml \
+          ctest -R "Performance" || true
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: valgrind-report.xml

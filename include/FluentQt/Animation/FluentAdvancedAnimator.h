@@ -13,7 +13,9 @@
 #include <QPoint>
 #include <QRect>
 #include <QColor>
-#include <functional>
+#include <QTouchEvent>
+#include <QGestureEvent>
+#include <QLocale>
 #include <memory>
 #include <unordered_map>
 
@@ -58,12 +60,36 @@ enum class FluentAdvancedAnimationType {
     Magnetic
 };
 
-// Animation performance levels
+// Enhanced animation performance levels
 enum class FluentAnimationPerformance {
     High,       // Full quality, all effects
     Medium,     // Reduced quality for better performance
     Low,        // Minimal effects, maximum performance
-    Adaptive    // Automatically adjust based on system performance
+    Adaptive,   // Automatically adjust based on system performance
+    PowerSaver, // Minimal animations for battery saving
+    Gaming,     // Optimized for gaming/high-refresh displays
+    Accessibility // Optimized for accessibility needs
+};
+
+// Cultural animation preferences
+enum class FluentCulturalAnimationStyle {
+    Western,        // Direct, immediate animations
+    Eastern,        // Subtle, flowing animations
+    Minimal,        // Clean, simple animations
+    Expressive,     // Rich, detailed animations
+    Formal,         // Conservative, professional animations
+    Playful,        // Fun, bouncy animations
+    Adaptive        // Adapts to cultural context
+};
+
+// Accessibility animation modes
+enum class FluentAccessibilityAnimationMode {
+    Full,           // All animations enabled
+    Reduced,        // Reduced motion (respects system preference)
+    Essential,      // Only essential feedback animations
+    None,           // No animations (static UI)
+    HighContrast,   // High contrast compatible animations
+    Custom          // Custom accessibility settings
 };
 
 // Gesture types for gesture animations

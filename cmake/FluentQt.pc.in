@@ -1,0 +1,15 @@
+# FluentQt.pc.in - pkg-config file for FluentQt
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: FluentQt
+Description: @PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
+URL: @PROJECT_HOMEPAGE_URL@
+
+Requires: Qt6Core Qt6Widgets Qt6Gui Qt6PrintSupport
+Libs: -L${libdir} -lFluentQt
+Cflags: -I${includedir}

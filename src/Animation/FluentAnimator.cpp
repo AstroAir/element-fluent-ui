@@ -24,7 +24,7 @@ FluentAnimator::FluentAnimator(QObject* parent)
     // Connect to performance monitor for adaptive animations
     connect(&Core::FluentPerformanceMonitor::instance(),
             &Core::FluentPerformanceMonitor::frameRateChanged,
-            this, [this](double fps) {
+            this, [](double fps) {
                 // Adapt animation quality based on performance
                 Q_UNUSED(fps)
                 // This could trigger animation quality adjustments
@@ -961,62 +961,51 @@ private:
 
 } // namespace Effects
 
-// Advanced animation utilities
-class FluentAnimationManager : public QObject {
-    Q_OBJECT
+// FluentAnimationManager implementation
+FluentAnimationManager& FluentAnimationManager::instance() {
+    static FluentAnimationManager instance;
+    return instance;
+}
 
-public:
-    static FluentAnimationManager& instance() {
-        static FluentAnimationManager instance;
-        return instance;
-    }
+void FluentAnimationManager::registerAnimation(QAbstractAnimation* animation) {
+    m_activeAnimations.insert(animation);
 
-    void registerAnimation(QAbstractAnimation* animation) {
-        m_activeAnimations.insert(animation);
-        
-        connect(animation, &QAbstractAnimation::finished, [this, animation]() {
-            m_activeAnimations.remove(animation);
-        });
-        
-        connect(animation, &QAbstractAnimation::destroyed, [this, animation]() {
-            m_activeAnimations.remove(animation);
-        });
-    }
+    connect(animation, &QAbstractAnimation::finished, [this, animation]() {
+        m_activeAnimations.remove(animation);
+    });
 
-    void pauseAllAnimations() {
-        for (auto* animation : m_activeAnimations) {
-            if (animation->state() == QAbstractAnimation::Running) {
-                animation->pause();
-                m_pausedAnimations.insert(animation);
-            }
+    connect(animation, &QAbstractAnimation::destroyed, [this, animation]() {
+        m_activeAnimations.remove(animation);
+    });
+}
+
+void FluentAnimationManager::pauseAllAnimations() {
+    for (auto* animation : m_activeAnimations) {
+        if (animation->state() == QAbstractAnimation::Running) {
+            animation->pause();
+            m_pausedAnimations.insert(animation);
         }
     }
+}
 
-    void resumeAllAnimations() {
-        for (auto* animation : m_pausedAnimations) {
-            animation->resume();
-        }
-        m_pausedAnimations.clear();
+void FluentAnimationManager::resumeAllAnimations() {
+    for (auto* animation : m_pausedAnimations) {
+        animation->resume();
     }
+    m_pausedAnimations.clear();
+}
 
-    void stopAllAnimations() {
-        for (auto* animation : m_activeAnimations) {
-            animation->stop();
-        }
-        m_activeAnimations.clear();
-        m_pausedAnimations.clear();
+void FluentAnimationManager::stopAllAnimations() {
+    for (auto* animation : m_activeAnimations) {
+        animation->stop();
     }
+    m_activeAnimations.clear();
+    m_pausedAnimations.clear();
+}
 
-    int activeAnimationCount() const {
-        return m_activeAnimations.size();
-    }
-
-private:
-    FluentAnimationManager() = default;
-    
-    QSet<QAbstractAnimation*> m_activeAnimations;
-    QSet<QAbstractAnimation*> m_pausedAnimations;
-};
+int FluentAnimationManager::activeAnimationCount() const {
+    return m_activeAnimations.size();
+}
 
 } // namespace FluentQt::Animation
 

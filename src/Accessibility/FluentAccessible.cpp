@@ -1,5 +1,8 @@
 // src/Accessibility/FluentAccessible.cpp
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Accessibility/FluentAccessibilityManager.h"
+#include "FluentQt/Accessibility/FluentKeyboardNavigationManager.h"
+#include "FluentQt/Accessibility/FluentScreenReaderManager.h"
 #include "FluentQt/Core/FluentComponent.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
@@ -649,7 +652,7 @@ public:
     }
 };
 
-// Initialize accessibility support
+// Initialize enhanced accessibility support
 void initializeAccessibility() {
     static bool initialized = false;
     if (initialized) return;
@@ -662,6 +665,25 @@ void initializeAccessibility() {
     // Always enable accessibility for FluentQt components
     // This ensures accessibility works even without assistive technology
     QAccessible::setActive(true);
+
+    // Initialize enhanced accessibility managers
+    auto& accessibilityManager = FluentQt::Accessibility::FluentAccessibilityManager::instance();
+    accessibilityManager.detectSystemAccessibilitySettings();
+    accessibilityManager.applySystemSettings();
+
+    // Initialize screen reader support
+    auto& screenReaderManager = FluentQt::Accessibility::FluentScreenReaderManager::instance();
+    screenReaderManager.detectScreenReader();
+
+    // Initialize keyboard navigation
+    auto& keyboardManager = FluentQt::Accessibility::FluentKeyboardNavigationManager::instance();
+    FluentQt::Accessibility::FluentKeyboardConfig config;
+    config.enableArrowNavigation = true;
+    config.enableSkipLinks = true;
+    config.enableFocusTrapping = true;
+    keyboardManager.setNavigationConfig(config);
+
+    qDebug() << "Enhanced FluentQt accessibility initialized";
 
     // Additional check for assistive technology
     const bool hasAT = []() {

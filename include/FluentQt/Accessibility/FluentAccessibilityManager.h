@@ -81,15 +81,75 @@ struct AccessibilityProperties {
     double contrastRatio{0.0};
 };
 
-// Accessibility issue for compliance checking
+// Enhanced accessibility issue types for comprehensive WCAG 2.1 validation
+enum class AccessibilityIssueType {
+    // Perceivable issues (WCAG 2.1 Principle 1)
+    MissingLabel,
+    LowContrast,
+    MissingAltText,
+    NoTextAlternatives,
+    InsufficientColorContrast,
+    ColorOnlyInformation,
+    AudioWithoutCaptions,
+    VideoWithoutDescriptions,
+    FlashingContent,
+    AutoPlayingMedia,
+    NonTextContentMissing,
+
+    // Operable issues (WCAG 2.1 Principle 2)
+    NoKeyboardAccess,
+    KeyboardTrap,
+    InvalidTabOrder,
+    NoFocusIndicator,
+    TimingTooShort,
+    NoSkipLinks,
+    UnpredictableNavigation,
+    ContextChangeOnFocus,
+    MotionActivation,
+    TargetSizeTooSmall,
+
+    // Understandable issues (WCAG 2.1 Principle 3)
+    MissingHeading,
+    EmptyLink,
+    FormValidationError,
+    NoErrorIdentification,
+    NoErrorSuggestion,
+    InconsistentNavigation,
+    InconsistentIdentification,
+    UnexpectedContextChange,
+    LabelInNameMismatch,
+
+    // Robust issues (WCAG 2.1 Principle 4)
+    InvalidMarkup,
+    IncompatibleAssistiveTech,
+    MissingLandmarks,
+    ImproperHeadingStructure,
+    MissingRequiredAttributes,
+    StatusMessagesMissing,
+
+    // Additional WCAG 2.1 AA specific issues
+    OrientationLocked,
+    ConcurrentInputMechanisms,
+    CharacterKeyShortcuts,
+    PointerCancellation,
+    PointerGestures
+};
+
+// Enhanced accessibility issue for compliance checking
 struct AccessibilityIssue {
     QString widgetName;
-    QString issueType;
+    AccessibilityIssueType issueType;
     QString description;
     QString suggestion;
     WcagLevel requiredLevel;
     QString wcagCriterion;
+    QString wcagTechnique;
+    int severity{1}; // 1-5, 5 being most severe
     bool isBlocking{false};
+    bool isAutomaticallyFixable{false};
+    QString fixAction;
+    QStringList affectedUsers; // Types of users affected
+    double impactScore{0.0}; // 0-100 impact score
 };
 
 // Enhanced accessibility interface
@@ -194,10 +254,47 @@ public:
     void announceGlobally(const QString& message, LiveRegionType urgency = LiveRegionType::Polite);
     void setAnnouncementDelay(int milliseconds) { m_announcementDelay = milliseconds; }
     
-    // Accessibility testing and validation
+    // Enhanced accessibility testing and validation
     QList<AccessibilityIssue> validateAccessibility(QWidget* rootWidget);
+    QList<AccessibilityIssue> validateWcag21Compliance(QWidget* rootWidget);
     void generateAccessibilityReport(QWidget* rootWidget, const QString& filename);
+    void generateWcag21Report(QWidget* rootWidget, const QString& filename);
     bool checkWcagCompliance(QWidget* widget, WcagLevel level);
+
+    // Specific WCAG 2.1 validation methods
+    QList<AccessibilityIssue> validatePerceivable(QWidget* widget);
+    QList<AccessibilityIssue> validateOperable(QWidget* widget);
+    QList<AccessibilityIssue> validateUnderstandable(QWidget* widget);
+    QList<AccessibilityIssue> validateRobust(QWidget* widget);
+
+    // Automated accessibility fixes
+    void autoFixAccessibilityIssues(QWidget* rootWidget, const QList<AccessibilityIssue>& issues);
+    bool canAutoFixIssue(const AccessibilityIssue& issue);
+    void applyAccessibilityFix(QWidget* widget, const AccessibilityIssue& issue);
+
+    // Advanced contrast and color checking
+    double calculateContrastRatio(const QColor& foreground, const QColor& background);
+    bool meetsContrastRequirements(const QColor& fg, const QColor& bg, WcagLevel level, bool isLargeText = false);
+    QColor suggestBetterContrast(const QColor& foreground, const QColor& background, WcagLevel level);
+    QList<AccessibilityIssue> validateColorAccessibility(QWidget* widget);
+
+    // Keyboard navigation validation
+    QList<AccessibilityIssue> validateKeyboardNavigation(QWidget* rootWidget);
+    bool isKeyboardAccessible(QWidget* widget);
+    QList<QWidget*> findKeyboardTraps(QWidget* rootWidget);
+    void validateTabOrder(QWidget* rootWidget, QList<AccessibilityIssue>& issues);
+
+    // Screen reader compatibility
+    QList<AccessibilityIssue> validateScreenReaderCompatibility(QWidget* widget);
+    bool hasProperAriaLabels(QWidget* widget);
+    bool hasProperHeadingStructure(QWidget* rootWidget);
+    void validateLandmarks(QWidget* rootWidget, QList<AccessibilityIssue>& issues);
+
+    // Touch and pointer accessibility (WCAG 2.1 AA)
+    QList<AccessibilityIssue> validateTouchAccessibility(QWidget* widget);
+    bool meetsMinimumTargetSize(QWidget* widget);
+    void validatePointerGestures(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void validateMotionActivation(QWidget* widget, QList<AccessibilityIssue>& issues);
     
     // Widget registration
     void registerAccessibleWidget(QWidget* widget, FluentEnhancedAccessible* accessible);
@@ -216,6 +313,19 @@ signals:
     void accessibilityIssueFound(const AccessibilityIssue& issue);
     void wcagComplianceLevelChanged(WcagLevel level);
 
+    // Enhanced accessibility signals
+    void accessibilityValidationCompleted(const QList<FluentQt::Accessibility::AccessibilityIssue>& issues);
+    void wcag21ValidationCompleted(const QList<FluentQt::Accessibility::AccessibilityIssue>& issues);
+    void accessibilityIssueFixed(const FluentQt::Accessibility::AccessibilityIssue& issue);
+    void contrastIssueDetected(QWidget* widget, double ratio, double required);
+    void keyboardTrapDetected(QWidget* widget);
+    void focusManagementIssue(QWidget* widget, const QString& issue);
+    void screenReaderIssueDetected(QWidget* widget, const QString& issue);
+    void touchAccessibilityIssue(QWidget* widget, const QString& issue);
+    void motionActivationIssue(QWidget* widget, const QString& issue);
+    void accessibilityReportGenerated(const QString& filename);
+    void autoFixApplied(QWidget* widget, const AccessibilityIssue& issue);
+
 private slots:
     void processAnnouncementQueue();
     void onSystemAccessibilityChanged();
@@ -227,6 +337,45 @@ private:
     void checkKeyboardAccess(QWidget* widget, QList<AccessibilityIssue>& issues);
     void checkFocusManagement(QWidget* widget, QList<AccessibilityIssue>& issues);
     void checkTextAlternatives(QWidget* widget, QList<AccessibilityIssue>& issues);
+
+    // Enhanced WCAG 2.1 validation methods
+    void validatePerceivableInternal(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void validateOperableInternal(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void validateUnderstandableInternal(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void validateRobustInternal(QWidget* widget, QList<AccessibilityIssue>& issues);
+
+    // Specific validation helpers
+    void checkImageAlternatives(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkMediaAlternatives(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkColorDependency(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkFlashingContent(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkTimingConstraints(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkSkipLinks(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkPageTitles(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkFormLabels(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkErrorHandling(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkConsistentNavigation(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkStatusMessages(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkTargetSizes(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkPointerInputs(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkMotionInputs(QWidget* widget, QList<AccessibilityIssue>& issues);
+    void checkCharacterKeyShortcuts(QWidget* widget, QList<AccessibilityIssue>& issues);
+
+    // Auto-fix helpers
+    void autoFixContrast(QWidget* widget, const AccessibilityIssue& issue);
+    void autoFixLabels(QWidget* widget, const AccessibilityIssue& issue);
+    void autoFixTabOrder(QWidget* widget, const AccessibilityIssue& issue);
+    void autoFixFocusIndicators(QWidget* widget, const AccessibilityIssue& issue);
+    void autoFixTargetSizes(QWidget* widget, const AccessibilityIssue& issue);
+
+    // Utility methods
+    QString generateIssueDescription(AccessibilityIssueType type, QWidget* widget);
+    QString generateFixSuggestion(AccessibilityIssueType type, QWidget* widget);
+    QString getWcagCriterion(AccessibilityIssueType type);
+    QString getWcagTechnique(AccessibilityIssueType type);
+    int calculateSeverity(AccessibilityIssueType type, WcagLevel level);
+    double calculateImpactScore(AccessibilityIssueType type, QWidget* widget);
+    QStringList getAffectedUserTypes(AccessibilityIssueType type);
 
 private:
     WcagLevel m_wcagLevel{WcagLevel::AA};

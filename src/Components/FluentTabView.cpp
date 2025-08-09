@@ -54,6 +54,7 @@ void FluentTabButton::setPinned(bool pinned) {
 }
 
 void FluentTabButton::paintEvent(QPaintEvent* event) {
+    Q_UNUSED(event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     

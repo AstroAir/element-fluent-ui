@@ -235,9 +235,12 @@ FluentToast* FluentToastManager::show(FluentToastType type, const QString& title
 }
 
 FluentToast* FluentToastManager::show(FluentToastType type, const QString& title, const QString& message, const FluentToastConfig& config) {
-    auto* toast = new FluentToast(config);
-    toast->setTitle(title);
-    toast->setMessage(message);
+    // Create toast with the specified type and config
+    auto* toast = new FluentToast(type, title, message);
+
+    // Apply config settings
+    toast->setConfiguration(config);
+
     return show(toast, config.position);
 }
 

@@ -1,0 +1,267 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.5.0'
+  CMAKE_VERSION: '3.20'
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+              name: "Windows MSVC",
+              os: windows-latest,
+              cc: "cl",
+              cxx: "cl",
+              environment_script: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
+              generators: "Visual Studio 17 2022"
+            }
+          - {
+              name: "Windows MinGW",
+              os: windows-latest,
+              cc: "gcc",
+              cxx: "g++",
+              generators: "Ninja"
+            }
+          - {
+              name: "Ubuntu GCC",
+              os: ubuntu-latest,
+              cc: "gcc-11",
+              cxx: "g++-11",
+              generators: "Ninja"
+            }
+          - {
+              name: "Ubuntu Clang",
+              os: ubuntu-latest,
+              cc: "clang-14",
+              cxx: "clang++-14",
+              generators: "Ninja"
+            }
+          - {
+              name: "macOS",
+              os: macos-latest,
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Ninja"
+            }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: ${{ runner.os }}
+        target: 'desktop'
+        arch: ${{ matrix.config.os == 'windows-latest' && 'win64_msvc2019_64' || '' }}
+        modules: 'qtcharts qtmultimedia qtnetworkauth'
+        cache: true
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          ninja-build \
+          gcc-11 \
+          g++-11 \
+          clang-14 \
+          clang++-14 \
+          libc++-14-dev \
+          libc++abi-14-dev \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          libxrandr-dev \
+          libxss-dev \
+          libxcursor-dev \
+          libxcomposite-dev \
+          libasound2-dev \
+          libpulse-dev \
+          libudev-dev \
+          libxkbcommon-dev \
+          libdrm-dev \
+          libxkbcommon-x11-dev \
+          libatspi2.0-dev \
+          libgtk-3-dev
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install ninja
+
+    - name: Install system dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install ninja
+
+    - name: Setup MSVC environment
+      if: matrix.config.name == 'Windows MSVC'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=${{ matrix.config.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
+          -DFLUENTQT_BUILD_EXAMPLES=ON \
+          -DFLUENTQT_BUILD_TESTS=ON \
+          -DFLUENTQT_BUILD_DOCS=OFF \
+          -DFLUENTQT_ENABLE_CHARTS=ON \
+          -DFLUENTQT_ENABLE_MULTIMEDIA=ON \
+          -DFLUENTQT_ENABLE_NETWORK=ON \
+          -DCMAKE_INSTALL_PREFIX=install
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Test
+      working-directory: build
+      run: ctest --output-on-failure --parallel
+
+    - name: Install
+      run: cmake --install build --config Release
+
+    - name: Package
+      if: matrix.config.name == 'Ubuntu GCC'
+      run: |
+        cd build
+        cpack
+
+    - name: Upload artifacts
+      if: matrix.config.name == 'Ubuntu GCC'
+      uses: actions/upload-artifact@v3
+      with:
+        name: fluentqt-packages
+        path: build/*.tar.gz
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint documentation
+      run: npm run lint:docs
+
+    - name: Check formatting
+      run: npm run format:check
+
+    - name: Validate links
+      run: npm run validate:links
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        modules: 'qtcharts'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang-format-14 \
+          clang-tidy-14 \
+          cppcheck \
+          ninja-build \
+          gcc-11 \
+          g++-11
+
+    - name: Check C++ formatting
+      run: |
+        find src include examples tests -name "*.cpp" -o -name "*.h" -o -name "*.hpp" | \
+        xargs clang-format-14 --dry-run --Werror
+
+    - name: Run static analysis
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_C_COMPILER=gcc-11 \
+          -DCMAKE_CXX_COMPILER=g++-11 \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        
+        # Run clang-tidy on a subset of files
+        find src -name "*.cpp" | head -10 | \
+        xargs clang-tidy-14 -p build --warnings-as-errors=*
+
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --inconclusive --xml --xml-version=2 \
+          --suppress=missingIncludeSystem \
+          --suppress=unmatchedSuppression \
+          --suppress=unusedFunction \
+          src/ include/ 2> cppcheck-report.xml || true
+
+    - name: Upload cppcheck results
+      uses: actions/upload-artifact@v3
+      with:
+        name: cppcheck-report
+        path: cppcheck-report.xml
+
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build documentation
+      run: npm run docs:build
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/.vitepress/dist

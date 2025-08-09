@@ -10,17 +10,22 @@
 #include <QDir>
 #include <QMutex>
 #include <QTimer>
-#include <functional>
+#include <QMap>
+#include <QColor>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 namespace FluentQt::Core {
 
-// Text direction for RTL support
+// Enhanced text direction for comprehensive RTL support
 enum class FluentTextDirection {
     LeftToRight,
     RightToLeft,
-    Auto  // Determined by locale
+    Auto,               // Determined by locale
+    Inherit,            // Inherit from parent
+    Mixed,              // Mixed content direction
+    Contextual          // Based on content analysis
 };
 
 // Number formatting styles
@@ -42,14 +47,53 @@ enum class FluentDateTimeFormat {
     Custom      // User-defined format
 };
 
-// Pluralization rules
+// Enhanced pluralization rules
 enum class FluentPluralRule {
     Zero,       // 0 items
     One,        // 1 item
     Two,        // 2 items (for languages with dual)
     Few,        // few items (2-4 in some languages)
     Many,       // many items (5+ in some languages)
-    Other       // default/other
+    Other,      // default/other
+    Fractional, // Fractional numbers (1.5, 2.3, etc.)
+    Ordinal     // Ordinal numbers (1st, 2nd, 3rd, etc.)
+};
+
+// Cultural adaptation types
+enum class FluentCulturalAdaptation {
+    None,               // No cultural adaptation
+    Colors,             // Color preferences and meanings
+    Icons,              // Icon styles and meanings
+    Layout,             // Layout preferences (spacing, density)
+    Typography,         // Font preferences and sizing
+    Imagery,            // Image and illustration styles
+    Interaction,        // Interaction patterns and gestures
+    Content,            // Content presentation preferences
+    All                 // All cultural adaptations
+};
+
+// Locale-specific formatting preferences
+enum class FluentFormattingStyle {
+    Default,            // Default system formatting
+    Formal,             // Formal/business formatting
+    Casual,             // Casual/friendly formatting
+    Technical,          // Technical/precise formatting
+    Localized,          // Fully localized formatting
+    International       // International/neutral formatting
+};
+
+// Text case transformation types
+enum class FluentTextCase {
+    None,               // No transformation
+    Lower,              // lowercase
+    Upper,              // UPPERCASE
+    Title,              // Title Case
+    Sentence,           // Sentence case
+    Camel,              // camelCase
+    Pascal,             // PascalCase
+    Snake,              // snake_case
+    Kebab,              // kebab-case
+    Localized           // Locale-specific casing
 };
 
 // Translation context for better organization
@@ -73,20 +117,66 @@ struct TranslationEntry {
     std::unordered_map<FluentPluralRule, QString> pluralForms;
 };
 
-// Locale information with extended properties
+// Enhanced locale information with cultural adaptation
 struct FluentLocaleInfo {
     QLocale locale;
     QString displayName;
     QString nativeName;
+    QString englishName;
     FluentTextDirection textDirection;
     QString dateFormat;
     QString timeFormat;
     QString numberFormat;
     QString currencySymbol;
+    QString currencyCode;
     QStringList supportedFeatures;
     bool isRTL{false};
     bool isComplete{false};  // Translation completeness
     double completionPercentage{0.0};
+
+    // Cultural adaptation properties
+    FluentFormattingStyle preferredFormattingStyle{FluentFormattingStyle::Default};
+    QMap<FluentCulturalAdaptation, QVariant> culturalPreferences;
+    QStringList preferredFonts;
+    QStringList fallbackFonts;
+    double textScalingFactor{1.0};
+    double lineHeightFactor{1.0};
+
+    // Regional preferences
+    QString region;
+    QString script;
+    QString variant;
+    QStringList territories;
+    QStringList languages;
+
+    // Formatting preferences
+    QString listSeparator{", "};
+    QString listLastSeparator{" and "};
+    QString decimalSeparator{"."};
+    QString thousandsSeparator{","};
+    QString quotationMarks{"\"\"''"}; // Primary and secondary quotes
+
+    // Calendar and time preferences
+    Qt::DayOfWeek firstDayOfWeek{Qt::Monday};
+    QStringList monthNames;
+    QStringList monthNamesShort;
+    QStringList dayNames;
+    QStringList dayNamesShort;
+    bool use24HourFormat{true};
+    QString amPmIndicator{"AM/PM"};
+
+    // Cultural color preferences
+    QColor primaryCulturalColor;
+    QColor secondaryCulturalColor;
+    QList<QColor> culturalColorPalette;
+
+    // Accessibility preferences
+    bool preferHighContrast{false};
+    bool preferReducedMotion{false};
+    double preferredFontSize{14.0};
+
+    // Custom properties for extensibility
+    QMap<QString, QVariant> customProperties;
 };
 
 // Translation manager for comprehensive i18n support
@@ -156,12 +246,38 @@ public:
     FluentPluralRule getPluralRule(int count) const;
     QString formatPlural(int count, const QString& singular, const QString& plural = "") const;
     
-    // Locale-specific utilities
+    // Enhanced locale-specific utilities
     QString getLocalizedString(const QString& key) const;
     QStringList getLocalizedStringList(const QString& key) const;
     QString getDecimalSeparator() const;
     QString getThousandsSeparator() const;
     QString getCurrencySymbol() const;
+    QString getCurrencyCode() const;
+    QString getListSeparator() const;
+    QString getListLastSeparator() const;
+    QString getQuotationMarks(bool primary = true) const;
+
+    // Cultural adaptation
+    void enableCulturalAdaptation(FluentCulturalAdaptation adaptation, bool enabled = true);
+    bool isCulturalAdaptationEnabled(FluentCulturalAdaptation adaptation) const;
+    QVariant getCulturalPreference(FluentCulturalAdaptation adaptation, const QString& key) const;
+    void setCulturalPreference(FluentCulturalAdaptation adaptation, const QString& key, const QVariant& value);
+
+    // Text transformation
+    QString transformText(const QString& text, FluentTextCase textCase) const;
+    QString formatList(const QStringList& items) const;
+    QString formatOrdinal(int number) const;
+    QString formatCardinal(int number) const;
+
+    // Advanced formatting
+    QString formatAddress(const QMap<QString, QString>& addressComponents) const;
+    QString formatPhoneNumber(const QString& phoneNumber) const;
+    QString formatName(const QString& firstName, const QString& lastName, const QString& title = "") const;
+
+    // Locale detection and suggestion
+    QLocale detectLocaleFromText(const QString& text) const;
+    QList<QLocale> suggestLocales(const QString& userInput) const;
+    bool isLocaleSupported(const QLocale& locale) const;
     
     // Translation caching
     void enableTranslationCache(bool enabled = true) { m_cacheEnabled = enabled; }
@@ -198,7 +314,7 @@ private:
     
     // Translation storage
     std::unordered_map<QString, TranslationEntry> m_translations;
-    std::unordered_map<QLocale, std::unique_ptr<QTranslator>> m_translators;
+    QMap<QLocale, std::unique_ptr<QTranslator>> m_translators;
     
     // Caching
     bool m_cacheEnabled{true};

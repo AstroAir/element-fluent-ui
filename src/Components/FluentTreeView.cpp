@@ -94,7 +94,7 @@ void FluentTreeView::setSelectionMode(FluentTreeSelectionMode mode) {
     if (m_selectionMode != mode) {
         m_selectionMode = mode;
 
-        QAbstractItemView::SelectionMode qtMode;
+        QAbstractItemView::SelectionMode qtMode = QAbstractItemView::SingleSelection;
         switch (mode) {
             case FluentTreeSelectionMode::NoSelection:
                 qtMode = QAbstractItemView::NoSelection;
@@ -129,6 +129,11 @@ void FluentTreeView::setExpandMode(FluentTreeExpandMode mode) {
                 break;
             case FluentTreeExpandMode::DoubleClick:
                 m_treeWidget->setExpandsOnDoubleClick(true);
+                break;
+            case FluentTreeExpandMode::AutoExpand:
+                m_treeWidget->setExpandsOnDoubleClick(false);
+                // Auto-expand items when they are added
+                m_treeWidget->expandAll();
                 break;
         }
     }

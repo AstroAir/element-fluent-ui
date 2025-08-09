@@ -1,0 +1,279 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  QT_VERSION: '6.5.0'
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog from git commits
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        else
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        fi
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD)
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s")
+        fi
+        
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.VERSION }}
+        release_name: FluentQt ${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Changes in ${{ steps.get_version.outputs.VERSION }}
+          
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ## Installation
+          
+          ### Using CMake
+          ```bash
+          find_package(FluentQt REQUIRED)
+          target_link_libraries(your_target FluentQt::FluentQt)
+          ```
+          
+          ### Using vcpkg
+          ```bash
+          vcpkg install fluentqt
+          ```
+          
+          ### Using Conan
+          ```bash
+          conan install fluentqt/1.0.0@
+          ```
+          
+          ## Documentation
+          
+          - [API Documentation](https://elementastro.github.io/element-fluent-ui/)
+          - [Component Guide](https://elementastro.github.io/element-fluent-ui/components/)
+          - [Examples](https://github.com/ElementAstro/element-fluent-ui/tree/main/examples)
+        draft: false
+        prerelease: false
+
+  build-packages:
+    name: Build ${{ matrix.config.name }}
+    needs: create-release
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - {
+              name: "Windows x64",
+              os: windows-latest,
+              cc: "cl",
+              cxx: "cl",
+              generators: "Visual Studio 17 2022",
+              package_name: "fluentqt-windows-x64"
+            }
+          - {
+              name: "Ubuntu x64",
+              os: ubuntu-latest,
+              cc: "gcc-11",
+              cxx: "g++-11",
+              generators: "Ninja",
+              package_name: "fluentqt-linux-x64"
+            }
+          - {
+              name: "macOS x64",
+              os: macos-latest,
+              cc: "clang",
+              cxx: "clang++",
+              generators: "Ninja",
+              package_name: "fluentqt-macos-x64"
+            }
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: ${{ runner.os }}
+        target: 'desktop'
+        arch: ${{ matrix.config.os == 'windows-latest' && 'win64_msvc2019_64' || '' }}
+        modules: 'qtcharts qtmultimedia qtnetworkauth'
+        cache: true
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          ninja-build \
+          gcc-11 \
+          g++-11 \
+          libgl1-mesa-dev \
+          libglu1-mesa-dev \
+          libxrandr-dev \
+          libxss-dev \
+          libxcursor-dev \
+          libxcomposite-dev \
+          libasound2-dev \
+          libpulse-dev \
+          libudev-dev \
+          libxkbcommon-dev \
+          libdrm-dev
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install ninja
+
+    - name: Install system dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install ninja
+
+    - name: Setup MSVC environment
+      if: matrix.config.name == 'Windows x64'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_C_COMPILER=${{ matrix.config.cc }} \
+          -DCMAKE_CXX_COMPILER=${{ matrix.config.cxx }} \
+          -DFLUENTQT_BUILD_EXAMPLES=ON \
+          -DFLUENTQT_BUILD_TESTS=ON \
+          -DFLUENTQT_BUILD_DOCS=OFF \
+          -DFLUENTQT_ENABLE_CHARTS=ON \
+          -DFLUENTQT_ENABLE_MULTIMEDIA=ON \
+          -DFLUENTQT_ENABLE_NETWORK=ON \
+          -DFLUENTQT_ENABLE_LTO=ON \
+          -DCMAKE_INSTALL_PREFIX=install
+
+    - name: Build
+      run: cmake --build build --config Release --parallel
+
+    - name: Test
+      working-directory: build
+      run: ctest --output-on-failure --parallel --build-config Release
+
+    - name: Install
+      run: cmake --install build --config Release
+
+    - name: Package
+      working-directory: build
+      run: cpack
+
+    - name: Prepare artifacts
+      shell: bash
+      run: |
+        mkdir -p artifacts
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          cp build/*.exe artifacts/ || true
+          cp build/*.zip artifacts/ || true
+        else
+          cp build/*.tar.gz artifacts/ || true
+          cp build/*.deb artifacts/ || true
+          cp build/*.rpm artifacts/ || true
+        fi
+        ls -la artifacts/
+
+    - name: Upload Release Assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: artifacts/*
+        asset_name: ${{ matrix.config.package_name }}
+        asset_content_type: application/octet-stream
+
+  publish-docs:
+    name: Publish Documentation
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build documentation
+      run: npm run docs:build
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/.vitepress/dist
+        cname: fluentqt.elementastro.org
+
+  notify:
+    name: Notify Release
+    needs: [create-release, build-packages, publish-docs]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Notify success
+      if: needs.create-release.result == 'success' && needs.build-packages.result == 'success'
+      run: |
+        echo "Release completed successfully!"
+        echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+
+    - name: Notify failure
+      if: needs.create-release.result == 'failure' || needs.build-packages.result == 'failure'
+      run: |
+        echo "Release failed!"
+        exit 1

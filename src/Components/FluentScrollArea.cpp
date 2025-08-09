@@ -38,12 +38,11 @@ public:
 protected:
     void paintEvent(QPaintEvent* event) override {
         Q_UNUSED(event)
-        
+
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setOpacity(m_opacity);
 
-        const QRect rect = this->rect();
         const QRect grooveRect = getGrooveRect();
         const QRect handleRect = getHandleRect();
 

@@ -40,7 +40,7 @@ struct FluentNavigationItem {
 
     FluentNavigationItem() = default;
     FluentNavigationItem(const QString& text, const QIcon& icon = QIcon(), QWidget* content = nullptr)
-        : text(text), icon(icon), content(content), tag(text) {}
+        : text(text), icon(icon), tag(text), content(content) {}
 };
 
 class FluentNavigationView : public Core::FluentComponent {
@@ -154,14 +154,14 @@ private:
     QHBoxLayout* m_mainLayout;
     QSplitter* m_splitter;
     QWidget* m_paneWidget;
-    QVBoxLayout* m_paneLayout;
     QWidget* m_contentWidget;
     QLabel* m_headerLabel;
     QToolButton* m_backButton;
     QToolButton* m_paneToggleButton;
-    QToolButton* m_hamburgerButton;
     QListWidget* m_navigationList;
     QStackedWidget* m_contentStack;
+    QVBoxLayout* m_paneLayout;
+    QToolButton* m_hamburgerButton;
     QWidget* m_settingsWidget;
 
     // Animation

@@ -79,13 +79,12 @@ void FluentSelectDropdown::setVisible(bool visible) {
 
 void FluentSelectDropdown::updateGeometry() {
     if (!m_select) return;
-    
-    const QSize size = calculateSize();
+
     const QRect geometry = calculateGeometry();
-    
+
     m_targetGeometry = geometry;
     m_targetPosition = geometry.topLeft();
-    
+
     setGeometry(geometry);
 }
 

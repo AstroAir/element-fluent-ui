@@ -34,6 +34,8 @@ set(FLUENTQT_SOURCES
     src/Core/FluentPerformance.cpp
     src/Styling/FluentTheme.cpp
     src/Animation/FluentAnimator.cpp
+    src/Animation/FluentTransformEffect.cpp
+    src/Animation/FluentAnimation.cpp
     src/Components/FluentButton.cpp
     src/Components/FluentCard.cpp
     src/Components/FluentComboBox.cpp
@@ -69,6 +71,8 @@ set(FLUENTQT_HEADERS
     include/FluentQt/Core/FluentPerformance.h
     include/FluentQt/Styling/FluentTheme.h
     include/FluentQt/Animation/FluentAnimator.h
+    include/FluentQt/Animation/FluentTransformEffect.h
+    include/FluentQt/Animation/FluentAnimation.h
     include/FluentQt/Components/FluentButton.h
     include/FluentQt/Components/FluentCard.h
     include/FluentQt/Components/FluentComboBox.h
@@ -151,6 +155,10 @@ target_link_libraries(SimpleTimeline FluentQt)
 # Toast and Select demo
 add_executable(ToastAndSelectDemo examples/ToastAndSelectDemo/main.cpp)
 target_link_libraries(ToastAndSelectDemo FluentQt)
+
+# Fluent Animation example
+add_executable(FluentAnimationExample examples/FluentAnimationExample.cpp)
+target_link_libraries(FluentAnimationExample FluentQt)
 
 # Tests (will be added later)
 # enable_testing()

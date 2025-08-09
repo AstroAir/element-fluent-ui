@@ -117,7 +117,7 @@ private slots:
             Components::FluentTimelineItemState::Completed,
             Components::FluentTimelineItemState::Warning
         };
-        auto state = *std::next(states.begin(), QRandomGenerator::global()->bounded(states.size()));
+        auto state = *std::next(states.begin(), QRandomGenerator::global()->bounded(qsizetype(states.size())));
         item->setItemState(state);
         
         m_interactiveTimeline->addItem(item);

@@ -147,8 +147,7 @@ FluentNavigationView::FluentNavigationView(QWidget* parent)
     setupPaneContent();
     
     // Initialize responsive behavior
-    connect(this, &FluentNavigationView::resizeEvent, 
-            this, &FluentNavigationView::updateDisplayModeFromWidth);
+    // The resizeEvent is already calling updateDisplayModeFromWidth via a timer.
             
     // Connect theme changes
     connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,

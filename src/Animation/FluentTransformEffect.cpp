@@ -56,7 +56,7 @@ void FluentTransformEffect::draw(QPainter *painter)
 
     painter->save();
 
-    QPointF center = pixmap.rect().center();
+    QPointF center = QPointF(pixmap.rect().center());
     painter->translate(center + m_translation);
     painter->rotate(m_rotation);
     painter->scale(m_scale, m_scale);

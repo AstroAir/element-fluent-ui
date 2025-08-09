@@ -35,8 +35,11 @@ FluentTheme::FluentTheme() {
     // Load saved settings
     loadSettings();
     
-    // Connect to system theme changes
-    connectToSystemTheme();
+    // Periodically check for system theme changes
+    m_systemThemeTimer = new QTimer(this);
+    m_systemThemeTimer->setInterval(1000); // Check every second
+    connect(m_systemThemeTimer, &QTimer::timeout, this, &FluentTheme::checkSystemTheme);
+    m_systemThemeTimer->start();
     
     // Initialize spacing and sizing maps
     initializeSpacingAndSizing();
@@ -92,7 +95,9 @@ void FluentTheme::setAccentColor(FluentAccentColor color) {
 const FluentColorPalette& FluentTheme::currentPalette() const noexcept {
     // Handle system mode
     if (m_mode == FluentThemeMode::System) {
-        return isSystemDarkMode() ? m_darkPalette : m_lightPalette;
+        const QColor windowColor = QApplication::palette().color(QPalette::Window);
+        const bool isDark = windowColor.lightness() < 128;
+        return isDark ? m_darkPalette : m_lightPalette;
     }
     
     return (m_mode == FluentThemeMode::Dark) ? m_darkPalette : m_lightPalette;
@@ -832,52 +837,22 @@ void FluentTheme::saveCustomColors(QSettings& settings) {
     settings.endGroup();
 }
 
-void FluentTheme::connectToSystemTheme() {
-    // Connect to Qt's style hints for system theme changes
-    connect(QApplication::styleHints(), &QStyleHints::colorSchemeChanged,
-            this, &FluentTheme::onSystemThemeChanged);
-    
-#ifdef Q_OS_WIN
-    // On Windows, also monitor for accent color changes
-    m_systemThemeTimer = new QTimer(this);
-    m_systemThemeTimer->setInterval(1000); // Check every second
-    connect(m_systemThemeTimer, &QTimer::timeout,
-            this, &FluentTheme::checkWindowsThemeChanges);
-    m_systemThemeTimer->start();
-#endif
+void FluentTheme::checkSystemTheme() {
+    if (m_mode != FluentThemeMode::System) {
+        return;
+    }
 
-    // Initial update
-    updateEffectiveMode();
-}
+    // Heuristic to determine if the system is in dark mode
+    const QColor windowColor = QApplication::palette().color(QPalette::Window);
+    const bool isDark = windowColor.lightness() < 128;
 
-void FluentTheme::onSystemThemeChanged(Qt::ColorScheme colorScheme) {
-    Q_UNUSED(colorScheme)
-    
-    if (m_mode == FluentThemeMode::System) {
+    static bool lastIsDark = isDark;
+
+    if (isDark != lastIsDark) {
+        lastIsDark = isDark;
         updateEffectiveMode();
         emit themeChanged();
     }
-}
-
-bool FluentTheme::isSystemDarkMode() const {
-    // Check Qt's color scheme first
-    const Qt::ColorScheme scheme = QApplication::styleHints()->colorScheme();
-    if (scheme == Qt::ColorScheme::Dark) {
-        return true;
-    } else if (scheme == Qt::ColorScheme::Light) {
-        return false;
-    }
-    
-    // Fallback to platform-specific detection
-#ifdef Q_OS_WIN
-    return isWindowsDarkMode();
-#elif defined(Q_OS_MAC)
-    return isMacOSDarkMode();
-#else
-    // Linux/Unix fallback - check environment variables
-    const QString theme = qgetenv("GTK_THEME");
-    return theme.contains("dark", Qt::CaseInsensitive);
-#endif
 }
 
 #ifdef Q_OS_WIN
@@ -949,7 +924,6 @@ void FluentTheme::updateEffectiveMode() {
     // This method handles the logic for system mode
     if (m_mode == FluentThemeMode::System) {
         // The currentPalette() method will handle the actual mode detection
-        qDebug() << "System theme mode detected as:" << (isSystemDarkMode() ? "Dark" : "Light");
     }
 }
 

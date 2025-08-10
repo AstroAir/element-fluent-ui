@@ -5,6 +5,8 @@
 #include <QPixmap>
 #include <QRect>
 #include <QIcon>
+#include <QMetaObject>
+
 
 #include "FluentQt/Styling/FluentCarouselStyles.h"
 #include "FluentQt/Core/FluentState.h"
@@ -91,7 +93,7 @@ private:
 
 void FluentCarouselStylingTest::initTestCase() {
     qApp->setApplicationName("FluentCarouselStylingTest");
-    
+
     // Initialize test pixmap for painting operations
     m_testPixmap = QPixmap(200, 200);
     m_testPixmap.fill(Qt::white);
@@ -103,7 +105,7 @@ void FluentCarouselStylingTest::cleanupTestCase() {
 
 void FluentCarouselStylingTest::init() {
     m_styles = &FluentCarouselStyles::instance();
-    
+
     // Create painter for testing
     m_painter = new QPainter(&m_testPixmap);
 }
@@ -111,7 +113,7 @@ void FluentCarouselStylingTest::init() {
 void FluentCarouselStylingTest::cleanup() {
     delete m_painter;
     m_painter = nullptr;
-    
+
     // Clear test pixmap
     m_testPixmap.fill(Qt::white);
 }
@@ -121,7 +123,7 @@ void FluentCarouselStylingTest::testSingleton() {
     // Test singleton pattern
     FluentCarouselStyles& instance1 = FluentCarouselStyles::instance();
     FluentCarouselStyles& instance2 = FluentCarouselStyles::instance();
-    
+
     QVERIFY(&instance1 == &instance2);
     QVERIFY(m_styles == &instance1);
 }
@@ -139,10 +141,10 @@ void FluentCarouselStylingTest::testInitialization() {
 void FluentCarouselStylingTest::testThemeIntegration() {
     // Test theme change signal connection
     QSignalSpy stylesChangedSpy(m_styles, &FluentCarouselStyles::stylesChanged);
-    
+
     // Trigger theme update
     m_styles->updateFromTheme();
-    
+
     // Should emit styles changed signal
     QCOMPARE(stylesChangedSpy.count(), 1);
 }
@@ -210,7 +212,7 @@ void FluentCarouselStylingTest::testInvalidStyleKeys() {
 // Base carousel styling tests
 void FluentCarouselStylingTest::testCarouselBackgroundPainting() {
     QRect testRect = createTestRect();
-    
+
     // Test normal state painting
     verifyPaintingOperation([&]() {
         m_styles->paintCarouselBackground(*m_painter, testRect, FluentState::Normal);
@@ -259,7 +261,7 @@ void FluentCarouselStylingTest::testCarouselElevation() {
 
 void FluentCarouselStylingTest::testCarouselStates() {
     QRect testRect = createTestRect();
-    
+
     // Test all supported states
     QList<FluentState> states = {
         FluentState::Normal,
@@ -305,7 +307,7 @@ void FluentCarouselStylingTest::testNavigationButtonStates() {
 
     // Test that different states produce different visual results
     // This would require pixel comparison in a real implementation
-    
+
     for (int i = 0; i < 2; ++i) {
         FluentState state = (i == 0) ? FluentState::Normal : FluentState::Hovered;
         verifyPaintingOperation([&]() {
@@ -412,13 +414,19 @@ QPixmap FluentCarouselStylingTest::createTestThumbnail() {
 
 void FluentCarouselStylingTest::verifyPaintingOperation(const std::function<void()>& paintOperation) {
     // Verify that painting operation doesn't crash
-    QVERIFY_EXCEPTION_THROWN(paintOperation(), std::exception) == false;
-    
+    try {
+        paintOperation();
+    } catch (const std::exception& e) {
+        QFAIL(qPrintable(QString("Painting threw exception: %1").arg(e.what())));
+    } catch (...) {
+        QFAIL("Painting threw an unknown exception");
+    }
+
     // In a real implementation, you might also verify:
     // - Pixel changes in the test pixmap
     // - Specific colors at certain positions
     // - Proper clipping and bounds checking
-    
+
     try {
         paintOperation();
         // If we get here, the painting operation succeeded

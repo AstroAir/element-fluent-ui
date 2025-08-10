@@ -341,6 +341,11 @@ QSize FluentBadge::sizeHint() const {
     return contentSize();
 }
 
+QRect FluentBadge::badgeRect() const {
+    // For now, return current geometry as the badge rect
+    return QRect(QPoint(0, 0), sizeHint());
+}
+
 QSize FluentBadge::minimumSizeHint() const {
     switch (m_badgeType) {
         case FluentBadgeType::Dot:

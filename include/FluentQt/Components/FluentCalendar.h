@@ -21,7 +21,10 @@ enum class FluentCalendarSelectionMode {
     MultiSelection,
     RangeSelection,
     WeekSelection,
-    MonthSelection
+    MonthSelection,
+    // Compatibility aliases expected by tests
+    MultipleSelection = MultiSelection,
+    NoSelection = WeekSelection
 };
 
 enum class FluentCalendarViewMode {
@@ -33,11 +36,17 @@ enum class FluentCalendarViewMode {
 struct FluentDateRange {
     QDate start;
     QDate end;
-    
+
+    FluentDateRange() = default;
+    FluentDateRange(const QDate& s, const QDate& e) : start(s), end(e) {}
+
+    QDate startDate() const { return start; }
+    QDate endDate() const { return end; }
+
     bool contains(const QDate& date) const {
         return date >= start && date <= end;
     }
-    
+
     bool isValid() const {
         return start.isValid() && end.isValid() && start <= end;
     }

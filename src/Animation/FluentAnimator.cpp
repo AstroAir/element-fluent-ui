@@ -20,137 +20,9 @@
 namespace FluentQt::Animation {
 
 // Advanced animation utilities
-class FluentAnimationManager : public QObject {
-    Q_OBJECT
 
-public:
-    static FluentAnimationManager& instance() {
-        static FluentAnimationManager instance;
-        return instance;
-    }
 
-    void registerAnimation(QAbstractAnimation* animation) {
-        m_activeAnimations.insert(animation);
 
-        connect(animation, &QAbstractAnimation::finished, [this, animation]() {
-            m_activeAnimations.remove(animation);
-        });
-
-        connect(animation, &QAbstractAnimation::destroyed, [this, animation]() {
-            m_activeAnimations.remove(animation);
-        });
-    }
-
-    void pauseAllAnimations() {
-        for (auto* animation : m_activeAnimations) {
-            if (animation->state() == QAbstractAnimation::Running) {
-                animation->pause();
-                m_pausedAnimations.insert(animation);
-            }
-        }
-    }
-
-    void resumeAllAnimations() {
-        for (auto* animation : m_pausedAnimations) {
-            animation->resume();
-        }
-        m_pausedAnimations.clear();
-    }
-
-    void stopAllAnimations() {
-        for (auto* animation : m_activeAnimations) {
-            animation->stop();
-        }
-        m_activeAnimations.clear();
-        m_pausedAnimations.clear();
-    }
-
-    int activeAnimationCount() const {
-        return m_activeAnimations.size();
-    }
-
-private:
-    FluentAnimationManager() = default;
-
-    QSet<QAbstractAnimation*> m_activeAnimations;
-    QSet<QAbstractAnimation*> m_pausedAnimations;
-};
-
-// Specialized animation effects
-namespace Effects {
-
-class FluentSpringEffect : public QObject {
-    Q_OBJECT
-
-public:
-    FluentSpringEffect(QWidget* target, QObject* parent = nullptr)
-        : QObject(parent), m_target(target) {}
-
-    void start(const QVariant& from, const QVariant& to) {
-        if (!m_target) return;
-
-        m_timer = new QTimer(this);
-        m_timer->setInterval(16); // ~60 FPS
-
-        m_startValue = from;
-        m_endValue = to;
-        m_currentValue = from;
-        m_velocity = 0.0;
-        m_time = 0.0;
-
-        connect(m_timer, &QTimer::timeout, this, &FluentSpringEffect::updateSpring);
-        m_timer->start();
-    }
-
-private slots:
-    void updateSpring() {
-        const double dt = 0.016; // 16ms
-        const double springConstant = 200.0;
-        const double damping = 20.0;
-
-        m_time += dt;
-
-        // Simple spring physics
-        const double displacement = m_currentValue.toDouble() - m_endValue.toDouble();
-        const double force = -springConstant * displacement - damping * m_velocity;
-
-        m_velocity += force * dt;
-        double newValue = m_currentValue.toDouble() + m_velocity * dt;
-
-        m_currentValue = newValue;
-
-        // Apply the value to the target
-        if (m_target) {
-            // This would need to be implemented for specific properties
-            // For now, just demonstrate the concept
-        }
-
-        // Check if spring has settled
-        if (std::abs(displacement) < 0.1 && std::abs(m_velocity) < 0.1) {
-            m_timer->stop();
-            m_timer->deleteLater();
-            m_timer = nullptr;
-
-            // Ensure final value is exact
-            m_currentValue = m_endValue;
-            emit finished();
-        }
-    }
-
-signals:
-    void finished();
-
-private:
-    QWidget* m_target;
-    QTimer* m_timer = nullptr;
-    QVariant m_startValue;
-    QVariant m_endValue;
-    QVariant m_currentValue;
-    double m_velocity = 0.0;
-    double m_time = 0.0;
-};
-
-} // namespace Effects
 
 FluentAnimator::FluentAnimator(QObject* parent)
     : QObject(parent)
@@ -165,11 +37,14 @@ FluentAnimator::FluentAnimator(QObject* parent)
             });
 }
 
+using namespace FluentQt::Animation;
+
 std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeIn(
     QWidget* target,
     const FluentAnimationConfig& config
 ) {
     if (!target) {
+
         return nullptr;
     }
 
@@ -1045,81 +920,7 @@ bool FluentAnimator::shouldRespectReducedMotion() {
     return QAccessible::isActive();
 }
 
-// Specialized animation effects
-namespace Effects {
 
-class FluentSpringEffect : public QObject {
-    Q_OBJECT
-
-public:
-    FluentSpringEffect(QWidget* target, QObject* parent = nullptr)
-        : QObject(parent), m_target(target) {}
-
-    void start(const QVariant& from, const QVariant& to) {
-        if (!m_target) return;
-
-        m_timer = new QTimer(this);
-        m_timer->setInterval(16); // ~60 FPS
-
-        m_startValue = from;
-        m_endValue = to;
-        m_currentValue = from;
-        m_velocity = 0.0;
-        m_time = 0.0;
-
-        connect(m_timer, &QTimer::timeout, this, &FluentSpringEffect::updateSpring);
-        m_timer->start();
-    }
-
-private slots:
-    void updateSpring() {
-        const double dt = 0.016; // 16ms
-        const double springConstant = 200.0;
-        const double damping = 20.0;
-
-        m_time += dt;
-
-        // Simple spring physics
-        const double displacement = m_currentValue.toDouble() - m_endValue.toDouble();
-        const double force = -springConstant * displacement - damping * m_velocity;
-
-        m_velocity += force * dt;
-        double newValue = m_currentValue.toDouble() + m_velocity * dt;
-
-        m_currentValue = newValue;
-
-        // Apply the value to the target
-        if (m_target) {
-            // This would need to be implemented for specific properties
-            // For now, just demonstrate the concept
-        }
-
-        // Check if spring has settled
-        if (std::abs(displacement) < 0.1 && std::abs(m_velocity) < 0.1) {
-            m_timer->stop();
-            m_timer->deleteLater();
-            m_timer = nullptr;
-
-            // Ensure final value is exact
-            m_currentValue = m_endValue;
-            emit finished();
-        }
-    }
-
-signals:
-    void finished();
-
-private:
-    QWidget* m_target;
-    QTimer* m_timer = nullptr;
-    QVariant m_startValue;
-    QVariant m_endValue;
-    QVariant m_currentValue;
-    double m_velocity = 0.0;
-    double m_time = 0.0;
-};
-
-} // namespace Effects
 
 // FluentAnimationManager implementation
 FluentAnimationManager& FluentAnimationManager::instance() {
@@ -1155,6 +956,29 @@ void FluentAnimationManager::resumeAllAnimations() {
     m_pausedAnimations.clear();
 }
 
+std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeIn(
+    QWidget* target,
+    int durationMs,
+    FluentEasing easing
+) {
+    FluentAnimationConfig cfg;
+    cfg.duration = std::chrono::milliseconds(durationMs);
+    cfg.easing = easing;
+    return FluentAnimator::fadeIn(target, cfg);
+}
+
+std::unique_ptr<QPropertyAnimation> FluentAnimator::fadeOut(
+    QWidget* target,
+    int durationMs,
+    FluentEasing easing
+) {
+    FluentAnimationConfig cfg;
+    cfg.duration = std::chrono::milliseconds(durationMs);
+    cfg.easing = easing;
+    return FluentAnimator::fadeOut(target, cfg);
+}
+
+
 void FluentAnimationManager::stopAllAnimations() {
     for (auto* animation : m_activeAnimations) {
         animation->stop();
@@ -1169,4 +993,3 @@ int FluentAnimationManager::activeAnimationCount() const {
 
 } // namespace FluentQt::Animation
 
-#include "FluentAnimator.moc"

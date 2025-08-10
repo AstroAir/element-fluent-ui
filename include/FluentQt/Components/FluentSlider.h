@@ -225,7 +225,6 @@ private:
     QPoint getHandleCenter(qreal value) const;
     QPoint getPositionFromValue(qreal value) const;
     qreal getValueFromPosition(const QPoint& position) const;
-    QString formatValue(qreal value) const;
     qreal snapValueToTick(qreal value) const;
 
     void generateAutoTicks();

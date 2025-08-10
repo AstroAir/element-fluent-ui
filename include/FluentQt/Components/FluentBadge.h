@@ -121,10 +121,9 @@ public:
 
     // Utility methods
     QString displayText() const;
-    QSize badgeSize() const;
     QRect badgeRect() const;
     bool isEmpty() const;
-    
+
     // Positioning for parent widget
     void attachTo(QWidget* parent, FluentBadgePosition position = FluentBadgePosition::TopRight);
     void detach();
@@ -141,8 +140,8 @@ public:
     static FluentBadge* createTextBadge(const QString& text, QWidget* parent = nullptr);
 
 public slots:
-    void show() override;
-    void hide() override;
+    void show();
+    void hide();
     void animateIn();
     void animateOut();
     void pulse();
@@ -166,7 +165,11 @@ signals:
     void animatedChanged(bool animated);
     void showZeroChanged(bool show);
     void pulsingChanged(bool pulsing);
-    
+    void offsetChanged(const QPoint& offset);
+    void attachedWidgetChanged(QWidget* widget);
+    void backgroundColorChanged(const QColor& color);
+    void textColorChanged(const QColor& color);
+
     void clicked();
     void doubleClicked();
 
@@ -182,6 +185,7 @@ private slots:
     void onPulseAnimationFinished();
     void onShowAnimationFinished();
     void onHideAnimationFinished();
+    void onPulseTimer();
     void updatePosition();
     void updateColors();
 
@@ -190,27 +194,36 @@ private:
     void updateLayout();
     void updateSizeMetrics();
     void updateDisplayContent();
-    
+    void updateContent();
+    void updateVisibility();
+    void updateAccessibility();
+
     // Painting methods
     void paintBackground(QPainter* painter, const QRect& rect);
     void paintBorder(QPainter* painter, const QRect& rect);
     void paintContent(QPainter* painter, const QRect& rect);
     void paintText(QPainter* painter, const QRect& rect);
     void paintIcon(QPainter* painter, const QRect& rect);
-    void paintDot(QPainter* painter, const QRect& rect);
-    
+    void paintDot(QPainter* painter);
+
+    // Additional painting helpers matching implementation
+    void paintTextBadge(QPainter* painter);
+    void paintIconBadge(QPainter* painter);
+
     // Animation methods
     void startShowAnimation();
     void startHideAnimation();
     void startPulseAnimation();
     void stopAllAnimations();
-    
+    void startSinglePulse();
+
     // Utility methods
     QRect calculateBadgeRect() const;
     QRect calculateContentRect() const;
     QSize calculateTextSize() const;
     QSize calculateIconSize() const;
-    
+    QSize contentSize() const;
+
     QColor getBackgroundColor() const;
     QColor getTextColor() const;
     QColor getBorderColor() const;
@@ -255,31 +268,46 @@ private:
     // Size metrics (updated based on m_badgeSize)
     int m_height{20};
     int m_minWidth{20};
+    int m_minHeight{20};
     int m_padding{6};
     int m_iconSize{12};
     int m_fontSize{11};
-    
+    int m_dotSize{10};
+
+    // Extra colors and flags used in implementation
+    QColor m_backgroundColor;
+    QColor m_textColor;
+    bool m_hasCustomBackgroundColor{false};
+    bool m_hasCustomTextColor{false};
+    bool m_autoHide{false};
+    QPoint m_offset;
+
     // Animation
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_showAnimation{nullptr};
     QPropertyAnimation* m_hideAnimation{nullptr};
-    QSequentialAnimationGroup* m_pulseAnimation{nullptr};
+    QPropertyAnimation* m_pulseAnimation{nullptr};
     QPropertyAnimation* m_scaleAnimation{nullptr};
     QPropertyAnimation* m_opacityAnimation{nullptr};
-    
+    QTimer* m_pulseTimer{nullptr};
+
     // Animation properties
     Q_PROPERTY(qreal badgeScale READ badgeScale WRITE setBadgeScale)
     Q_PROPERTY(qreal badgeOpacity READ badgeOpacity WRITE setBadgeOpacity)
-    
+
     qreal m_badgeScale{1.0};
     qreal m_badgeOpacity{1.0};
-    
+    qreal m_pulseScale{1.0};
+
     // Property accessors for animations
     qreal badgeScale() const { return m_badgeScale; }
     void setBadgeScale(qreal scale);
-    
+
     qreal badgeOpacity() const { return m_badgeOpacity; }
     void setBadgeOpacity(qreal opacity);
+
+    qreal pulseScale() const;
+    void setPulseScale(qreal scale);
 };
 
 } // namespace FluentQt::Components

@@ -179,6 +179,7 @@ set(FLUENTQT_STYLING_SOURCES
 set(FLUENTQT_ANIMATION_SOURCES
     src/Animation/FluentAnimator.cpp
     src/Animation/FluentAnimationPerformanceManager.cpp
+    src/Animation/FluentTransformEffect.cpp
 )
 
 # Component sources
@@ -208,6 +209,8 @@ set(FLUENTQT_COMPONENT_SOURCES
     src/Components/FluentResizable.cpp
     src/Components/FluentScrollArea.cpp
     src/Components/FluentSheet.cpp
+    # Component implementations that are currently complete
+    src/Components/FluentProgressBar.cpp
 )
 
 # Accessibility sources
@@ -256,6 +259,7 @@ set(FLUENTQT_STYLING_HEADERS
 set(FLUENTQT_ANIMATION_HEADERS
     include/FluentQt/Animation/FluentAnimator.h
     include/FluentQt/Animation/FluentAnimationPerformanceManager.h
+    include/FluentQt/Animation/FluentTransformEffect.h
 )
 
 # Component headers
@@ -285,6 +289,7 @@ set(FLUENTQT_COMPONENT_HEADERS
     include/FluentQt/Components/FluentResizable.h
     include/FluentQt/Components/FluentScrollArea.h
     include/FluentQt/Components/FluentSheet.h
+    include/FluentQt/Components/FluentProgressBar.h
 )
 
 # Accessibility headers
@@ -442,7 +447,7 @@ endif()
 # Qt version compatibility
 target_compile_definitions(FluentQt PUBLIC
     QT_DISABLE_DEPRECATED_BEFORE=0x060000
-    QT_NO_KEYWORDS
+
 )
 
 # ============================================================================

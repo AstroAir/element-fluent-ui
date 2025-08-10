@@ -115,7 +115,7 @@ void FluentThemeTest::testDarkModeToggle() {
 void FluentThemeTest::testAccentColor() {
     const QColor testColor(255, 0, 0); // Red
     
-    QSignalSpy accentChangedSpy(m_theme, &Styling::FluentTheme::accentColorChanged);
+    QSignalSpy accentChangedSpy(m_theme, SIGNAL(accentColorChanged(QColor)));
     
     m_theme->setAccentColor(testColor);
     QCOMPARE(m_theme->accentColor(), testColor);
@@ -254,8 +254,8 @@ void FluentThemeTest::testElevation() {
 
 void FluentThemeTest::testMarginsPadding() {
     // Test margins and padding methods
-    int margins = m_theme->margins("medium");
-    int padding = m_theme->padding("medium");
+    int margins = m_theme->marginsValue("medium");
+    int padding = m_theme->paddingValue("medium");
     
     QVERIFY(margins >= 0);
     QVERIFY(padding >= 0);
@@ -381,7 +381,7 @@ void FluentThemeTest::testThemeChangeSignals() {
 }
 
 void FluentThemeTest::testAccentColorChangeSignals() {
-    QSignalSpy accentChangedSpy(m_theme, &Styling::FluentTheme::accentColorChanged);
+    QSignalSpy accentChangedSpy(m_theme, SIGNAL(accentColorChanged(QColor)));
     
     m_theme->setAccentColor(QColor(255, 0, 0));
     QCOMPARE(accentChangedSpy.count(), 1);

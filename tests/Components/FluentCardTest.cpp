@@ -583,7 +583,7 @@ void FluentCardTest::testHeaderClicked() {
 
     // This is harder to test without access to the header widget directly
     // For now, just verify the signal exists and can be connected
-    QVERIFY(QMetaObject::indexOfSignal(m_card->metaObject(), "headerClicked()") != -1);
+    QVERIFY(m_card->metaObject()->indexOfSignal("headerClicked()") != -1);
 }
 
 void FluentCardTest::testPropertyChangeSignals() {

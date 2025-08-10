@@ -10,6 +10,7 @@
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
 #include <QTimer>
+class QPushButton;
 
 namespace FluentQt::Components {
 
@@ -47,6 +48,8 @@ class FluentTextInput : public Core::FluentComponent {
 
 public:
     explicit FluentTextInput(QWidget* parent = nullptr);
+    explicit FluentTextInput(const QString& placeholder, QWidget* parent = nullptr)
+        : FluentTextInput(parent) { setPlaceholderText(placeholder); }
     ~FluentTextInput() override;
 
     // Text properties
@@ -86,13 +89,24 @@ public:
     void setReadOnly(bool readOnly);
 
     // Validation
+    enum class FluentTextInputValidation { Email, URL, Number, Custom };
     bool isValid() const;
     void validate();
     void clearValidation();
+    void setValidationType(FluentTextInputValidation type) { m_validationType = type; }
+    void setCustomValidator(std::function<bool(const QString&)> fn) { m_customValidator = std::move(fn); }
 
     // Focus management
     void setFocus();
     void clearFocus();
+    void setPasswordMode(bool on) { setInputType(on ? FluentTextInputType::Password : FluentTextInputType::Text); }
+    bool isPasswordMode() const { return m_inputType == FluentTextInputType::Password; }
+    void setPasswordVisible(bool on) { m_lineEdit->setEchoMode(on ? QLineEdit::Normal : QLineEdit::Password); }
+    bool isPasswordVisible() const { return m_lineEdit->echoMode() == QLineEdit::Normal; }
+    void setMultiline(bool on) { Q_UNUSED(on) /* stub: single-line only for now */; }
+    bool isMultiline() const { return false; }
+    void setClearButtonEnabled(bool enabled) { setClearButtonVisible(enabled); }
+    bool isClearButtonEnabled() const { return isClearButtonVisible(); }
 
     // Selection
     void selectAll();
@@ -170,7 +184,11 @@ private:
     QPushButton* m_clearButton{nullptr};
     QLabel* m_helperLabel{nullptr};
     QLabel* m_errorLabel{nullptr};
-    
+
+    // Validation configuration
+    FluentTextInputValidation m_validationType{FluentTextInputValidation::Email};
+    std::function<bool(const QString&)> m_customValidator{};
+
     // Properties
     FluentTextInputType m_inputType{FluentTextInputType::Text};
     FluentTextInputState m_inputState{FluentTextInputState::Normal};

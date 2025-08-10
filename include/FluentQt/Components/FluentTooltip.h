@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
+class QVBoxLayout;
 
 namespace FluentQt::Components {
 

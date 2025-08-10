@@ -99,12 +99,4 @@ void FluentComponent::performStateTransition(FluentState from, FluentState to) {
     }
 }
 
-template <typename T>
-void FluentComponent::bindProperty(const QString &property, std::function<T()> getter) {
-    // Implementation for reactive property binding
-    // This is a placeholder for future reactive programming features
-    Q_UNUSED(property)
-    Q_UNUSED(getter)
-}
-
 } // namespace FluentQt::Core

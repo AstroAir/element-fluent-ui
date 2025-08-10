@@ -36,7 +36,13 @@ public:
 
   // Reactive state management
   template <typename T>
-  void bindProperty(const QString &property, std::function<T()> getter);
+  void bindProperty(const QString &property, std::function<T()> getter) {
+    // Provide a minimal inline template implementation so callers in tests link correctly.
+    // For now, simply invoke the getter once and set a dynamic property to the value.
+    // Future work: connect to change signals and keep it reactive.
+    QVariant value = QVariant::fromValue(getter());
+    this->setProperty(property.toUtf8().constData(), value);
+  }
 
 signals:
   void stateChanged(FluentState state);

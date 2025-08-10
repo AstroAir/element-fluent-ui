@@ -27,7 +27,8 @@ enum class FluentCardStyle {
     Default,
     Outlined,
     Elevated,
-    Filled
+    Filled,
+    Subtle
 };
 
 class FluentCardHeader;

@@ -56,9 +56,30 @@ enum class FluentEasing {
     Back,
     BackOut,
     BackIn,
-    BackInOut
+    BackInOut,
+    // Aliases expected by tests
+    QuadIn,
+    QuadOut,
+    QuadInOut,
+    CubicIn,
+    CubicOut,
+    CubicInOut,
+    QuartIn,
+    QuartOut,
+    QuartInOut,
+    QuintIn,
+    QuintOut,
+    QuintInOut,
+    SineIn,
+    SineOut,
+    SineInOut,
+    ExpoIn,
+    ExpoOut,
+    ExpoInOut,
+    CircIn,
+    CircOut,
+    CircInOut
 };
-
 enum class FluentAnimationType {
     Fade,
     FadeIn,
@@ -101,6 +122,7 @@ struct FluentAnimationConfig {
     qreal startValue{0.0};
     qreal endValue{1.0};
 
+
     // Micro-interaction settings
     bool enableHoverEffects{true};
     bool enableFocusEffects{true};
@@ -123,13 +145,26 @@ public:
 
     // Static convenience methods
     static std::unique_ptr<QPropertyAnimation> fadeIn(
-        QWidget* target, 
+        QWidget* target,
         const FluentAnimationConfig& config = {}
     );
-    
+
     static std::unique_ptr<QPropertyAnimation> fadeOut(
-        QWidget* target, 
+        QWidget* target,
         const FluentAnimationConfig& config = {}
+    );
+
+    // Overloads expected by tests: direct duration + easing
+    static std::unique_ptr<QPropertyAnimation> fadeIn(
+        QWidget* target,
+        int durationMs,
+        FluentEasing easing
+    );
+
+    static std::unique_ptr<QPropertyAnimation> fadeOut(
+        QWidget* target,
+        int durationMs,
+        FluentEasing easing
     );
 
     static std::unique_ptr<QPropertyAnimation> scaleIn(
@@ -334,7 +369,7 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::staggerAnimation(
     const FluentAnimationConfig& config
 ) {
     auto group = std::make_unique<QSequentialAnimationGroup>();
-    
+
     for (auto* widget : widgets) {
         auto animation = [&]() -> std::unique_ptr<QPropertyAnimation> {
             switch (type) {
@@ -347,7 +382,7 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::staggerAnimation(
                     return fadeIn(widget, config);
             }
         }();
-        
+
         // Add delay between animations
         if (group->animationCount() > 0) {
             QTimer::singleShot(staggerDelay.count(), [&]() {
@@ -357,7 +392,7 @@ std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::staggerAnimation(
             group->addAnimation(animation.release());
         }
     }
-    
+
     return group;
 }
 

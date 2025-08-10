@@ -24,6 +24,12 @@
 
 namespace FluentQt::Styling {
 
+// Helper: detect system dark mode in a cross-platform, non-invasive way
+static bool isSystemDarkMode() {
+    const QColor windowColor = QApplication::palette().color(QPalette::Window);
+    return windowColor.lightness() < 128;
+}
+
 FluentTheme& FluentTheme::instance() {
     static FluentTheme instance;
     return instance;
@@ -31,16 +37,16 @@ FluentTheme& FluentTheme::instance() {
 
 FluentTheme::FluentTheme() {
     initializePalettes();
-    
+
     // Load saved settings
     loadSettings();
-    
+
     // Periodically check for system theme changes
     m_systemThemeTimer = new QTimer(this);
     m_systemThemeTimer->setInterval(5000); // Check every 5 seconds
     connect(m_systemThemeTimer, &QTimer::timeout, this, &FluentTheme::checkSystemTheme);
     m_systemThemeTimer->start();
-    
+
     // Initialize spacing and sizing maps
     initializeSpacingAndSizing();
 
@@ -60,17 +66,17 @@ void FluentTheme::setMode(FluentThemeMode mode) {
     if (m_mode != mode) {
         const FluentThemeMode oldMode = m_mode;
         m_mode = mode;
-        
+
         // Update effective mode based on system if needed
         updateEffectiveMode();
-        
+
         // Save setting
         saveSettings();
-        
+
         emit modeChanged(mode);
         emit themeChanged();
-        
-        qDebug() << "Theme mode changed from" << static_cast<int>(oldMode) 
+
+        qDebug() << "Theme mode changed from" << static_cast<int>(oldMode)
                  << "to" << static_cast<int>(mode);
     }
 }
@@ -109,13 +115,46 @@ void FluentTheme::setAccentColor(FluentAccentColor color) {
 
         // Save setting
         saveSettings();
-
-        emit accentColorChanged(color);
-        emit themeChanged();
-
-        qDebug() << "Accent color changed to" << static_cast<int>(color);
     }
 }
+
+QColor FluentTheme::accentColor() const {
+    // Map enum/custom color to an actual QColor from current palette
+    return currentPalette().accent;
+}
+
+void FluentTheme::setAccentColor(const QColor& color) {
+    if (!color.isValid()) {
+        return;
+    }
+    setCustomAccentColor(color);
+    emit accentColorChanged(accentColor());
+    emit themeChanged();
+}
+
+void FluentTheme::setCustomAccentColor(const QColor& color) {
+    // Switch to a custom accent using provided QColor; update palettes accordingly
+    if (!color.isValid()) return;
+
+    // For now, map to the closest built-in accent to reuse existing palette logic
+    const auto closest = findClosestAccentColor(color);
+    if (closest != m_accentColor || currentPalette().accent != color) {
+        m_accentColor = closest;
+        updateAccentColors();
+        // Override the base accent slots with the exact custom color
+        m_lightPalette.accent = color;
+        m_darkPalette.accent = color;
+    }
+}
+
+int FluentTheme::marginsValue(std::string_view size) const {
+    return margins(size).left();
+}
+
+int FluentTheme::paddingValue(std::string_view size) const {
+    return padding(size).left();
+}
+
 
 const FluentColorPalette& FluentTheme::currentPalette() const noexcept {
     // Handle system mode
@@ -124,15 +163,15 @@ const FluentColorPalette& FluentTheme::currentPalette() const noexcept {
         const bool isDark = windowColor.lightness() < 128;
         return isDark ? m_darkPalette : m_lightPalette;
     }
-    
+
     return (m_mode == FluentThemeMode::Dark) ? m_darkPalette : m_lightPalette;
 }
 
 QColor FluentTheme::color(std::string_view colorName) const {
     FLUENT_PROFILE("FluentTheme::color");
-    
+
     const auto& palette = currentPalette();
-    
+
     // Map color names to palette colors
     static const std::unordered_map<std::string_view, std::function<QColor(const FluentColorPalette&)>> colorMap = {
         // Accent colors
@@ -143,7 +182,7 @@ QColor FluentTheme::color(std::string_view colorName) const {
         {"accentDark1", [](const auto& p) { return p.accentDark1; }},
         {"accentDark2", [](const auto& p) { return p.accentDark2; }},
         {"accentDark3", [](const auto& p) { return p.accentDark3; }},
-        
+
         // Neutral colors
         {"neutralPrimary", [](const auto& p) { return p.neutralPrimary; }},
         {"neutralSecondary", [](const auto& p) { return p.neutralSecondary; }},
@@ -155,7 +194,7 @@ QColor FluentTheme::color(std::string_view colorName) const {
         {"neutralDark", [](const auto& p) { return p.neutralDark; }},
         {"neutralDarker", [](const auto& p) { return p.neutralDarker; }},
         {"neutralDarkest", [](const auto& p) { return p.neutralDarkest; }},
-        
+
         // Semantic colors
         {"error", [](const auto& p) { return p.error; }},
         {"errorLight", [](const auto& p) { return p.errorLight; }},
@@ -165,36 +204,36 @@ QColor FluentTheme::color(std::string_view colorName) const {
         {"successLight", [](const auto& p) { return p.successLight; }},
         {"info", [](const auto& p) { return p.info; }},
         {"infoLight", [](const auto& p) { return p.infoLight; }},
-        
+
         // Surface colors
         {"surface", [](const auto& p) { return p.neutralLightest; }},
         {"surfaceSecondary", [](const auto& p) { return p.neutralLighter; }},
         {"surfaceTertiary", [](const auto& p) { return p.neutralLight; }},
-        
+
         // Text colors
         {"textPrimary", [](const auto& p) { return p.neutralPrimary; }},
         {"textSecondary", [](const auto& p) { return p.neutralSecondary; }},
         {"textTertiary", [](const auto& p) { return p.neutralTertiary; }},
         {"textDisabled", [](const auto& p) { return p.neutralTertiaryAlt; }},
-        
+
         // Border colors
         {"border", [](const auto& p) { return p.neutralQuaternaryAlt; }},
         {"borderStrong", [](const auto& p) { return p.neutralQuaternary; }},
         {"borderSubtle", [](const auto& p) { return p.neutralTertiaryAlt; }}
     };
-    
+
     const auto it = colorMap.find(colorName);
     if (it != colorMap.end()) {
         return it->second(palette);
     }
-    
+
     qWarning() << "Unknown color name:" << colorName.data();
     return palette.neutralPrimary; // Fallback
 }
 
 QBrush FluentTheme::brush(std::string_view brushName) const {
     const QColor brushColor = color(brushName);
-    
+
     // Create special brushes for certain names
     if (brushName == "acrylic") {
         return createAcrylicBrush(brushColor);
@@ -203,7 +242,7 @@ QBrush FluentTheme::brush(std::string_view brushName) const {
     } else if (brushName.ends_with("Gradient")) {
         return createGradientBrush(brushColor);
     }
-    
+
     return QBrush(brushColor);
 }
 
@@ -283,7 +322,7 @@ int FluentTheme::spacing(std::string_view size) const {
     if (it != m_spacingMap.end()) {
         return it->second;
     }
-    
+
     qWarning() << "Unknown spacing size:" << size.data();
     return 8; // Default spacing
 }
@@ -370,7 +409,7 @@ int FluentTheme::strokeWidth(std::string_view weight) const {
 
 void FluentTheme::initializePalettes() {
     FLUENT_PROFILE("FluentTheme::initializePalettes");
-    
+
     // Initialize light palette
     m_lightPalette = FluentColorPalette{
         // Accent colors (Blue by default)
@@ -381,7 +420,7 @@ void FluentTheme::initializePalettes() {
         .accentDark1 = QColor("#005a9e"),
         .accentDark2 = QColor("#004578"),
         .accentDark3 = QColor("#003966"),
-        
+
         // Neutral colors
         .neutralLightest = QColor("#ffffff"),
         .neutralLighter = QColor("#f3f2f1"),
@@ -397,7 +436,7 @@ void FluentTheme::initializePalettes() {
         .neutralDark = QColor("#201f1e"),
         .neutralDarker = QColor("#106ebe"),
         .neutralDarkest = QColor("#11100f"),
-        
+
         // Semantic colors
         .error = QColor("#d13438"),
         .errorLight = QColor("#f3d6d7"),
@@ -408,7 +447,7 @@ void FluentTheme::initializePalettes() {
         .info = QColor("#0078d4"),
         .infoLight = QColor("#deecf9")
     };
-    
+
     // Initialize dark palette
     m_darkPalette = FluentColorPalette{
         // Accent colors (Blue by default)
@@ -419,7 +458,7 @@ void FluentTheme::initializePalettes() {
         .accentDark1 = QColor("#0086c7"),
         .accentDark2 = QColor("#005ba1"),
         .accentDark3 = QColor("#004578"),
-        
+
         // Neutral colors (inverted from light)
         .neutralLightest = QColor("#1f1f1f"),
         .neutralLighter = QColor("#2d2d2d"),
@@ -435,7 +474,7 @@ void FluentTheme::initializePalettes() {
         .neutralDark = QColor("#f3f2f1"),
         .neutralDarker = QColor("#faf9f8"),
         .neutralDarkest = QColor("#fdfdfc"),
-        
+
         // Semantic colors (adjusted for dark theme)
         .error = QColor("#ff6b70"),
         .errorLight = QColor("#442726"),
@@ -446,21 +485,21 @@ void FluentTheme::initializePalettes() {
         .info = QColor("#60cdff"),
         .infoLight = QColor("#203047")
     };
-    
+
     // Update accent colors based on current setting
     updateAccentColors();
 }
 
 void FluentTheme::updateAccentColors() {
     FLUENT_PROFILE("FluentTheme::updateAccentColors");
-    
+
     // Base colors for different accent options
     struct AccentColorSet {
         QColor base;
         QColor light1, light2, light3;
         QColor dark1, dark2, dark3;
     };
-    
+
     static const std::unordered_map<FluentAccentColor, AccentColorSet> accentColors = {
         {FluentAccentColor::Blue, {
             QColor("#0078d4"),
@@ -503,11 +542,11 @@ void FluentTheme::updateAccentColors() {
             QColor("#00685c"), QColor("#004d42"), QColor("#003328")
         }}
     };
-    
+
     const auto it = accentColors.find(m_accentColor);
     if (it != accentColors.end()) {
         const AccentColorSet& colorSet = it->second;
-        
+
         // Update light palette
         m_lightPalette.accent = colorSet.base;
         m_lightPalette.accentLight1 = colorSet.light1;
@@ -516,7 +555,7 @@ void FluentTheme::updateAccentColors() {
         m_lightPalette.accentDark1 = colorSet.dark1;
         m_lightPalette.accentDark2 = colorSet.dark2;
         m_lightPalette.accentDark3 = colorSet.dark3;
-        
+
         // For dark palette, use lighter variants as base
         m_darkPalette.accent = colorSet.light2;
         m_darkPalette.accentLight1 = colorSet.light1;
@@ -525,7 +564,7 @@ void FluentTheme::updateAccentColors() {
         m_darkPalette.accentDark1 = colorSet.dark1;
         m_darkPalette.accentDark2 = colorSet.dark2;
         m_darkPalette.accentDark3 = colorSet.dark3;
-        
+
         // Update info colors to match accent
         m_lightPalette.info = colorSet.base;
         m_lightPalette.infoLight = colorSet.light3;
@@ -546,14 +585,14 @@ void FluentTheme::initializeSpacingAndSizing() {
         {"xxl", 20},
         {"xxxl", 24},
         {"huge", 32},
-        
+
         // Named spacing
         {"compact", 4},
         {"default", 8},
         {"comfortable", 12},
         {"spacious", 16}
     };
-    
+
     // Fluent Design icon sizes
     m_iconSizeMap = {
         {"tiny", QSize(10, 10)},
@@ -563,7 +602,7 @@ void FluentTheme::initializeSpacingAndSizing() {
         {"xlarge", QSize(24, 24)},
         {"xxlarge", QSize(32, 32)},
         {"huge", QSize(48, 48)},
-        
+
         // Context-specific sizes
         {"button", QSize(16, 16)},
         {"toolbar", QSize(16, 16)},
@@ -811,34 +850,34 @@ void FluentTheme::initializeElevation() {
 
 void FluentTheme::loadSettings() {
     QSettings settings("FluentQt", "Theme");
-    
+
     // Load theme mode
     const int modeInt = settings.value("mode", static_cast<int>(FluentThemeMode::System)).toInt();
     m_mode = static_cast<FluentThemeMode>(modeInt);
-    
+
     // Load accent color
     const int accentInt = settings.value("accentColor", static_cast<int>(FluentAccentColor::Blue)).toInt();
     m_accentColor = static_cast<FluentAccentColor>(accentInt);
-    
+
     // Load custom colors if any
     loadCustomColors(settings);
 }
 
 void FluentTheme::saveSettings() {
     QSettings settings("FluentQt", "Theme");
-    
+
     settings.setValue("mode", static_cast<int>(m_mode));
     settings.setValue("accentColor", static_cast<int>(m_accentColor));
-    
+
     // Save custom colors if any
     saveCustomColors(settings);
-    
+
     settings.sync();
 }
 
 void FluentTheme::loadCustomColors(QSettings& settings) {
     settings.beginGroup("CustomColors");
-    
+
     // Load any custom color overrides
     const QStringList keys = settings.childKeys();
     for (const QString& key : keys) {
@@ -848,17 +887,17 @@ void FluentTheme::loadCustomColors(QSettings& settings) {
             m_customColors[key.toStdString()] = color;
         }
     }
-    
+
     settings.endGroup();
 }
 
 void FluentTheme::saveCustomColors(QSettings& settings) {
     settings.beginGroup("CustomColors");
-    
+
     for (const auto& [key, color] : m_customColors) {
         settings.setValue(QString::fromStdString(key), color);
     }
-    
+
     settings.endGroup();
 }
 
@@ -882,7 +921,7 @@ void FluentTheme::checkSystemTheme() {
 
 #ifdef Q_OS_WIN
 bool FluentTheme::isWindowsDarkMode() const {
-    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 
+    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
                       QSettings::NativeFormat);
     return registry.value("AppsUseLightTheme", 1).toInt() == 0;
 }
@@ -890,17 +929,17 @@ bool FluentTheme::isWindowsDarkMode() const {
 void FluentTheme::checkWindowsThemeChanges() {
     static bool lastDarkMode = isWindowsDarkMode();
     static QColor lastAccentColor = getWindowsAccentColor();
-    
+
     const bool currentDarkMode = isWindowsDarkMode();
     const QColor currentAccentColor = getWindowsAccentColor();
-    
+
     bool changed = false;
-    
+
     if (currentDarkMode != lastDarkMode) {
         lastDarkMode = currentDarkMode;
         changed = true;
     }
-    
+
     if (currentAccentColor != lastAccentColor) {
         lastAccentColor = currentAccentColor;
         // Update accent color if using system colors
@@ -909,29 +948,29 @@ void FluentTheme::checkWindowsThemeChanges() {
             changed = true;
         }
     }
-    
+
     if (changed && m_mode == FluentThemeMode::System) {
         emit themeChanged();
     }
 }
 
 QColor FluentTheme::getWindowsAccentColor() const {
-    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\DWM", 
+    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\DWM",
                       QSettings::NativeFormat);
-    
+
     bool ok;
     const quint32 colorValue = registry.value("AccentColor", 0xFF0078D4).toUInt(&ok);
-    
+
     if (ok) {
         // Windows stores ABGR format
         const quint8 r = (colorValue >> 0) & 0xFF;
         const quint8 g = (colorValue >> 8) & 0xFF;
         const quint8 b = (colorValue >> 16) & 0xFF;
         const quint8 a = (colorValue >> 24) & 0xFF;
-        
+
         return QColor(r, g, b, a);
     }
-    
+
     return QColor("#0078d4"); // Fallback to default blue
 }
 #endif
@@ -958,7 +997,7 @@ void FluentTheme::updateSystemAccentColor(const QColor& systemColor) {
     if (closestAccent != m_accentColor) {
         m_accentColor = closestAccent;
         updateAccentColors();
-        emit accentColorChanged(m_accentColor);
+        emit accentColorChanged(accentColor());
     }
 }
 
@@ -970,7 +1009,7 @@ FluentAccentColor FluentTheme::findClosestAccentColor(const QColor& targetColor)
         const int db = c1.blue() - c2.blue();
         return dr * dr + dg * dg + db * db;
     };
-    
+
     const std::vector<std::pair<FluentAccentColor, QColor>> accentOptions = {
         {FluentAccentColor::Blue, QColor("#0078d4")},
         {FluentAccentColor::Purple, QColor("#8764b8")},
@@ -981,10 +1020,10 @@ FluentAccentColor FluentTheme::findClosestAccentColor(const QColor& targetColor)
         {FluentAccentColor::Green, QColor("#107c10")},
         {FluentAccentColor::Teal, QColor("#008272")}
     };
-    
+
     FluentAccentColor closest = FluentAccentColor::Blue;
     int minDistance = std::numeric_limits<int>::max();
-    
+
     for (const auto& [accent, color] : accentOptions) {
         const int distance = colorDistance(targetColor, color);
         if (distance < minDistance) {
@@ -992,7 +1031,7 @@ FluentAccentColor FluentTheme::findClosestAccentColor(const QColor& targetColor)
             closest = accent;
         }
     }
-    
+
     return closest;
 }
 
@@ -1096,7 +1135,7 @@ QBrush FluentTheme::createAcrylicBrush(const QColor& baseColor) const {
     // Create a semi-transparent brush that simulates acrylic effect
     QColor acrylicColor = baseColor;
     acrylicColor.setAlphaF(0.8);
-    
+
     // In a full implementation, this would create a more complex brush
     // with noise texture and blur effects
     return QBrush(acrylicColor);
@@ -1107,7 +1146,7 @@ QBrush FluentTheme::createMicaBrush() const {
     const auto& palette = currentPalette();
     QColor micaColor = palette.neutralLighter;
     micaColor.setAlphaF(0.7);
-    
+
     return QBrush(micaColor);
 }
 
@@ -1115,7 +1154,7 @@ QBrush FluentTheme::createGradientBrush(const QColor& baseColor) const {
     QLinearGradient gradient(0, 0, 0, 100);
     gradient.setColorAt(0, baseColor.lighter(110));
     gradient.setColorAt(1, baseColor.darker(110));
-    
+
     return QBrush(gradient);
 }
 
@@ -1135,12 +1174,12 @@ void FluentTheme::resetToDefaults() {
     m_mode = FluentThemeMode::System;
     m_accentColor = FluentAccentColor::Blue;
     m_customColors.clear();
-    
+
     initializePalettes();
     saveSettings();
-    
+
     emit modeChanged(m_mode);
-    emit accentColorChanged(m_accentColor);
+    emit accentColorChanged(accentColor());
     emit themeChanged();
 }
 
@@ -1148,14 +1187,14 @@ QString FluentTheme::exportTheme() const {
     QJsonObject themeJson;
     themeJson["mode"] = static_cast<int>(m_mode);
     themeJson["accentColor"] = static_cast<int>(m_accentColor);
-    
+
     // Export custom colors
     QJsonObject customColorsJson;
     for (const auto& [name, color] : m_customColors) {
         customColorsJson[QString::fromStdString(name)] = color.name();
     }
     themeJson["customColors"] = customColorsJson;
-    
+
     QJsonDocument doc(themeJson);
     return doc.toJson(QJsonDocument::Compact);
 }
@@ -1163,23 +1202,23 @@ QString FluentTheme::exportTheme() const {
 bool FluentTheme::importTheme(const QString& themeData) {
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(themeData.toUtf8(), &error);
-    
+
     if (error.error != QJsonParseError::NoError) {
         qWarning() << "Failed to parse theme JSON:" << error.errorString();
         return false;
     }
-    
+
     const QJsonObject themeJson = doc.object();
-    
+
     // Import basic settings
     if (themeJson.contains("mode")) {
         m_mode = static_cast<FluentThemeMode>(themeJson["mode"].toInt());
     }
-    
+
     if (themeJson.contains("accentColor")) {
         m_accentColor = static_cast<FluentAccentColor>(themeJson["accentColor"].toInt());
     }
-    
+
     // Import custom colors
     if (themeJson.contains("customColors")) {
         const QJsonObject customColorsJson = themeJson["customColors"].toObject();
@@ -1190,15 +1229,15 @@ bool FluentTheme::importTheme(const QString& themeData) {
             }
         }
     }
-    
+
     // Regenerate palettes and save
     updateAccentColors();
     saveSettings();
-    
+
     emit modeChanged(m_mode);
-    emit accentColorChanged(m_accentColor);
+    emit accentColorChanged(accentColor());
     emit themeChanged();
-    
+
     return true;
 }
 

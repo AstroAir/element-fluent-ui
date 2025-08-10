@@ -21,7 +21,8 @@ enum class FluentButtonStyle {
     Subtle,
     Outline,
     Hyperlink,
-    Toggle
+    Toggle,
+    Icon
 };
 
 enum class FluentButtonSize {

@@ -291,7 +291,7 @@ void FluentTextInput::validate() {
         return;
     }
     
-    // Type-specific validation
+    // Type-specific validation and any explicit validationType override
     switch (m_inputType) {
         case FluentTextInputType::Email:
             if (!validateEmail(currentText)) {
@@ -299,25 +299,43 @@ void FluentTextInput::validate() {
                 setErrorText(tr("Please enter a valid email address"));
             }
             break;
-            
         case FluentTextInputType::Url:
             if (!validateUrl(currentText)) {
                 m_isValid = false;
                 setErrorText(tr("Please enter a valid URL"));
             }
             break;
-            
         case FluentTextInputType::Number:
             if (!validateNumber(currentText)) {
                 m_isValid = false;
                 setErrorText(tr("Please enter a valid number"));
             }
             break;
-            
         default:
             break;
     }
-    
+
+    // Optional explicit validation type
+    switch (m_validationType) {
+        case FluentTextInput::FluentTextInputValidation::Email:
+            if (!validateEmail(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid email address")); }
+            break;
+        case FluentTextInput::FluentTextInputValidation::URL:
+            if (!validateUrl(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid URL")); }
+            break;
+        case FluentTextInput::FluentTextInputValidation::Number:
+            if (!validateNumber(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid number")); }
+            break;
+        case FluentTextInput::FluentTextInputValidation::Custom:
+            if (m_customValidator) {
+                if (!m_customValidator(currentText)) {
+                    m_isValid = false;
+                    setErrorText(tr("Invalid value"));
+                }
+            }
+            break;
+    }
+
     if (m_isValid) {
         clearValidation();
     }

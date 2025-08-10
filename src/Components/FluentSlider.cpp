@@ -406,10 +406,6 @@ void FluentSlider::setShowTooltip(bool show) {
     }
 }
 
-QString FluentSlider::formatValue(qreal value) const {
-    return m_valueFormatter ? m_valueFormatter(value) : QString::number(value);
-}
-
 void FluentSlider::setValueFormatter(std::function<QString(qreal)> formatter) {
     m_valueFormatter = formatter;
     update();

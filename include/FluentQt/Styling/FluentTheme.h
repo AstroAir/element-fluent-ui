@@ -173,7 +173,7 @@ struct FluentColorPalette {
 class FluentTheme : public QObject {
     Q_OBJECT
     Q_PROPERTY(FluentThemeMode mode READ mode WRITE setMode NOTIFY modeChanged)
-    Q_PROPERTY(FluentAccentColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(FluentAccentColor accentColor READ accentColorEnum WRITE setAccentColor NOTIFY accentColorChanged)
     Q_PROPERTY(FluentThemeVariant variant READ variant WRITE setVariant NOTIFY variantChanged)
     Q_PROPERTY(FluentColorScheme colorScheme READ colorScheme WRITE setColorScheme NOTIFY colorSchemeChanged)
     Q_PROPERTY(FluentDynamicMode dynamicMode READ dynamicMode WRITE setDynamicMode NOTIFY dynamicModeChanged)
@@ -194,10 +194,13 @@ public:
     void setDarkMode(bool dark);
     void toggleThemeMode();
 
-    // Accent color
-    FluentAccentColor accentColor() const noexcept { return m_accentColor; }
+    // Accent color (compat overloads)
+    FluentAccentColor accentColorEnum() const noexcept { return m_accentColor; }
     void setAccentColor(FluentAccentColor color);
     void setCustomAccentColor(const QColor& color);
+    // Tests expect QColor getters/setters
+    QColor accentColor() const;
+    void setAccentColor(const QColor& color);
 
     // Theme variant
     FluentThemeVariant variant() const noexcept { return m_variant; }
@@ -264,6 +267,9 @@ public:
     int elevation(std::string_view level) const;
     QMargins margins(std::string_view size) const;
     QMargins padding(std::string_view size) const;
+    // Simple scalar accessors expected in tests
+    int marginsValue(std::string_view size) const;
+    int paddingValue(std::string_view size) const;
 
     // Layout dimensions
     int componentHeight(std::string_view size) const;
@@ -291,7 +297,10 @@ public:
 
 signals:
     void modeChanged(FluentThemeMode mode);
+    // Keep original enum signal for internal users
     void accentColorChanged(FluentAccentColor color);
+    // Add QColor-based signal for tests/consumers that expect a QColor
+    void accentColorChanged(const QColor& color);
     void variantChanged(FluentThemeVariant variant);
     void colorSchemeChanged(FluentColorScheme scheme);
     void dynamicModeChanged(FluentDynamicMode mode);

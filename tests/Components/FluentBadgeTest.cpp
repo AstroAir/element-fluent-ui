@@ -839,8 +839,8 @@ void FluentBadgeTest::testInteractionSignals() {
     // These signals would be emitted by mouse events
     // For now, just verify the signals exist and can be connected
     const QMetaObject* metaObj = m_badge->metaObject();
-    QVERIFY(QMetaObject::indexOfSignal(metaObj, "clicked()") != -1);
-    QVERIFY(QMetaObject::indexOfSignal(metaObj, "doubleClicked()") != -1);
+    QVERIFY(metaObj->indexOfSignal("clicked()") != -1);
+    QVERIFY(metaObj->indexOfSignal("doubleClicked()") != -1);
 }
 
 void FluentBadgeTest::testAccessibility() {

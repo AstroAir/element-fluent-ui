@@ -30,4 +30,11 @@ private:
     qreal m_scale = 1.0;
     qreal m_rotation = 0.0;
     QPointF m_translation = QPointF(0, 0);
+
+    // Performance optimization flags
+    bool m_useHardwareAcceleration = true;
+    bool m_hardwareAccelAvailable = false;
+    bool m_cacheEnabled = true;
+    mutable QPixmap m_cachedPixmap;
+    mutable bool m_cacheValid = false;
 };

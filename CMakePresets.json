@@ -1,0 +1,459 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Configuration",
+            "description": "Default build configuration with all features enabled",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "OFF",
+                "FLUENTQT_ENABLE_NETWORK": "OFF"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug Configuration",
+            "description": "Debug build with all debugging features enabled",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "OFF",
+                "FLUENTQT_ENABLE_NETWORK": "OFF",
+                "FLUENTQT_ENABLE_SANITIZERS": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release Configuration",
+            "description": "Optimized release build for production",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "OFF",
+                "FLUENTQT_BUILD_TESTS": "OFF",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON"
+            }
+        },
+        {
+            "name": "static",
+            "displayName": "Static Library Configuration",
+            "description": "Static library build for embedding",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-static",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "OFF",
+                "FLUENTQT_BUILD_TESTS": "OFF",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "OFF",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON"
+            }
+        },
+        {
+            "name": "minimal",
+            "displayName": "Minimal Configuration",
+            "description": "Minimal build with only core components",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-minimal",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "OFF",
+                "FLUENTQT_BUILD_TESTS": "OFF",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "OFF",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "OFF",
+                "FLUENTQT_ENABLE_NETWORK": "OFF"
+            }
+        },
+        {
+            "name": "development",
+            "displayName": "Development Configuration",
+            "description": "Development build with hot reload support",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-dev",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "ON",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "windows-msys2",
+            "displayName": "Windows MSYS2 Configuration",
+            "description": "Optimized build for Windows MSYS2/MinGW environment",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-windows-msys2",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "environment": {
+                "PATH": "$penv{MSYSTEM_PREFIX}/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-march=native -mtune=native",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "windows-msvc",
+            "displayName": "Windows MSVC Configuration",
+            "description": "Optimized build for Windows with MSVC compiler",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-windows-msvc",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "/O2 /Ob2 /DNDEBUG",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "macos-intel",
+            "displayName": "macOS Intel Configuration",
+            "description": "Optimized build for macOS on Intel processors",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-macos-intel",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "10.15",
+                "CMAKE_OSX_ARCHITECTURES": "x86_64",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-march=native -mtune=native",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "macos-apple-silicon",
+            "displayName": "macOS Apple Silicon Configuration",
+            "description": "Optimized build for macOS on Apple Silicon (M1/M2)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-macos-apple-silicon",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_OSX_DEPLOYMENT_TARGET": "11.0",
+                "CMAKE_OSX_ARCHITECTURES": "arm64",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-mcpu=apple-m1",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "linux-ubuntu",
+            "displayName": "Linux Ubuntu Configuration",
+            "description": "Optimized build for Ubuntu/Debian-based distributions",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-linux-ubuntu",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-march=native -mtune=native",
+                "CMAKE_PREFIX_PATH": "/usr/lib/x86_64-linux-gnu/cmake",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "linux-centos",
+            "displayName": "Linux CentOS/RHEL Configuration",
+            "description": "Optimized build for CentOS/RHEL/Fedora distributions",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-linux-centos",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-march=native -mtune=native",
+                "CMAKE_PREFIX_PATH": "/usr/lib64/cmake",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "linux-arch",
+            "displayName": "Linux Arch Configuration",
+            "description": "Optimized build for Arch Linux and derivatives",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-linux-arch",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-march=native -mtune=native",
+                "CMAKE_PREFIX_PATH": "/usr/lib/cmake",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        },
+        {
+            "name": "linux-generic",
+            "displayName": "Linux Generic Configuration",
+            "description": "Generic build for any Linux distribution",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-linux-generic",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "FLUENTQT_BUILD_EXAMPLES": "ON",
+                "FLUENTQT_BUILD_TESTS": "ON",
+                "FLUENTQT_BUILD_DOCS": "OFF",
+                "FLUENTQT_BUILD_SHARED": "ON",
+                "FLUENTQT_ENABLE_CHARTS": "ON",
+                "FLUENTQT_ENABLE_MULTIMEDIA": "ON",
+                "FLUENTQT_ENABLE_NETWORK": "ON",
+                "FLUENTQT_ENABLE_LTO": "ON",
+                "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG",
+                "CMAKE_MODULE_PATH": "${sourceDir}/cmake"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "displayName": "Default Build"
+        },
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "displayName": "Debug Build"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "displayName": "Release Build"
+        },
+        {
+            "name": "static",
+            "configurePreset": "static",
+            "displayName": "Static Library Build"
+        },
+        {
+            "name": "minimal",
+            "configurePreset": "minimal",
+            "displayName": "Minimal Build"
+        },
+        {
+            "name": "development",
+            "configurePreset": "development",
+            "displayName": "Development Build"
+        },
+        {
+            "name": "windows-msys2",
+            "configurePreset": "windows-msys2",
+            "displayName": "Windows MSYS2 Build"
+        },
+        {
+            "name": "windows-msvc",
+            "configurePreset": "windows-msvc",
+            "displayName": "Windows MSVC Build"
+        },
+        {
+            "name": "macos-intel",
+            "configurePreset": "macos-intel",
+            "displayName": "macOS Intel Build"
+        },
+        {
+            "name": "macos-apple-silicon",
+            "configurePreset": "macos-apple-silicon",
+            "displayName": "macOS Apple Silicon Build"
+        },
+        {
+            "name": "linux-ubuntu",
+            "configurePreset": "linux-ubuntu",
+            "displayName": "Linux Ubuntu Build"
+        },
+        {
+            "name": "linux-centos",
+            "configurePreset": "linux-centos",
+            "displayName": "Linux CentOS Build"
+        },
+        {
+            "name": "linux-arch",
+            "configurePreset": "linux-arch",
+            "displayName": "Linux Arch Build"
+        },
+        {
+            "name": "linux-generic",
+            "configurePreset": "linux-generic",
+            "displayName": "Linux Generic Build"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "displayName": "Default Tests"
+        },
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "displayName": "Debug Tests"
+        },
+        {
+            "name": "development",
+            "configurePreset": "development",
+            "displayName": "Development Tests"
+        },
+        {
+            "name": "windows-msys2",
+            "configurePreset": "windows-msys2",
+            "displayName": "Windows MSYS2 Tests"
+        },
+        {
+            "name": "windows-msvc",
+            "configurePreset": "windows-msvc",
+            "displayName": "Windows MSVC Tests"
+        },
+        {
+            "name": "macos-intel",
+            "configurePreset": "macos-intel",
+            "displayName": "macOS Intel Tests"
+        },
+        {
+            "name": "macos-apple-silicon",
+            "configurePreset": "macos-apple-silicon",
+            "displayName": "macOS Apple Silicon Tests"
+        },
+        {
+            "name": "linux-ubuntu",
+            "configurePreset": "linux-ubuntu",
+            "displayName": "Linux Ubuntu Tests"
+        },
+        {
+            "name": "linux-centos",
+            "configurePreset": "linux-centos",
+            "displayName": "Linux CentOS Tests"
+        },
+        {
+            "name": "linux-arch",
+            "configurePreset": "linux-arch",
+            "displayName": "Linux Arch Tests"
+        },
+        {
+            "name": "linux-generic",
+            "configurePreset": "linux-generic",
+            "displayName": "Linux Generic Tests"
+        }
+    ]
+}

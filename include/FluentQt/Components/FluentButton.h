@@ -14,6 +14,17 @@
 
 namespace FluentQt::Components {
 
+// Dirty region tracking for paint optimization
+enum class FluentButtonDirtyRegion {
+    None = 0x00,
+    Background = 0x01,
+    Border = 0x02,
+    Content = 0x04,
+    All = Background | Border | Content
+};
+Q_DECLARE_FLAGS(FluentButtonDirtyRegions, FluentButtonDirtyRegion)
+Q_DECLARE_OPERATORS_FOR_FLAGS(FluentQt::Components::FluentButtonDirtyRegions)
+
 enum class FluentButtonStyle {
     Default,
     Primary,
@@ -131,6 +142,7 @@ signals:
 protected:
     // Event handling
     void paintEvent(QPaintEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
     void mouseReleaseEvent(QMouseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
@@ -138,7 +150,7 @@ protected:
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
     void changeEvent(QEvent* event) override;
-    
+
     // State management
     void updateStateStyle() override;
     void performStateTransition(Core::FluentState from, Core::FluentState to) override;
@@ -173,7 +185,7 @@ private:
     QColor getFocusColor() const;
     QPen getBorderPen() const;
     QFont getFont() const;
-    
+
     int getHorizontalPadding() const;
     int getVerticalPadding() const;
     int getIconTextSpacing() const;
@@ -190,6 +202,11 @@ private:
     void updateGeometry();
     void updateAccessibility();
     bool isPressed() const { return m_pressed; }
+
+    // Cache management methods
+    void invalidateCache(FluentButtonDirtyRegions regions = {}) const;
+    void updateCacheIfNeeded() const;
+    QString generateStyleKey() const;
 
 private:
     // Content
@@ -224,6 +241,21 @@ private:
     // Cached values for performance
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
+
+    // Paint caching for performance optimization
+    mutable QPixmap m_cachedBackground;
+    mutable QPixmap m_cachedBorder;
+    mutable QPixmap m_cachedContent;
+    mutable QRect m_cachedRect;
+    mutable QString m_cachedStyleKey;
+    mutable bool m_backgroundCacheValid{false};
+    mutable bool m_borderCacheValid{false};
+    mutable bool m_contentCacheValid{false};
+
+    // Dirty region tracking
+    mutable FluentButtonDirtyRegions m_dirtyRegions{FluentButtonDirtyRegion::All};
 };
+
+
 
 } // namespace FluentQt::Components

@@ -22,16 +22,16 @@ FluentScreenReaderManager::FluentScreenReaderManager() {
     m_announcementTimer = new QTimer(this);
     m_announcementTimer->setSingleShot(true);
     connect(m_announcementTimer, &QTimer::timeout, this, &FluentScreenReaderManager::processAnnouncementQueue);
-    
+
     // Detect screen reader on startup
     detectScreenReader();
-    
+
     qDebug() << "FluentScreenReaderManager initialized";
 }
 
 FluentScreenReaderInfo FluentScreenReaderManager::detectScreenReader() {
     FluentScreenReaderInfo info;
-    
+
 #ifdef Q_OS_WIN
     info.type = detectWindowsScreenReader();
 #elif defined(Q_OS_MACOS)
@@ -39,7 +39,7 @@ FluentScreenReaderInfo FluentScreenReaderManager::detectScreenReader() {
 #elif defined(Q_OS_LINUX)
     info.type = detectLinuxScreenReader();
 #endif
-    
+
     switch (info.type) {
         case FluentScreenReaderType::NVDA:
             info.name = "NVDA";
@@ -78,16 +78,16 @@ FluentScreenReaderInfo FluentScreenReaderManager::detectScreenReader() {
             info.supportsLandmarks = false;
             break;
     }
-    
+
     m_activeScreenReader = info.type;
     m_screenReaderInfo = info;
     m_screenReaderActive = (info.type != FluentScreenReaderType::Unknown);
-    
+
     if (m_screenReaderActive) {
         emit screenReaderDetected(info.type, info.name);
         qDebug() << "Detected screen reader:" << info.name;
     }
-    
+
     return info;
 }
 
@@ -95,27 +95,27 @@ void FluentScreenReaderManager::setScreenReaderActive(bool active) {
     if (m_screenReaderActive != active) {
         m_screenReaderActive = active;
         emit screenReaderActivated(active);
-        
+
         if (active) {
             announce("Screen reader support activated", FluentAnnouncementPriority::High);
         }
     }
 }
 
-void FluentScreenReaderManager::announce(const QString& message, 
+void FluentScreenReaderManager::announce(const QString& message,
                                         FluentAnnouncementPriority priority,
                                         FluentLiveRegionType liveType) {
     if (!m_screenReaderActive || message.isEmpty()) {
         return;
     }
-    
+
     FluentAnnouncement announcement;
     announcement.message = message;
     announcement.priority = priority;
     announcement.liveType = liveType;
     announcement.timestamp = std::chrono::steady_clock::now();
     announcement.interrupt = (priority == FluentAnnouncementPriority::Interrupt);
-    
+
     queueAnnouncement(announcement);
 }
 
@@ -125,14 +125,14 @@ void FluentScreenReaderManager::announceFromWidget(QWidget* widget, const QStrin
         announce(message, priority);
         return;
     }
-    
+
     FluentAnnouncement announcement;
     announcement.message = message;
     announcement.priority = priority;
     announcement.source = widget;
     announcement.timestamp = std::chrono::steady_clock::now();
     announcement.context = widget->objectName();
-    
+
     queueAnnouncement(announcement);
 }
 
@@ -148,68 +148,68 @@ void FluentScreenReaderManager::clearAnnouncementQueue() {
 
 void FluentScreenReaderManager::setAriaRole(QWidget* widget, FluentAriaRole role) {
     if (!widget) return;
-    
+
     QMutexLocker locker(&m_mutex);
     m_ariaRoles[widget] = role;
-    
+
     // Update accessible interface
     updateAccessibleInterface(widget);
-    
+
     emit ariaPropertyChanged(widget, "role", ariaRoleToString(role));
 }
 
 void FluentScreenReaderManager::setAriaProperties(QWidget* widget, const FluentAriaProperties& properties) {
     if (!widget) return;
-    
+
     QMutexLocker locker(&m_mutex);
     m_ariaProperties[widget] = properties;
-    
+
     // Update accessible interface
     updateAccessibleInterface(widget);
 }
 
 void FluentScreenReaderManager::setAriaLabel(QWidget* widget, const QString& label) {
     if (!widget) return;
-    
+
     widget->setAccessibleName(label);
-    
+
     QMutexLocker locker(&m_mutex);
     auto& props = m_ariaProperties[widget];
     props.label = label;
-    
+
     emit ariaPropertyChanged(widget, "aria-label", label);
 }
 
 void FluentScreenReaderManager::setAriaDescription(QWidget* widget, const QString& description) {
     if (!widget) return;
-    
+
     widget->setAccessibleDescription(description);
-    
+
     QMutexLocker locker(&m_mutex);
     auto& props = m_ariaProperties[widget];
     props.describedBy = description;
-    
+
     emit ariaPropertyChanged(widget, "aria-describedby", description);
 }
 
 void FluentScreenReaderManager::setLiveRegion(QWidget* widget, FluentLiveRegionType type, bool atomic) {
     if (!widget) return;
-    
+
     QMutexLocker locker(&m_mutex);
     m_liveRegions[widget] = type;
-    
+
     auto& props = m_ariaProperties[widget];
     props.live = type;
     props.atomic = atomic;
-    
-    emit ariaPropertyChanged(widget, "aria-live", 
-                           type == FluentLiveRegionType::Polite ? "polite" : 
+
+    emit ariaPropertyChanged(widget, "aria-live",
+                           type == FluentLiveRegionType::Polite ? "polite" :
                            type == FluentLiveRegionType::Assertive ? "assertive" : "off");
 }
 
 void FluentScreenReaderManager::updateLiveRegion(QWidget* widget, const QString& content) {
     if (!widget) return;
-    
+
     auto it = m_liveRegions.find(widget);
     if (it != m_liveRegions.end() && it->second != FluentLiveRegionType::Off) {
         announce(content, FluentAnnouncementPriority::Medium, it->second);
@@ -219,23 +219,23 @@ void FluentScreenReaderManager::updateLiveRegion(QWidget* widget, const QString&
 
 void FluentScreenReaderManager::setLandmark(QWidget* widget, FluentAriaRole landmarkRole, const QString& label) {
     if (!widget) return;
-    
+
     setAriaRole(widget, landmarkRole);
     if (!label.isEmpty()) {
         setAriaLabel(widget, label);
     }
-    
+
     QMutexLocker locker(&m_mutex);
     if (!m_landmarks.contains(widget)) {
         m_landmarks.append(widget);
     }
-    
+
     emit landmarkAdded(widget, landmarkRole, label);
 }
 
 void FluentScreenReaderManager::removeLandmark(QWidget* widget) {
     if (!widget) return;
-    
+
     QMutexLocker locker(&m_mutex);
     m_landmarks.removeAll(widget);
 }
@@ -247,18 +247,18 @@ QList<QWidget*> FluentScreenReaderManager::getLandmarks() const {
 
 void FluentScreenReaderManager::setHeading(QWidget* widget, int level, const QString& text) {
     if (!widget) return;
-    
+
     setAriaRole(widget, FluentAriaRole::Heading);
     setAriaLabel(widget, text);
-    
+
     QMutexLocker locker(&m_mutex);
     auto& props = m_ariaProperties[widget];
     props.level = level;
-    
+
     if (!m_headings.contains(widget)) {
         m_headings.append(widget);
     }
-    
+
     emit ariaPropertyChanged(widget, "aria-level", QString::number(level));
 }
 
@@ -306,7 +306,7 @@ FluentScreenReaderType FluentScreenReaderManager::detectWindowsScreenReader() {
     if (isProcessRunning("jfw.exe")) {
         return FluentScreenReaderType::JAWS;
     }
-    
+
     // Check for Windows Narrator
     BOOL isNarratorRunning = FALSE;
     SystemParametersInfo(SPI_GETSCREENREADER, 0, &isNarratorRunning, 0);
@@ -314,7 +314,7 @@ FluentScreenReaderType FluentScreenReaderManager::detectWindowsScreenReader() {
         return FluentScreenReaderType::WindowsNarrator;
     }
 #endif
-    
+
     return FluentScreenReaderType::Unknown;
 }
 
@@ -324,7 +324,7 @@ FluentScreenReaderType FluentScreenReaderManager::detectMacScreenReader() {
     // This is a simplified implementation
     return FluentScreenReaderType::VoiceOver;
 #endif
-    
+
     return FluentScreenReaderType::Unknown;
 }
 
@@ -334,35 +334,62 @@ FluentScreenReaderType FluentScreenReaderManager::detectLinuxScreenReader() {
         return FluentScreenReaderType::Orca;
     }
 #endif
-    
+
     return FluentScreenReaderType::Unknown;
 }
 
 bool FluentScreenReaderManager::isProcessRunning(const QString& processName) {
+    // Check if we're in offscreen mode - if so, skip process detection to avoid hanging
+    if (QApplication::instance()) {
+        QString platformName = qgetenv("QT_QPA_PLATFORM");
+        if (platformName.isEmpty()) {
+            QStringList args = QApplication::arguments();
+            for (int i = 0; i < args.size() - 1; ++i) {
+                if (args[i] == "-platform") {
+                    platformName = args[i + 1];
+                    break;
+                }
+            }
+        }
+
+        if (platformName == "offscreen" || platformName == "minimal") {
+            qDebug() << "Skipping process detection for" << processName << "in" << platformName << "mode";
+            return false;
+        }
+    }
+
     QProcess process;
-    
+
 #ifdef Q_OS_WIN
     process.start("tasklist", QStringList() << "/FI" << QString("IMAGENAME eq %1").arg(processName));
 #else
     process.start("pgrep", QStringList() << processName);
 #endif
-    
-    process.waitForFinished(3000);
+
+    // Use shorter timeout to prevent hanging, especially in headless environments
+    bool finished = process.waitForFinished(1000); // Reduced from 3000ms to 1000ms
+    if (!finished) {
+        qDebug() << "Process detection timed out for" << processName;
+        process.kill();
+        process.waitForFinished(500);
+        return false;
+    }
+
     QString output = process.readAllStandardOutput();
-    
+
     return output.contains(processName, Qt::CaseInsensitive);
 }
 
 void FluentScreenReaderManager::queueAnnouncement(const FluentAnnouncement& announcement) {
     QMutexLocker locker(&m_mutex);
-    
+
     if (announcement.interrupt) {
         m_announcementQueue.clear();
     }
-    
+
     m_announcementQueue.enqueue(announcement);
     emit announcementQueued(announcement);
-    
+
     if (!m_announcementTimer->isActive()) {
         m_announcementTimer->start(m_announcementDelay);
     }
@@ -370,16 +397,16 @@ void FluentScreenReaderManager::queueAnnouncement(const FluentAnnouncement& anno
 
 void FluentScreenReaderManager::processAnnouncementQueue() {
     QMutexLocker locker(&m_mutex);
-    
+
     if (m_announcementQueue.isEmpty()) {
         return;
     }
-    
+
     FluentAnnouncement announcement = m_announcementQueue.dequeue();
     locker.unlock();
-    
+
     deliverAnnouncement(announcement);
-    
+
     // Schedule next announcement if queue is not empty
     locker.relock();
     if (!m_announcementQueue.isEmpty()) {
@@ -391,13 +418,13 @@ void FluentScreenReaderManager::deliverAnnouncement(const FluentAnnouncement& an
     if (!shouldAnnounce(announcement)) {
         return;
     }
-    
+
     QString formattedMessage = formatAnnouncementForScreenReader(announcement.message, m_activeScreenReader);
-    
+
     // In a real implementation, this would use platform-specific APIs
     // to send the announcement to the screen reader
     qDebug() << "Screen reader announcement:" << formattedMessage;
-    
+
     emit announcementDelivered(announcement);
     m_lastAnnouncement = std::chrono::steady_clock::now();
     m_announcementCount++;
@@ -405,12 +432,12 @@ void FluentScreenReaderManager::deliverAnnouncement(const FluentAnnouncement& an
 
 QString FluentScreenReaderManager::formatAnnouncementForScreenReader(const QString& message, FluentScreenReaderType type) {
     QString formatted = message;
-    
+
     // Limit message length
     if (formatted.length() > m_maxAnnouncementLength) {
         formatted = formatted.left(m_maxAnnouncementLength - 3) + "...";
     }
-    
+
     // Screen reader specific formatting
     switch (type) {
         case FluentScreenReaderType::NVDA:
@@ -423,7 +450,7 @@ QString FluentScreenReaderManager::formatAnnouncementForScreenReader(const QStri
         default:
             break;
     }
-    
+
     return formatted;
 }
 
@@ -431,12 +458,12 @@ bool FluentScreenReaderManager::shouldAnnounce(const FluentAnnouncement& announc
     // Check if enough time has passed since last announcement
     auto now = std::chrono::steady_clock::now();
     auto timeSinceLastAnnouncement = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastAnnouncement);
-    
-    if (timeSinceLastAnnouncement.count() < m_announcementDelay && 
+
+    if (timeSinceLastAnnouncement.count() < m_announcementDelay &&
         announcement.priority != FluentAnnouncementPriority::Interrupt) {
         return false;
     }
-    
+
     return true;
 }
 
@@ -462,7 +489,7 @@ QString FluentScreenReaderManager::ariaRoleToString(FluentAriaRole role) {
 
 void FluentScreenReaderManager::updateAccessibleInterface(QWidget* widget) {
     if (!widget) return;
-    
+
     // Update Qt's accessibility interface
     // This would typically involve updating QAccessibleInterface
     widget->update();

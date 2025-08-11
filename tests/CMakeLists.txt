@@ -83,6 +83,7 @@ endfunction()
 
 # Animation System Tests
 add_fluent_test(FluentAnimatorTest FluentAnimatorTest.cpp)
+add_fluent_test(FluentAnimatorTestFixed FluentAnimatorTestFixed.cpp)
 
 # Theme System Tests
 add_fluent_test(FluentThemeTest FluentThemeTest.cpp)
@@ -143,6 +144,11 @@ endif()
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/FluentCarouselStylingTest.cpp)
     add_fluent_test(FluentCarouselStylingTest FluentCarouselStylingTest.cpp)
 endif()
+add_fluent_test(FluentCarouselCoalesceTest FluentCarouselCoalesceTest.cpp)
+
+# TreeView Performance/Behavior Tests
+add_fluent_test(FluentTreeViewPerfTest Components/FluentTreeViewPerfTest.cpp)
+
 
 # Custom test target to run all tests
 add_custom_target(run_tests

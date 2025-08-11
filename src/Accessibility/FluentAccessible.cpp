@@ -165,7 +165,7 @@ QAccessible::Role FluentAccessibleInterface::role() const {
 
 QAccessible::State FluentAccessibleInterface::state() const {
     QAccessible::State state = QAccessibleWidget::state();
-    
+
     // Add Fluent-specific states
     const QAccessible::State fluentState = getFluentState();
     state.checkable = fluentState.checkable;
@@ -173,7 +173,7 @@ QAccessible::State FluentAccessibleInterface::state() const {
     state.expanded = fluentState.expanded;
     state.collapsed = fluentState.collapsed;
     state.busy = fluentState.busy;
-    
+
     return state;
 }
 
@@ -403,10 +403,10 @@ QString FluentAccessibleInterface::getFluentDescription() const {
 // Global accessibility helper functions
 void setAccessibleName(QWidget* widget, const QString& name) {
     if (!widget) return;
-    
+
     widget->setObjectName(name);
     widget->setAccessibleName(name);
-    
+
     // Notify screen readers of name change
     if (QAccessible::queryAccessibleInterface(widget)) {
         QAccessibleEvent event(widget, QAccessible::NameChanged);
@@ -416,10 +416,10 @@ void setAccessibleName(QWidget* widget, const QString& name) {
 
 void setAccessibleDescription(QWidget* widget, const QString& description) {
     if (!widget) return;
-    
+
     widget->setProperty("accessibleDescription", description);
     widget->setAccessibleDescription(description);
-    
+
     // Notify screen readers
     if (QAccessible::queryAccessibleInterface(widget)) {
         QAccessibleEvent event(widget, QAccessible::DescriptionChanged);
@@ -429,9 +429,9 @@ void setAccessibleDescription(QWidget* widget, const QString& description) {
 
 void setAccessibleRole(QWidget* widget, QAccessible::Role role) {
     if (!widget) return;
-    
+
     widget->setProperty("accessibleRole", static_cast<int>(role));
-    
+
     // Install custom accessible interface if needed
     if (!widget->accessibleName().isEmpty() || !widget->accessibleDescription().isEmpty()) {
         QAccessible::installFactory([](const QString& classname, QObject* object) -> QAccessibleInterface* {
@@ -445,7 +445,7 @@ void setAccessibleRole(QWidget* widget, QAccessible::Role role) {
 
 void announceToScreenReader(const QString& message) {
     if (message.isEmpty()) return;
-    
+
     // Create a temporary widget for the announcement
     static QWidget* announceWidget = nullptr;
     if (!announceWidget) {
@@ -453,13 +453,13 @@ void announceToScreenReader(const QString& message) {
         announceWidget->setObjectName("FluentAnnouncer");
         announceWidget->hide();
     }
-    
+
     announceWidget->setAccessibleName(message);
-    
+
     // Fire accessibility event
     QAccessibleEvent event(announceWidget, QAccessible::Alert);
     QAccessible::updateAccessibility(&event);
-    
+
     // Also use platform-specific APIs if available
 #ifdef Q_OS_WIN
     // Use Windows SAPI for immediate announcement
@@ -485,10 +485,10 @@ void announceToScreenReader(const QString& message) {
 bool isHighContrastMode() {
     static bool checked = false;
     static bool highContrast = false;
-    
+
     if (!checked) {
         checked = true;
-        
+
 #ifdef Q_OS_WIN
         // Check Windows high contrast mode
         HIGHCONTRAST hc = {};
@@ -511,20 +511,20 @@ bool isHighContrastMode() {
             const QPalette palette = QApplication::palette();
             const QColor bg = palette.color(QPalette::Window);
             const QColor fg = palette.color(QPalette::WindowText);
-            
+
             // Calculate contrast ratio
             const double bgLuminance = 0.299 * bg.redF() + 0.587 * bg.greenF() + 0.114 * bg.blueF();
             const double fgLuminance = 0.299 * fg.redF() + 0.587 * fg.greenF() + 0.114 * fg.blueF();
-            
-            const double contrast = (std::max(bgLuminance, fgLuminance) + 0.05) / 
+
+            const double contrast = (std::max(bgLuminance, fgLuminance) + 0.05) /
                                   (std::min(bgLuminance, fgLuminance) + 0.05);
-            
+
             // WCAG AA standard requires 4.5:1 for normal text
             // High contrast mode typically exceeds 7:1
             highContrast = contrast > 7.0;
         }
     }
-    
+
     return highContrast;
 }
 
@@ -532,7 +532,7 @@ void updateForHighContrast(QWidget* widget) {
     if (!widget || !isHighContrastMode()) {
         return;
     }
-    
+
     // Apply high contrast styling
     const QString highContrastStyle = R"(
         QWidget {
@@ -540,30 +540,30 @@ void updateForHighContrast(QWidget* widget) {
             color: windowtext;
             border: 1px solid windowtext;
         }
-        
+
         QPushButton {
             background-color: button;
             color: buttontext;
             border: 2px solid buttontext;
             padding: 4px 8px;
         }
-        
+
         QPushButton:hover {
             background-color: highlight;
             color: highlightedtext;
         }
-        
+
         QPushButton:pressed {
             background-color: buttontext;
             color: button;
         }
-        
+
         QPushButton:disabled {
             background-color: button;
             color: graytext;
             border-color: graytext;
         }
-        
+
         QLineEdit, QTextEdit, QPlainTextEdit {
             background-color: base;
             color: text;
@@ -571,41 +571,41 @@ void updateForHighContrast(QWidget* widget) {
             selection-background-color: highlight;
             selection-color: highlightedtext;
         }
-        
+
         QLabel {
             color: windowtext;
             background-color: transparent;
         }
-        
+
         QGroupBox {
             border: 2px solid windowtext;
             color: windowtext;
             font-weight: bold;
         }
-        
+
         QScrollBar {
             background-color: button;
             border: 1px solid windowtext;
         }
-        
+
         QScrollBar::handle {
             background-color: buttontext;
             border: 1px solid windowtext;
         }
-        
+
         QScrollBar::handle:hover {
             background-color: highlight;
         }
     )";
-    
+
     widget->setStyleSheet(widget->styleSheet() + highContrastStyle);
-    
+
     // Also update child widgets
     const auto children = widget->findChildren<QWidget*>();
     for (QWidget* child : children) {
         child->setStyleSheet(child->styleSheet() + highContrastStyle);
     }
-    
+
     // Announce the change
     announceToScreenReader("High contrast mode applied");
 }
@@ -659,6 +659,32 @@ void initializeAccessibility() {
 
     initialized = true;
 
+    // Check if we're running in offscreen mode or other headless environments
+    // In these cases, skip full accessibility initialization to avoid deadlocks
+    if (QApplication::instance()) {
+        // Check for offscreen platform via environment variable or command line
+        QString platformName = qgetenv("QT_QPA_PLATFORM");
+        if (platformName.isEmpty()) {
+            // Try to get from application arguments
+            QStringList args = QApplication::arguments();
+            for (int i = 0; i < args.size() - 1; ++i) {
+                if (args[i] == "-platform") {
+                    platformName = args[i + 1];
+                    break;
+                }
+            }
+        }
+
+        if (platformName == "offscreen" || platformName == "minimal") {
+            qDebug() << "Skipping full accessibility initialization for platform:" << platformName;
+            // Only install the factory for basic accessibility support
+            QAccessible::installFactory(FluentAccessibleFactory::create);
+            QAccessible::setActive(true);
+            qDebug() << "Basic FluentQt accessibility initialized for" << platformName << "platform";
+            return;
+        }
+    }
+
     // Install the factory
     QAccessible::installFactory(FluentAccessibleFactory::create);
 
@@ -711,6 +737,46 @@ void initializeAccessibility() {
     }
 
     qDebug() << "FluentQt accessibility initialized - Active:" << QAccessible::isActive();
+}
+
+// Safe initialization function that can be called explicitly
+bool initializeAccessibilitySafe(bool forceFullInit) {
+    static bool initialized = false;
+    if (initialized) return true;
+
+    try {
+        // Check platform first
+        bool isOffscreenMode = false;
+        if (QApplication::instance() && !forceFullInit) {
+            QString platformName = qgetenv("QT_QPA_PLATFORM");
+            if (platformName.isEmpty()) {
+                QStringList args = QApplication::arguments();
+                for (int i = 0; i < args.size() - 1; ++i) {
+                    if (args[i] == "-platform") {
+                        platformName = args[i + 1];
+                        break;
+                    }
+                }
+            }
+            isOffscreenMode = (platformName == "offscreen" || platformName == "minimal");
+        }
+
+        if (isOffscreenMode) {
+            qDebug() << "Safe accessibility initialization: Basic mode for offscreen platform";
+            QAccessible::installFactory(FluentAccessibleFactory::create);
+            QAccessible::setActive(true);
+            initialized = true;
+            return true;
+        }
+
+        // Full initialization for normal platforms
+        initializeAccessibility();
+        initialized = true;
+        return true;
+    } catch (...) {
+        qWarning() << "Failed to initialize accessibility system safely";
+        return false;
+    }
 }
 
 // Auto-initialize accessibility when the module is loaded

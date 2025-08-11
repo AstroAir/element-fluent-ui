@@ -8,6 +8,7 @@
 #include <QLineEdit>
 #include <QCheckBox>
 #include <QVBoxLayout>
+#include <QTimer>
 #include <functional>
 
 namespace FluentQt::Components {
@@ -39,25 +40,25 @@ class FluentTreeItem : public QTreeWidgetItem {
 public:
     FluentTreeItem(QTreeWidget* parent = nullptr);
     FluentTreeItem(QTreeWidgetItem* parent = nullptr);
-    
+
     // Enhanced data handling
     void setItemData(const QString& key, const QVariant& value);
     QVariant itemData(const QString& key) const;
-    
+
     // Visual states
     void setExpandable(bool expandable);
     bool isExpandable() const;
-    
+
     void setCheckable(bool checkable);
     bool isCheckable() const;
-    
+
     void setIcon(const QIcon& icon);
     void setToolTip(const QString& tooltip);
-    
+
     // Lazy loading support
     void setLazyLoading(bool lazy);
     bool isLazyLoading() const;
-    
+
 private:
     QVariantMap m_userData;
     bool m_expandable{true};
@@ -138,6 +139,32 @@ public:
     void setLazyLoadingEnabled(bool enabled);
     bool isLazyLoadingEnabled() const;
 
+    // Advanced Virtualization System
+    void setVirtualizationEnabled(bool enabled);
+    bool isVirtualizationEnabled() const;
+
+    // Virtualization configuration
+    void setVirtualizationOverscan(int overscan);
+    int virtualizationOverscan() const { return m_virtualizationOverscan; }
+
+    void setVirtualizationChunkSize(int chunkSize);
+    int virtualizationChunkSize() const { return m_virtualizationChunkSize; }
+
+    // Column virtualization
+    void setColumnVirtualizationEnabled(bool enabled);
+    bool isColumnVirtualizationEnabled() const { return m_columnVirtualizationEnabled; }
+
+    // Performance monitoring
+    struct VirtualizationMetrics {
+        int totalItems{0};
+        int visibleItems{0};
+        int renderedItems{0};
+        int cachedItems{0};
+        double renderTime{0.0};
+        size_t memoryUsage{0};
+    };
+    VirtualizationMetrics getVirtualizationMetrics() const;
+
 signals:
     void itemClicked(FluentTreeItem* item, int column);
     void itemDoubleClicked(FluentTreeItem* item, int column);
@@ -163,6 +190,34 @@ private:
     void filterItems(const QString& filter);
     bool itemMatchesFilter(QTreeWidgetItem* item, const QString& filter) const;
 
+    // Advanced virtualization helpers
+    void updateVirtualizationWindow();
+    void updateColumnVirtualization();
+    void updateVirtualizationCache();
+    void renderVirtualizedItems();
+    void optimizeVirtualizationPerformance();
+
+    // Virtualization data structures
+    struct VirtualizedItem {
+        QTreeWidgetItem* item{nullptr};
+        QRect boundingRect;
+        bool isVisible{false};
+        bool isCached{false};
+        QPixmap cachedPixmap;
+        qint64 lastAccessTime{0};
+    };
+
+    struct VirtualizationWindow {
+        int firstVisibleRow{0};
+        int lastVisibleRow{0};
+        int firstVisibleColumn{0};
+        int lastVisibleColumn{0};
+        QRect viewportRect;
+    };
+
+    // Debounce support
+    void scheduleFilterApply();
+
 private:
     QVBoxLayout* m_layout;
     QLineEdit* m_filterEdit;
@@ -171,10 +226,31 @@ private:
     FluentTreeSelectionMode m_selectionMode{FluentTreeSelectionMode::SingleSelection};
     FluentTreeExpandMode m_expandMode{FluentTreeExpandMode::DoubleClick};
     std::vector<FluentTreeColumn> m_columns;
-    
+
     bool m_filteringEnabled{true};
     bool m_lazyLoadingEnabled{false};
     QString m_currentFilter;
+
+    // Advanced virtualization state
+    bool m_virtualizationEnabled{false};
+    bool m_columnVirtualizationEnabled{false};
+    int m_virtualizationOverscan{10}; // rows before/after viewport
+    int m_virtualizationChunkSize{100}; // items to process per chunk
+
+    // Virtualization data
+    mutable VirtualizationWindow m_virtualizationWindow;
+    mutable QHash<QTreeWidgetItem*, VirtualizedItem> m_virtualizedItems;
+    mutable QList<QTreeWidgetItem*> m_visibleItems;
+    mutable QTimer m_virtualizationUpdateTimer;
+
+    // Performance tracking
+    mutable VirtualizationMetrics m_virtualizationMetrics;
+
+    // Style caching and debounce timer
+    QString m_cachedStyleKey;
+    QString m_cachedTreeStyle;
+    QString m_cachedFilterStyle;
+    QTimer m_filterDebounceTimer;
 };
 
 } // namespace FluentQt::Components

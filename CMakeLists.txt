@@ -13,6 +13,16 @@ project(FluentQt
 # Project Configuration
 # ============================================================================
 
+# Include FluentQt platform detection and toolchain configuration
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(FluentQtPlatformDetection)
+include(FluentQtToolchains)
+
+# Detect platform and configure toolchain
+fluentqt_detect_platform()
+fluentqt_validate_toolchain()
+fluentqt_configure_toolchain()
+
 # C++ Standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -88,6 +98,9 @@ if(FLUENTQT_BUILD_TESTS)
         set(FLUENTQT_BUILD_TESTS OFF)
     endif()
 endif()
+
+# Validate all dependencies
+fluentqt_validate_dependencies()
 
 # ============================================================================
 # Qt Configuration

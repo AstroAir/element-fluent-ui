@@ -2,6 +2,7 @@
 #include "FluentQt/Components/FluentCarousel.h"
 #include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Core/FluentPerformance.h"
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -49,21 +50,21 @@ void FluentCarousel::initializeComponent() {
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_AcceptTouchEvents, true);
     setAttribute(Qt::WA_Hover, true);
-    
+
     initializeLayout();
     initializeAnimations();
     initializeGestures();
     initializeAccessibility();
-    
+
     // Connect to theme changes
     connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
             this, &FluentCarousel::onThemeChanged);
-    
+
     // Setup auto-play timer
     m_autoPlayTimer->setSingleShot(false);
     connect(m_autoPlayTimer.get(), &QTimer::timeout,
             this, &FluentCarousel::onAutoPlayTimer);
-    
+
     updateAutoPlayTimer();
 }
 
@@ -71,22 +72,22 @@ void FluentCarousel::initializeLayout() {
     m_mainLayout = new QHBoxLayout(this);
     m_mainLayout->setContentsMargins(m_config.contentMargins);
     m_mainLayout->setSpacing(0);
-    
+
     // Create content widget
     m_contentWidget = new QWidget(this);
     m_contentWidget->setObjectName("FluentCarousel_Content");
-    
+
     // Create stacked widget for items
     m_stackedWidget = new QStackedWidget(m_contentWidget);
     m_stackedWidget->setObjectName("FluentCarousel_Stack");
-    
+
     // Layout content widget
     auto* contentLayout = new QVBoxLayout(m_contentWidget);
     contentLayout->setContentsMargins(0, 0, 0, 0);
     contentLayout->addWidget(m_stackedWidget);
-    
+
     m_mainLayout->addWidget(m_contentWidget);
-    
+
     updateLayout();
 }
 
@@ -96,14 +97,31 @@ void FluentCarousel::initializeAnimations() {
     m_transitionAnimation->setPropertyName("transitionProgress");
     m_transitionAnimation->setDuration(static_cast<int>(m_config.transitionDuration.count()));
     m_transitionAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
+    // Respect reduced motion preference
+    if (Styling::FluentTheme::instance().isReducedMotionMode()) {
+        m_transitionAnimation->setDuration(0);
+    }
+
     connect(m_transitionAnimation.get(), &QPropertyAnimation::valueChanged,
             this, &FluentCarousel::onTransitionAnimationValueChanged);
     connect(m_transitionAnimation.get(), &QPropertyAnimation::finished,
             this, &FluentCarousel::onTransitionAnimationFinished);
-    
+
     // Setup transition group for complex animations
     m_transitionGroup->addAnimation(m_transitionAnimation.get());
+
+    // Setup repaint coalescing timer (~60Hz)
+    if (!m_repaintCoalesceTimer) {
+        m_repaintCoalesceTimer = std::make_unique<QTimer>(this);
+        m_repaintCoalesceTimer->setSingleShot(true);
+        connect(m_repaintCoalesceTimer.get(), &QTimer::timeout, this, [this]() {
+            if (m_pendingRepaint) {
+                m_pendingRepaint = false;
+                this->update();
+            }
+        });
+    }
 }
 
 void FluentCarousel::initializeGestures() {
@@ -125,20 +143,20 @@ void FluentCarousel::setConfig(const FluentCarouselConfig& config) {
     if (m_config.transition != config.transition ||
         m_config.navigationStyle != config.navigationStyle ||
         m_config.orientation != config.orientation) {
-        
+
         m_config = config;
-        
+
         // Update animations
         m_transitionAnimation->setDuration(static_cast<int>(m_config.transitionDuration.count()));
-        
+
         // Update layout
         updateLayout();
         updateNavigationVisibility();
         updateIndicatorVisibility();
-        
+
         // Update auto-play
         updateAutoPlayTimer();
-        
+
         // Update gestures
         if (m_config.enableTouch) {
             grabGesture(Qt::PanGesture);
@@ -147,50 +165,50 @@ void FluentCarousel::setConfig(const FluentCarouselConfig& config) {
             ungrabGesture(Qt::PanGesture);
             ungrabGesture(Qt::SwipeGesture);
         }
-        
+
         // Emit configuration change signals
         emit transitionChanged(m_config.transition);
         emit navigationStyleChanged(m_config.navigationStyle);
         emit orientationChanged(m_config.orientation);
         emit infiniteChanged(m_config.infinite);
         emit touchEnabledChanged(m_config.enableTouch);
-        
+
         update();
     }
 }
 
 void FluentCarousel::addItem(QWidget* widget) {
     if (!widget) return;
-    
+
     FluentCarouselItemData itemData(widget);
     addItem(itemData);
 }
 
 void FluentCarousel::addItem(const FluentCarouselItemData& itemData) {
     if (!itemData.widget) return;
-    
+
     m_items.push_back(itemData);
     m_stackedWidget->addWidget(itemData.widget);
-    
+
     // If this is the first item, make it current
     if (m_items.size() == 1) {
         m_currentIndex = 0;
         m_stackedWidget->setCurrentIndex(0);
     }
-    
+
     updateNavigationVisibility();
     updateIndicatorVisibility();
     updateAccessibilityInfo();
-    
+
     emit itemCountChanged(static_cast<int>(m_items.size()));
-    
+
     m_sizeHintValid = false;
     updateGeometry();
 }
 
 void FluentCarousel::insertItem(int index, QWidget* widget) {
     if (!widget) return;
-    
+
     FluentCarouselItemData itemData(widget);
     insertItem(index, itemData);
 }
@@ -199,68 +217,68 @@ void FluentCarousel::insertItem(int index, const FluentCarouselItemData& itemDat
     if (!itemData.widget || index < 0 || index > static_cast<int>(m_items.size())) {
         return;
     }
-    
+
     m_items.insert(m_items.begin() + index, itemData);
     m_stackedWidget->insertWidget(index, itemData.widget);
-    
+
     // Adjust current index if necessary
     if (index <= m_currentIndex) {
         m_currentIndex++;
     }
-    
+
     // If this is the first item, make it current
     if (m_items.size() == 1) {
         m_currentIndex = 0;
         m_stackedWidget->setCurrentIndex(0);
     }
-    
+
     updateNavigationVisibility();
     updateIndicatorVisibility();
     updateAccessibilityInfo();
-    
+
     emit itemCountChanged(static_cast<int>(m_items.size()));
-    
+
     m_sizeHintValid = false;
     updateGeometry();
 }
 
 void FluentCarousel::removeItem(int index) {
     if (!isValidIndex(index)) return;
-    
+
     QWidget* widget = m_items[index].widget;
     m_items.erase(m_items.begin() + index);
     m_stackedWidget->removeWidget(widget);
-    
+
     // Adjust current index
     if (index < m_currentIndex) {
         m_currentIndex--;
     } else if (index == m_currentIndex && m_currentIndex >= static_cast<int>(m_items.size())) {
         m_currentIndex = std::max(0, static_cast<int>(m_items.size()) - 1);
     }
-    
+
     // Update current widget
     if (!m_items.empty()) {
         m_stackedWidget->setCurrentIndex(m_currentIndex);
     }
-    
+
     updateNavigationVisibility();
     updateIndicatorVisibility();
     updateAccessibilityInfo();
-    
+
     emit itemCountChanged(static_cast<int>(m_items.size()));
-    
+
     m_sizeHintValid = false;
     updateGeometry();
 }
 
 void FluentCarousel::removeItem(QWidget* widget) {
     if (!widget) return;
-    
+
     auto it = std::find_if(m_items.begin(), m_items.end(),
                           [widget](const FluentCarouselItemData& item) {
                               return item.widget == widget;
                           });
-    
+
     if (it != m_items.end()) {
         int index = static_cast<int>(std::distance(m_items.begin(), it));
         removeItem(index);
@@ -269,21 +287,21 @@ void FluentCarousel::removeItem(QWidget* widget) {
 
 void FluentCarousel::clearItems() {
     m_items.clear();
-    
+
     // Remove all widgets from stacked widget
     while (m_stackedWidget->count() > 0) {
         QWidget* widget = m_stackedWidget->widget(0);
         m_stackedWidget->removeWidget(widget);
     }
-    
+
     m_currentIndex = 0;
-    
+
     updateNavigationVisibility();
     updateIndicatorVisibility();
     updateAccessibilityInfo();
-    
+
     emit itemCountChanged(0);
-    
+
     m_sizeHintValid = false;
     updateGeometry();
 }
@@ -300,44 +318,44 @@ FluentCarouselItemData FluentCarousel::itemData(int index) const {
 
 void FluentCarousel::setItemData(int index, const FluentCarouselItemData& data) {
     if (!isValidIndex(index) || !data.widget) return;
-    
+
     m_items[index] = data;
-    
+
     // Replace widget in stacked widget if different
     if (m_stackedWidget->widget(index) != data.widget) {
         QWidget* oldWidget = m_stackedWidget->widget(index);
         m_stackedWidget->removeWidget(oldWidget);
         m_stackedWidget->insertWidget(index, data.widget);
-        
+
         if (index == m_currentIndex) {
             m_stackedWidget->setCurrentIndex(index);
         }
     }
-    
+
     updateAccessibilityInfo();
-    
+
     m_sizeHintValid = false;
     updateGeometry();
 }
 
 void FluentCarousel::setCurrentIndex(int index, bool animated) {
     if (!isValidIndex(index) || index == m_currentIndex) return;
-    
+
     int oldIndex = m_currentIndex;
-    
+
     if (animated && !m_transitioning) {
         startTransition(oldIndex, index, true);
     } else {
         m_currentIndex = index;
         m_stackedWidget->setCurrentIndex(index);
         emit currentIndexChanged(index);
-        
+
         updateAccessibilityInfo();
         if (m_config.announceChanges) {
             announceCurrentItem();
         }
     }
-    
+
     resetAutoPlayTimer();
 }
 
@@ -375,7 +393,7 @@ void FluentCarousel::setOrientation(FluentCarouselOrientation orientation) {
 
 void FluentCarousel::setAutoPlayEnabled(bool enabled) {
     FluentCarouselAutoPlay newAutoPlay = enabled ? FluentCarouselAutoPlay::Forward : FluentCarouselAutoPlay::None;
-    
+
     if (m_config.autoPlay != newAutoPlay) {
         m_config.autoPlay = newAutoPlay;
         updateAutoPlayTimer();
@@ -385,7 +403,7 @@ void FluentCarousel::setAutoPlayEnabled(bool enabled) {
 
 void FluentCarousel::setAutoPlayInterval(int milliseconds) {
     auto newInterval = std::chrono::milliseconds(milliseconds);
-    
+
     if (m_config.autoPlayInterval != newInterval) {
         m_config.autoPlayInterval = newInterval;
         updateAutoPlayTimer();
@@ -404,7 +422,7 @@ void FluentCarousel::setInfinite(bool infinite) {
 void FluentCarousel::setTouchEnabled(bool enabled) {
     if (m_config.enableTouch != enabled) {
         m_config.enableTouch = enabled;
-        
+
         if (enabled) {
             grabGesture(Qt::PanGesture);
             grabGesture(Qt::SwipeGesture);
@@ -412,7 +430,7 @@ void FluentCarousel::setTouchEnabled(bool enabled) {
             ungrabGesture(Qt::PanGesture);
             ungrabGesture(Qt::SwipeGesture);
         }
-        
+
         emit touchEnabledChanged(enabled);
     }
 }
@@ -420,33 +438,33 @@ void FluentCarousel::setTouchEnabled(bool enabled) {
 QSize FluentCarousel::sizeHint() const {
     if (!m_sizeHintValid) {
         QSize hint(400, 300); // Default size
-        
+
         if (!m_items.empty() && m_stackedWidget) {
             hint = m_stackedWidget->sizeHint();
         }
-        
+
         // Add margins
         hint += QSize(m_config.contentMargins.left() + m_config.contentMargins.right(),
                      m_config.contentMargins.top() + m_config.contentMargins.bottom());
-        
+
         m_cachedSizeHint = hint;
         m_sizeHintValid = true;
     }
-    
+
     return m_cachedSizeHint;
 }
 
 QSize FluentCarousel::minimumSizeHint() const {
     QSize hint(200, 150); // Minimum size
-    
+
     if (!m_items.empty() && m_stackedWidget) {
         hint = m_stackedWidget->minimumSizeHint();
     }
-    
+
     // Add margins
     hint += QSize(m_config.contentMargins.left() + m_config.contentMargins.right(),
                  m_config.contentMargins.top() + m_config.contentMargins.bottom());
-    
+
     return hint;
 }
 
@@ -530,20 +548,24 @@ void FluentCarousel::stopTransition() {
 
 // Event handling
 void FluentCarousel::paintEvent(QPaintEvent* event) {
+    FLUENT_PROFILE_COMPONENT("FluentCarousel::paintEvent");
     Q_UNUSED(event)
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // Paint background
     auto& theme = Styling::FluentTheme::instance();
+
+    // Paint background
     painter.fillRect(rect(), theme.color("surface"));
 
-    // Paint border if needed
+    // Focus ring per theme tokens
     if (state() == Core::FluentState::Focused) {
-        QPen focusPen(theme.color("accent"), 2);
+        const int ring = theme.strokeWidth("focus");
+        const int radius = theme.borderRadius("control");
+        QPen focusPen(theme.currentPalette().focusIndicator, ring);
         painter.setPen(focusPen);
-        painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), cornerRadius(), cornerRadius());
+        painter.drawRoundedRect(rect().adjusted(ring/2, ring/2, -ring/2, -ring/2), radius, radius);
     }
 }
 
@@ -830,7 +852,7 @@ void FluentCarousel::onAutoPlayTimer() {
 void FluentCarousel::onTransitionAnimationValueChanged(const QVariant& value) {
     m_transitionProgress = value.toReal();
     emit transitionProgressChanged(m_transitionProgress);
-    update();
+    scheduleCoalescedUpdate();
 }
 
 void FluentCarousel::onTransitionAnimationFinished() {
@@ -872,6 +894,7 @@ void FluentCarousel::onThemeChanged() {
 
 // Private helper methods
 void FluentCarousel::updateLayout() {
+    QElapsedTimer timer; timer.start();
     if (!m_mainLayout) return;
 
     // Update layout direction based on orientation
@@ -886,11 +909,19 @@ void FluentCarousel::updateLayout() {
 
     // Update spacing
     m_mainLayout->setSpacing(m_config.itemSpacing);
+
+    auto elapsed = std::chrono::milliseconds(timer.elapsed());
+    FluentQt::Core::FluentPerformanceMonitor::instance()
+        .recordComponentLayout("FluentCarousel", elapsed);
 }
 
 void FluentCarousel::updateItemPositions() {
+    QElapsedTimer timer; timer.start();
     // This method would handle positioning for non-stacked layouts
     // For now, we use QStackedWidget which handles positioning automatically
+    auto elapsed = std::chrono::milliseconds(timer.elapsed());
+    FluentQt::Core::FluentPerformanceMonitor::instance()
+        .recordComponentLayout("FluentCarousel", elapsed);
 }
 
 void FluentCarousel::updateNavigationVisibility() {
@@ -1087,6 +1118,18 @@ void FluentCarousel::announceCurrentItem() {
 void FluentCarousel::updateStateStyle() {
     // Update visual styling based on current state
     update();
+}
+
+// Helper to coalesce updates during animations
+void FluentCarousel::scheduleCoalescedUpdate() {
+    if (!m_repaintCoalesceTimer) {
+        update();
+        return;
+    }
+    m_pendingRepaint = true;
+    if (!m_repaintCoalesceTimer->isActive()) {
+        m_repaintCoalesceTimer->start(m_repaintIntervalMs);
+    }
 }
 
 void FluentCarousel::performStateTransition(Core::FluentState from, Core::FluentState to) {

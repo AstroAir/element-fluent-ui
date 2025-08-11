@@ -44,20 +44,29 @@ A modern, comprehensive C++ Qt6 library implementing Microsoft's Fluent Design S
 
 #### Build from Source
 
+**Quick Build:**
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/element-fluent-ui.git
+git clone https://github.com/ElementAstro/element-fluent-ui.git
 cd element-fluent-ui
 
-# Create build directory
-mkdir build && cd build
-
-# Configure with CMake
-cmake ..
-
-# Build the library
-cmake --build .
+# One-command build
+./scripts/build.sh --preset release    # Linux/macOS
+.\scripts\build.ps1 -Preset release    # Windows
 ```
+
+**Manual Build:**
+```bash
+# Configure and build
+cmake --preset default
+cmake --build --preset default
+
+# Or with specific options
+cmake -B build -DFLUENTQT_BUILD_EXAMPLES=ON
+cmake --build build
+```
+
+📖 **For detailed build instructions, see [BUILD_GUIDE.md](docs/BUILD_GUIDE.md)**
 
 #### Using with CMake
 

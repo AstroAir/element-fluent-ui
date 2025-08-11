@@ -1,12 +1,12 @@
 /**
  * @file Accessibility.h
  * @brief Comprehensive header for FluentQt accessibility features
- * 
+ *
  * This header includes all accessibility-related classes and utilities
  * for creating inclusive, WCAG 2.1 AA compliant applications. It provides
  * screen reader support, keyboard navigation, high contrast themes,
  * and accessibility validation tools.
- * 
+ *
  * @author Max Qian
  * @copyright MIT License
  * @version 1.0.0
@@ -33,12 +33,12 @@
 /**
  * @namespace FluentQt::Accessibility
  * @brief Namespace containing all accessibility functionality
- * 
+ *
  * The Accessibility namespace provides comprehensive accessibility
  * features to ensure FluentQt applications are usable by everyone,
  * including users with disabilities. It follows WCAG 2.1 AA guidelines
  * and integrates with platform accessibility APIs.
- * 
+ *
  * **Core Features:**
  * - Screen reader support (NVDA, JAWS, VoiceOver, Orca)
  * - Keyboard navigation management
@@ -46,7 +46,7 @@
  * - Reduced motion preferences
  * - Focus management and indication
  * - Accessible rich internet applications (ARIA) support
- * 
+ *
  * **WCAG 2.1 AA Compliance:**
  * - Color contrast validation (4.5:1 ratio)
  * - Keyboard accessibility
@@ -54,40 +54,40 @@
  * - Alternative text for images
  * - Proper heading structure
  * - Form labels and descriptions
- * 
+ *
  * **Screen Reader Features:**
  * - Live regions for dynamic content
  * - Proper role and state announcements
  * - Descriptive text for complex UI elements
  * - Navigation landmarks
  * - Table headers and captions
- * 
+ *
  * **Keyboard Navigation:**
  * - Tab order management
  * - Arrow key navigation for complex widgets
  * - Escape key handling
  * - Shortcut key support
  * - Focus trapping in modals
- * 
+ *
  * **Visual Accessibility:**
  * - High contrast mode detection
  * - Automatic color adjustment
  * - Scalable UI elements
  * - Clear focus indicators
  * - Sufficient color contrast
- * 
+ *
  * @code
  * // Basic accessibility setup
  * auto& accessibility = FluentQt::Accessibility::FluentAccessibilityManager::instance();
  * accessibility.initialize();
- * 
+ *
  * // Make a widget accessible
  * auto* button = new FluentButton("Save");
  * FluentQt::Accessibility::makeAccessible(button, "Save document", "Saves the current document to disk");
- * 
+ *
  * // Check color contrast
  * bool isAccessible = FluentQt::Accessibility::validateContrast(textColor, backgroundColor);
- * 
+ *
  * // Enable high contrast mode
  * FluentQt::Accessibility::setHighContrastMode(true);
  * @endcode
@@ -191,30 +191,42 @@ struct AccessibilityInfo {
 
 /**
  * @brief Initialize the accessibility system
- * 
+ *
  * This function initializes the FluentQt accessibility system,
  * sets up platform integration, and configures default settings.
- * 
+ *
  * @return true if initialization was successful
  */
 bool initializeAccessibility();
 
 /**
+ * @brief Initialize accessibility system safely for any platform
+ *
+ * This function provides a safe way to initialize accessibility that
+ * automatically detects the platform and skips problematic operations
+ * in headless/offscreen environments.
+ *
+ * @param forceFullInit If true, forces full initialization even in offscreen mode
+ * @return true if initialization was successful
+ */
+bool initializeAccessibilitySafe(bool forceFullInit = false);
+
+/**
  * @brief Make a widget accessible
- * 
+ *
  * @param widget The widget to make accessible
  * @param name Accessible name
  * @param description Detailed description
  * @param role Accessibility role
  */
-void makeAccessible(QWidget* widget, 
-                   const QString& name, 
+void makeAccessible(QWidget* widget,
+                   const QString& name,
                    const QString& description = QString(),
                    AccessibilityRole role = AccessibilityRole::Button);
 
 /**
  * @brief Set accessibility information for a widget
- * 
+ *
  * @param widget The widget to configure
  * @param info Accessibility information
  */
@@ -222,7 +234,7 @@ void setAccessibilityInfo(QWidget* widget, const AccessibilityInfo& info);
 
 /**
  * @brief Get accessibility information for a widget
- * 
+ *
  * @param widget The widget to query
  * @return Current accessibility information
  */
@@ -254,19 +266,19 @@ bool isReducedMotionEnabled();
 
 /**
  * @brief Validate color contrast ratio
- * 
+ *
  * @param foreground Foreground color
  * @param background Background color
  * @param level WCAG compliance level to check
  * @return true if contrast meets the specified level
  */
-bool validateContrast(const QColor& foreground, 
-                     const QColor& background, 
+bool validateContrast(const QColor& foreground,
+                     const QColor& background,
                      WcagLevel level = WcagLevel::AA);
 
 /**
  * @brief Calculate color contrast ratio
- * 
+ *
  * @param color1 First color
  * @param color2 Second color
  * @return Contrast ratio (1.0 to 21.0)
@@ -275,7 +287,7 @@ double calculateContrastRatio(const QColor& color1, const QColor& color2);
 
 /**
  * @brief Get minimum contrast ratio for WCAG level
- * 
+ *
  * @param level WCAG compliance level
  * @param isLargeText Whether the text is considered large (18pt+ or 14pt+ bold)
  * @return Minimum required contrast ratio
@@ -284,19 +296,19 @@ double getMinimumContrastRatio(WcagLevel level, bool isLargeText = false);
 
 /**
  * @brief Adjust color for better contrast
- * 
+ *
  * @param color Color to adjust
  * @param background Background color
  * @param targetRatio Target contrast ratio
  * @return Adjusted color with improved contrast
  */
-QColor adjustColorContrast(const QColor& color, 
-                          const QColor& background, 
+QColor adjustColorContrast(const QColor& color,
+                          const QColor& background,
                           double targetRatio = 4.5);
 
 /**
  * @brief Announce text to screen readers
- * 
+ *
  * @param text Text to announce
  * @param priority Announcement priority (polite/assertive)
  */
@@ -304,7 +316,7 @@ void announceToScreenReader(const QString& text, const QString& priority = "poli
 
 /**
  * @brief Set focus to a widget with proper announcement
- * 
+ *
  * @param widget Widget to focus
  * @param reason Focus reason for screen readers
  */
@@ -312,7 +324,7 @@ void setAccessibleFocus(QWidget* widget, const QString& reason = QString());
 
 /**
  * @brief Create a live region for dynamic content
- * 
+ *
  * @param widget Widget containing dynamic content
  * @param politeness Live region politeness (polite/assertive)
  */
@@ -320,7 +332,7 @@ void createLiveRegion(QWidget* widget, const QString& politeness = "polite");
 
 /**
  * @brief Update live region content
- * 
+ *
  * @param widget Live region widget
  * @param content New content to announce
  */
@@ -328,7 +340,7 @@ void updateLiveRegion(QWidget* widget, const QString& content);
 
 /**
  * @brief Validate widget accessibility
- * 
+ *
  * @param widget Widget to validate
  * @param level WCAG compliance level to check
  * @return List of accessibility issues found
@@ -337,7 +349,7 @@ QStringList validateWidgetAccessibility(QWidget* widget, WcagLevel level = WcagL
 
 /**
  * @brief Generate accessibility report for an application
- * 
+ *
  * @param rootWidget Root widget to analyze (usually main window)
  * @param level WCAG compliance level to check
  * @return Detailed accessibility report

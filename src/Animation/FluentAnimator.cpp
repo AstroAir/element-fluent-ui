@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QtMath>
 #include <QAccessible>
+#include <QOpenGLContext>
 
 namespace FluentQt::Animation {
 
@@ -693,6 +694,13 @@ void FluentAnimator::setupAnimation(
     if (config.useHardwareAcceleration) {
         // Set hints for the graphics system to use GPU acceleration
         animation->setProperty("hardwareAccelerated", true);
+
+        // Use optimized update intervals for GPU acceleration
+        if (QOpenGLContext::currentContext()) {
+            animation->setProperty("updateInterval", 16); // 60 FPS
+        } else {
+            animation->setProperty("updateInterval", 33); // 30 FPS fallback
+        }
     }
 
     // Register animation with performance monitor
@@ -992,4 +1000,3 @@ int FluentAnimationManager::activeAnimationCount() const {
 }
 
 } // namespace FluentQt::Animation
-

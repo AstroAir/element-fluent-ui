@@ -1,17 +1,23 @@
 // src/Components/FluentTreeView.cpp
 #include "FluentQt/Components/FluentTreeView.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QDateTime>
+#include <QElapsedTimer>
+#include <QHash>
+#include <QHeaderView>
+#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QMouseEvent>
-#include <QKeyEvent>
 #include <QScrollBar>
-#include <QApplication>
-#include <QTimer>
 #include <QSet>
+#include <QTimer>
+#include <QTreeWidgetItemIterator>
+#include <algorithm>
+#include <chrono>
 
 namespace FluentQt::Components {
 
@@ -20,7 +26,8 @@ FluentTreeItem::FluentTreeItem(QTreeWidget* parent) : QTreeWidgetItem(parent) {
     setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 }
 
-FluentTreeItem::FluentTreeItem(QTreeWidgetItem* parent) : QTreeWidgetItem(parent) {
+FluentTreeItem::FluentTreeItem(QTreeWidgetItem* parent)
+    : QTreeWidgetItem(parent) {
     setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 }
 
@@ -41,9 +48,7 @@ void FluentTreeItem::setExpandable(bool expandable) {
     }
 }
 
-bool FluentTreeItem::isExpandable() const {
-    return m_expandable;
-}
+bool FluentTreeItem::isExpandable() const { return m_expandable; }
 
 void FluentTreeItem::setCheckable(bool checkable) {
     m_checkable = checkable;
@@ -55,9 +60,7 @@ void FluentTreeItem::setCheckable(bool checkable) {
     }
 }
 
-bool FluentTreeItem::isCheckable() const {
-    return m_checkable;
-}
+bool FluentTreeItem::isCheckable() const { return m_checkable; }
 
 void FluentTreeItem::setIcon(const QIcon& icon) {
     QTreeWidgetItem::setIcon(0, icon);
@@ -77,25 +80,23 @@ void FluentTreeItem::setLazyLoading(bool lazy) {
     }
 }
 
-bool FluentTreeItem::isLazyLoading() const {
-    return m_lazyLoading;
-}
+bool FluentTreeItem::isLazyLoading() const { return m_lazyLoading; }
 
 // FluentTreeView Implementation
-FluentTreeView::FluentTreeView(QWidget* parent) : Core::FluentComponent(parent) {
+FluentTreeView::FluentTreeView(QWidget* parent)
+    : Core::FluentComponent(parent) {
     setupTreeWidget();
     setupFilterBar();
     updateTreeStyling();
 
     // Setup filter debounce timer
     m_filterDebounceTimer.setSingleShot(true);
-    connect(&m_filterDebounceTimer, &QTimer::timeout, this, [this]() {
-        this->filterItems(m_currentFilter);
-    });
+    connect(&m_filterDebounceTimer, &QTimer::timeout, this,
+            [this]() { this->filterItems(m_currentFilter); });
 
     // Setup advanced virtualization timer
     m_virtualizationUpdateTimer.setSingleShot(true);
-    m_virtualizationUpdateTimer.setInterval(16); // ~60fps
+    m_virtualizationUpdateTimer.setInterval(16);  // ~60fps
     connect(&m_virtualizationUpdateTimer, &QTimer::timeout, this, [this]() {
         updateVirtualizationWindow();
         updateVirtualizationCache();
@@ -103,28 +104,31 @@ FluentTreeView::FluentTreeView(QWidget* parent) : Core::FluentComponent(parent) 
     });
 
     // Hook scroll events for virtualization
-    connect(m_treeWidget->verticalScrollBar(), &QScrollBar::valueChanged, this, [this](int){
-        if (m_virtualizationEnabled) {
-            m_virtualizationUpdateTimer.start();
-        }
-    });
+    connect(m_treeWidget->verticalScrollBar(), &QScrollBar::valueChanged, this,
+            [this](int) {
+                if (m_virtualizationEnabled) {
+                    m_virtualizationUpdateTimer.start();
+                }
+            });
 
-    connect(m_treeWidget->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this](int){
-        if (m_virtualizationEnabled && m_columnVirtualizationEnabled) {
-            m_virtualizationUpdateTimer.start();
-        }
-    });
+    connect(m_treeWidget->horizontalScrollBar(), &QScrollBar::valueChanged,
+            this, [this](int) {
+                if (m_virtualizationEnabled && m_columnVirtualizationEnabled) {
+                    m_virtualizationUpdateTimer.start();
+                }
+            });
 
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentTreeView::updateTreeStyling);
-    });
-
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentTreeView::updateTreeStyling);
+}
 
 void FluentTreeView::setSelectionMode(FluentTreeSelectionMode mode) {
     if (m_selectionMode != mode) {
         m_selectionMode = mode;
 
-        QAbstractItemView::SelectionMode qtMode = QAbstractItemView::SingleSelection;
+        QAbstractItemView::SelectionMode qtMode =
+            QAbstractItemView::SingleSelection;
         switch (mode) {
             case FluentTreeSelectionMode::NoSelection:
                 qtMode = QAbstractItemView::NoSelection;
@@ -201,9 +205,7 @@ void FluentTreeView::setSortingEnabled(bool enabled) {
     m_treeWidget->setSortingEnabled(enabled);
 }
 
-bool FluentTreeView::filteringEnabled() const {
-    return m_filteringEnabled;
-}
+bool FluentTreeView::filteringEnabled() const { return m_filteringEnabled; }
 
 void FluentTreeView::setFilteringEnabled(bool enabled) {
     if (m_filteringEnabled != enabled) {
@@ -248,8 +250,9 @@ void FluentTreeView::setColumns(const std::vector<FluentTreeColumn>& columns) {
             header->resizeSection(i, column.width);
         }
 
-        header->setSectionResizeMode(i, column.resizable ?
-            QHeaderView::Interactive : QHeaderView::Fixed);
+        header->setSectionResizeMode(i, column.resizable
+                                            ? QHeaderView::Interactive
+                                            : QHeaderView::Fixed);
     }
 }
 
@@ -276,8 +279,10 @@ FluentTreeItem* FluentTreeView::addTopLevelItem(const QString& text) {
     return item;
 }
 
-FluentTreeItem* FluentTreeView::addChildItem(FluentTreeItem* parent, const QString& text) {
-    if (!parent) return nullptr;
+FluentTreeItem* FluentTreeView::addChildItem(FluentTreeItem* parent,
+                                             const QString& text) {
+    if (!parent)
+        return nullptr;
 
     auto* item = new FluentTreeItem(parent);
     item->setText(0, text);
@@ -286,7 +291,8 @@ FluentTreeItem* FluentTreeView::addChildItem(FluentTreeItem* parent, const QStri
 }
 
 void FluentTreeView::removeItem(FluentTreeItem* item) {
-    if (!item) return;
+    if (!item)
+        return;
 
     auto* parent = item->parent();
     if (parent) {
@@ -300,9 +306,7 @@ void FluentTreeView::removeItem(FluentTreeItem* item) {
     delete item;
 }
 
-void FluentTreeView::clear() {
-    m_treeWidget->clear();
-}
+void FluentTreeView::clear() { m_treeWidget->clear(); }
 
 QList<FluentTreeItem*> FluentTreeView::selectedItems() const {
     QList<FluentTreeItem*> items;
@@ -322,13 +326,9 @@ void FluentTreeView::setCurrentItem(FluentTreeItem* item) {
     m_treeWidget->setCurrentItem(item);
 }
 
-void FluentTreeView::expandAll() {
-    m_treeWidget->expandAll();
-}
+void FluentTreeView::expandAll() { m_treeWidget->expandAll(); }
 
-void FluentTreeView::collapseAll() {
-    m_treeWidget->collapseAll();
-}
+void FluentTreeView::collapseAll() { m_treeWidget->collapseAll(); }
 
 void FluentTreeView::expandItem(FluentTreeItem* item) {
     if (item) {
@@ -384,7 +384,8 @@ void FluentTreeView::paintEvent(QPaintEvent* event) {
     if (hasFocus()) {
         QPen pen(palette.accent, 2);
         painter.setPen(pen);
-        painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), cornerRadius(), cornerRadius());
+        painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), cornerRadius(),
+                                cornerRadius());
     }
 
     Core::FluentComponent::paintEvent(event);
@@ -397,41 +398,6 @@ void FluentTreeView::resizeEvent(QResizeEvent* event) {
     // Update column widths for auto-sized columns
     if (!m_columns.empty()) {
         auto* header = m_treeWidget->header();
-void FluentTreeView::updateVirtualizationWindow() {
-    if (!m_virtualizationEnabled || !m_treeWidget) return;
-
-    FLUENT_PROFILE("FluentTreeView::updateVirtualizationWindow");
-    QElapsedTimer timer;
-    timer.start();
-
-    const auto viewport = m_treeWidget->viewport()->rect();
-    const int rowHeight = m_treeWidget->uniformRowHeights() ?
-        m_treeWidget->sizeHintForRow(0) : 24;
-    const int scrollY = m_treeWidget->verticalScrollBar()->value();
-    const int scrollX = m_treeWidget->horizontalScrollBar()->value();
-
-    // Calculate visible window with overscan
-    const int firstVisibleRow = std::max(0, (scrollY / std::max(1, rowHeight)) - m_virtualizationOverscan);
-    const int visibleRowCount = (viewport.height() / std::max(1, rowHeight)) + 1;
-    const int lastVisibleRow = firstVisibleRow + visibleRowCount + (2 * m_virtualizationOverscan);
-
-    // Update virtualization window
-    m_virtualizationWindow.firstVisibleRow = firstVisibleRow;
-    m_virtualizationWindow.lastVisibleRow = lastVisibleRow;
-    m_virtualizationWindow.viewportRect = viewport;
-
-    // Column virtualization
-    if (m_columnVirtualizationEnabled) {
-        updateColumnVirtualization();
-    }
-
-    // Update visible items efficiently
-    renderVirtualizedItems();
-
-    // Update performance metrics
-    m_virtualizationMetrics.renderTime = timer.elapsed();
-    m_virtualizationMetrics.visibleItems = m_visibleItems.size();
-}
 
         int totalWidth = width();
         int fixedWidth = 0;
@@ -446,7 +412,9 @@ void FluentTreeView::updateVirtualizationWindow() {
         }
 
         if (autoColumns > 0) {
-            int autoWidth = autoColumns > 0 ? (totalWidth - fixedWidth) / autoColumns : totalWidth;
+            int autoWidth = autoColumns > 0
+                                ? (totalWidth - fixedWidth) / autoColumns
+                                : totalWidth;
             for (int i = 0; i < static_cast<int>(m_columns.size()); ++i) {
                 if (m_columns[i].width <= 0) {
                     header->resizeSection(i, autoWidth);
@@ -454,6 +422,53 @@ void FluentTreeView::updateVirtualizationWindow() {
             }
         }
     }
+}
+
+void FluentTreeView::updateVirtualizationWindow() {
+    if (!m_virtualizationEnabled || !m_treeWidget)
+        return;
+
+    FLUENT_PROFILE("FluentTreeView::updateVirtualizationWindow");
+    QElapsedTimer timer;
+    timer.start();
+
+    const auto viewport = m_treeWidget->viewport()->rect();
+    const int rowHeight = m_treeWidget->uniformRowHeights()
+                              ? m_treeWidget->sizeHintForRow(0)
+                              : 24;
+    const int scrollY = m_treeWidget->verticalScrollBar()->value();
+    const int scrollX = m_treeWidget->horizontalScrollBar()->value();
+
+    // Calculate visible window with overscan
+    const int firstVisibleRow = std::max(
+        0, (scrollY / std::max(1, rowHeight)) - m_virtualizationOverscan);
+    const int visibleRowCount =
+        (viewport.height() / std::max(1, rowHeight)) + 1;
+    const int lastVisibleRow =
+        firstVisibleRow + visibleRowCount + (2 * m_virtualizationOverscan);
+
+    // Update virtualization window
+    m_virtualizationWindow.firstVisibleRow = firstVisibleRow;
+    m_virtualizationWindow.lastVisibleRow = lastVisibleRow;
+    m_virtualizationWindow.viewportRect = viewport;
+
+    // Use scrollX for column virtualization if enabled
+    if (m_columnVirtualizationEnabled) {
+        Q_UNUSED(scrollX);  // scrollX is used in updateColumnVirtualization()
+    }
+    m_virtualizationWindow.viewportRect = viewport;
+
+    // Column virtualization
+    if (m_columnVirtualizationEnabled) {
+        updateColumnVirtualization();
+    }
+
+    // Update visible items efficiently
+    renderVirtualizedItems();
+
+    // Update performance metrics
+    m_virtualizationMetrics.renderTime = timer.elapsed();
+    m_virtualizationMetrics.visibleItems = m_visibleItems.size();
 }
 
 void FluentTreeView::onItemClicked(QTreeWidgetItem* item, int column) {
@@ -497,24 +512,24 @@ void FluentTreeView::setupTreeWidget() {
     m_treeWidget->setExpandsOnDoubleClick(true);
     m_treeWidget->setHeaderHidden(false);
 
-    connect(m_treeWidget, &QTreeWidget::itemClicked,
-            this, &FluentTreeView::onItemClicked);
+    connect(m_treeWidget, &QTreeWidget::itemClicked, this,
+            &FluentTreeView::onItemClicked);
     connect(m_treeWidget, &QTreeWidget::itemDoubleClicked,
             [this](QTreeWidgetItem* item, int column) {
                 if (auto* fluentItem = dynamic_cast<FluentTreeItem*>(item)) {
                     emit itemDoubleClicked(fluentItem, column);
                 }
             });
-    connect(m_treeWidget, &QTreeWidget::itemExpanded,
-            this, &FluentTreeView::onItemExpanded);
+    connect(m_treeWidget, &QTreeWidget::itemExpanded, this,
+            &FluentTreeView::onItemExpanded);
     connect(m_treeWidget, &QTreeWidget::itemCollapsed,
             [this](QTreeWidgetItem* item) {
                 if (auto* fluentItem = dynamic_cast<FluentTreeItem*>(item)) {
                     emit itemCollapsed(fluentItem);
                 }
             });
-    connect(m_treeWidget, &QTreeWidget::itemSelectionChanged,
-            this, &FluentTreeView::itemSelectionChanged);
+    connect(m_treeWidget, &QTreeWidget::itemSelectionChanged, this,
+            &FluentTreeView::itemSelectionChanged);
     connect(m_treeWidget, &QTreeWidget::itemChanged,
             [this](QTreeWidgetItem* item, int column) {
                 if (auto* fluentItem = dynamic_cast<FluentTreeItem*>(item)) {
@@ -528,8 +543,8 @@ void FluentTreeView::setupFilterBar() {
     m_filterEdit->setPlaceholderText("Filter items...");
     m_filterEdit->setClearButtonEnabled(true);
 
-    connect(m_filterEdit, &QLineEdit::textChanged,
-            this, &FluentTreeView::onFilterTextChanged);
+    connect(m_filterEdit, &QLineEdit::textChanged, this,
+            &FluentTreeView::onFilterTextChanged);
 
     m_layout->addWidget(m_filterEdit);
     m_layout->addWidget(m_treeWidget);
@@ -551,14 +566,16 @@ void FluentTreeView::updateTreeStyling() {
                             .arg(palette.accentDark1.name())
                             .arg(palette.neutralLighter.name());
 
-    if (key == m_cachedStyleKey && !m_cachedTreeStyle.isEmpty() && !m_cachedFilterStyle.isEmpty()) {
+    if (key == m_cachedStyleKey && !m_cachedTreeStyle.isEmpty() &&
+        !m_cachedFilterStyle.isEmpty()) {
         m_treeWidget->setStyleSheet(m_cachedTreeStyle);
         m_filterEdit->setStyleSheet(m_cachedFilterStyle);
         return;
     }
 
     // Recompute and cache styles
-    QString styleSheet = QString(R"(
+    QString styleSheet =
+        QString(R"(
         QTreeWidget {
             background-color: %1;
             border: 1px solid %2;
@@ -608,19 +625,20 @@ void FluentTreeView::updateTreeStyling() {
             border-bottom: 2px solid %2;
             font-weight: 600;
         }
-    )").arg(
-        palette.neutralLightest.name(),          // background
-        palette.neutralQuaternary.name(),        // border
-        QString::number(cornerRadius()),         // border radius
-        palette.accent.name(),                   // selection background
-        palette.neutralLightest.name(),          // selection text
-        palette.neutralLight.name(),             // item border
-        palette.neutralLight.name(),             // hover background
-        palette.accentDark1.name(),              // active selection
-        palette.neutralLighter.name()            // header background
-    );
+    )")
+            .arg(palette.neutralLightest.name(),    // background
+                 palette.neutralQuaternary.name(),  // border
+                 QString::number(cornerRadius()),   // border radius
+                 palette.accent.name(),             // selection background
+                 palette.neutralLightest.name(),    // selection text
+                 palette.neutralLight.name(),       // item border
+                 palette.neutralLight.name(),       // hover background
+                 palette.accentDark1.name(),        // active selection
+                 palette.neutralLighter.name()      // header background
+            );
 
-    QString filterStyle = QString(R"(
+    QString filterStyle =
+        QString(R"(
         QLineEdit {
             background-color: %1;
             border: 2px solid %2;
@@ -631,12 +649,10 @@ void FluentTreeView::updateTreeStyling() {
         QLineEdit:focus {
             border-color: %4;
         }
-    )").arg(
-        palette.neutralLightest.name(),
-        palette.neutralQuaternary.name(),
-        QString::number(cornerRadius()),
-        palette.accent.name()
-    );
+    )")
+            .arg(palette.neutralLightest.name(),
+                 palette.neutralQuaternary.name(),
+                 QString::number(cornerRadius()), palette.accent.name());
 
     m_treeWidget->setStyleSheet(styleSheet);
     m_filterEdit->setStyleSheet(filterStyle);
@@ -653,14 +669,28 @@ void FluentTreeView::filterItems(const QString& filter) {
         return;
     }
 
-    QElapsedTimer timer; timer.start();
+    QElapsedTimer timer;
+    timer.start();
 
     QTreeWidgetItemIterator it(m_treeWidget);
     while (*it) {
         bool matches = itemMatchesFilter(*it, filter);
         (*it)->setHidden(!matches);
 
-        // Show parent items if any child matches
+        if (matches) {
+            auto* parent = (*it)->parent();
+            while (parent) {
+                parent->setHidden(false);
+                parent = parent->parent();
+            }
+        }
+        ++it;
+    }
+
+    auto elapsed = std::chrono::milliseconds(timer.elapsed());
+    FluentQt::Core::FluentPerformanceMonitor::instance().recordComponentUpdate(
+        "FluentTreeView", elapsed);
+}
 
 void FluentTreeView::setVirtualizationEnabled(bool enabled) {
     m_virtualizationEnabled = enabled;
@@ -678,24 +708,10 @@ bool FluentTreeView::isVirtualizationEnabled() const {
     return m_virtualizationEnabled;
 }
 
-        if (matches) {
-            auto* parent = (*it)->parent();
-            while (parent) {
-                parent->setHidden(false);
-                parent = parent->parent();
-            }
-        }
-
-        ++it;
-    }
-
-    auto elapsed = std::chrono::milliseconds(timer.elapsed());
-    FluentQt::Core::FluentPerformanceMonitor::instance()
-        .recordComponentUpdate("FluentTreeView", elapsed);
-}
-
-bool FluentTreeView::itemMatchesFilter(QTreeWidgetItem* item, const QString& filter) const {
-    if (!item) return false;
+bool FluentTreeView::itemMatchesFilter(QTreeWidgetItem* item,
+                                       const QString& filter) const {
+    if (!item)
+        return false;
 
     // Check item text
     for (int i = 0; i < item->columnCount(); ++i) {
@@ -720,6 +736,13 @@ void FluentTreeView::setVirtualizationChunkSize(int chunkSize) {
     m_virtualizationChunkSize = qMax(10, chunkSize);
 }
 
+void FluentTreeView::setVirtualizationOverscan(int overscan) {
+    m_virtualizationOverscan = std::max(0, overscan);
+    if (m_virtualizationEnabled) {
+        updateVirtualizationWindow();
+    }
+}
+
 void FluentTreeView::setColumnVirtualizationEnabled(bool enabled) {
     if (m_columnVirtualizationEnabled != enabled) {
         m_columnVirtualizationEnabled = enabled;
@@ -730,7 +753,8 @@ void FluentTreeView::setColumnVirtualizationEnabled(bool enabled) {
 }
 
 void FluentTreeView::updateColumnVirtualization() {
-    if (!m_columnVirtualizationEnabled || !m_treeWidget) return;
+    if (!m_columnVirtualizationEnabled || !m_treeWidget)
+        return;
 
     const auto header = m_treeWidget->header();
     const int scrollX = m_treeWidget->horizontalScrollBar()->value();
@@ -766,7 +790,8 @@ void FluentTreeView::updateColumnVirtualization() {
 }
 
 void FluentTreeView::renderVirtualizedItems() {
-    if (!m_virtualizationEnabled || !m_treeWidget) return;
+    if (!m_virtualizationEnabled || !m_treeWidget)
+        return;
 
     FLUENT_PROFILE("FluentTreeView::renderVirtualizedItems");
 
@@ -781,8 +806,9 @@ void FluentTreeView::renderVirtualizedItems() {
     while (*it) {
         totalItems++;
 
-        const bool shouldBeVisible = (currentIndex >= m_virtualizationWindow.firstVisibleRow &&
-                                    currentIndex <= m_virtualizationWindow.lastVisibleRow);
+        const bool shouldBeVisible =
+            (currentIndex >= m_virtualizationWindow.firstVisibleRow &&
+             currentIndex <= m_virtualizationWindow.lastVisibleRow);
 
         if (shouldBeVisible) {
             (*it)->setHidden(false);
@@ -814,16 +840,18 @@ void FluentTreeView::renderVirtualizedItems() {
     m_virtualizationMetrics.cachedItems = m_virtualizedItems.size();
 }
 
-FluentTreeView::VirtualizationMetrics FluentTreeView::getVirtualizationMetrics() const {
+FluentTreeView::VirtualizationMetrics FluentTreeView::getVirtualizationMetrics()
+    const {
     return m_virtualizationMetrics;
 }
 
 void FluentTreeView::updateVirtualizationCache() {
-    if (!m_virtualizationEnabled) return;
+    if (!m_virtualizationEnabled)
+        return;
 
     // Clean up old cached items (LRU eviction)
     const qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-    const qint64 maxAge = 30000; // 30 seconds
+    const qint64 maxAge = 30000;  // 30 seconds
 
     auto it = m_virtualizedItems.begin();
     while (it != m_virtualizedItems.end()) {
@@ -836,12 +864,13 @@ void FluentTreeView::updateVirtualizationCache() {
 }
 
 void FluentTreeView::optimizeVirtualizationPerformance() {
-    if (!m_virtualizationEnabled) return;
+    if (!m_virtualizationEnabled)
+        return;
 
     // Adjust chunk size based on performance
-    if (m_virtualizationMetrics.renderTime > 16.0) { // > 60fps
+    if (m_virtualizationMetrics.renderTime > 16.0) {  // > 60fps
         m_virtualizationChunkSize = qMax(10, m_virtualizationChunkSize - 10);
-    } else if (m_virtualizationMetrics.renderTime < 8.0) { // < 120fps
+    } else if (m_virtualizationMetrics.renderTime < 8.0) {  // < 120fps
         m_virtualizationChunkSize = qMin(500, m_virtualizationChunkSize + 20);
     }
 
@@ -849,4 +878,4 @@ void FluentTreeView::optimizeVirtualizationPerformance() {
     // This could be enhanced with scroll velocity detection
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

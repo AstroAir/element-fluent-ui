@@ -1,10 +1,10 @@
 // tests/Core/FluentComponentTest.cpp
-#include <QtTest/QtTest>
-#include <QtTest/QSignalSpy>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QFocusEvent>
 #include <QEnterEvent>
+#include <QFocusEvent>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QtTest/QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Core/FluentComponent.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -90,15 +90,16 @@ void FluentComponentTest::cleanup() {
 void FluentComponentTest::testDefaultConstructor() {
     // Test default constructor
     FluentComponent* component = new FluentComponent();
-    
+
     // Verify default properties
     QCOMPARE(component->state(), FluentState::Normal);
     QVERIFY(component->isAnimated());
-    QCOMPARE(component->cornerRadius(), static_cast<int>(FluentCornerRadius::Medium));
+    QCOMPARE(component->cornerRadius(),
+             static_cast<int>(FluentCornerRadius::Medium));
     QVERIFY(component->isEnabled());
     QCOMPARE(component->focusPolicy(), Qt::StrongFocus);
     QVERIFY(component->testAttribute(Qt::WA_Hover));
-    
+
     delete component;
 }
 
@@ -106,37 +107,39 @@ void FluentComponentTest::testParentConstructor() {
     // Test constructor with parent
     QWidget* parent = new QWidget();
     FluentComponent* component = new FluentComponent(parent);
-    
+
     QCOMPARE(component->parent(), parent);
     QCOMPARE(component->parentWidget(), parent);
-    
-    delete parent; // This should also delete component
+
+    delete parent;  // This should also delete component
 }
 
 void FluentComponentTest::testState() {
     // Test setting and getting state
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
-    QCOMPARE(m_component->state(), FluentState::Normal); // Default state
-    
+
+    QCOMPARE(m_component->state(), FluentState::Normal);  // Default state
+
     m_component->setState(FluentState::Hovered);
     QCOMPARE(m_component->state(), FluentState::Hovered);
     QCOMPARE(stateChangedSpy.count(), 1);
-    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(), FluentState::Hovered);
-    
+    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(),
+             FluentState::Hovered);
+
     m_component->setState(FluentState::Pressed);
     QCOMPARE(m_component->state(), FluentState::Pressed);
     QCOMPARE(stateChangedSpy.count(), 2);
-    QCOMPARE(stateChangedSpy.last().first().value<FluentState>(), FluentState::Pressed);
-    
+    QCOMPARE(stateChangedSpy.last().first().value<FluentState>(),
+             FluentState::Pressed);
+
     m_component->setState(FluentState::Focused);
     QCOMPARE(m_component->state(), FluentState::Focused);
     QCOMPARE(stateChangedSpy.count(), 3);
-    
+
     m_component->setState(FluentState::Disabled);
     QCOMPARE(m_component->state(), FluentState::Disabled);
     QCOMPARE(stateChangedSpy.count(), 4);
-    
+
     // Setting the same state should not emit the signal
     m_component->setState(FluentState::Disabled);
     QCOMPARE(stateChangedSpy.count(), 4);
@@ -145,29 +148,29 @@ void FluentComponentTest::testState() {
 void FluentComponentTest::testStateTransitions() {
     // Test state transitions
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
+
     // Test Normal -> Hovered
     m_component->setState(FluentState::Normal);
     stateChangedSpy.clear();
     m_component->setState(FluentState::Hovered);
     QCOMPARE(stateChangedSpy.count(), 1);
-    
+
     // Test Hovered -> Pressed
     m_component->setState(FluentState::Pressed);
     QCOMPARE(stateChangedSpy.count(), 2);
-    
+
     // Test Pressed -> Normal
     m_component->setState(FluentState::Normal);
     QCOMPARE(stateChangedSpy.count(), 3);
-    
+
     // Test Normal -> Focused
     m_component->setState(FluentState::Focused);
     QCOMPARE(stateChangedSpy.count(), 4);
-    
+
     // Test Focused -> Disabled
     m_component->setState(FluentState::Disabled);
     QCOMPARE(stateChangedSpy.count(), 5);
-    
+
     // Test Disabled -> Normal
     m_component->setState(FluentState::Normal);
     QCOMPARE(stateChangedSpy.count(), 6);
@@ -176,30 +179,27 @@ void FluentComponentTest::testStateTransitions() {
 void FluentComponentTest::testStateSignals() {
     // Test that state change signals are emitted correctly
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
+
     // Test each state change
-    FluentState states[] = {
-        FluentState::Hovered,
-        FluentState::Pressed,
-        FluentState::Focused,
-        FluentState::Disabled,
-        FluentState::Normal
-    };
-    
+    FluentState states[] = {FluentState::Hovered, FluentState::Pressed,
+                            FluentState::Focused, FluentState::Disabled,
+                            FluentState::Normal};
+
     for (int i = 0; i < 5; ++i) {
         m_component->setState(states[i]);
         QCOMPARE(stateChangedSpy.count(), i + 1);
-        QCOMPARE(stateChangedSpy.last().first().value<FluentState>(), states[i]);
+        QCOMPARE(stateChangedSpy.last().first().value<FluentState>(),
+                 states[i]);
     }
 }
 
 void FluentComponentTest::testAnimated() {
     // Test animated property
-    QVERIFY(m_component->isAnimated()); // Default should be true
-    
+    QVERIFY(m_component->isAnimated());  // Default should be true
+
     m_component->setAnimated(false);
     QVERIFY(!m_component->isAnimated());
-    
+
     m_component->setAnimated(true);
     QVERIFY(m_component->isAnimated());
 }
@@ -208,30 +208,31 @@ void FluentComponentTest::testAnimationDuration() {
     // Test that animation is properly configured
     // This is harder to test directly without access to internal animation
     // For now, just verify that animated state changes work
-    
+
     m_component->setAnimated(true);
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
+
     m_component->setState(FluentState::Hovered);
     QCOMPARE(stateChangedSpy.count(), 1);
-    
+
     // Animation should not prevent immediate state change
     QCOMPARE(m_component->state(), FluentState::Hovered);
 }
 
 void FluentComponentTest::testCornerRadius() {
     // Test setting and getting corner radius
-    QCOMPARE(m_component->cornerRadius(), static_cast<int>(FluentCornerRadius::Medium)); // Default
-    
+    QCOMPARE(m_component->cornerRadius(),
+             static_cast<int>(FluentCornerRadius::Medium));  // Default
+
     m_component->setCornerRadius(16);
     QCOMPARE(m_component->cornerRadius(), 16);
-    
+
     m_component->setCornerRadius(0);
     QCOMPARE(m_component->cornerRadius(), 0);
-    
+
     m_component->setCornerRadius(32);
     QCOMPARE(m_component->cornerRadius(), 32);
-    
+
     // Setting the same radius should not cause issues
     m_component->setCornerRadius(32);
     QCOMPARE(m_component->cornerRadius(), 32);
@@ -241,13 +242,13 @@ void FluentComponentTest::testCornerRadiusEnum() {
     // Test corner radius enum values
     m_component->setCornerRadius(static_cast<int>(FluentCornerRadius::None));
     QCOMPARE(m_component->cornerRadius(), 0);
-    
+
     m_component->setCornerRadius(static_cast<int>(FluentCornerRadius::Small));
     QCOMPARE(m_component->cornerRadius(), 4);
-    
+
     m_component->setCornerRadius(static_cast<int>(FluentCornerRadius::Medium));
     QCOMPARE(m_component->cornerRadius(), 8);
-    
+
     m_component->setCornerRadius(static_cast<int>(FluentCornerRadius::Large));
     QCOMPARE(m_component->cornerRadius(), 16);
 }
@@ -255,35 +256,36 @@ void FluentComponentTest::testCornerRadiusEnum() {
 void FluentComponentTest::testEnterEvent() {
     // Test enter event handling
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
+
     // Ensure component is enabled and in normal state
     m_component->setEnabled(true);
     m_component->setState(FluentState::Normal);
     stateChangedSpy.clear();
-    
+
     // Simulate enter event
     QEnterEvent enterEvent(QPointF(10, 10), QPointF(10, 10), QPointF(10, 10));
     QApplication::sendEvent(m_component, &enterEvent);
-    
+
     // Should change to hovered state
     QCOMPARE(m_component->state(), FluentState::Hovered);
     QCOMPARE(stateChangedSpy.count(), 1);
-    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(), FluentState::Hovered);
+    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(),
+             FluentState::Hovered);
 }
 
 void FluentComponentTest::testLeaveEvent() {
     // Test leave event handling
     QSignalSpy stateChangedSpy(m_component, &FluentComponent::stateChanged);
-    
+
     // Set component to hovered state first
     m_component->setEnabled(true);
     m_component->setState(FluentState::Hovered);
     stateChangedSpy.clear();
-    
+
     // Simulate leave event
     QEvent leaveEvent(QEvent::Leave);
     QApplication::sendEvent(m_component, &leaveEvent);
-    
+
     // Should change to normal state (or focused if has focus)
     if (m_component->hasFocus()) {
         QCOMPARE(m_component->state(), FluentState::Focused);
@@ -304,13 +306,15 @@ void FluentComponentTest::testMousePressEvent() {
 
     // Simulate mouse press event
     QPoint center = m_component->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &pressEvent);
 
     // Should change to pressed state
     QCOMPARE(m_component->state(), FluentState::Pressed);
     QCOMPARE(stateChangedSpy.count(), 1);
-    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(), FluentState::Pressed);
+    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(),
+             FluentState::Pressed);
 }
 
 void FluentComponentTest::testMouseReleaseEvent() {
@@ -324,11 +328,13 @@ void FluentComponentTest::testMouseReleaseEvent() {
 
     // Simulate mouse release event
     QPoint center = m_component->rect().center();
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &releaseEvent);
 
     // Should change to normal or hovered state depending on mouse position
-    QVERIFY(m_component->state() == FluentState::Normal || m_component->state() == FluentState::Hovered);
+    QVERIFY(m_component->state() == FluentState::Normal ||
+            m_component->state() == FluentState::Hovered);
     QCOMPARE(stateChangedSpy.count(), 1);
 }
 
@@ -348,7 +354,8 @@ void FluentComponentTest::testFocusInEvent() {
     // Should change to focused state
     QCOMPARE(m_component->state(), FluentState::Focused);
     QCOMPARE(stateChangedSpy.count(), 1);
-    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(), FluentState::Focused);
+    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(),
+             FluentState::Focused);
 }
 
 void FluentComponentTest::testFocusOutEvent() {
@@ -367,7 +374,8 @@ void FluentComponentTest::testFocusOutEvent() {
     // Should change to normal state
     QCOMPARE(m_component->state(), FluentState::Normal);
     QCOMPARE(stateChangedSpy.count(), 1);
-    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(), FluentState::Normal);
+    QCOMPARE(stateChangedSpy.first().first().value<FluentState>(),
+             FluentState::Normal);
 }
 
 void FluentComponentTest::testUpdateStateStyle() {
@@ -426,9 +434,9 @@ void FluentComponentTest::testThemeIntegration() {
     auto originalMode = theme.mode();
 
     // Change theme mode
-    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light) ?
-                   FluentQt::Styling::FluentThemeMode::Dark :
-                   FluentQt::Styling::FluentThemeMode::Light;
+    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light)
+                       ? FluentQt::Styling::FluentThemeMode::Dark
+                       : FluentQt::Styling::FluentThemeMode::Light;
     theme.setMode(newMode);
 
     // Component should respond to theme changes
@@ -482,7 +490,8 @@ void FluentComponentTest::testDisabledState() {
 
     // Test that disabled component doesn't respond to mouse press
     QPoint center = m_component->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &pressEvent);
 
     // State should remain disabled

@@ -1,10 +1,10 @@
 // tests/Components/FluentCardTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMouseEvent>
-#include <QVBoxLayout>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QPushButton>
+#include <QSignalSpy>
+#include <QVBoxLayout>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentCard.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -97,7 +97,8 @@ void FluentCardTest::init() {
     // Create a fresh card before each test
     m_card = new FluentCard();
     m_card->show();
-    QTest::qWaitForWindowExposed(m_card);
+    QVERIFY2(QTest::qWaitForWindowExposed(m_card),
+             "Window was not exposed in time");
 }
 
 void FluentCardTest::cleanup() {
@@ -109,7 +110,7 @@ void FluentCardTest::cleanup() {
 void FluentCardTest::testDefaultConstructor() {
     // Test default constructor
     FluentCard* card = new FluentCard();
-    
+
     // Verify default properties
     QVERIFY(card->title().isEmpty());
     QVERIFY(card->subtitle().isEmpty());
@@ -123,7 +124,7 @@ void FluentCardTest::testDefaultConstructor() {
     QVERIFY(card->isHeaderVisible());
     QVERIFY(!card->isFooterVisible());
     QVERIFY(card->isEnabled());
-    
+
     delete card;
 }
 
@@ -131,10 +132,10 @@ void FluentCardTest::testTitleConstructor() {
     // Test constructor with title
     const QString cardTitle = "Test Card";
     FluentCard* card = new FluentCard(cardTitle);
-    
+
     QCOMPARE(card->title(), cardTitle);
     QVERIFY(card->subtitle().isEmpty());
-    
+
     delete card;
 }
 
@@ -143,10 +144,10 @@ void FluentCardTest::testTitleSubtitleConstructor() {
     const QString cardTitle = "Test Card";
     const QString cardSubtitle = "Test Subtitle";
     FluentCard* card = new FluentCard(cardTitle, cardSubtitle);
-    
+
     QCOMPARE(card->title(), cardTitle);
     QCOMPARE(card->subtitle(), cardSubtitle);
-    
+
     delete card;
 }
 
@@ -154,19 +155,19 @@ void FluentCardTest::testTitle() {
     // Test setting and getting title
     const QString title1 = "Card Title";
     const QString title2 = "New Title";
-    
-    QSignalSpy titleChangedSpy(m_card, &FluentCard::titleChanged);
-    
+
+    QSignalSpy titleChangedSpy(m_card, SIGNAL(titleChanged(QString)));
+
     m_card->setTitle(title1);
     QCOMPARE(m_card->title(), title1);
     QCOMPARE(titleChangedSpy.count(), 1);
     QCOMPARE(titleChangedSpy.first().first().toString(), title1);
-    
+
     m_card->setTitle(title2);
     QCOMPARE(m_card->title(), title2);
     QCOMPARE(titleChangedSpy.count(), 2);
     QCOMPARE(titleChangedSpy.last().first().toString(), title2);
-    
+
     // Setting the same title should not emit the signal
     m_card->setTitle(title2);
     QCOMPARE(titleChangedSpy.count(), 2);
@@ -176,19 +177,19 @@ void FluentCardTest::testSubtitle() {
     // Test setting and getting subtitle
     const QString subtitle1 = "Card Subtitle";
     const QString subtitle2 = "New Subtitle";
-    
-    QSignalSpy subtitleChangedSpy(m_card, &FluentCard::subtitleChanged);
-    
+
+    QSignalSpy subtitleChangedSpy(m_card, SIGNAL(subtitleChanged(QString)));
+
     m_card->setSubtitle(subtitle1);
     QCOMPARE(m_card->subtitle(), subtitle1);
     QCOMPARE(subtitleChangedSpy.count(), 1);
     QCOMPARE(subtitleChangedSpy.first().first().toString(), subtitle1);
-    
+
     m_card->setSubtitle(subtitle2);
     QCOMPARE(m_card->subtitle(), subtitle2);
     QCOMPARE(subtitleChangedSpy.count(), 2);
     QCOMPARE(subtitleChangedSpy.last().first().toString(), subtitle2);
-    
+
     // Setting the same subtitle should not emit the signal
     m_card->setSubtitle(subtitle2);
     QCOMPARE(subtitleChangedSpy.count(), 2);
@@ -196,22 +197,22 @@ void FluentCardTest::testSubtitle() {
 
 void FluentCardTest::testHeaderIcon() {
     // Test setting and getting header icon
-    QSignalSpy headerIconChangedSpy(m_card, &FluentCard::headerIconChanged);
-    
+    QSignalSpy headerIconChangedSpy(m_card, SIGNAL(headerIconChanged(QIcon)));
+
     QIcon icon1;
     QPixmap pixmap1(16, 16);
     pixmap1.fill(Qt::red);
     icon1 = QIcon(pixmap1);
-    
+
     m_card->setHeaderIcon(icon1);
     QVERIFY(!m_card->headerIcon().isNull());
     QCOMPARE(headerIconChangedSpy.count(), 1);
-    
+
     QIcon icon2;
     QPixmap pixmap2(16, 16);
     pixmap2.fill(Qt::green);
     icon2 = QIcon(pixmap2);
-    
+
     m_card->setHeaderIcon(icon2);
     QVERIFY(!m_card->headerIcon().isNull());
     QCOMPARE(headerIconChangedSpy.count(), 2);
@@ -219,34 +220,37 @@ void FluentCardTest::testHeaderIcon() {
 
 void FluentCardTest::testHeaderVisible() {
     // Test header visibility
-    QVERIFY(m_card->isHeaderVisible()); // Default should be true
-    
+    QVERIFY(m_card->isHeaderVisible());  // Default should be true
+
     m_card->setHeaderVisible(false);
     QVERIFY(!m_card->isHeaderVisible());
-    
+
     m_card->setHeaderVisible(true);
     QVERIFY(m_card->isHeaderVisible());
 }
 
 void FluentCardTest::testElevation() {
     // Test setting and getting elevation
-    QSignalSpy elevationChangedSpy(m_card, &FluentCard::elevationChanged);
-    
-    QCOMPARE(m_card->elevation(), FluentCardElevation::Low); // Default elevation
-    
+    QSignalSpy elevationChangedSpy(
+        m_card, SIGNAL(elevationChanged(FluentCardElevation)));
+
+    QCOMPARE(m_card->elevation(),
+             FluentCardElevation::Low);  // Default elevation
+
     m_card->setElevation(FluentCardElevation::Medium);
     QCOMPARE(m_card->elevation(), FluentCardElevation::Medium);
     QCOMPARE(elevationChangedSpy.count(), 1);
-    QCOMPARE(elevationChangedSpy.first().first().value<FluentCardElevation>(), FluentCardElevation::Medium);
-    
+    QCOMPARE(elevationChangedSpy.first().first().value<FluentCardElevation>(),
+             FluentCardElevation::Medium);
+
     m_card->setElevation(FluentCardElevation::High);
     QCOMPARE(m_card->elevation(), FluentCardElevation::High);
     QCOMPARE(elevationChangedSpy.count(), 2);
-    
+
     m_card->setElevation(FluentCardElevation::Flat);
     QCOMPARE(m_card->elevation(), FluentCardElevation::Flat);
     QCOMPARE(elevationChangedSpy.count(), 3);
-    
+
     // Setting the same elevation should not emit the signal
     m_card->setElevation(FluentCardElevation::Flat);
     QCOMPARE(elevationChangedSpy.count(), 3);
@@ -254,27 +258,29 @@ void FluentCardTest::testElevation() {
 
 void FluentCardTest::testCardStyle() {
     // Test setting and getting card style
-    QSignalSpy cardStyleChangedSpy(m_card, &FluentCard::cardStyleChanged);
-    
-    QCOMPARE(m_card->cardStyle(), FluentCardStyle::Default); // Default style
-    
+    QSignalSpy cardStyleChangedSpy(m_card,
+                                   SIGNAL(cardStyleChanged(FluentCardStyle)));
+
+    QCOMPARE(m_card->cardStyle(), FluentCardStyle::Default);  // Default style
+
     m_card->setCardStyle(FluentCardStyle::Elevated);
     QCOMPARE(m_card->cardStyle(), FluentCardStyle::Elevated);
     QCOMPARE(cardStyleChangedSpy.count(), 1);
-    QCOMPARE(cardStyleChangedSpy.first().first().value<FluentCardStyle>(), FluentCardStyle::Elevated);
-    
+    QCOMPARE(cardStyleChangedSpy.first().first().value<FluentCardStyle>(),
+             FluentCardStyle::Elevated);
+
     m_card->setCardStyle(FluentCardStyle::Outlined);
     QCOMPARE(m_card->cardStyle(), FluentCardStyle::Outlined);
     QCOMPARE(cardStyleChangedSpy.count(), 2);
-    
+
     m_card->setCardStyle(FluentCardStyle::Filled);
     QCOMPARE(m_card->cardStyle(), FluentCardStyle::Filled);
     QCOMPARE(cardStyleChangedSpy.count(), 3);
-    
+
     m_card->setCardStyle(FluentCardStyle::Subtle);
     QCOMPARE(m_card->cardStyle(), FluentCardStyle::Subtle);
     QCOMPARE(cardStyleChangedSpy.count(), 4);
-    
+
     // Setting the same style should not emit the signal
     m_card->setCardStyle(FluentCardStyle::Subtle);
     QCOMPARE(cardStyleChangedSpy.count(), 4);
@@ -282,21 +288,21 @@ void FluentCardTest::testCardStyle() {
 
 void FluentCardTest::testShadowOpacity() {
     // Test setting and getting shadow opacity
-    QCOMPARE(m_card->shadowOpacity(), 1.0); // Default opacity
-    
+    QCOMPARE(m_card->shadowOpacity(), 1.0);  // Default opacity
+
     m_card->setShadowOpacity(0.5);
     QCOMPARE(m_card->shadowOpacity(), 0.5);
-    
+
     m_card->setShadowOpacity(0.0);
     QCOMPARE(m_card->shadowOpacity(), 0.0);
-    
+
     m_card->setShadowOpacity(1.0);
     QCOMPARE(m_card->shadowOpacity(), 1.0);
 }
 
 void FluentCardTest::testSelectable() {
     // Test selectable property
-    QVERIFY(!m_card->isSelectable()); // Default should be false
+    QVERIFY(!m_card->isSelectable());  // Default should be false
 
     m_card->setSelectable(true);
     QVERIFY(m_card->isSelectable());
@@ -307,9 +313,9 @@ void FluentCardTest::testSelectable() {
 
 void FluentCardTest::testSelected() {
     // Test selected property
-    QSignalSpy selectedChangedSpy(m_card, &FluentCard::selectedChanged);
+    QSignalSpy selectedChangedSpy(m_card, SIGNAL(selectedChanged(bool)));
 
-    QVERIFY(!m_card->isSelected()); // Default should be false
+    QVERIFY(!m_card->isSelected());  // Default should be false
 
     // Make card selectable first
     m_card->setSelectable(true);
@@ -331,7 +337,7 @@ void FluentCardTest::testSelected() {
 
 void FluentCardTest::testExpandable() {
     // Test expandable property
-    QVERIFY(!m_card->isExpandable()); // Default should be false
+    QVERIFY(!m_card->isExpandable());  // Default should be false
 
     m_card->setExpandable(true);
     QVERIFY(m_card->isExpandable());
@@ -342,9 +348,9 @@ void FluentCardTest::testExpandable() {
 
 void FluentCardTest::testExpanded() {
     // Test expanded property
-    QSignalSpy expandedChangedSpy(m_card, &FluentCard::expandedChanged);
+    QSignalSpy expandedChangedSpy(m_card, SIGNAL(expandedChanged(bool)));
 
-    QVERIFY(m_card->isExpanded()); // Default should be true
+    QVERIFY(m_card->isExpanded());  // Default should be true
 
     // Make card expandable first
     m_card->setExpandable(true);
@@ -366,11 +372,11 @@ void FluentCardTest::testExpanded() {
 
 void FluentCardTest::testToggleExpanded() {
     // Test toggle expanded functionality
-    QSignalSpy expandedChangedSpy(m_card, &FluentCard::expandedChanged);
+    QSignalSpy expandedChangedSpy(m_card, SIGNAL(expandedChanged(bool)));
 
     // Make card expandable
     m_card->setExpandable(true);
-    QVERIFY(m_card->isExpanded()); // Should start expanded
+    QVERIFY(m_card->isExpanded());  // Should start expanded
 
     m_card->toggleExpanded();
     QVERIFY(!m_card->isExpanded());
@@ -385,7 +391,7 @@ void FluentCardTest::testToggleExpanded() {
 
 void FluentCardTest::testFooterVisible() {
     // Test footer visibility
-    QVERIFY(!m_card->isFooterVisible()); // Default should be false
+    QVERIFY(!m_card->isFooterVisible());  // Default should be false
 
     m_card->setFooterVisible(true);
     QVERIFY(m_card->isFooterVisible());
@@ -396,7 +402,7 @@ void FluentCardTest::testFooterVisible() {
 
 void FluentCardTest::testContentWidget() {
     // Test content widget management
-    QVERIFY(m_card->contentWidget() == nullptr); // Default should be null
+    QVERIFY(m_card->contentWidget() == nullptr);  // Default should be null
 
     // Create a test widget
     QLabel* testWidget = new QLabel("Test Content");
@@ -460,7 +466,7 @@ void FluentCardTest::testContentLayout() {
     QLabel* testLabel = new QLabel("Test");
     contentLayout->addWidget(testLabel);
 
-    QVERIFY(true); // If we get here, the layout is functional
+    QVERIFY(true);  // If we get here, the layout is functional
 }
 
 void FluentCardTest::testHeaderLayout() {
@@ -502,7 +508,7 @@ void FluentCardTest::testAnimateOut() {
 void FluentCardTest::testExpandWithAnimation() {
     // Test expand with animation
     m_card->setExpandable(true);
-    m_card->setExpanded(false); // Start collapsed
+    m_card->setExpanded(false);  // Start collapsed
 
     QSignalSpy expandedChangedSpy(m_card, &FluentCard::expandedChanged);
 
@@ -516,7 +522,7 @@ void FluentCardTest::testExpandWithAnimation() {
 void FluentCardTest::testCollapseWithAnimation() {
     // Test collapse with animation
     m_card->setExpandable(true);
-    m_card->setExpanded(true); // Start expanded
+    m_card->setExpanded(true);  // Start expanded
 
     QSignalSpy expandedChangedSpy(m_card, &FluentCard::expandedChanged);
 
@@ -533,10 +539,15 @@ void FluentCardTest::testMouseInteraction() {
     QSignalSpy cardDoubleClickedSpy(m_card, &FluentCard::cardDoubleClicked);
 
     QPoint center = m_card->rect().center();
+    QPoint global = m_card->mapToGlobal(center);
 
     // Test mouse press and release (click)
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(global), Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(global), Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_card, &pressEvent);
     QApplication::sendEvent(m_card, &releaseEvent);
@@ -544,7 +555,9 @@ void FluentCardTest::testMouseInteraction() {
     QCOMPARE(cardClickedSpy.count(), 1);
 
     // Test double click
-    QMouseEvent doubleClickEvent(QEvent::MouseButtonDblClick, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent doubleClickEvent(
+        QEvent::MouseButtonDblClick, QPointF(center), QPointF(center),
+        QPointF(global), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_card, &doubleClickEvent);
 
     QCOMPARE(cardDoubleClickedSpy.count(), 1);
@@ -556,8 +569,14 @@ void FluentCardTest::testCardClicked() {
 
     // Simulate click
     QPoint center = m_card->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint global = m_card->mapToGlobal(center);
+
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(global), Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(global), Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_card, &pressEvent);
     QApplication::sendEvent(m_card, &releaseEvent);
@@ -571,7 +590,11 @@ void FluentCardTest::testCardDoubleClicked() {
 
     // Simulate double click
     QPoint center = m_card->rect().center();
-    QMouseEvent doubleClickEvent(QEvent::MouseButtonDblClick, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint global = m_card->mapToGlobal(center);
+
+    QMouseEvent doubleClickEvent(
+        QEvent::MouseButtonDblClick, QPointF(center), QPointF(center),
+        QPointF(global), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_card, &doubleClickEvent);
 
     QCOMPARE(cardDoubleClickedSpy.count(), 1);
@@ -631,8 +654,14 @@ void FluentCardTest::testInteractionSignals() {
 
     // Simulate card click
     QPoint center = m_card->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint global = m_card->mapToGlobal(center);
+
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(global), Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(global), Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_card, &pressEvent);
     QApplication::sendEvent(m_card, &releaseEvent);
@@ -640,7 +669,9 @@ void FluentCardTest::testInteractionSignals() {
     QCOMPARE(cardClickedSpy.count(), 1);
 
     // Simulate double click
-    QMouseEvent doubleClickEvent(QEvent::MouseButtonDblClick, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent doubleClickEvent(
+        QEvent::MouseButtonDblClick, QPointF(center), QPointF(center),
+        QPointF(global), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_card, &doubleClickEvent);
 
     QCOMPARE(cardDoubleClickedSpy.count(), 1);
@@ -674,8 +705,8 @@ void FluentCardTest::testThemeIntegration() {
     // Change theme mode
     theme.setDarkMode(!originalDarkMode);
 
-    // Card should update its appearance (this would require checking internal styling)
-    // For now, just verify the card still functions correctly
+    // Card should update its appearance (this would require checking internal
+    // styling) For now, just verify the card still functions correctly
     QVERIFY(m_card->isEnabled());
 
     // Test that property operations still work after theme change

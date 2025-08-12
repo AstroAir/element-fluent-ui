@@ -2,11 +2,11 @@
 #include "FluentQt/Components/FluentSelectItem.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QDebug>
+#include <QFontMetrics>
 #include <QPainter>
 #include <QStyleOptionViewItem>
-#include <QApplication>
-#include <QFontMetrics>
-#include <QDebug>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Styling;
@@ -14,8 +14,7 @@ using namespace FluentQt::Styling;
 // FluentSelectItem implementation
 FluentSelectItem::FluentSelectItem() = default;
 
-FluentSelectItem::FluentSelectItem(const QString& text)
-    : m_data(text) {}
+FluentSelectItem::FluentSelectItem(const QString& text) : m_data(text) {}
 
 FluentSelectItem::FluentSelectItem(const QString& text, const QVariant& data)
     : m_data(text, data) {}
@@ -23,7 +22,8 @@ FluentSelectItem::FluentSelectItem(const QString& text, const QVariant& data)
 FluentSelectItem::FluentSelectItem(const QIcon& icon, const QString& text)
     : m_data(icon, text) {}
 
-FluentSelectItem::FluentSelectItem(const QIcon& icon, const QString& text, const QVariant& data)
+FluentSelectItem::FluentSelectItem(const QIcon& icon, const QString& text,
+                                   const QVariant& data)
     : m_data(icon, text, data) {}
 
 FluentSelectItem::FluentSelectItem(const FluentSelectItemData& data)
@@ -39,14 +39,15 @@ FluentSelectItem& FluentSelectItem::operator=(const FluentSelectItem& other) {
     return *this;
 }
 
-bool FluentSelectItem::matches(const QString& searchText, Qt::MatchFlags flags) const {
+bool FluentSelectItem::matches(const QString& searchText,
+                               Qt::MatchFlags flags) const {
     if (searchText.isEmpty()) {
         return true;
     }
-    
+
     const QString text = m_data.text;
     const QString description = m_data.description;
-    
+
     if (flags & Qt::MatchExactly) {
         return text == searchText || description == searchText;
     } else if (flags & Qt::MatchStartsWith) {
@@ -56,7 +57,7 @@ bool FluentSelectItem::matches(const QString& searchText, Qt::MatchFlags flags) 
         return text.contains(searchText, Qt::CaseInsensitive) ||
                description.contains(searchText, Qt::CaseInsensitive);
     }
-    
+
     return false;
 }
 
@@ -87,7 +88,8 @@ FluentSelectItem FluentSelectItem::createGroup(const QString& title) {
     return FluentSelectItem(data);
 }
 
-FluentSelectItem FluentSelectItem::createCheckableItem(const QString& text, bool checked) {
+FluentSelectItem FluentSelectItem::createCheckableItem(const QString& text,
+                                                       bool checked) {
     FluentSelectItemData data;
     data.text = text;
     data.checkable = true;
@@ -95,11 +97,14 @@ FluentSelectItem FluentSelectItem::createCheckableItem(const QString& text, bool
     return FluentSelectItem(data);
 }
 
-FluentSelectItem FluentSelectItem::createIconItem(const QIcon& icon, const QString& text, const QVariant& data) {
+FluentSelectItem FluentSelectItem::createIconItem(const QIcon& icon,
+                                                  const QString& text,
+                                                  const QVariant& data) {
     return FluentSelectItem(icon, text, data);
 }
 
-FluentSelectItem FluentSelectItem::createDisabledItem(const QString& text, const QVariant& data) {
+FluentSelectItem FluentSelectItem::createDisabledItem(const QString& text,
+                                                      const QVariant& data) {
     FluentSelectItemData itemData;
     itemData.text = text;
     itemData.data = data;
@@ -109,8 +114,7 @@ FluentSelectItem FluentSelectItem::createDisabledItem(const QString& text, const
 
 bool FluentSelectItem::operator==(const FluentSelectItem& other) const {
     return m_data.text == other.m_data.text &&
-           m_data.data == other.m_data.data &&
-           m_data.type == other.m_data.type;
+           m_data.data == other.m_data.data && m_data.type == other.m_data.type;
 }
 
 // FluentSelectModel implementation
@@ -127,14 +131,14 @@ void FluentSelectModel::insertItem(int index, const FluentSelectItem& item) {
     if (index < 0 || index > m_items.size()) {
         return;
     }
-    
+
     m_items.insert(index, item);
-    
+
     auto* standardItem = new QStandardItem();
     setupItem(standardItem, item);
-    
+
     QStandardItemModel::insertRow(index, standardItem);
-    
+
     emit itemAdded(index);
 }
 
@@ -142,10 +146,10 @@ void FluentSelectModel::removeItem(int index) {
     if (index < 0 || index >= m_items.size()) {
         return;
     }
-    
+
     m_items.removeAt(index);
     QStandardItemModel::removeRow(index);
-    
+
     emit itemRemoved(index);
 }
 
@@ -167,81 +171,80 @@ void FluentSelectModel::setItemAt(int index, const FluentSelectItem& item) {
     if (index < 0 || index >= m_items.size()) {
         return;
     }
-    
+
     m_items[index] = item;
-    
+
     auto* standardItem = QStandardItemModel::item(index);
     if (standardItem) {
         setupItem(standardItem, item);
     }
-    
+
     emit itemChanged(index);
 }
 
-int FluentSelectModel::itemCount() const {
-    return m_items.size();
-}
+int FluentSelectModel::itemCount() const { return m_items.size(); }
 
-bool FluentSelectModel::isEmpty() const {
-    return m_items.isEmpty();
-}
+bool FluentSelectModel::isEmpty() const { return m_items.isEmpty(); }
 
-QList<int> FluentSelectModel::findItems(const QString& text, Qt::MatchFlags flags) const {
+QList<int> FluentSelectModel::findItems(const QString& text,
+                                        Qt::MatchFlags flags) const {
     QList<int> found;
-    
+
     for (int i = 0; i < m_items.size(); ++i) {
         if (m_items[i].matches(text, flags)) {
             found.append(i);
         }
     }
-    
+
     return found;
 }
 
-QList<int> FluentSelectModel::findItemsByData(const QVariant& data, Qt::MatchFlags flags) const {
+QList<int> FluentSelectModel::findItemsByData(const QVariant& data,
+                                              Qt::MatchFlags flags) const {
     QList<int> found;
-    
+
     for (int i = 0; i < m_items.size(); ++i) {
         const QVariant itemData = m_items[i].data();
-        
+
         if (flags & Qt::MatchExactly) {
             if (itemData == data) {
                 found.append(i);
             }
         } else if (flags & Qt::MatchContains) {
-            if (itemData.toString().contains(data.toString(), Qt::CaseInsensitive)) {
+            if (itemData.toString().contains(data.toString(),
+                                             Qt::CaseInsensitive)) {
                 found.append(i);
             }
         }
     }
-    
+
     return found;
 }
 
 void FluentSelectModel::addGroup(const QString& title) {
     const FluentSelectItem groupItem = FluentSelectItem::createGroup(title);
     addItem(groupItem);
-    
+
     if (!m_groups.contains(title)) {
         m_groups[title] = QList<int>();
     }
 }
 
-void FluentSelectModel::addItemToGroup(const QString& groupTitle, const FluentSelectItem& item) {
+void FluentSelectModel::addItemToGroup(const QString& groupTitle,
+                                       const FluentSelectItem& item) {
     addItem(item);
-    
+
     if (m_groups.contains(groupTitle)) {
         m_groups[groupTitle].append(m_items.size() - 1);
     }
 }
 
-QStringList FluentSelectModel::groups() const {
-    return m_groups.keys();
-}
+QStringList FluentSelectModel::groups() const { return m_groups.keys(); }
 
-QList<FluentSelectItem> FluentSelectModel::itemsInGroup(const QString& groupTitle) const {
+QList<FluentSelectItem> FluentSelectModel::itemsInGroup(
+    const QString& groupTitle) const {
     QList<FluentSelectItem> items;
-    
+
     if (m_groups.contains(groupTitle)) {
         const QList<int>& indexes = m_groups[groupTitle];
         for (int index : indexes) {
@@ -250,7 +253,7 @@ QList<FluentSelectItem> FluentSelectModel::itemsInGroup(const QString& groupTitl
             }
         }
     }
-    
+
     return items;
 }
 
@@ -272,9 +275,9 @@ QVariant FluentSelectModel::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() >= m_items.size()) {
         return QStandardItemModel::data(index, role);
     }
-    
+
     const FluentSelectItem& item = m_items[index.row()];
-    
+
     switch (role) {
         case Qt::DisplayRole:
             return item.text();
@@ -307,13 +310,14 @@ QVariant FluentSelectModel::data(const QModelIndex& index, int role) const {
     }
 }
 
-bool FluentSelectModel::setData(const QModelIndex& index, const QVariant& value, int role) {
+bool FluentSelectModel::setData(const QModelIndex& index, const QVariant& value,
+                                int role) {
     if (!index.isValid() || index.row() >= m_items.size()) {
         return QStandardItemModel::setData(index, value, role);
     }
-    
+
     FluentSelectItem& item = m_items[index.row()];
-    
+
     switch (role) {
         case Qt::DisplayRole:
             item.setText(value.toString());
@@ -342,16 +346,16 @@ bool FluentSelectModel::setData(const QModelIndex& index, const QVariant& value,
         default:
             return QStandardItemModel::setData(index, value, role);
     }
-    
+
     // Update the standard item
     auto* standardItem = QStandardItemModel::item(index.row());
     if (standardItem) {
         setupItem(standardItem, item);
     }
-    
+
     emit dataChanged(index, index, {role});
     emit itemChanged(index.row());
-    
+
     return true;
 }
 
@@ -359,40 +363,45 @@ Qt::ItemFlags FluentSelectModel::flags(const QModelIndex& index) const {
     if (!index.isValid() || index.row() >= m_items.size()) {
         return QStandardItemModel::flags(index);
     }
-    
+
     const FluentSelectItem& item = m_items[index.row()];
-    
+
     Qt::ItemFlags flags = Qt::ItemIsSelectable;
-    
+
     if (item.isEnabled() && item.isSelectable()) {
         flags |= Qt::ItemIsEnabled;
     }
-    
+
     if (item.isCheckable()) {
         flags |= Qt::ItemIsUserCheckable;
     }
-    
+
     return flags;
 }
 
-void FluentSelectModel::setupItem(QStandardItem* standardItem, const FluentSelectItem& selectItem) {
-    if (!standardItem) return;
-    
+void FluentSelectModel::setupItem(QStandardItem* standardItem,
+                                  const FluentSelectItem& selectItem) {
+    if (!standardItem)
+        return;
+
     standardItem->setText(selectItem.text());
     standardItem->setIcon(selectItem.icon());
     standardItem->setToolTip(selectItem.tooltip());
     standardItem->setData(selectItem.data(), Qt::UserRole);
     standardItem->setEnabled(selectItem.isEnabled());
     standardItem->setCheckable(selectItem.isCheckable());
-    
+
     if (selectItem.isCheckable()) {
-        standardItem->setCheckState(selectItem.isChecked() ? Qt::Checked : Qt::Unchecked);
+        standardItem->setCheckState(selectItem.isChecked() ? Qt::Checked
+                                                           : Qt::Unchecked);
     }
 }
 
-FluentSelectItem FluentSelectModel::getSelectItem(const QStandardItem* standardItem) const {
-    if (!standardItem) return FluentSelectItem();
-    
+FluentSelectItem FluentSelectModel::getSelectItem(
+    const QStandardItem* standardItem) const {
+    if (!standardItem)
+        return FluentSelectItem();
+
     FluentSelectItemData data;
     data.text = standardItem->text();
     data.icon = standardItem->icon();
@@ -401,12 +410,14 @@ FluentSelectItem FluentSelectModel::getSelectItem(const QStandardItem* standardI
     data.enabled = standardItem->isEnabled();
     data.checkable = standardItem->isCheckable();
     data.checked = standardItem->checkState() == Qt::Checked;
-    
+
     return FluentSelectItem(data);
 }
 
-void FluentSelectModel::updateItemFromStandard(FluentSelectItem& selectItem, const QStandardItem* standardItem) const {
-    if (!standardItem) return;
+void FluentSelectModel::updateItemFromStandard(
+    FluentSelectItem& selectItem, const QStandardItem* standardItem) const {
+    if (!standardItem)
+        return;
 
     selectItem.setText(standardItem->text());
     selectItem.setIcon(standardItem->icon());
@@ -423,7 +434,9 @@ FluentSelectItemDelegate::FluentSelectItemDelegate(QObject* parent)
 
 FluentSelectItemDelegate::~FluentSelectItemDelegate() = default;
 
-void FluentSelectItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+void FluentSelectItemDelegate::paint(QPainter* painter,
+                                     const QStyleOptionViewItem& option,
+                                     const QModelIndex& index) const {
     if (!painter || !index.isValid()) {
         return;
     }
@@ -446,7 +459,8 @@ void FluentSelectItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
     }
 }
 
-QSize FluentSelectItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QSize FluentSelectItemDelegate::sizeHint(const QStyleOptionViewItem& option,
+                                         const QModelIndex& index) const {
     if (!index.isValid()) {
         return QStyledItemDelegate::sizeHint(option, index);
     }
@@ -466,7 +480,9 @@ QSize FluentSelectItemDelegate::sizeHint(const QStyleOptionViewItem& option, con
     }
 }
 
-void FluentSelectItemDelegate::paintItem(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+void FluentSelectItemDelegate::paintItem(QPainter* painter,
+                                         const QStyleOptionViewItem& option,
+                                         const QModelIndex& index) const {
     painter->save();
 
     // Paint background
@@ -479,8 +495,10 @@ void FluentSelectItemDelegate::paintItem(QPainter* painter, const QStyleOptionVi
     const QRect statusIconRect = getStatusIconRect(option);
 
     // Paint checkbox if needed
-    if (m_showCheckboxes && index.data(FluentSelectModel::CheckableRole).toBool()) {
-        const bool checked = index.data(Qt::CheckStateRole).toInt() == Qt::Checked;
+    if (m_showCheckboxes &&
+        index.data(FluentSelectModel::CheckableRole).toBool()) {
+        const bool checked =
+            index.data(Qt::CheckStateRole).toInt() == Qt::Checked;
         paintCheckbox(painter, checkboxRect, checked, option);
     }
 
@@ -497,7 +515,8 @@ void FluentSelectItemDelegate::paintItem(QPainter* painter, const QStyleOptionVi
     }
 
     // Paint status icon
-    const QIcon statusIcon = index.data(FluentSelectModel::StatusIconRole).value<QIcon>();
+    const QIcon statusIcon =
+        index.data(FluentSelectModel::StatusIconRole).value<QIcon>();
     if (!statusIcon.isNull()) {
         paintStatusIcon(painter, statusIconRect, statusIcon);
     }
@@ -505,7 +524,8 @@ void FluentSelectItemDelegate::paintItem(QPainter* painter, const QStyleOptionVi
     painter->restore();
 }
 
-void FluentSelectItemDelegate::paintSeparator(QPainter* painter, const QStyleOptionViewItem& option) const {
+void FluentSelectItemDelegate::paintSeparator(
+    QPainter* painter, const QStyleOptionViewItem& option) const {
     painter->save();
 
     const auto& theme = FluentTheme::instance();
@@ -514,12 +534,15 @@ void FluentSelectItemDelegate::paintSeparator(QPainter* painter, const QStyleOpt
     painter->setPen(QPen(palette.neutralTertiary, 1));
 
     const int y = option.rect.center().y();
-    painter->drawLine(option.rect.left() + m_padding, y, option.rect.right() - m_padding, y);
+    painter->drawLine(option.rect.left() + m_padding, y,
+                      option.rect.right() - m_padding, y);
 
     painter->restore();
 }
 
-void FluentSelectItemDelegate::paintGroup(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+void FluentSelectItemDelegate::paintGroup(QPainter* painter,
+                                          const QStyleOptionViewItem& option,
+                                          const QModelIndex& index) const {
     painter->save();
 
     const auto& theme = FluentTheme::instance();
@@ -541,7 +564,9 @@ void FluentSelectItemDelegate::paintGroup(QPainter* painter, const QStyleOptionV
     painter->restore();
 }
 
-void FluentSelectItemDelegate::paintBackground(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+void FluentSelectItemDelegate::paintBackground(
+    QPainter* painter, const QStyleOptionViewItem& option,
+    const QModelIndex& index) const {
     const QColor backgroundColor = getBackgroundColor(option, index);
 
     if (backgroundColor.isValid()) {
@@ -549,13 +574,16 @@ void FluentSelectItemDelegate::paintBackground(QPainter* painter, const QStyleOp
     }
 }
 
-void FluentSelectItemDelegate::paintIcon(QPainter* painter, const QRect& rect, const QIcon& icon) const {
+void FluentSelectItemDelegate::paintIcon(QPainter* painter, const QRect& rect,
+                                         const QIcon& icon) const {
     if (!icon.isNull() && rect.isValid()) {
         icon.paint(painter, rect);
     }
 }
 
-void FluentSelectItemDelegate::paintText(QPainter* painter, const QRect& rect, const QString& text, const QStyleOptionViewItem& option) const {
+void FluentSelectItemDelegate::paintText(
+    QPainter* painter, const QRect& rect, const QString& text,
+    const QStyleOptionViewItem& option) const {
     if (text.isEmpty() || !rect.isValid()) {
         return;
     }
@@ -569,7 +597,9 @@ void FluentSelectItemDelegate::paintText(QPainter* painter, const QRect& rect, c
     painter->drawText(rect, Qt::AlignLeft | Qt::AlignVCenter, text);
 }
 
-void FluentSelectItemDelegate::paintCheckbox(QPainter* painter, const QRect& rect, bool checked, const QStyleOptionViewItem& option) const {
+void FluentSelectItemDelegate::paintCheckbox(
+    QPainter* painter, const QRect& rect, bool checked,
+    const QStyleOptionViewItem& option) const {
     Q_UNUSED(option)
 
     if (!rect.isValid()) {
@@ -592,17 +622,20 @@ void FluentSelectItemDelegate::paintCheckbox(QPainter* painter, const QRect& rec
 
         // Draw a simple checkmark
         painter->drawLine(checkRect.left(), checkRect.center().y(),
-                         checkRect.center().x(), checkRect.bottom());
+                          checkRect.center().x(), checkRect.bottom());
         painter->drawLine(checkRect.center().x(), checkRect.bottom(),
-                         checkRect.right(), checkRect.top());
+                          checkRect.right(), checkRect.top());
     }
 }
 
-void FluentSelectItemDelegate::paintStatusIcon(QPainter* painter, const QRect& rect, const QIcon& icon) const {
+void FluentSelectItemDelegate::paintStatusIcon(QPainter* painter,
+                                               const QRect& rect,
+                                               const QIcon& icon) const {
     paintIcon(painter, rect, icon);
 }
 
-QRect FluentSelectItemDelegate::getIconRect(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QRect FluentSelectItemDelegate::getIconRect(const QStyleOptionViewItem& option,
+                                            const QModelIndex& index) const {
     Q_UNUSED(index)
 
     const int x = option.rect.left() + m_padding;
@@ -611,7 +644,8 @@ QRect FluentSelectItemDelegate::getIconRect(const QStyleOptionViewItem& option, 
     return QRect(QPoint(x, y), m_iconSize);
 }
 
-QRect FluentSelectItemDelegate::getTextRect(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QRect FluentSelectItemDelegate::getTextRect(const QStyleOptionViewItem& option,
+                                            const QModelIndex& index) const {
     Q_UNUSED(index)
 
     int left = option.rect.left() + m_padding;
@@ -627,12 +661,14 @@ QRect FluentSelectItemDelegate::getTextRect(const QStyleOptionViewItem& option, 
         left += m_iconSize.width() + m_spacing;
     }
 
-    const int right = option.rect.right() - m_padding - m_iconSize.width() - m_spacing; // Reserve space for status icon
+    const int right = option.rect.right() - m_padding - m_iconSize.width() -
+                      m_spacing;  // Reserve space for status icon
 
     return QRect(left, option.rect.top(), right - left, option.rect.height());
 }
 
-QRect FluentSelectItemDelegate::getCheckboxRect(const QStyleOptionViewItem& option) const {
+QRect FluentSelectItemDelegate::getCheckboxRect(
+    const QStyleOptionViewItem& option) const {
     if (!m_showCheckboxes) {
         return QRect();
     }
@@ -644,14 +680,16 @@ QRect FluentSelectItemDelegate::getCheckboxRect(const QStyleOptionViewItem& opti
     return QRect(x, y, size, size);
 }
 
-QRect FluentSelectItemDelegate::getStatusIconRect(const QStyleOptionViewItem& option) const {
+QRect FluentSelectItemDelegate::getStatusIconRect(
+    const QStyleOptionViewItem& option) const {
     const int x = option.rect.right() - m_padding - m_iconSize.width();
     const int y = option.rect.center().y() - m_iconSize.height() / 2;
 
     return QRect(QPoint(x, y), m_iconSize);
 }
 
-QColor FluentSelectItemDelegate::getBackgroundColor(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QColor FluentSelectItemDelegate::getBackgroundColor(
+    const QStyleOptionViewItem& option, const QModelIndex& index) const {
     Q_UNUSED(index)
 
     const auto& theme = FluentTheme::instance();
@@ -663,10 +701,11 @@ QColor FluentSelectItemDelegate::getBackgroundColor(const QStyleOptionViewItem& 
         return palette.neutralLighter;
     }
 
-    return QColor(); // Transparent
+    return QColor();  // Transparent
 }
 
-QColor FluentSelectItemDelegate::getTextColor(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QColor FluentSelectItemDelegate::getTextColor(
+    const QStyleOptionViewItem& option, const QModelIndex& index) const {
     Q_UNUSED(index)
 
     const auto& theme = FluentTheme::instance();
@@ -681,7 +720,8 @@ QColor FluentSelectItemDelegate::getTextColor(const QStyleOptionViewItem& option
     return palette.neutralPrimary;
 }
 
-QFont FluentSelectItemDelegate::getFont(const QStyleOptionViewItem& option, const QModelIndex& index) const {
+QFont FluentSelectItemDelegate::getFont(const QStyleOptionViewItem& option,
+                                        const QModelIndex& index) const {
     Q_UNUSED(index)
 
     const auto& theme = FluentTheme::instance();

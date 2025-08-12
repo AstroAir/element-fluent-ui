@@ -1,9 +1,9 @@
 // tests/Components/FluentTooltipTest.cpp
-#include <QtTest/QtTest>
-#include <QtTest/QSignalSpy>
-#include <QTimer>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QTimer>
+#include <QtTest/QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentTooltip.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -105,7 +105,7 @@ void FluentTooltipTest::cleanup() {
 void FluentTooltipTest::testDefaultConstructor() {
     // Test default constructor
     FluentTooltip* tooltip = new FluentTooltip();
-    
+
     // Verify default properties
     QVERIFY(tooltip->text().isEmpty());
     QVERIFY(tooltip->title().isEmpty());
@@ -115,7 +115,7 @@ void FluentTooltipTest::testDefaultConstructor() {
     QCOMPARE(tooltip->hideDelay(), 100);
     QVERIFY(!tooltip->isPersistent());
     QCOMPARE(tooltip->maxSize(), QSize(300, 200));
-    
+
     delete tooltip;
 }
 
@@ -123,10 +123,10 @@ void FluentTooltipTest::testTextConstructor() {
     // Test constructor with text
     const QString tooltipText = "Test tooltip text";
     FluentTooltip* tooltip = new FluentTooltip(tooltipText);
-    
+
     QCOMPARE(tooltip->text(), tooltipText);
     QVERIFY(tooltip->title().isEmpty());
-    
+
     delete tooltip;
 }
 
@@ -135,10 +135,10 @@ void FluentTooltipTest::testTitleTextConstructor() {
     const QString tooltipTitle = "Test Title";
     const QString tooltipText = "Test tooltip text";
     FluentTooltip* tooltip = new FluentTooltip(tooltipTitle, tooltipText);
-    
+
     QCOMPARE(tooltip->title(), tooltipTitle);
     QCOMPARE(tooltip->text(), tooltipText);
-    
+
     delete tooltip;
 }
 
@@ -146,19 +146,19 @@ void FluentTooltipTest::testText() {
     // Test setting and getting text
     const QString text1 = "Tooltip text";
     const QString text2 = "New tooltip text";
-    
+
     QSignalSpy textChangedSpy(m_tooltip, &FluentTooltip::textChanged);
-    
+
     m_tooltip->setText(text1);
     QCOMPARE(m_tooltip->text(), text1);
     QCOMPARE(textChangedSpy.count(), 1);
     QCOMPARE(textChangedSpy.first().first().toString(), text1);
-    
+
     m_tooltip->setText(text2);
     QCOMPARE(m_tooltip->text(), text2);
     QCOMPARE(textChangedSpy.count(), 2);
     QCOMPARE(textChangedSpy.last().first().toString(), text2);
-    
+
     // Setting the same text should not emit the signal
     m_tooltip->setText(text2);
     QCOMPARE(textChangedSpy.count(), 2);
@@ -168,19 +168,19 @@ void FluentTooltipTest::testTitle() {
     // Test setting and getting title
     const QString title1 = "Tooltip title";
     const QString title2 = "New tooltip title";
-    
+
     QSignalSpy titleChangedSpy(m_tooltip, &FluentTooltip::titleChanged);
-    
+
     m_tooltip->setTitle(title1);
     QCOMPARE(m_tooltip->title(), title1);
     QCOMPARE(titleChangedSpy.count(), 1);
     QCOMPARE(titleChangedSpy.first().first().toString(), title1);
-    
+
     m_tooltip->setTitle(title2);
     QCOMPARE(m_tooltip->title(), title2);
     QCOMPARE(titleChangedSpy.count(), 2);
     QCOMPARE(titleChangedSpy.last().first().toString(), title2);
-    
+
     // Setting the same title should not emit the signal
     m_tooltip->setTitle(title2);
     QCOMPARE(titleChangedSpy.count(), 2);
@@ -189,42 +189,44 @@ void FluentTooltipTest::testTitle() {
 void FluentTooltipTest::testPosition() {
     // Test setting and getting position
     QSignalSpy positionChangedSpy(m_tooltip, &FluentTooltip::positionChanged);
-    
-    QCOMPARE(m_tooltip->position(), FluentTooltipPosition::Auto); // Default position
-    
+
+    QCOMPARE(m_tooltip->position(),
+             FluentTooltipPosition::Auto);  // Default position
+
     m_tooltip->setPosition(FluentTooltipPosition::Top);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::Top);
     QCOMPARE(positionChangedSpy.count(), 1);
-    QCOMPARE(positionChangedSpy.first().first().value<FluentTooltipPosition>(), FluentTooltipPosition::Top);
-    
+    QCOMPARE(positionChangedSpy.first().first().value<FluentTooltipPosition>(),
+             FluentTooltipPosition::Top);
+
     m_tooltip->setPosition(FluentTooltipPosition::Bottom);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::Bottom);
     QCOMPARE(positionChangedSpy.count(), 2);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::Left);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::Left);
     QCOMPARE(positionChangedSpy.count(), 3);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::Right);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::Right);
     QCOMPARE(positionChangedSpy.count(), 4);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::TopLeft);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::TopLeft);
     QCOMPARE(positionChangedSpy.count(), 5);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::TopRight);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::TopRight);
     QCOMPARE(positionChangedSpy.count(), 6);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::BottomLeft);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::BottomLeft);
     QCOMPARE(positionChangedSpy.count(), 7);
-    
+
     m_tooltip->setPosition(FluentTooltipPosition::BottomRight);
     QCOMPARE(m_tooltip->position(), FluentTooltipPosition::BottomRight);
     QCOMPARE(positionChangedSpy.count(), 8);
-    
+
     // Setting the same position should not emit the signal
     m_tooltip->setPosition(FluentTooltipPosition::BottomRight);
     QCOMPARE(positionChangedSpy.count(), 8);
@@ -233,18 +235,19 @@ void FluentTooltipTest::testPosition() {
 void FluentTooltipTest::testTheme() {
     // Test setting and getting theme
     QSignalSpy themeChangedSpy(m_tooltip, &FluentTooltip::themeChanged);
-    
-    QCOMPARE(m_tooltip->theme(), FluentTooltipTheme::Auto); // Default theme
-    
+
+    QCOMPARE(m_tooltip->theme(), FluentTooltipTheme::Auto);  // Default theme
+
     m_tooltip->setTheme(FluentTooltipTheme::Light);
     QCOMPARE(m_tooltip->theme(), FluentTooltipTheme::Light);
     QCOMPARE(themeChangedSpy.count(), 1);
-    QCOMPARE(themeChangedSpy.first().first().value<FluentTooltipTheme>(), FluentTooltipTheme::Light);
-    
+    QCOMPARE(themeChangedSpy.first().first().value<FluentTooltipTheme>(),
+             FluentTooltipTheme::Light);
+
     m_tooltip->setTheme(FluentTooltipTheme::Dark);
     QCOMPARE(m_tooltip->theme(), FluentTooltipTheme::Dark);
     QCOMPARE(themeChangedSpy.count(), 2);
-    
+
     // Setting the same theme should not emit the signal
     m_tooltip->setTheme(FluentTooltipTheme::Dark);
     QCOMPARE(themeChangedSpy.count(), 2);
@@ -253,19 +256,19 @@ void FluentTooltipTest::testTheme() {
 void FluentTooltipTest::testShowDelay() {
     // Test setting and getting show delay
     QSignalSpy showDelayChangedSpy(m_tooltip, &FluentTooltip::showDelayChanged);
-    
-    QCOMPARE(m_tooltip->showDelay(), 500); // Default delay
-    
+
+    QCOMPARE(m_tooltip->showDelay(), 500);  // Default delay
+
     m_tooltip->setShowDelay(1000);
     QCOMPARE(m_tooltip->showDelay(), 1000);
     QCOMPARE(showDelayChangedSpy.count(), 1);
     QCOMPARE(showDelayChangedSpy.first().first().toInt(), 1000);
-    
+
     m_tooltip->setShowDelay(250);
     QCOMPARE(m_tooltip->showDelay(), 250);
     QCOMPARE(showDelayChangedSpy.count(), 2);
     QCOMPARE(showDelayChangedSpy.last().first().toInt(), 250);
-    
+
     // Setting the same delay should not emit the signal
     m_tooltip->setShowDelay(250);
     QCOMPARE(showDelayChangedSpy.count(), 2);
@@ -274,19 +277,19 @@ void FluentTooltipTest::testShowDelay() {
 void FluentTooltipTest::testHideDelay() {
     // Test setting and getting hide delay
     QSignalSpy hideDelayChangedSpy(m_tooltip, &FluentTooltip::hideDelayChanged);
-    
-    QCOMPARE(m_tooltip->hideDelay(), 100); // Default delay
-    
+
+    QCOMPARE(m_tooltip->hideDelay(), 100);  // Default delay
+
     m_tooltip->setHideDelay(500);
     QCOMPARE(m_tooltip->hideDelay(), 500);
     QCOMPARE(hideDelayChangedSpy.count(), 1);
     QCOMPARE(hideDelayChangedSpy.first().first().toInt(), 500);
-    
+
     m_tooltip->setHideDelay(50);
     QCOMPARE(m_tooltip->hideDelay(), 50);
     QCOMPARE(hideDelayChangedSpy.count(), 2);
     QCOMPARE(hideDelayChangedSpy.last().first().toInt(), 50);
-    
+
     // Setting the same delay should not emit the signal
     m_tooltip->setHideDelay(50);
     QCOMPARE(hideDelayChangedSpy.count(), 2);
@@ -294,9 +297,10 @@ void FluentTooltipTest::testHideDelay() {
 
 void FluentTooltipTest::testPersistent() {
     // Test persistent property
-    QSignalSpy persistentChangedSpy(m_tooltip, &FluentTooltip::persistentChanged);
+    QSignalSpy persistentChangedSpy(m_tooltip,
+                                    &FluentTooltip::persistentChanged);
 
-    QVERIFY(!m_tooltip->isPersistent()); // Default should be false
+    QVERIFY(!m_tooltip->isPersistent());  // Default should be false
 
     m_tooltip->setPersistent(true);
     QVERIFY(m_tooltip->isPersistent());
@@ -317,7 +321,7 @@ void FluentTooltipTest::testMaxSize() {
     // Test setting and getting max size
     QSignalSpy maxSizeChangedSpy(m_tooltip, &FluentTooltip::maxSizeChanged);
 
-    QCOMPARE(m_tooltip->maxSize(), QSize(300, 200)); // Default size
+    QCOMPARE(m_tooltip->maxSize(), QSize(300, 200));  // Default size
 
     QSize newSize1(400, 300);
     m_tooltip->setMaxSize(newSize1);
@@ -425,7 +429,7 @@ void FluentTooltipTest::testDelayedShow() {
     QSignalSpy aboutToShowSpy(m_tooltip, &FluentTooltip::aboutToShow);
 
     m_tooltip->setText("Delayed tooltip");
-    m_tooltip->setShowDelay(100); // Short delay for testing
+    m_tooltip->setShowDelay(100);  // Short delay for testing
 
     // Show tooltip - should be delayed
     m_tooltip->showAt(QPoint(100, 100));
@@ -445,8 +449,8 @@ void FluentTooltipTest::testDelayedHide() {
     QSignalSpy aboutToHideSpy(m_tooltip, &FluentTooltip::aboutToHide);
 
     m_tooltip->setText("Delayed hide tooltip");
-    m_tooltip->setHideDelay(100); // Short delay for testing
-    m_tooltip->setShowDelay(0); // No show delay
+    m_tooltip->setHideDelay(100);  // Short delay for testing
+    m_tooltip->setShowDelay(0);    // No show delay
 
     // Show tooltip immediately
     m_tooltip->showAt(QPoint(100, 100));
@@ -479,8 +483,8 @@ void FluentTooltipTest::testMouseEvents() {
     m_tooltip->setText("Mouse event tooltip");
     m_tooltip->showAt(QPoint(100, 100));
 
-    // For now, just verify that the tooltip can handle mouse events without crashing
-    // Direct event simulation may have compatibility issues
+    // For now, just verify that the tooltip can handle mouse events without
+    // crashing Direct event simulation may have compatibility issues
     QVERIFY(true);
 }
 
@@ -492,7 +496,8 @@ void FluentTooltipTest::testPropertyChangeSignals() {
     QSignalSpy themeChangedSpy(m_tooltip, &FluentTooltip::themeChanged);
     QSignalSpy showDelayChangedSpy(m_tooltip, &FluentTooltip::showDelayChanged);
     QSignalSpy hideDelayChangedSpy(m_tooltip, &FluentTooltip::hideDelayChanged);
-    QSignalSpy persistentChangedSpy(m_tooltip, &FluentTooltip::persistentChanged);
+    QSignalSpy persistentChangedSpy(m_tooltip,
+                                    &FluentTooltip::persistentChanged);
     QSignalSpy maxSizeChangedSpy(m_tooltip, &FluentTooltip::maxSizeChanged);
 
     // Change properties and verify signals
@@ -595,7 +600,8 @@ void FluentTooltipTest::testAccessibility() {
     m_tooltip->setText("Accessible tooltip");
     m_tooltip->setTitle("Accessibility Test");
 
-    // Test that tooltip can be created and used without accessibility-related crashes
+    // Test that tooltip can be created and used without accessibility-related
+    // crashes
     m_tooltip->showAt(QPoint(100, 100));
     m_tooltip->hide();
 
@@ -611,13 +617,14 @@ void FluentTooltipTest::testThemeIntegration() {
     auto originalMode = theme.mode();
 
     // Change theme mode
-    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light) ?
-                   FluentQt::Styling::FluentThemeMode::Dark :
-                   FluentQt::Styling::FluentThemeMode::Light;
+    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light)
+                       ? FluentQt::Styling::FluentThemeMode::Dark
+                       : FluentQt::Styling::FluentThemeMode::Light;
     theme.setMode(newMode);
 
-    // Tooltip should update its appearance (this would require checking internal styling)
-    // For now, just verify the tooltip still functions correctly
+    // Tooltip should update its appearance (this would require checking
+    // internal styling) For now, just verify the tooltip still functions
+    // correctly
     QSignalSpy textChangedSpy(m_tooltip, &FluentTooltip::textChanged);
     m_tooltip->setText("Theme test tooltip");
     QCOMPARE(m_tooltip->text(), QString("Theme test tooltip"));

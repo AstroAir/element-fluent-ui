@@ -1,40 +1,41 @@
 // src/Components/FluentNotification.cpp
 #include "FluentQt/Components/FluentNotification.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPainter>
-#include <QStyleOption>
-#include <QMouseEvent>
 #include <QApplication>
-#include <QScreen>
-#include <QFontMetrics>
 #include <QDebug>
+#include <QFontMetrics>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QScreen>
+#include <QStyleOption>
+#include <QVBoxLayout>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentNotification::FluentNotification(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-    , m_autoHideTimer(new QTimer(this))
-{
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)),
+      m_autoHideTimer(new QTimer(this)) {
     setupUI();
     setupAnimations();
     updateColors();
-    
+
     setFixedWidth(360);
     setAttribute(Qt::WA_DeleteOnClose);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-    
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint |
+                   Qt::WindowStaysOnTopHint);
+
     // Connect theme changes
     auto& theme = Styling::FluentTheme::instance();
-    connect(&theme, &Styling::FluentTheme::themeChanged, this, &FluentNotification::updateColors);
+    connect(&theme, &Styling::FluentTheme::themeChanged, this,
+            &FluentNotification::updateColors);
 }
 
-FluentNotification::FluentNotification(FluentNotificationType type, const QString& title, 
-                                     const QString& message, QWidget* parent)
-    : FluentNotification(parent)
-{
+FluentNotification::FluentNotification(FluentNotificationType type,
+                                       const QString& title,
+                                       const QString& message, QWidget* parent)
+    : FluentNotification(parent) {
     setType(type);
     setTitle(title);
     setMessage(message);
@@ -47,11 +48,12 @@ void FluentNotification::setupUI() {
     m_opacityEffect = new QGraphicsOpacityEffect(this);
     m_opacityEffect->setOpacity(1.0);
     setGraphicsEffect(m_opacityEffect);
-    
+
     // Setup auto-hide timer
     m_autoHideTimer->setSingleShot(true);
-    connect(m_autoHideTimer, &QTimer::timeout, this, &FluentNotification::onAutoHideTimeout);
-    
+    connect(m_autoHideTimer, &QTimer::timeout, this,
+            &FluentNotification::onAutoHideTimeout);
+
     setMinimumHeight(64);
     setMaximumHeight(200);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
@@ -62,19 +64,19 @@ void FluentNotification::setupAnimations() {
     m_showAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
     m_showAnimation->setDuration(300);
     m_showAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_showAnimation, &QPropertyAnimation::finished, this, &FluentNotification::onShowAnimationFinished);
-    
+    connect(m_showAnimation, &QPropertyAnimation::finished, this,
+            &FluentNotification::onShowAnimationFinished);
+
     // Hide animation
     m_hideAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
     m_hideAnimation->setDuration(200);
     m_hideAnimation->setEasingCurve(QEasingCurve::InCubic);
-    connect(m_hideAnimation, &QPropertyAnimation::finished, this, &FluentNotification::onHideAnimationFinished);
+    connect(m_hideAnimation, &QPropertyAnimation::finished, this,
+            &FluentNotification::onHideAnimationFinished);
 }
 
 // Type and content
-FluentNotificationType FluentNotification::type() const {
-    return m_type;
-}
+FluentNotificationType FluentNotification::type() const { return m_type; }
 
 void FluentNotification::setType(FluentNotificationType type) {
     if (m_type != type) {
@@ -85,9 +87,7 @@ void FluentNotification::setType(FluentNotificationType type) {
     }
 }
 
-QString FluentNotification::title() const {
-    return m_title;
-}
+QString FluentNotification::title() const { return m_title; }
 
 void FluentNotification::setTitle(const QString& title) {
     if (m_title != title) {
@@ -99,9 +99,7 @@ void FluentNotification::setTitle(const QString& title) {
     }
 }
 
-QString FluentNotification::message() const {
-    return m_message;
-}
+QString FluentNotification::message() const { return m_message; }
 
 void FluentNotification::setMessage(const QString& message) {
     if (m_message != message) {
@@ -113,9 +111,7 @@ void FluentNotification::setMessage(const QString& message) {
     }
 }
 
-QIcon FluentNotification::icon() const {
-    return m_customIcon;
-}
+QIcon FluentNotification::icon() const { return m_customIcon; }
 
 void FluentNotification::setIcon(const QIcon& icon) {
     if (m_customIcon.cacheKey() != icon.cacheKey()) {
@@ -126,9 +122,7 @@ void FluentNotification::setIcon(const QIcon& icon) {
 }
 
 // Behavior
-int FluentNotification::duration() const {
-    return m_duration;
-}
+int FluentNotification::duration() const { return m_duration; }
 
 void FluentNotification::setDuration(int milliseconds) {
     if (m_duration != milliseconds) {
@@ -137,9 +131,7 @@ void FluentNotification::setDuration(int milliseconds) {
     }
 }
 
-bool FluentNotification::isClosable() const {
-    return m_closable;
-}
+bool FluentNotification::isClosable() const { return m_closable; }
 
 void FluentNotification::setClosable(bool closable) {
     if (m_closable != closable) {
@@ -150,9 +142,7 @@ void FluentNotification::setClosable(bool closable) {
     }
 }
 
-bool FluentNotification::isPersistent() const {
-    return m_persistent;
-}
+bool FluentNotification::isPersistent() const { return m_persistent; }
 
 void FluentNotification::setPersistent(bool persistent) {
     if (m_persistent != persistent) {
@@ -170,32 +160,32 @@ void FluentNotification::addAction(const FluentNotificationAction& action) {
     update();
 }
 
-void FluentNotification::addAction(const QString& text, std::function<void()> callback) {
+void FluentNotification::addAction(const QString& text,
+                                   std::function<void()> callback) {
     addAction(FluentNotificationAction(text, callback));
 }
 
-void FluentNotification::addAction(const QString& text, const QIcon& icon, std::function<void()> callback) {
+void FluentNotification::addAction(const QString& text, const QIcon& icon,
+                                   std::function<void()> callback) {
     addAction(FluentNotificationAction(text, icon, callback));
 }
 
 void FluentNotification::clearActions() {
     m_actions.clear();
-    
+
     // Clean up action buttons
     for (QPushButton* button : m_actionButtons) {
         button->deleteLater();
     }
     m_actionButtons.clear();
-    
+
     m_layoutDirty = true;
     updateGeometry();
     update();
 }
 
 // Animation and display
-qreal FluentNotification::opacity() const {
-    return m_currentOpacity;
-}
+qreal FluentNotification::opacity() const { return m_currentOpacity; }
 
 void FluentNotification::setOpacity(qreal opacity) {
     if (!qFuzzyCompare(m_currentOpacity, opacity)) {
@@ -210,11 +200,11 @@ void FluentNotification::setOpacity(qreal opacity) {
 void FluentNotification::show() {
     QWidget::show();
     emit aboutToShow();
-    
+
     if (!m_persistent && m_duration > 0) {
         startAutoHide();
     }
-    
+
     emit shown();
 }
 
@@ -235,64 +225,65 @@ void FluentNotification::close() {
 QSize FluentNotification::sizeHint() const {
     QFontMetrics titleFm(font());
     QFontMetrics messageFm(font());
-    
+
     int width = 360;
-    int height = 16; // Top padding
-    
+    int height = 16;  // Top padding
+
     // Icon space
     if (!getTypeIcon().isNull() || !m_customIcon.isNull()) {
-        height = qMax(height, 48 + 16); // Icon height + padding
+        height = qMax(height, 48 + 16);  // Icon height + padding
     }
-    
+
     // Title height
     if (!m_title.isEmpty()) {
         height += titleFm.height() + 4;
     }
-    
+
     // Message height
     if (!m_message.isEmpty()) {
-        QRect textRect(0, 0, width - 80, 0); // Account for icon and padding
-        QRect boundingRect = messageFm.boundingRect(textRect, Qt::TextWordWrap, m_message);
+        QRect textRect(0, 0, width - 80, 0);  // Account for icon and padding
+        QRect boundingRect =
+            messageFm.boundingRect(textRect, Qt::TextWordWrap, m_message);
         height += boundingRect.height() + 4;
     }
-    
+
     // Actions height
     if (!m_actions.isEmpty()) {
-        height += 32 + 8; // Button height + spacing
+        height += 32 + 8;  // Button height + spacing
     }
-    
-    height += 16; // Bottom padding
-    
+
+    height += 16;  // Bottom padding
+
     return QSize(width, qMax(height, 64));
 }
 
-QSize FluentNotification::minimumSizeHint() const {
-    return QSize(300, 64);
-}
+QSize FluentNotification::minimumSizeHint() const { return QSize(300, 64); }
 
 // Public slots
 void FluentNotification::showAnimated() {
-    if (m_showing || isVisible()) return;
-    
+    if (m_showing || isVisible())
+        return;
+
     m_showing = true;
     m_hiding = false;
-    
+
     setOpacity(0.0);
     show();
-    
+
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
     m_showAnimation->start();
 }
 
 void FluentNotification::hideAnimated() {
-    if (m_hiding || !isVisible()) return;
-    
+    if (m_hiding || !isVisible())
+        return;
+
     m_hiding = true;
     m_showing = false;
-    
+
     stopAutoHide();
-    
+
     m_hideAnimation->setStartValue(opacity());
     m_hideAnimation->setEndValue(0.0);
     m_hideAnimation->start();
@@ -304,9 +295,7 @@ void FluentNotification::startAutoHide() {
     }
 }
 
-void FluentNotification::stopAutoHide() {
-    m_autoHideTimer->stop();
-}
+void FluentNotification::stopAutoHide() { m_autoHideTimer->stop(); }
 
 // Protected methods - Event handling
 void FluentNotification::paintEvent(QPaintEvent* event) {
@@ -350,10 +339,13 @@ void FluentNotification::paintEvent(QPaintEvent* event) {
 
         QRect messageRect = getTextRect();
         if (!m_title.isEmpty()) {
-            messageRect.setTop(messageRect.top() + painter.fontMetrics().height() + 4);
+            messageRect.setTop(messageRect.top() +
+                               painter.fontMetrics().height() + 4);
         }
 
-        painter.drawText(messageRect, Qt::TextWordWrap | Qt::AlignLeft | Qt::AlignTop, m_message);
+        painter.drawText(messageRect,
+                         Qt::TextWordWrap | Qt::AlignLeft | Qt::AlignTop,
+                         m_message);
     }
 
     // Paint close button
@@ -372,9 +364,11 @@ void FluentNotification::paintEvent(QPaintEvent* event) {
         // Draw X
         int margin = 4;
         painter.drawLine(closeRect.left() + margin, closeRect.top() + margin,
-                        closeRect.right() - margin, closeRect.bottom() - margin);
+                         closeRect.right() - margin,
+                         closeRect.bottom() - margin);
         painter.drawLine(closeRect.right() - margin, closeRect.top() + margin,
-                        closeRect.left() + margin, closeRect.bottom() - margin);
+                         closeRect.left() + margin,
+                         closeRect.bottom() - margin);
     }
 }
 
@@ -391,7 +385,7 @@ void FluentNotification::mousePressEvent(QMouseEvent* event) {
 
 void FluentNotification::enterEvent(QEnterEvent* event) {
     m_hovered = true;
-    stopAutoHide(); // Pause auto-hide when hovered
+    stopAutoHide();  // Pause auto-hide when hovered
     update();
     Core::FluentComponent::enterEvent(event);
 }
@@ -399,7 +393,7 @@ void FluentNotification::enterEvent(QEnterEvent* event) {
 void FluentNotification::leaveEvent(QEvent* event) {
     m_hovered = false;
     if (!m_persistent && m_duration > 0) {
-        startAutoHide(); // Resume auto-hide when not hovered
+        startAutoHide();  // Resume auto-hide when not hovered
     }
     update();
     Core::FluentComponent::leaveEvent(event);
@@ -411,13 +405,12 @@ void FluentNotification::resizeEvent(QResizeEvent* event) {
 }
 
 // Private slots
-void FluentNotification::onCloseButtonClicked() {
-    close();
-}
+void FluentNotification::onCloseButtonClicked() { close(); }
 
 void FluentNotification::onActionButtonClicked() {
     QPushButton* button = qobject_cast<QPushButton*>(sender());
-    if (!button) return;
+    if (!button)
+        return;
 
     int index = m_actionButtons.indexOf(button);
     if (index >= 0 && index < m_actions.size()) {
@@ -429,9 +422,7 @@ void FluentNotification::onActionButtonClicked() {
     }
 }
 
-void FluentNotification::onAutoHideTimeout() {
-    hideAnimated();
-}
+void FluentNotification::onAutoHideTimeout() { hideAnimated(); }
 
 void FluentNotification::onShowAnimationFinished() {
     m_showing = false;
@@ -444,9 +435,7 @@ void FluentNotification::onHideAnimationFinished() {
     close();
 }
 
-void FluentNotification::updateColors() {
-    update();
-}
+void FluentNotification::updateColors() { update(); }
 
 // Private utility methods
 void FluentNotification::updateLayout() {
@@ -456,16 +445,19 @@ void FluentNotification::updateLayout() {
     if (!getTypeIcon().isNull() || !m_customIcon.isNull()) {
         m_iconRect = QRect(contentRect.left(), contentRect.top(), 32, 32);
         m_textRect = QRect(m_iconRect.right() + 12, contentRect.top(),
-                          contentRect.width() - 44 - (m_closable ? 24 : 0), contentRect.height());
+                           contentRect.width() - 44 - (m_closable ? 24 : 0),
+                           contentRect.height());
     } else {
         m_iconRect = QRect();
         m_textRect = QRect(contentRect.left(), contentRect.top(),
-                          contentRect.width() - (m_closable ? 24 : 0), contentRect.height());
+                           contentRect.width() - (m_closable ? 24 : 0),
+                           contentRect.height());
     }
 
     // Close button
     if (m_closable) {
-        m_closeButtonRect = QRect(contentRect.right() - 16, contentRect.top(), 16, 16);
+        m_closeButtonRect =
+            QRect(contentRect.right() - 16, contentRect.top(), 16, 16);
     } else {
         m_closeButtonRect = QRect();
     }
@@ -473,8 +465,9 @@ void FluentNotification::updateLayout() {
     // Actions area
     if (!m_actions.isEmpty()) {
         int actionsHeight = 32;
-        m_actionsRect = QRect(m_textRect.left(), contentRect.bottom() - actionsHeight,
-                             m_textRect.width(), actionsHeight);
+        m_actionsRect =
+            QRect(m_textRect.left(), contentRect.bottom() - actionsHeight,
+                  m_textRect.width(), actionsHeight);
         m_textRect.setBottom(m_actionsRect.top() - 8);
     } else {
         m_actionsRect = QRect();
@@ -483,9 +476,7 @@ void FluentNotification::updateLayout() {
     m_layoutDirty = false;
 }
 
-void FluentNotification::updateTypeIcon() {
-    update();
-}
+void FluentNotification::updateTypeIcon() { update(); }
 
 void FluentNotification::updateActionButtons() {
     // Clean up existing buttons
@@ -502,7 +493,8 @@ void FluentNotification::updateActionButtons() {
         }
 
         button->setFixedHeight(28);
-        connect(button, &QPushButton::clicked, this, &FluentNotification::onActionButtonClicked);
+        connect(button, &QPushButton::clicked, this,
+                &FluentNotification::onActionButtonClicked);
 
         m_actionButtons.append(button);
     }
@@ -573,17 +565,11 @@ QRect FluentNotification::getContentRect() const {
     return rect().adjusted(16, 16, -16, -16);
 }
 
-QRect FluentNotification::getIconRect() const {
-    return m_iconRect;
-}
+QRect FluentNotification::getIconRect() const { return m_iconRect; }
 
-QRect FluentNotification::getTextRect() const {
-    return m_textRect;
-}
+QRect FluentNotification::getTextRect() const { return m_textRect; }
 
-QRect FluentNotification::getActionsRect() const {
-    return m_actionsRect;
-}
+QRect FluentNotification::getActionsRect() const { return m_actionsRect; }
 
 QRect FluentNotification::getCloseButtonRect() const {
     return m_closeButtonRect;
@@ -596,24 +582,22 @@ FluentNotificationManager& FluentNotificationManager::instance() {
 }
 
 FluentNotificationManager::FluentNotificationManager(QObject* parent)
-    : QObject(parent)
-    , m_layoutTimer(new QTimer(this))
-{
+    : QObject(parent), m_layoutTimer(new QTimer(this)) {
     m_layoutTimer->setSingleShot(true);
     m_layoutTimer->setInterval(50);
-    connect(m_layoutTimer, &QTimer::timeout, this, &FluentNotificationManager::updateLayout);
+    connect(m_layoutTimer, &QTimer::timeout, this,
+            &FluentNotificationManager::updateLayout);
 }
 
-FluentNotificationManager::~FluentNotificationManager() {
-    clear();
-}
+FluentNotificationManager::~FluentNotificationManager() { clear(); }
 
 // Configuration
 FluentNotificationPosition FluentNotificationManager::position() const {
     return m_position;
 }
 
-void FluentNotificationManager::setPosition(FluentNotificationPosition position) {
+void FluentNotificationManager::setPosition(
+    FluentNotificationPosition position) {
     if (m_position != position) {
         m_position = position;
         positionNotifications();
@@ -625,16 +609,15 @@ FluentNotificationAnimation FluentNotificationManager::animation() const {
     return m_animation;
 }
 
-void FluentNotificationManager::setAnimation(FluentNotificationAnimation animation) {
+void FluentNotificationManager::setAnimation(
+    FluentNotificationAnimation animation) {
     if (m_animation != animation) {
         m_animation = animation;
         emit animationChanged(animation);
     }
 }
 
-int FluentNotificationManager::maxVisible() const {
-    return m_maxVisible;
-}
+int FluentNotificationManager::maxVisible() const { return m_maxVisible; }
 
 void FluentNotificationManager::setMaxVisible(int count) {
     if (m_maxVisible != count) {
@@ -644,9 +627,7 @@ void FluentNotificationManager::setMaxVisible(int count) {
     }
 }
 
-int FluentNotificationManager::spacing() const {
-    return m_spacing;
-}
+int FluentNotificationManager::spacing() const { return m_spacing; }
 
 void FluentNotificationManager::setSpacing(int spacing) {
     if (m_spacing != spacing) {
@@ -656,9 +637,7 @@ void FluentNotificationManager::setSpacing(int spacing) {
     }
 }
 
-QMargins FluentNotificationManager::margins() const {
-    return m_margins;
-}
+QMargins FluentNotificationManager::margins() const { return m_margins; }
 
 void FluentNotificationManager::setMargins(const QMargins& margins) {
     if (m_margins != margins) {
@@ -669,12 +648,15 @@ void FluentNotificationManager::setMargins(const QMargins& margins) {
 }
 
 // Notification management
-FluentNotification* FluentNotificationManager::show(FluentNotificationType type, const QString& title,
-                                                   const QString& message, int duration) {
+FluentNotification* FluentNotificationManager::show(FluentNotificationType type,
+                                                    const QString& title,
+                                                    const QString& message,
+                                                    int duration) {
     auto* notification = new FluentNotification(type, title, message);
     notification->setDuration(duration);
 
-    connect(notification, &FluentNotification::closed, this, &FluentNotificationManager::onNotificationClosed);
+    connect(notification, &FluentNotification::closed, this,
+            &FluentNotificationManager::onNotificationClosed);
 
     if (m_visibleNotifications.size() < m_maxVisible) {
         m_visibleNotifications.append(notification);
@@ -688,24 +670,31 @@ FluentNotification* FluentNotificationManager::show(FluentNotificationType type,
     return notification;
 }
 
-FluentNotification* FluentNotificationManager::showInfo(const QString& title, const QString& message, int duration) {
+FluentNotification* FluentNotificationManager::showInfo(const QString& title,
+                                                        const QString& message,
+                                                        int duration) {
     return show(FluentNotificationType::Info, title, message, duration);
 }
 
-FluentNotification* FluentNotificationManager::showSuccess(const QString& title, const QString& message, int duration) {
+FluentNotification* FluentNotificationManager::showSuccess(
+    const QString& title, const QString& message, int duration) {
     return show(FluentNotificationType::Success, title, message, duration);
 }
 
-FluentNotification* FluentNotificationManager::showWarning(const QString& title, const QString& message, int duration) {
+FluentNotification* FluentNotificationManager::showWarning(
+    const QString& title, const QString& message, int duration) {
     return show(FluentNotificationType::Warning, title, message, duration);
 }
 
-FluentNotification* FluentNotificationManager::showError(const QString& title, const QString& message, int duration) {
+FluentNotification* FluentNotificationManager::showError(const QString& title,
+                                                         const QString& message,
+                                                         int duration) {
     return show(FluentNotificationType::Error, title, message, duration);
 }
 
 void FluentNotificationManager::hide(FluentNotification* notification) {
-    if (!notification) return;
+    if (!notification)
+        return;
 
     notification->hideAnimated();
 }
@@ -735,19 +724,19 @@ int FluentNotificationManager::queuedCount() const {
     return m_queuedNotifications.size();
 }
 
-QList<FluentNotification*> FluentNotificationManager::visibleNotifications() const {
+QList<FluentNotification*> FluentNotificationManager::visibleNotifications()
+    const {
     return m_visibleNotifications;
 }
 
 // Public slots
-void FluentNotificationManager::updateLayout() {
-    positionNotifications();
-}
+void FluentNotificationManager::updateLayout() { positionNotifications(); }
 
 // Private slots
 void FluentNotificationManager::onNotificationClosed() {
     auto* notification = qobject_cast<FluentNotification*>(sender());
-    if (!notification) return;
+    if (!notification)
+        return;
 
     m_visibleNotifications.removeAll(notification);
     emit notificationHidden(notification);
@@ -758,7 +747,8 @@ void FluentNotificationManager::onNotificationClosed() {
 }
 
 void FluentNotificationManager::processQueue() {
-    while (m_visibleNotifications.size() < m_maxVisible && !m_queuedNotifications.isEmpty()) {
+    while (m_visibleNotifications.size() < m_maxVisible &&
+           !m_queuedNotifications.isEmpty()) {
         auto* notification = m_queuedNotifications.dequeue();
         m_visibleNotifications.append(notification);
         animateNotification(notification, true);
@@ -775,8 +765,10 @@ void FluentNotificationManager::positionNotifications() {
     }
 }
 
-void FluentNotificationManager::animateNotification(FluentNotification* notification, bool show) {
-    if (!notification) return;
+void FluentNotificationManager::animateNotification(
+    FluentNotification* notification, bool show) {
+    if (!notification)
+        return;
 
     if (show) {
         notification->showAnimated();
@@ -785,14 +777,15 @@ void FluentNotificationManager::animateNotification(FluentNotification* notifica
     }
 }
 
-QPoint FluentNotificationManager::calculateNotificationPosition(int index) const {
+QPoint FluentNotificationManager::calculateNotificationPosition(
+    int index) const {
     QWidget* parentWidget = getParentWidget();
     if (!parentWidget) {
         return QPoint(100, 100 + index * 80);
     }
 
     QRect parentRect = parentWidget->geometry();
-    QSize notificationSize(360, 80); // Default notification size
+    QSize notificationSize(360, 80);  // Default notification size
 
     int x, y;
 
@@ -810,7 +803,8 @@ QPoint FluentNotificationManager::calculateNotificationPosition(int index) const
         case FluentNotificationPosition::TopRight:
         case FluentNotificationPosition::BottomRight:
         default:
-            x = parentRect.right() - notificationSize.width() - m_margins.right();
+            x = parentRect.right() - notificationSize.width() -
+                m_margins.right();
             break;
     }
 
@@ -819,18 +813,23 @@ QPoint FluentNotificationManager::calculateNotificationPosition(int index) const
         case FluentNotificationPosition::TopLeft:
         case FluentNotificationPosition::TopCenter:
         case FluentNotificationPosition::TopRight:
-            y = parentRect.top() + m_margins.top() + index * (notificationSize.height() + m_spacing);
+            y = parentRect.top() + m_margins.top() +
+                index * (notificationSize.height() + m_spacing);
             break;
         case FluentNotificationPosition::Center:
-            y = parentRect.center().y() - (m_visibleNotifications.size() * (notificationSize.height() + m_spacing)) / 2
-                + index * (notificationSize.height() + m_spacing);
+            y = parentRect.center().y() -
+                (m_visibleNotifications.size() *
+                 (notificationSize.height() + m_spacing)) /
+                    2 +
+                index * (notificationSize.height() + m_spacing);
             break;
         case FluentNotificationPosition::BottomLeft:
         case FluentNotificationPosition::BottomCenter:
         case FluentNotificationPosition::BottomRight:
         default:
-            y = parentRect.bottom() - m_margins.bottom() - notificationSize.height()
-                - index * (notificationSize.height() + m_spacing);
+            y = parentRect.bottom() - m_margins.bottom() -
+                notificationSize.height() -
+                index * (notificationSize.height() + m_spacing);
             break;
     }
 
@@ -856,4 +855,4 @@ QWidget* FluentNotificationManager::getParentWidget() const {
     return nullptr;
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

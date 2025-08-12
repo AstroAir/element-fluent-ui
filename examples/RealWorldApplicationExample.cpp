@@ -1,61 +1,61 @@
 // examples/RealWorldApplicationExample.cpp
-#include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGridLayout>
-#include <QSplitter>
-#include <QStackedWidget>
-#include <QMenuBar>
-#include <QStatusBar>
-#include <QToolBar>
 #include <QAction>
 #include <QActionGroup>
-#include <QLabel>
-#include <QTextEdit>
-#include <QListWidget>
-#include <QTableWidget>
-#include <QTreeWidget>
-#include <QHeaderView>
-#include <QTimer>
+#include <QApplication>
 #include <QDateTime>
-#include <QRandomGenerator>
 #include <QFileDialog>
+#include <QFormLayout>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QInputDialog>
+#include <QLabel>
+#include <QListWidget>
+#include <QMainWindow>
+#include <QMenuBar>
 #include <QMessageBox>
 #include <QProgressBar>
-#include <QSlider>
-#include <QSpinBox>
-#include <QGroupBox>
+#include <QRandomGenerator>
 #include <QScrollArea>
 #include <QSettings>
-#include <QInputDialog>
-#include <QFormLayout>
+#include <QSlider>
+#include <QSpinBox>
+#include <QSplitter>
+#include <QStackedWidget>
+#include <QStatusBar>
+#include <QTableWidget>
+#include <QTextEdit>
+#include <QTimer>
+#include <QToolBar>
+#include <QTreeWidget>
+#include <QVBoxLayout>
 
-#include "FluentQt/Components/FluentButton.h"
-#include "FluentQt/Components/FluentCard.h"
-#include "FluentQt/Components/FluentPanel.h"
-#include "FluentQt/Components/FluentNavigationView.h"
-#include "FluentQt/Components/FluentTabView.h"
-#include "FluentQt/Components/FluentSplitter.h"
-#include "FluentQt/Components/FluentTextInput.h"
-#include "FluentQt/Components/FluentComboBox.h"
-#include "FluentQt/Components/FluentCheckBox.h"
-#include "FluentQt/Components/FluentProgressBar.h"
-#include "FluentQt/Components/FluentTreeView.h"
-#include "FluentQt/Components/FluentChartView.h"
-#include "FluentQt/Components/FluentRichTextEditor.h"
-#include "FluentQt/Components/FluentCalendar.h"
-#include "FluentQt/Components/FluentBreadcrumb.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Components/FluentBreadcrumb.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCalendar.h"
+#include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentChartView.h"
+#include "FluentQt/Components/FluentCheckBox.h"
+#include "FluentQt/Components/FluentComboBox.h"
+#include "FluentQt/Components/FluentNavigationView.h"
+#include "FluentQt/Components/FluentPanel.h"
+#include "FluentQt/Components/FluentProgressBar.h"
+#include "FluentQt/Components/FluentRichTextEditor.h"
+#include "FluentQt/Components/FluentSplitter.h"
+#include "FluentQt/Components/FluentTabView.h"
+#include "FluentQt/Components/FluentTextInput.h"
+#include "FluentQt/Components/FluentTreeView.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt;
 
 /**
  * Real-world Application Example: Project Management Dashboard
- * 
+ *
  * This example demonstrates a complete mini-application that showcases:
  * - Professional application architecture
  * - Integration of multiple FluentQt components
@@ -82,9 +82,7 @@ public:
         setupAccessibility();
     }
 
-    ~ProjectManagementApp() {
-        saveApplicationSettings();
-    }
+    ~ProjectManagementApp() { saveApplicationSettings(); }
 
 private slots:
     // File operations
@@ -93,36 +91,36 @@ private slots:
     void saveProject();
     void exportProject();
     void importData();
-    
+
     // View operations
     void toggleTheme();
     void toggleFullScreen();
     void showPreferences();
     void showAbout();
-    
+
     // Navigation
     void onNavigationChanged(int index);
     void onTabChanged(int index);
-    
+
     // Project management
     void addTask();
     void editTask();
     void deleteTask();
     void markTaskComplete();
     void updateTaskProgress();
-    
+
     // Team management
     void addTeamMember();
     void editTeamMember();
     void removeTeamMember();
     void assignTask();
-    
+
     // Analytics and reporting
     void generateReport();
     void exportAnalytics();
     void refreshDashboard();
     void updateMetrics();
-    
+
     // Real-time updates
     void onDataChanged();
     void onNotificationReceived();
@@ -138,13 +136,13 @@ private:
     void setupTheme();
     void setupPerformanceMonitoring();
     void setupAccessibility();
-    
+
     // Data management
     void loadApplicationData();
     void saveApplicationSettings();
     void loadProjectData();
     void saveProjectData();
-    
+
     // UI creation methods
     QWidget* createDashboardPage();
     QWidget* createProjectsPage();
@@ -153,28 +151,28 @@ private:
     QWidget* createAnalyticsPage();
     QWidget* createCalendarPage();
     QWidget* createSettingsPage();
-    
+
     // Dashboard components
     QWidget* createMetricsOverview();
     QWidget* createRecentActivity();
     QWidget* createQuickActions();
     QWidget* createProjectStatus();
-    
+
     // Task management components
     QWidget* createTaskList();
     QWidget* createTaskDetails();
     QWidget* createTaskFilters();
-    
+
     // Team management components
     QWidget* createTeamOverview();
     QWidget* createMemberDetails();
     QWidget* createTeamChat();
-    
+
     // Analytics components
     QWidget* createPerformanceCharts();
     QWidget* createProgressReports();
     QWidget* createTimeTracking();
-    
+
     // Helper methods
     void updateDashboardMetrics();
     void refreshTaskList();
@@ -189,25 +187,25 @@ private:
     Components::FluentNavigationView* m_navigationView{nullptr};
     Components::FluentTabView* m_mainTabs{nullptr};
     Components::FluentSplitter* m_mainSplitter{nullptr};
-    
+
     // Menu and toolbar
     QMenuBar* m_menuBar{nullptr};
     QToolBar* m_toolBar{nullptr};
     QStatusBar* m_statusBar{nullptr};
-    
+
     // Status bar components
     QLabel* m_statusLabel{nullptr};
     QLabel* m_projectLabel{nullptr};
     QLabel* m_userLabel{nullptr};
     Components::FluentProgressBar* m_operationProgress{nullptr};
-    
+
     // Dashboard components
     QWidget* m_dashboardPage{nullptr};
     QGridLayout* m_metricsLayout{nullptr};
     QList<Components::FluentCard*> m_metricCards;
     QListWidget* m_activityList{nullptr};
     Components::FluentPanel* m_quickActionsPanel{nullptr};
-    
+
     // Project management
     QWidget* m_projectsPage{nullptr};
     QWidget* m_tasksPage{nullptr};
@@ -215,47 +213,47 @@ private:
     Components::FluentTextInput* m_taskSearch{nullptr};
     Components::FluentComboBox* m_taskFilter{nullptr};
     Components::FluentRichTextEditor* m_taskEditor{nullptr};
-    
+
     // Team management
     QWidget* m_teamPage{nullptr};
     Components::FluentTreeView* m_teamTree{nullptr};
     QTextEdit* m_teamChat{nullptr};
     Components::FluentCard* m_memberCard{nullptr};
-    
+
     // Analytics
     QWidget* m_analyticsPage{nullptr};
     Components::FluentChartView* m_performanceChart{nullptr};
     Components::FluentChartView* m_progressChart{nullptr};
     QTableWidget* m_timeTrackingTable{nullptr};
-    
+
     // Calendar and scheduling
     QWidget* m_calendarPage{nullptr};
     Components::FluentCalendar* m_calendar{nullptr};
     QListWidget* m_eventsList{nullptr};
-    
+
     // Settings
     QWidget* m_settingsPage{nullptr};
     Components::FluentComboBox* m_themeCombo{nullptr};
     Components::FluentCheckBox* m_notificationsCheck{nullptr};
     Components::FluentCheckBox* m_animationsCheck{nullptr};
     QSlider* m_refreshIntervalSlider{nullptr};
-    
+
     // Data and state management
     QTimer* m_refreshTimer{nullptr};
     QTimer* m_metricsTimer{nullptr};
     QTimer* m_notificationTimer{nullptr};
-    
+
     // Application state
     QString m_currentProject{"Sample Project"};
     QString m_currentUser{"John Doe"};
     bool m_darkMode{false};
     bool m_notificationsEnabled{true};
     bool m_animationsEnabled{true};
-    int m_refreshInterval{30}; // seconds
-    
+    int m_refreshInterval{30};  // seconds
+
     // Performance monitoring
     Core::FluentPerformanceMonitor* m_performanceMonitor{nullptr};
-    
+
     // Sample data
     struct Task {
         QString id;
@@ -267,7 +265,7 @@ private:
         QDateTime dueDate;
         QString priority;
     };
-    
+
     struct TeamMember {
         QString id;
         QString name;
@@ -277,11 +275,11 @@ private:
         QStringList skills;
         int tasksAssigned;
     };
-    
+
     QList<Task> m_tasks;
     QList<TeamMember> m_teamMembers;
     QStringList m_recentActivities;
-    
+
     // Metrics data
     struct ProjectMetrics {
         int totalTasks{0};
@@ -296,21 +294,22 @@ private:
 };
 
 void ProjectManagementApp::setupApplication() {
-    setWindowTitle("FluentQt Project Management - Real-world Application Example");
+    setWindowTitle(
+        "FluentQt Project Management - Real-world Application Example");
     setMinimumSize(1400, 900);
     resize(1600, 1000);
-    
+
     // Set application icon and properties
     setWindowIcon(QIcon(":/icons/app.png"));
-    
+
     // Enable high DPI support
     setAttribute(Qt::WA_AcceptTouchEvents);
-    
+
     // Set up application settings
     QSettings settings;
     restoreGeometry(settings.value("geometry").toByteArray());
     restoreState(settings.value("windowState").toByteArray());
-    
+
     m_darkMode = settings.value("darkMode", false).toBool();
     m_notificationsEnabled = settings.value("notifications", true).toBool();
     m_animationsEnabled = settings.value("animations", true).toBool();
@@ -319,69 +318,78 @@ void ProjectManagementApp::setupApplication() {
 
 void ProjectManagementApp::setupMenuBar() {
     m_menuBar = menuBar();
-    
+
     // File menu
     auto* fileMenu = m_menuBar->addMenu("&File");
-    
+
     auto* newAction = fileMenu->addAction("&New Project");
     newAction->setShortcut(QKeySequence::New);
     newAction->setStatusTip("Create a new project");
-    connect(newAction, &QAction::triggered, this, &ProjectManagementApp::newProject);
-    
+    connect(newAction, &QAction::triggered, this,
+            &ProjectManagementApp::newProject);
+
     auto* openAction = fileMenu->addAction("&Open Project");
     openAction->setShortcut(QKeySequence::Open);
     openAction->setStatusTip("Open an existing project");
-    connect(openAction, &QAction::triggered, this, &ProjectManagementApp::openProject);
-    
+    connect(openAction, &QAction::triggered, this,
+            &ProjectManagementApp::openProject);
+
     auto* saveAction = fileMenu->addAction("&Save Project");
     saveAction->setShortcut(QKeySequence::Save);
     saveAction->setStatusTip("Save the current project");
-    connect(saveAction, &QAction::triggered, this, &ProjectManagementApp::saveProject);
-    
+    connect(saveAction, &QAction::triggered, this,
+            &ProjectManagementApp::saveProject);
+
     fileMenu->addSeparator();
-    
+
     auto* exportAction = fileMenu->addAction("&Export...");
     exportAction->setStatusTip("Export project data");
-    connect(exportAction, &QAction::triggered, this, &ProjectManagementApp::exportProject);
-    
+    connect(exportAction, &QAction::triggered, this,
+            &ProjectManagementApp::exportProject);
+
     auto* importAction = fileMenu->addAction("&Import...");
     importAction->setStatusTip("Import project data");
-    connect(importAction, &QAction::triggered, this, &ProjectManagementApp::importData);
-    
+    connect(importAction, &QAction::triggered, this,
+            &ProjectManagementApp::importData);
+
     fileMenu->addSeparator();
-    
+
     auto* exitAction = fileMenu->addAction("E&xit");
     exitAction->setShortcut(QKeySequence::Quit);
     exitAction->setStatusTip("Exit the application");
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
-    
+
     // View menu
     auto* viewMenu = m_menuBar->addMenu("&View");
-    
+
     auto* themeAction = viewMenu->addAction("Toggle &Theme");
     themeAction->setShortcut(QKeySequence("Ctrl+T"));
     themeAction->setStatusTip("Switch between light and dark themes");
-    connect(themeAction, &QAction::triggered, this, &ProjectManagementApp::toggleTheme);
-    
+    connect(themeAction, &QAction::triggered, this,
+            &ProjectManagementApp::toggleTheme);
+
     auto* fullScreenAction = viewMenu->addAction("&Full Screen");
     fullScreenAction->setShortcut(QKeySequence::FullScreen);
     fullScreenAction->setStatusTip("Toggle full screen mode");
     fullScreenAction->setCheckable(true);
-    connect(fullScreenAction, &QAction::triggered, this, &ProjectManagementApp::toggleFullScreen);
-    
+    connect(fullScreenAction, &QAction::triggered, this,
+            &ProjectManagementApp::toggleFullScreen);
+
     viewMenu->addSeparator();
-    
+
     auto* preferencesAction = viewMenu->addAction("&Preferences");
     preferencesAction->setShortcut(QKeySequence::Preferences);
     preferencesAction->setStatusTip("Open application preferences");
-    connect(preferencesAction, &QAction::triggered, this, &ProjectManagementApp::showPreferences);
-    
+    connect(preferencesAction, &QAction::triggered, this,
+            &ProjectManagementApp::showPreferences);
+
     // Help menu
     auto* helpMenu = m_menuBar->addMenu("&Help");
-    
+
     auto* aboutAction = helpMenu->addAction("&About");
     aboutAction->setStatusTip("Show application information");
-    connect(aboutAction, &QAction::triggered, this, &ProjectManagementApp::showAbout);
+    connect(aboutAction, &QAction::triggered, this,
+            &ProjectManagementApp::showAbout);
 }
 
 void ProjectManagementApp::setupToolBar() {
@@ -391,24 +399,28 @@ void ProjectManagementApp::setupToolBar() {
     // Quick action buttons
     auto* newProjectBtn = new Components::FluentButton("New Project");
     newProjectBtn->setIcon(QIcon(":/icons/new.png"));
-    connect(newProjectBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::newProject);
+    connect(newProjectBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::newProject);
     m_toolBar->addWidget(newProjectBtn);
 
     auto* addTaskBtn = new Components::FluentButton("Add Task");
     addTaskBtn->setIcon(QIcon(":/icons/add.png"));
-    connect(addTaskBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::addTask);
+    connect(addTaskBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::addTask);
     m_toolBar->addWidget(addTaskBtn);
 
     auto* refreshBtn = new Components::FluentButton("Refresh");
     refreshBtn->setIcon(QIcon(":/icons/refresh.png"));
-    connect(refreshBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::refreshDashboard);
+    connect(refreshBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::refreshDashboard);
     m_toolBar->addWidget(refreshBtn);
 
     m_toolBar->addSeparator();
 
     auto* themeBtn = new Components::FluentButton("Toggle Theme");
     themeBtn->setIcon(QIcon(":/icons/theme.png"));
-    connect(themeBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::toggleTheme);
+    connect(themeBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::toggleTheme);
     m_toolBar->addWidget(themeBtn);
 }
 
@@ -438,7 +450,8 @@ void ProjectManagementApp::setupMainInterface() {
     // Create main navigation view
     m_navigationView = new Components::FluentNavigationView(this);
     m_navigationView->setHeader("Project Management");
-    m_navigationView->setDisplayMode(Components::FluentNavigationDisplayMode::Auto);
+    m_navigationView->setDisplayMode(
+        Components::FluentNavigationDisplayMode::Auto);
     m_navigationView->setBackButtonVisible(false);
     m_navigationView->setSettingsVisible(true);
 
@@ -504,8 +517,12 @@ QWidget* ProjectManagementApp::createDashboardPage() {
     layout->setSpacing(20);
 
     // Welcome header
-    auto* welcomeCard = new Components::FluentCard("Welcome to Project Management Dashboard");
-    welcomeCard->setSubtitle(QString("Managing %1 - %2").arg(m_currentProject, QDateTime::currentDateTime().toString("MMMM dd, yyyy")));
+    auto* welcomeCard =
+        new Components::FluentCard("Welcome to Project Management Dashboard");
+    welcomeCard->setSubtitle(
+        QString("Managing %1 - %2")
+            .arg(m_currentProject,
+                 QDateTime::currentDateTime().toString("MMMM dd, yyyy")));
     layout->addWidget(welcomeCard);
 
     // Main dashboard content
@@ -543,9 +560,12 @@ QWidget* ProjectManagementApp::createMetricsOverview() {
     panelLayout->addLayout(m_metricsLayout);
 
     // Create metric cards
-    QStringList metricTitles = {"Total Tasks", "Completed", "In Progress", "Team Members", "Project Progress", "Hours Logged"};
+    QStringList metricTitles = {"Total Tasks",      "Completed",
+                                "In Progress",      "Team Members",
+                                "Project Progress", "Hours Logged"};
     QStringList metricValues = {"24", "18", "6", "8", "75%", "156"};
-    QStringList metricColors = {"#0078d4", "#107c10", "#ff8c00", "#5c2d91", "#d13438", "#00bcf2"};
+    QStringList metricColors = {"#0078d4", "#107c10", "#ff8c00",
+                                "#5c2d91", "#d13438", "#00bcf2"};
 
     for (int i = 0; i < metricTitles.size(); ++i) {
         auto* metricCard = new Components::FluentCard();
@@ -556,7 +576,9 @@ QWidget* ProjectManagementApp::createMetricsOverview() {
         // Add visual indicator
         auto* cardLayout = new QVBoxLayout(metricCard);
         auto* valueLabel = new QLabel(metricValues[i]);
-        valueLabel->setStyleSheet(QString("font-size: 24px; font-weight: bold; color: %1;").arg(metricColors[i]));
+        valueLabel->setStyleSheet(
+            QString("font-size: 24px; font-weight: bold; color: %1;")
+                .arg(metricColors[i]));
         valueLabel->setAlignment(Qt::AlignCenter);
         cardLayout->addWidget(valueLabel);
 
@@ -596,15 +618,18 @@ QWidget* ProjectManagementApp::createQuickActions() {
 
     auto* addTaskBtn = new Components::FluentButton("Add New Task");
     addTaskBtn->setIcon(QIcon(":/icons/add.png"));
-    connect(addTaskBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::addTask);
+    connect(addTaskBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::addTask);
 
     auto* addMemberBtn = new Components::FluentButton("Add Team Member");
     addMemberBtn->setIcon(QIcon(":/icons/person.png"));
-    connect(addMemberBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::addTeamMember);
+    connect(addMemberBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::addTeamMember);
 
     auto* generateReportBtn = new Components::FluentButton("Generate Report");
     generateReportBtn->setIcon(QIcon(":/icons/report.png"));
-    connect(generateReportBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::generateReport);
+    connect(generateReportBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::generateReport);
 
     panelLayout->addWidget(addTaskBtn);
     panelLayout->addWidget(addMemberBtn);
@@ -655,10 +680,12 @@ QWidget* ProjectManagementApp::createTasksPage() {
     m_taskSearch->setPlaceholderText("Search tasks...");
 
     m_taskFilter = new Components::FluentComboBox();
-    m_taskFilter->addItems({"All Tasks", "Active", "Completed", "Overdue", "High Priority"});
+    m_taskFilter->addItems(
+        {"All Tasks", "Active", "Completed", "Overdue", "High Priority"});
 
     auto* addTaskBtn = new Components::FluentButton("Add Task");
-    connect(addTaskBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::addTask);
+    connect(addTaskBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::addTask);
 
     headerLayout->addWidget(new QLabel("Tasks:"));
     headerLayout->addWidget(m_taskSearch);
@@ -673,7 +700,8 @@ QWidget* ProjectManagementApp::createTasksPage() {
 
     // Task table
     m_taskTable = new QTableWidget(0, 6);
-    m_taskTable->setHorizontalHeaderLabels({"Title", "Assignee", "Status", "Progress", "Due Date", "Priority"});
+    m_taskTable->setHorizontalHeaderLabels(
+        {"Title", "Assignee", "Status", "Progress", "Due Date", "Priority"});
     m_taskTable->horizontalHeader()->setStretchLastSection(true);
     m_taskTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_taskTable->setAlternatingRowColors(true);
@@ -701,7 +729,8 @@ QWidget* ProjectManagementApp::createTeamPage() {
     headerLayout->addStretch();
 
     auto* addMemberBtn = new Components::FluentButton("Add Member");
-    connect(addMemberBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::addTeamMember);
+    connect(addMemberBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::addTeamMember);
     headerLayout->addWidget(addMemberBtn);
 
     layout->addLayout(headerLayout);
@@ -718,7 +747,8 @@ QWidget* ProjectManagementApp::createTeamPage() {
     auto* treeWidget = new QTreeWidget();
     treeWidget->setHeaderLabel("Team Structure");
 
-    auto* rootItem = new QTreeWidgetItem(treeWidget, QStringList("Development Team"));
+    auto* rootItem =
+        new QTreeWidgetItem(treeWidget, QStringList("Development Team"));
     auto* frontendItem = new QTreeWidgetItem(rootItem, QStringList("Frontend"));
     new QTreeWidgetItem(frontendItem, QStringList("Sarah Johnson - Lead"));
     new QTreeWidgetItem(frontendItem, QStringList("Mike Chen - Developer"));
@@ -784,7 +814,8 @@ QWidget* ProjectManagementApp::createAnalyticsPage() {
     headerLayout->addStretch();
 
     auto* exportBtn = new Components::FluentButton("Export Analytics");
-    connect(exportBtn, &Components::FluentButton::clicked, this, &ProjectManagementApp::exportAnalytics);
+    connect(exportBtn, &Components::FluentButton::clicked, this,
+            &ProjectManagementApp::exportAnalytics);
     headerLayout->addWidget(exportBtn);
 
     layout->addLayout(headerLayout);
@@ -820,7 +851,8 @@ QWidget* ProjectManagementApp::createAnalyticsPage() {
     auto* timeTrackingLayout = timeTrackingPanel->createVerticalLayout();
 
     m_timeTrackingTable = new QTableWidget(0, 5);
-    m_timeTrackingTable->setHorizontalHeaderLabels({"Date", "Task", "Member", "Hours", "Description"});
+    m_timeTrackingTable->setHorizontalHeaderLabels(
+        {"Date", "Task", "Member", "Hours", "Description"});
     m_timeTrackingTable->horizontalHeader()->setStretchLastSection(true);
     m_timeTrackingTable->setMaximumHeight(200);
 
@@ -828,11 +860,21 @@ QWidget* ProjectManagementApp::createAnalyticsPage() {
     for (int i = 0; i < 5; ++i) {
         int row = m_timeTrackingTable->rowCount();
         m_timeTrackingTable->insertRow(row);
-        m_timeTrackingTable->setItem(row, 0, new QTableWidgetItem(QDateTime::currentDateTime().addDays(-i).toString("yyyy-MM-dd")));
-        m_timeTrackingTable->setItem(row, 1, new QTableWidgetItem(QString("Task %1").arg(i + 1)));
-        m_timeTrackingTable->setItem(row, 2, new QTableWidgetItem(QString("Member %1").arg(i % 3 + 1)));
-        m_timeTrackingTable->setItem(row, 3, new QTableWidgetItem(QString("%1h").arg(QRandomGenerator::global()->bounded(2, 8))));
-        m_timeTrackingTable->setItem(row, 4, new QTableWidgetItem("Development work"));
+        m_timeTrackingTable->setItem(
+            row, 0,
+            new QTableWidgetItem(
+                QDateTime::currentDateTime().addDays(-i).toString(
+                    "yyyy-MM-dd")));
+        m_timeTrackingTable->setItem(
+            row, 1, new QTableWidgetItem(QString("Task %1").arg(i + 1)));
+        m_timeTrackingTable->setItem(
+            row, 2, new QTableWidgetItem(QString("Member %1").arg(i % 3 + 1)));
+        m_timeTrackingTable->setItem(
+            row, 3,
+            new QTableWidgetItem(
+                QString("%1h").arg(QRandomGenerator::global()->bounded(2, 8))));
+        m_timeTrackingTable->setItem(row, 4,
+                                     new QTableWidgetItem("Development work"));
     }
 
     timeTrackingLayout->addWidget(m_timeTrackingTable);
@@ -920,7 +962,8 @@ QWidget* ProjectManagementApp::createSettingsPage() {
     auto* behaviorGroup = new QGroupBox("Behavior");
     auto* behaviorLayout = new QFormLayout(behaviorGroup);
 
-    m_notificationsCheck = new Components::FluentCheckBox("Enable notifications");
+    m_notificationsCheck =
+        new Components::FluentCheckBox("Enable notifications");
     m_notificationsCheck->setChecked(m_notificationsEnabled);
 
     m_animationsCheck = new Components::FluentCheckBox("Enable animations");
@@ -939,10 +982,13 @@ QWidget* ProjectManagementApp::createSettingsPage() {
     m_refreshIntervalSlider->setTickPosition(QSlider::TicksBelow);
     m_refreshIntervalSlider->setTickInterval(30);
 
-    auto* refreshLabel = new QLabel(QString("Refresh interval: %1 seconds").arg(m_refreshInterval));
-    connect(m_refreshIntervalSlider, &QSlider::valueChanged, [refreshLabel](int value) {
-        refreshLabel->setText(QString("Refresh interval: %1 seconds").arg(value));
-    });
+    auto* refreshLabel = new QLabel(
+        QString("Refresh interval: %1 seconds").arg(m_refreshInterval));
+    connect(m_refreshIntervalSlider, &QSlider::valueChanged,
+            [refreshLabel](int value) {
+                refreshLabel->setText(
+                    QString("Refresh interval: %1 seconds").arg(value));
+            });
 
     performanceLayout->addRow(refreshLabel);
     performanceLayout->addRow(m_refreshIntervalSlider);
@@ -964,29 +1010,35 @@ QWidget* ProjectManagementApp::createSettingsPage() {
 // Slot implementations
 void ProjectManagementApp::setupConnections() {
     // Navigation connections
-    connect(m_navigationView, &Components::FluentNavigationView::selectionChanged,
-            this, &ProjectManagementApp::onNavigationChanged);
+    connect(m_navigationView,
+            &Components::FluentNavigationView::selectionChanged, this,
+            &ProjectManagementApp::onNavigationChanged);
 
     // Timer connections
     m_refreshTimer = new QTimer(this);
     m_refreshTimer->setInterval(m_refreshInterval * 1000);
-    connect(m_refreshTimer, &QTimer::timeout, this, &ProjectManagementApp::refreshDashboard);
+    connect(m_refreshTimer, &QTimer::timeout, this,
+            &ProjectManagementApp::refreshDashboard);
     m_refreshTimer->start();
 
     m_metricsTimer = new QTimer(this);
-    m_metricsTimer->setInterval(10000); // Update metrics every 10 seconds
-    connect(m_metricsTimer, &QTimer::timeout, this, &ProjectManagementApp::updateMetrics);
+    m_metricsTimer->setInterval(10000);  // Update metrics every 10 seconds
+    connect(m_metricsTimer, &QTimer::timeout, this,
+            &ProjectManagementApp::updateMetrics);
     m_metricsTimer->start();
 
     m_notificationTimer = new QTimer(this);
-    m_notificationTimer->setInterval(60000); // Check for notifications every minute
-    connect(m_notificationTimer, &QTimer::timeout, this, &ProjectManagementApp::onNotificationReceived);
+    m_notificationTimer->setInterval(
+        60000);  // Check for notifications every minute
+    connect(m_notificationTimer, &QTimer::timeout, this,
+            &ProjectManagementApp::onNotificationReceived);
     m_notificationTimer->start();
 }
 
 void ProjectManagementApp::setupTheme() {
     auto& theme = Styling::FluentTheme::instance();
-    theme.setMode(m_darkMode ? Styling::FluentThemeMode::Dark : Styling::FluentThemeMode::Light);
+    theme.setMode(m_darkMode ? Styling::FluentThemeMode::Dark
+                             : Styling::FluentThemeMode::Light);
 }
 
 void ProjectManagementApp::setupPerformanceMonitoring() {
@@ -1000,7 +1052,9 @@ void ProjectManagementApp::setupAccessibility() {
 
     // Set accessible properties for main window
     setAccessibleName("Project Management Application");
-    setAccessibleDescription("A comprehensive project management dashboard with team collaboration features");
+    setAccessibleDescription(
+        "A comprehensive project management dashboard with team collaboration "
+        "features");
 }
 
 void ProjectManagementApp::loadApplicationData() {
@@ -1010,28 +1064,40 @@ void ProjectManagementApp::loadApplicationData() {
         Task task;
         task.id = QString("TASK-%1").arg(i, 3, 10, QChar('0'));
         task.title = QString("Task %1: Sample Work Item").arg(i);
-        task.description = QString("This is a sample task description for task %1").arg(i);
+        task.description =
+            QString("This is a sample task description for task %1").arg(i);
         task.assignee = QString("Team Member %1").arg((i % 4) + 1);
-        task.status = (i % 3 == 0) ? "Completed" : (i % 3 == 1) ? "In Progress" : "Not Started";
-        task.progress = (i % 3 == 0) ? 100 : QRandomGenerator::global()->bounded(20, 80);
-        task.dueDate = QDateTime::currentDateTime().addDays(QRandomGenerator::global()->bounded(1, 30));
+        task.status = (i % 3 == 0)   ? "Completed"
+                      : (i % 3 == 1) ? "In Progress"
+                                     : "Not Started";
+        task.progress =
+            (i % 3 == 0) ? 100 : QRandomGenerator::global()->bounded(20, 80);
+        task.dueDate = QDateTime::currentDateTime().addDays(
+            QRandomGenerator::global()->bounded(1, 30));
         task.priority = (i % 3 == 0) ? "High" : (i % 3 == 1) ? "Medium" : "Low";
         m_tasks.append(task);
     }
 
     // Load sample team members
     m_teamMembers.clear();
-    QStringList names = {"Sarah Johnson", "Mike Chen", "David Smith", "Lisa Wang", "Tom Brown", "Emma Davis"};
-    QStringList roles = {"Frontend Lead", "Frontend Developer", "Backend Lead", "Backend Developer", "QA Lead", "UI/UX Designer"};
+    QStringList names = {"Sarah Johnson", "Mike Chen", "David Smith",
+                         "Lisa Wang",     "Tom Brown", "Emma Davis"};
+    QStringList roles = {"Frontend Lead", "Frontend Developer",
+                         "Backend Lead",  "Backend Developer",
+                         "QA Lead",       "UI/UX Designer"};
 
     for (int i = 0; i < names.size(); ++i) {
         TeamMember member;
         member.id = QString("MEMBER-%1").arg(i + 1);
         member.name = names[i];
         member.role = roles[i];
-        member.email = QString("%1@company.com").arg(names[i].toLower().replace(" ", "."));
-        member.status = (i % 3 == 0) ? "Available" : (i % 3 == 1) ? "Busy" : "Away";
-        member.skills = {"JavaScript", "React", "Node.js", "Python", "Qt", "C++"};
+        member.email =
+            QString("%1@company.com").arg(names[i].toLower().replace(" ", "."));
+        member.status = (i % 3 == 0)   ? "Available"
+                        : (i % 3 == 1) ? "Busy"
+                                       : "Away";
+        member.skills = {"JavaScript", "React", "Node.js",
+                         "Python",     "Qt",    "C++"};
         member.tasksAssigned = QRandomGenerator::global()->bounded(2, 8);
         m_teamMembers.append(member);
     }
@@ -1044,11 +1110,14 @@ void ProjectManagementApp::loadApplicationData() {
 // Slot implementations
 void ProjectManagementApp::newProject() {
     profileOperation("New Project", [this]() {
-        QString projectName = QInputDialog::getText(this, "New Project", "Enter project name:");
+        QString projectName =
+            QInputDialog::getText(this, "New Project", "Enter project name:");
         if (!projectName.isEmpty()) {
             m_currentProject = projectName;
-            m_projectLabel->setText(QString("Project: %1").arg(m_currentProject));
-            showNotification(QString("Created new project: %1").arg(projectName), "success");
+            m_projectLabel->setText(
+                QString("Project: %1").arg(m_currentProject));
+            showNotification(
+                QString("Created new project: %1").arg(projectName), "success");
             refreshDashboard();
         }
     });
@@ -1056,7 +1125,8 @@ void ProjectManagementApp::newProject() {
 
 void ProjectManagementApp::openProject() {
     profileOperation("Open Project", [this]() {
-        QString fileName = QFileDialog::getOpenFileName(this, "Open Project", "", "Project Files (*.proj)");
+        QString fileName = QFileDialog::getOpenFileName(
+            this, "Open Project", "", "Project Files (*.proj)");
         if (!fileName.isEmpty()) {
             showNotification("Project opened successfully", "success");
             refreshDashboard();
@@ -1066,7 +1136,8 @@ void ProjectManagementApp::openProject() {
 
 void ProjectManagementApp::saveProject() {
     profileOperation("Save Project", [this]() {
-        QString fileName = QFileDialog::getSaveFileName(this, "Save Project", "", "Project Files (*.proj)");
+        QString fileName = QFileDialog::getSaveFileName(
+            this, "Save Project", "", "Project Files (*.proj)");
         if (!fileName.isEmpty()) {
             showNotification("Project saved successfully", "success");
         }
@@ -1075,7 +1146,8 @@ void ProjectManagementApp::saveProject() {
 
 void ProjectManagementApp::exportProject() {
     profileOperation("Export Project", [this]() {
-        QString fileName = QFileDialog::getSaveFileName(this, "Export Project", "", "CSV Files (*.csv)");
+        QString fileName = QFileDialog::getSaveFileName(
+            this, "Export Project", "", "CSV Files (*.csv)");
         if (!fileName.isEmpty()) {
             showNotification("Project data exported successfully", "success");
         }
@@ -1084,7 +1156,8 @@ void ProjectManagementApp::exportProject() {
 
 void ProjectManagementApp::importData() {
     profileOperation("Import Data", [this]() {
-        QString fileName = QFileDialog::getOpenFileName(this, "Import Data", "", "CSV Files (*.csv)");
+        QString fileName = QFileDialog::getOpenFileName(this, "Import Data", "",
+                                                        "CSV Files (*.csv)");
         if (!fileName.isEmpty()) {
             showNotification("Data imported successfully", "success");
             refreshDashboard();
@@ -1095,13 +1168,16 @@ void ProjectManagementApp::importData() {
 void ProjectManagementApp::toggleTheme() {
     m_darkMode = !m_darkMode;
     auto& theme = Styling::FluentTheme::instance();
-    theme.setMode(m_darkMode ? Styling::FluentThemeMode::Dark : Styling::FluentThemeMode::Light);
+    theme.setMode(m_darkMode ? Styling::FluentThemeMode::Dark
+                             : Styling::FluentThemeMode::Light);
 
     if (m_themeCombo) {
         m_themeCombo->setCurrentIndex(m_darkMode ? 2 : 1);
     }
 
-    showNotification(QString("Switched to %1 theme").arg(m_darkMode ? "dark" : "light"), "info");
+    showNotification(
+        QString("Switched to %1 theme").arg(m_darkMode ? "dark" : "light"),
+        "info");
 }
 
 void ProjectManagementApp::toggleFullScreen() {
@@ -1115,29 +1191,30 @@ void ProjectManagementApp::toggleFullScreen() {
 }
 
 void ProjectManagementApp::showPreferences() {
-    m_navigationView->setSelectedIndex(6); // Settings page
+    m_navigationView->setSelectedIndex(6);  // Settings page
     showNotification("Opened application preferences", "info");
 }
 
 void ProjectManagementApp::showAbout() {
     QMessageBox::about(this, "About Project Management App",
-        "FluentQt Real-world Application Example\n\n"
-        "This comprehensive example demonstrates:\n"
-        "• Professional application architecture\n"
-        "• Integration of multiple FluentQt components\n"
-        "• Real-world data management patterns\n"
-        "• Modern UI/UX design principles\n"
-        "• Performance optimization\n"
-        "• Accessibility support\n"
-        "• Responsive design\n\n"
-        "Built with FluentQt and Qt 6.x");
+                       "FluentQt Real-world Application Example\n\n"
+                       "This comprehensive example demonstrates:\n"
+                       "• Professional application architecture\n"
+                       "• Integration of multiple FluentQt components\n"
+                       "• Real-world data management patterns\n"
+                       "• Modern UI/UX design principles\n"
+                       "• Performance optimization\n"
+                       "• Accessibility support\n"
+                       "• Responsive design\n\n"
+                       "Built with FluentQt and Qt 6.x");
 }
 
 void ProjectManagementApp::onNavigationChanged(int index) {
     profileOperation("Navigation Change", [this, index]() {
         animatePageTransition();
 
-        QStringList pageNames = {"Dashboard", "Projects", "Tasks", "Team", "Analytics", "Calendar", "Settings"};
+        QStringList pageNames = {"Dashboard", "Projects", "Tasks",   "Team",
+                                 "Analytics", "Calendar", "Settings"};
         if (index >= 0 && index < pageNames.size()) {
             m_statusLabel->setText(QString("Viewing %1").arg(pageNames[index]));
 
@@ -1150,10 +1227,12 @@ void ProjectManagementApp::addTask() {
     profileOperation("Add Task", [this]() {
         // Simple task creation dialog
         bool ok;
-        QString taskTitle = QInputDialog::getText(this, "Add Task", "Enter task title:", QLineEdit::Normal, "", &ok);
+        QString taskTitle = QInputDialog::getText(
+            this, "Add Task", "Enter task title:", QLineEdit::Normal, "", &ok);
         if (ok && !taskTitle.isEmpty()) {
             Task newTask;
-            newTask.id = QString("TASK-%1").arg(m_tasks.size() + 1, 3, 10, QChar('0'));
+            newTask.id =
+                QString("TASK-%1").arg(m_tasks.size() + 1, 3, 10, QChar('0'));
             newTask.title = taskTitle;
             newTask.description = "New task description";
             newTask.assignee = "Unassigned";
@@ -1166,7 +1245,8 @@ void ProjectManagementApp::addTask() {
             refreshTaskList();
             updateDashboardMetrics();
 
-            showNotification(QString("Added new task: %1").arg(taskTitle), "success");
+            showNotification(QString("Added new task: %1").arg(taskTitle),
+                             "success");
         }
     });
 }
@@ -1174,13 +1254,16 @@ void ProjectManagementApp::addTask() {
 void ProjectManagementApp::addTeamMember() {
     profileOperation("Add Team Member", [this]() {
         bool ok;
-        QString memberName = QInputDialog::getText(this, "Add Team Member", "Enter member name:", QLineEdit::Normal, "", &ok);
+        QString memberName = QInputDialog::getText(
+            this, "Add Team Member", "Enter member name:", QLineEdit::Normal,
+            "", &ok);
         if (ok && !memberName.isEmpty()) {
             TeamMember newMember;
             newMember.id = QString("MEMBER-%1").arg(m_teamMembers.size() + 1);
             newMember.name = memberName;
             newMember.role = "Team Member";
-            newMember.email = QString("%1@company.com").arg(memberName.toLower().replace(" ", "."));
+            newMember.email = QString("%1@company.com")
+                                  .arg(memberName.toLower().replace(" ", "."));
             newMember.status = "Available";
             newMember.skills = {"General"};
             newMember.tasksAssigned = 0;
@@ -1189,7 +1272,9 @@ void ProjectManagementApp::addTeamMember() {
             refreshTeamData();
             updateDashboardMetrics();
 
-            showNotification(QString("Added new team member: %1").arg(memberName), "success");
+            showNotification(
+                QString("Added new team member: %1").arg(memberName),
+                "success");
         }
     });
 }
@@ -1203,17 +1288,19 @@ void ProjectManagementApp::generateReport() {
         QTimer* progressTimer = new QTimer(this);
         int progress = 0;
 
-        connect(progressTimer, &QTimer::timeout, [this, progressTimer, &progress]() {
-            progress += 10;
-            m_operationProgress->setValue(progress);
+        connect(progressTimer, &QTimer::timeout,
+                [this, progressTimer, &progress]() {
+                    progress += 10;
+                    m_operationProgress->setValue(progress);
 
-            if (progress >= 100) {
-                progressTimer->stop();
-                progressTimer->deleteLater();
-                m_operationProgress->setVisible(false);
-                showNotification("Report generated successfully", "success");
-            }
-        });
+                    if (progress >= 100) {
+                        progressTimer->stop();
+                        progressTimer->deleteLater();
+                        m_operationProgress->setVisible(false);
+                        showNotification("Report generated successfully",
+                                         "success");
+                    }
+                });
 
         progressTimer->start(100);
     });
@@ -1226,7 +1313,9 @@ void ProjectManagementApp::refreshDashboard() {
         refreshTeamData();
 
         // Add new activity
-        QString activity = QString("🔄 Dashboard refreshed at %1").arg(QDateTime::currentDateTime().toString("hh:mm:ss"));
+        QString activity =
+            QString("🔄 Dashboard refreshed at %1")
+                .arg(QDateTime::currentDateTime().toString("hh:mm:ss"));
         m_activityList->insertItem(0, activity);
 
         // Keep only last 10 activities
@@ -1241,14 +1330,19 @@ void ProjectManagementApp::refreshDashboard() {
 void ProjectManagementApp::updateMetrics() {
     // Update project metrics
     m_metrics.totalTasks = m_tasks.size();
-    m_metrics.completedTasks = std::count_if(m_tasks.begin(), m_tasks.end(),
+    m_metrics.completedTasks = std::count_if(
+        m_tasks.begin(), m_tasks.end(),
         [](const Task& task) { return task.status == "Completed"; });
-    m_metrics.overdueTasks = std::count_if(m_tasks.begin(), m_tasks.end(),
-        [](const Task& task) { return task.dueDate < QDateTime::currentDateTime() && task.status != "Completed"; });
+    m_metrics.overdueTasks =
+        std::count_if(m_tasks.begin(), m_tasks.end(), [](const Task& task) {
+            return task.dueDate < QDateTime::currentDateTime() &&
+                   task.status != "Completed";
+        });
     m_metrics.teamMembers = m_teamMembers.size();
 
     if (m_metrics.totalTasks > 0) {
-        m_metrics.projectProgress = (double)m_metrics.completedTasks / m_metrics.totalTasks * 100.0;
+        m_metrics.projectProgress =
+            (double)m_metrics.completedTasks / m_metrics.totalTasks * 100.0;
     }
 
     updateDashboardMetrics();
@@ -1263,8 +1357,7 @@ void ProjectManagementApp::updateDashboardMetrics() {
             QString::number(m_metrics.totalTasks - m_metrics.completedTasks),
             QString::number(m_metrics.teamMembers),
             QString("%1%").arg(m_metrics.projectProgress, 0, 'f', 1),
-            QString("%1h").arg(m_metrics.hoursLogged)
-        };
+            QString("%1h").arg(m_metrics.hoursLogged)};
 
         for (int i = 0; i < qMin(m_metricCards.size(), newValues.size()); ++i) {
             // Update the card subtitle
@@ -1274,7 +1367,8 @@ void ProjectManagementApp::updateDashboardMetrics() {
 }
 
 void ProjectManagementApp::refreshTaskList() {
-    if (!m_taskTable) return;
+    if (!m_taskTable)
+        return;
 
     m_taskTable->setRowCount(m_tasks.size());
 
@@ -1283,8 +1377,10 @@ void ProjectManagementApp::refreshTaskList() {
         m_taskTable->setItem(i, 0, new QTableWidgetItem(task.title));
         m_taskTable->setItem(i, 1, new QTableWidgetItem(task.assignee));
         m_taskTable->setItem(i, 2, new QTableWidgetItem(task.status));
-        m_taskTable->setItem(i, 3, new QTableWidgetItem(QString("%1%").arg(task.progress)));
-        m_taskTable->setItem(i, 4, new QTableWidgetItem(task.dueDate.toString("yyyy-MM-dd")));
+        m_taskTable->setItem(
+            i, 3, new QTableWidgetItem(QString("%1%").arg(task.progress)));
+        m_taskTable->setItem(
+            i, 4, new QTableWidgetItem(task.dueDate.toString("yyyy-MM-dd")));
         m_taskTable->setItem(i, 5, new QTableWidgetItem(task.priority));
     }
 }
@@ -1292,7 +1388,8 @@ void ProjectManagementApp::refreshTaskList() {
 void ProjectManagementApp::refreshTeamData() {
     // Update team-related displays
     if (m_memberCard) {
-        m_memberCard->setSubtitle(QString("%1 team members").arg(m_teamMembers.size()));
+        m_memberCard->setSubtitle(
+            QString("%1 team members").arg(m_teamMembers.size()));
     }
 }
 
@@ -1301,13 +1398,14 @@ void ProjectManagementApp::onNotificationReceived() {
     QStringList notifications = {
         "New task assigned to you",
         "Meeting reminder: Daily standup in 15 minutes",
-        "Project milestone completed",
-        "New team member joined the project",
-        "Weekly report is ready for review"
-    };
+        "Project milestone completed", "New team member joined the project",
+        "Weekly report is ready for review"};
 
-    if (m_notificationsEnabled && QRandomGenerator::global()->bounded(100) < 20) { // 20% chance
-        QString notification = notifications[QRandomGenerator::global()->bounded(notifications.size())];
+    if (m_notificationsEnabled &&
+        QRandomGenerator::global()->bounded(100) < 20) {  // 20% chance
+        QString notification =
+            notifications[QRandomGenerator::global()->bounded(
+                notifications.size())];
         showNotification(notification, "info");
     }
 }
@@ -1322,23 +1420,24 @@ void ProjectManagementApp::animatePageTransition() {
         // Simple fade animation for page transitions
         Animation::FluentAnimationConfig config;
         config.duration = std::chrono::milliseconds(200);
-        auto fadeAnimation = Animation::FluentAnimator::fadeIn(centralWidget(), config);
+        auto fadeAnimation =
+            Animation::FluentAnimator::fadeIn(centralWidget(), config);
         fadeAnimation->start();
     }
 }
 
-void ProjectManagementApp::showNotification(const QString& message, const QString& type) {
+void ProjectManagementApp::showNotification(const QString& message,
+                                            const QString& type) {
     // Show notification in status bar
     QString icon = (type == "success") ? "✅" : (type == "warning") ? "⚠️" : "ℹ️";
     m_statusLabel->setText(QString("%1 %2").arg(icon, message));
 
     // Clear notification after 3 seconds
-    QTimer::singleShot(3000, [this]() {
-        m_statusLabel->setText("Ready");
-    });
+    QTimer::singleShot(3000, [this]() { m_statusLabel->setText("Ready"); });
 }
 
-void ProjectManagementApp::profileOperation(const QString& operation, std::function<void()> func) {
+void ProjectManagementApp::profileOperation(const QString& operation,
+                                            std::function<void()> func) {
     if (m_performanceMonitor) {
         m_performanceMonitor->beginProfile(operation);
         func();
@@ -1359,18 +1458,34 @@ void ProjectManagementApp::saveApplicationSettings() {
 }
 
 // Placeholder implementations for remaining slots
-void ProjectManagementApp::editTask() { showNotification("Edit task functionality", "info"); }
-void ProjectManagementApp::deleteTask() { showNotification("Delete task functionality", "info"); }
-void ProjectManagementApp::markTaskComplete() { showNotification("Mark task complete functionality", "info"); }
-void ProjectManagementApp::updateTaskProgress() { showNotification("Update task progress functionality", "info"); }
-void ProjectManagementApp::editTeamMember() { showNotification("Edit team member functionality", "info"); }
-void ProjectManagementApp::removeTeamMember() { showNotification("Remove team member functionality", "info"); }
-void ProjectManagementApp::assignTask() { showNotification("Assign task functionality", "info"); }
-void ProjectManagementApp::exportAnalytics() { showNotification("Export analytics functionality", "info"); }
+void ProjectManagementApp::editTask() {
+    showNotification("Edit task functionality", "info");
+}
+void ProjectManagementApp::deleteTask() {
+    showNotification("Delete task functionality", "info");
+}
+void ProjectManagementApp::markTaskComplete() {
+    showNotification("Mark task complete functionality", "info");
+}
+void ProjectManagementApp::updateTaskProgress() {
+    showNotification("Update task progress functionality", "info");
+}
+void ProjectManagementApp::editTeamMember() {
+    showNotification("Edit team member functionality", "info");
+}
+void ProjectManagementApp::removeTeamMember() {
+    showNotification("Remove team member functionality", "info");
+}
+void ProjectManagementApp::assignTask() {
+    showNotification("Assign task functionality", "info");
+}
+void ProjectManagementApp::exportAnalytics() {
+    showNotification("Export analytics functionality", "info");
+}
 void ProjectManagementApp::onTabChanged(int index) { Q_UNUSED(index) }
 void ProjectManagementApp::onDataChanged() { refreshDashboard(); }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     // Note: High DPI attributes are automatically enabled in Qt 6

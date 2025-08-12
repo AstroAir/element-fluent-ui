@@ -32,7 +32,7 @@ set_target_properties(ToastAndSelectDemo PROPERTIES
 
 # Copy resources if they exist
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources")
-    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources" 
+    file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
          DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 endif()
 

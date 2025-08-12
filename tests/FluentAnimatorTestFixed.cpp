@@ -1,8 +1,8 @@
 // tests/FluentAnimatorTestFixed.cpp
-#include <QtTest/QtTest>
 #include <QApplication>
-#include <QWidget>
 #include <QPropertyAnimation>
+#include <QWidget>
+#include <QtTest/QtTest>
 #include <memory>
 
 #include "FluentQt/Animation/FluentAnimator.h"
@@ -45,7 +45,7 @@ void FluentAnimatorTestFixed::init() {
     m_testWidget = new QWidget();
     m_testWidget->resize(100, 100);
     m_testWidget->show();
-    
+
     m_animator = new FluentAnimator(this);
 }
 
@@ -53,7 +53,7 @@ void FluentAnimatorTestFixed::cleanup() {
     // Cleanup after each test
     delete m_testWidget;
     m_testWidget = nullptr;
-    
+
     delete m_animator;
     m_animator = nullptr;
 }
@@ -63,7 +63,7 @@ void FluentAnimatorTestFixed::testConstructor() {
     auto* animator = new FluentAnimator();
     QVERIFY(animator != nullptr);
     delete animator;
-    
+
     // Test constructor with parent
     auto* animator2 = new FluentAnimator(m_testWidget);
     QVERIFY(animator2->parent() == m_testWidget);
@@ -74,19 +74,28 @@ void FluentAnimatorTestFixed::testFadeAnimations() {
     // Test fade in animation with config
     auto fadeInAnimation = FluentAnimator::fadeIn(m_testWidget);
     QVERIFY(fadeInAnimation != nullptr);
-    QCOMPARE(fadeInAnimation->targetObject(), m_testWidget);
-    QCOMPARE(fadeInAnimation->propertyName(), QByteArray("windowOpacity"));
+
+    // The animation targets the QGraphicsOpacityEffect, not the widget directly
+    auto* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(fadeInAnimation->targetObject());
+    QVERIFY(opacityEffect != nullptr);
+    QCOMPARE(fadeInAnimation->propertyName(), QByteArray("opacity"));
 
     // Test fade in with duration and easing
-    auto fadeInAnimation2 = FluentAnimator::fadeIn(m_testWidget, 500, FluentEasing::EaseOut);
+    auto fadeInAnimation2 =
+        FluentAnimator::fadeIn(m_testWidget, 500, FluentEasing::EaseOut);
     QVERIFY(fadeInAnimation2 != nullptr);
     QCOMPARE(fadeInAnimation2->duration(), 500);
 
     // Test fade out animation
     auto fadeOutAnimation = FluentAnimator::fadeOut(m_testWidget);
     QVERIFY(fadeOutAnimation != nullptr);
-    QCOMPARE(fadeOutAnimation->targetObject(), m_testWidget);
-    QCOMPARE(fadeOutAnimation->propertyName(), QByteArray("windowOpacity"));
+
+    // The animation targets the QGraphicsOpacityEffect, not the widget directly
+    auto* opacityEffect2 =
+        qobject_cast<QGraphicsOpacityEffect*>(fadeOutAnimation->targetObject());
+    QVERIFY(opacityEffect2 != nullptr);
+    QCOMPARE(fadeOutAnimation->propertyName(), QByteArray("opacity"));
 }
 
 void FluentAnimatorTestFixed::testSlideAnimations() {

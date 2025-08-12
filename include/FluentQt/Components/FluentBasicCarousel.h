@@ -1,16 +1,16 @@
 // include/FluentQt/Components/FluentBasicCarousel.h
 #pragma once
 
-#include "FluentQt/Components/FluentCarousel.h"
-#include "FluentQt/Components/FluentButton.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCarousel.h"
 
 namespace FluentQt::Components {
 
 /**
  * @brief Basic carousel component with navigation controls
- * 
+ *
  * FluentBasicCarousel provides a simple carousel implementation with:
  * - Previous/Next navigation buttons
  * - Keyboard navigation support
@@ -20,18 +20,27 @@ namespace FluentQt::Components {
  */
 class FluentBasicCarousel : public FluentCarousel {
     Q_OBJECT
-    Q_PROPERTY(bool showNavigationButtons READ showNavigationButtons WRITE setShowNavigationButtons NOTIFY navigationButtonsVisibilityChanged)
-    Q_PROPERTY(QString previousButtonText READ previousButtonText WRITE setPreviousButtonText NOTIFY previousButtonTextChanged)
-    Q_PROPERTY(QString nextButtonText READ nextButtonText WRITE setNextButtonText NOTIFY nextButtonTextChanged)
-    Q_PROPERTY(FluentButtonStyle navigationButtonStyle READ navigationButtonStyle WRITE setNavigationButtonStyle NOTIFY navigationButtonStyleChanged)
+    Q_PROPERTY(
+        bool showNavigationButtons READ showNavigationButtons WRITE
+            setShowNavigationButtons NOTIFY navigationButtonsVisibilityChanged)
+    Q_PROPERTY(QString previousButtonText READ previousButtonText WRITE
+                   setPreviousButtonText NOTIFY previousButtonTextChanged)
+    Q_PROPERTY(QString nextButtonText READ nextButtonText WRITE
+                   setNextButtonText NOTIFY nextButtonTextChanged)
+    Q_PROPERTY(
+        FluentButtonStyle navigationButtonStyle READ navigationButtonStyle WRITE
+            setNavigationButtonStyle NOTIFY navigationButtonStyleChanged)
 
 public:
     explicit FluentBasicCarousel(QWidget* parent = nullptr);
-    explicit FluentBasicCarousel(const FluentCarouselConfig& config, QWidget* parent = nullptr);
+    explicit FluentBasicCarousel(const FluentCarouselConfig& config,
+                                 QWidget* parent = nullptr);
     ~FluentBasicCarousel() override = default;
 
     // Navigation button properties
-    bool showNavigationButtons() const noexcept { return m_showNavigationButtons; }
+    bool showNavigationButtons() const noexcept {
+        return m_showNavigationButtons;
+    }
     void setShowNavigationButtons(bool show);
 
     QString previousButtonText() const noexcept { return m_previousButtonText; }
@@ -40,7 +49,9 @@ public:
     QString nextButtonText() const noexcept { return m_nextButtonText; }
     void setNextButtonText(const QString& text);
 
-    FluentButtonStyle navigationButtonStyle() const noexcept { return m_navigationButtonStyle; }
+    FluentButtonStyle navigationButtonStyle() const noexcept {
+        return m_navigationButtonStyle;
+    }
     void setNavigationButtonStyle(FluentButtonStyle style);
 
     // Button access for customization
@@ -61,7 +72,7 @@ signals:
     void previousButtonTextChanged(const QString& text);
     void nextButtonTextChanged(const QString& text);
     void navigationButtonStyleChanged(FluentButtonStyle style);
-    void navigationButtonClicked(int direction); // -1 for previous, 1 for next
+    void navigationButtonClicked(int direction);  // -1 for previous, 1 for next
 
 protected:
     void keyPressEvent(QKeyEvent* event) override;
@@ -139,4 +150,4 @@ private:
     QHBoxLayout* m_layout{nullptr};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

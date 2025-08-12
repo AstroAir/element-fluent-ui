@@ -1,48 +1,47 @@
 // src/Components/FluentTouchCarousel.cpp
 #include "FluentQt/Components/FluentTouchCarousel.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QTouchEvent>
-#include <QGestureEvent>
-#include <QPanGesture>
-#include <QSwipeGesture>
-#include <QTapGesture>
-#include <QTapAndHoldGesture>
-#include <QScroller>
-#include <QScrollerProperties>
-#include <QPropertyAnimation>
-#include <QEasingCurve>
-#include <QTimer>
-#include <QPainter>
-#include <QStyleOption>
 #include <QApplication>
 #include <QDebug>
-#include <cmath>
+#include <QEasingCurve>
+#include <QGestureEvent>
+#include <QPainter>
+#include <QPanGesture>
+#include <QPropertyAnimation>
+#include <QScroller>
+#include <QScrollerProperties>
+#include <QStyleOption>
+#include <QSwipeGesture>
+#include <QTapAndHoldGesture>
+#include <QTapGesture>
+#include <QTimer>
+#include <QTouchEvent>
 #include <algorithm>
+#include <cmath>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentTouchCarousel::FluentTouchCarousel(QWidget* parent)
-    : FluentCarousel(parent)
-    , m_momentumAnimation(std::make_unique<QPropertyAnimation>(this))
-    , m_feedbackTimer(std::make_unique<QTimer>(this))
-{
+    : FluentCarousel(parent),
+      m_momentumAnimation(std::make_unique<QPropertyAnimation>(this)),
+      m_feedbackTimer(std::make_unique<QTimer>(this)) {
     initializeTouchCarousel();
 }
 
-FluentTouchCarousel::FluentTouchCarousel(const FluentCarouselConfig& config, QWidget* parent)
-    : FluentCarousel(config, parent)
-    , m_momentumAnimation(std::make_unique<QPropertyAnimation>(this))
-    , m_feedbackTimer(std::make_unique<QTimer>(this))
-{
+FluentTouchCarousel::FluentTouchCarousel(const FluentCarouselConfig& config,
+                                         QWidget* parent)
+    : FluentCarousel(config, parent),
+      m_momentumAnimation(std::make_unique<QPropertyAnimation>(this)),
+      m_feedbackTimer(std::make_unique<QTimer>(this)) {
     initializeTouchCarousel();
 }
 
-FluentTouchCarousel::FluentTouchCarousel(const FluentCarouselTouchConfig& touchConfig, QWidget* parent)
-    : FluentCarousel(parent)
-    , m_touchConfig(touchConfig)
-    , m_momentumAnimation(std::make_unique<QPropertyAnimation>(this))
-    , m_feedbackTimer(std::make_unique<QTimer>(this))
-{
+FluentTouchCarousel::FluentTouchCarousel(
+    const FluentCarouselTouchConfig& touchConfig, QWidget* parent)
+    : FluentCarousel(parent),
+      m_touchConfig(touchConfig),
+      m_momentumAnimation(std::make_unique<QPropertyAnimation>(this)),
+      m_feedbackTimer(std::make_unique<QTimer>(this)) {
     initializeTouchCarousel();
 }
 
@@ -52,17 +51,17 @@ void FluentTouchCarousel::initializeTouchCarousel() {
     config.enableTouch = true;
     config.enableKeyboard = true;
     config.enableWheel = true;
-    config.pauseOnHover = false; // Don't pause on hover for touch devices
+    config.pauseOnHover = false;  // Don't pause on hover for touch devices
     setConfig(config);
-    
+
     setupGestureRecognition();
     setupMomentumScrolling();
     setupTouchFeedback();
-    
+
     // Connect signals
-    connect(this, &FluentCarousel::currentIndexChanged,
-            this, &FluentTouchCarousel::currentOffsetChanged);
-    
+    connect(this, &FluentCarousel::currentIndexChanged, this,
+            &FluentTouchCarousel::currentOffsetChanged);
+
     updateAccessibilityInfo();
 }
 
@@ -73,7 +72,7 @@ void FluentTouchCarousel::setupGestureRecognition() {
         grabGesture(Qt::TapGesture);
         grabGesture(Qt::TapAndHoldGesture);
     }
-    
+
     setAttribute(Qt::WA_AcceptTouchEvents, m_touchEnabled);
 }
 
@@ -82,30 +81,39 @@ void FluentTouchCarousel::setupMomentumScrolling() {
     m_momentumAnimation->setTargetObject(this);
     m_momentumAnimation->setPropertyName("currentOffset");
     m_momentumAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_momentumAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentTouchCarousel::onMomentumAnimationValueChanged);
-    connect(m_momentumAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentTouchCarousel::onMomentumAnimationFinished);
-    
+
+    connect(m_momentumAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentTouchCarousel::onMomentumAnimationValueChanged);
+    connect(m_momentumAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentTouchCarousel::onMomentumAnimationFinished);
+
     // Setup QScroller for advanced momentum
     if (m_momentumScrolling) {
         m_scroller = QScroller::scroller(this);
         if (m_scroller) {
             QScrollerProperties properties = m_scroller->scrollerProperties();
-            
+
             // Configure physics
-            properties.setScrollMetric(QScrollerProperties::DragVelocitySmoothingFactor, m_touchConfig.friction);
-            properties.setScrollMetric(QScrollerProperties::MinimumVelocity, 0.1);
-            properties.setScrollMetric(QScrollerProperties::MaximumVelocity, m_touchConfig.maximumVelocity);
-            properties.setScrollMetric(QScrollerProperties::AcceleratingFlickMaximumTime, 0.5);
-            properties.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
-            properties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
-            
+            properties.setScrollMetric(
+                QScrollerProperties::DragVelocitySmoothingFactor,
+                m_touchConfig.friction);
+            properties.setScrollMetric(QScrollerProperties::MinimumVelocity,
+                                       0.1);
+            properties.setScrollMetric(QScrollerProperties::MaximumVelocity,
+                                       m_touchConfig.maximumVelocity);
+            properties.setScrollMetric(
+                QScrollerProperties::AcceleratingFlickMaximumTime, 0.5);
+            properties.setScrollMetric(
+                QScrollerProperties::HorizontalOvershootPolicy,
+                QScrollerProperties::OvershootAlwaysOff);
+            properties.setScrollMetric(
+                QScrollerProperties::VerticalOvershootPolicy,
+                QScrollerProperties::OvershootAlwaysOff);
+
             m_scroller->setScrollerProperties(properties);
-            
-            connect(m_scroller, &QScroller::stateChanged,
-                    this, &FluentTouchCarousel::onScrollerStateChanged);
+
+            connect(m_scroller, &QScroller::stateChanged, this,
+                    &FluentTouchCarousel::onScrollerStateChanged);
         }
     }
 }
@@ -114,19 +122,20 @@ void FluentTouchCarousel::setupTouchFeedback() {
     // Setup feedback timer
     m_feedbackTimer->setSingleShot(true);
     m_feedbackTimer->setInterval(50);
-    connect(m_feedbackTimer.get(), &QTimer::timeout,
-            this, &FluentTouchCarousel::onTouchFeedbackTimer);
+    connect(m_feedbackTimer.get(), &QTimer::timeout, this,
+            &FluentTouchCarousel::onTouchFeedbackTimer);
 }
 
-void FluentTouchCarousel::setTouchConfig(const FluentCarouselTouchConfig& config) {
+void FluentTouchCarousel::setTouchConfig(
+    const FluentCarouselTouchConfig& config) {
     m_touchConfig = config;
-    
+
     // Update gesture recognition
     setupGestureRecognition();
-    
+
     // Update momentum scrolling
     setupMomentumScrolling();
-    
+
     // Update accessibility
     updateAccessibilityInfo();
 }
@@ -168,7 +177,8 @@ void FluentTouchCarousel::setEdgeBehavior(FluentCarouselEdgeBehavior behavior) {
     }
 }
 
-void FluentTouchCarousel::setTouchFeedback(FluentCarouselTouchFeedback feedback) {
+void FluentTouchCarousel::setTouchFeedback(
+    FluentCarouselTouchFeedback feedback) {
     if (m_touchConfig.feedback != feedback) {
         m_touchConfig.feedback = feedback;
         emit touchFeedbackChanged(feedback);
@@ -191,7 +201,7 @@ FluentTouchCarousel* FluentTouchCarousel::createMobile(QWidget* parent) {
     touchConfig.panThreshold = 5.0;
     touchConfig.feedback = FluentCarouselTouchFeedback::Combined;
     touchConfig.enableHapticFeedback = true;
-    
+
     return new FluentTouchCarousel(touchConfig, parent);
 }
 
@@ -202,7 +212,7 @@ FluentTouchCarousel* FluentTouchCarousel::createTablet(QWidget* parent) {
     touchConfig.panThreshold = 8.0;
     touchConfig.feedback = FluentCarouselTouchFeedback::Visual;
     touchConfig.enableHapticFeedback = false;
-    
+
     return new FluentTouchCarousel(touchConfig, parent);
 }
 
@@ -213,7 +223,7 @@ FluentTouchCarousel* FluentTouchCarousel::createDesktop(QWidget* parent) {
     touchConfig.panThreshold = 10.0;
     touchConfig.feedback = FluentCarouselTouchFeedback::Visual;
     touchConfig.enableHapticFeedback = false;
-    
+
     return new FluentTouchCarousel(touchConfig, parent);
 }
 
@@ -225,26 +235,26 @@ void FluentTouchCarousel::resetTouch() {
     m_touchVelocity = 0.0;
     m_currentGesture = FluentCarouselTouchGesture::None;
     m_gestureRecognized = false;
-    
+
     if (m_momentumAnimation->state() == QPropertyAnimation::Running) {
         m_momentumAnimation->stop();
     }
-    
+
     update();
 }
 
 void FluentTouchCarousel::stopMomentum() {
     if (m_momentumActive) {
         m_momentumActive = false;
-        
+
         if (m_momentumAnimation->state() == QPropertyAnimation::Running) {
             m_momentumAnimation->stop();
         }
-        
+
         if (m_scroller && m_scroller->state() != QScroller::Inactive) {
             m_scroller->stop();
         }
-        
+
         emit momentumFinished();
     }
 }
@@ -256,18 +266,20 @@ void FluentTouchCarousel::enableTouchFeedback(bool enabled) {
 void FluentTouchCarousel::calibrateTouchSensitivity() {
     // Auto-calibrate touch sensitivity based on device characteristics
     QScreen* screen = QApplication::primaryScreen();
-    if (!screen) return;
-    
+    if (!screen)
+        return;
+
     qreal dpi = screen->physicalDotsPerInch();
-    qreal scaleFactor = dpi / 96.0; // 96 DPI is standard
-    
+    qreal scaleFactor = dpi / 96.0;  // 96 DPI is standard
+
     // Adjust thresholds based on DPI
     m_touchConfig.swipeDistanceThreshold *= scaleFactor;
     m_touchConfig.panThreshold *= scaleFactor;
-    
+
     // Adjust for accessibility if needed
     if (m_touchConfig.enableTouchAccessibility) {
-        m_touchConfig.swipeDistanceThreshold *= m_touchConfig.accessibilityScaleFactor;
+        m_touchConfig.swipeDistanceThreshold *=
+            m_touchConfig.accessibilityScaleFactor;
         m_touchConfig.panThreshold *= m_touchConfig.accessibilityScaleFactor;
     }
 }
@@ -275,16 +287,16 @@ void FluentTouchCarousel::calibrateTouchSensitivity() {
 // Event handling
 bool FluentTouchCarousel::event(QEvent* event) {
     switch (event->type()) {
-    case QEvent::Gesture:
-        return gestureEvent(static_cast<QGestureEvent*>(event));
-    case QEvent::TouchBegin:
-    case QEvent::TouchUpdate:
-    case QEvent::TouchEnd:
-    case QEvent::TouchCancel:
-        touchEvent(static_cast<QTouchEvent*>(event));
-        return true;
-    default:
-        return FluentCarousel::event(event);
+        case QEvent::Gesture:
+            return gestureEvent(static_cast<QGestureEvent*>(event));
+        case QEvent::TouchBegin:
+        case QEvent::TouchUpdate:
+        case QEvent::TouchEnd:
+        case QEvent::TouchCancel:
+            touchEvent(static_cast<QTouchEvent*>(event));
+            return true;
+        default:
+            return FluentCarousel::event(event);
     }
 }
 
@@ -293,27 +305,27 @@ void FluentTouchCarousel::touchEvent(QTouchEvent* event) {
         FluentCarousel::touchEvent(event);
         return;
     }
-    
+
     const QList<QTouchEvent::TouchPoint>& touchPoints = event->points();
     if (touchPoints.isEmpty()) {
         return;
     }
-    
+
     switch (event->type()) {
-    case QEvent::TouchBegin:
-        processTouchBegin(event);
-        break;
-    case QEvent::TouchUpdate:
-        processTouchUpdate(event);
-        break;
-    case QEvent::TouchEnd:
-    case QEvent::TouchCancel:
-        processTouchEnd(event);
-        break;
-    default:
-        break;
+        case QEvent::TouchBegin:
+            processTouchBegin(event);
+            break;
+        case QEvent::TouchUpdate:
+            processTouchUpdate(event);
+            break;
+        case QEvent::TouchEnd:
+        case QEvent::TouchCancel:
+            processTouchEnd(event);
+            break;
+        default:
+            break;
     }
-    
+
     event->accept();
 }
 
@@ -321,19 +333,19 @@ bool FluentTouchCarousel::gestureEvent(QGestureEvent* event) {
     if (!m_gestureEnabled) {
         return false;
     }
-    
+
     bool handled = false;
-    
+
     if (QGesture* pan = event->gesture(Qt::PanGesture)) {
         handlePanGesture(static_cast<QPanGesture*>(pan));
         handled = true;
     }
-    
+
     if (QGesture* swipe = event->gesture(Qt::SwipeGesture)) {
         handleSwipeGesture(static_cast<QSwipeGesture*>(swipe));
         handled = true;
     }
-    
+
     if (QGesture* tap = event->gesture(Qt::TapGesture)) {
         if (QTapGesture* tapGesture = qobject_cast<QTapGesture*>(tap)) {
             handleTapGesture(tapGesture->position());
@@ -342,12 +354,13 @@ bool FluentTouchCarousel::gestureEvent(QGestureEvent* event) {
     }
 
     if (QGesture* longPress = event->gesture(Qt::TapAndHoldGesture)) {
-        if (QTapAndHoldGesture* holdGesture = qobject_cast<QTapAndHoldGesture*>(longPress)) {
+        if (QTapAndHoldGesture* holdGesture =
+                qobject_cast<QTapAndHoldGesture*>(longPress)) {
             handleLongPressGesture(holdGesture->position());
         }
         handled = true;
     }
-    
+
     return handled;
 }
 
@@ -360,46 +373,49 @@ void FluentTouchCarousel::mousePressEvent(QMouseEvent* event) {
         m_touchActive = true;
         m_touchStartTime = std::chrono::steady_clock::now();
         m_touchLastTime = m_touchStartTime;
-        
+
         emit touchStarted(m_touchStartPos);
-        
+
         // Stop any ongoing momentum
         stopMomentum();
-        
+
         // Provide touch feedback
         provideTouchFeedback(FluentCarouselTouchGesture::Tap);
     }
-    
+
     FluentCarousel::mousePressEvent(event);
 }
 
 void FluentTouchCarousel::mouseMoveEvent(QMouseEvent* event) {
     if (m_touchActive) {
         m_touchCurrentPos = event->position();
-        
+
         // Calculate velocity
         calculateTouchVelocity();
-        
+
         // Update offset
         QPointF delta = m_touchCurrentPos - m_touchStartPos;
-        qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal) 
-                        ? delta.x() : delta.y();
-        
+        qreal distance =
+            (config().orientation == FluentCarouselOrientation::Horizontal)
+                ? delta.x()
+                : delta.y();
+
         updateTouchOffset(distance);
-        
+
         // Detect gesture
-        if (!m_gestureRecognized && std::abs(distance) > m_touchConfig.panThreshold) {
+        if (!m_gestureRecognized &&
+            std::abs(distance) > m_touchConfig.panThreshold) {
             m_currentGesture = FluentCarouselTouchGesture::Pan;
             m_gestureRecognized = true;
             emit gestureDetected(m_currentGesture, m_touchVelocity);
         }
-        
+
         emit touchMoved(m_touchCurrentPos, m_touchVelocity);
-        
+
         m_touchLastPos = m_touchCurrentPos;
         m_touchLastTime = std::chrono::steady_clock::now();
     }
-    
+
     FluentCarousel::mouseMoveEvent(event);
 }
 
@@ -412,11 +428,14 @@ void FluentTouchCarousel::mouseReleaseEvent(QMouseEvent* event) {
 
         // Determine if this was a swipe
         QPointF delta = m_touchCurrentPos - m_touchStartPos;
-        qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                        ? delta.x() : delta.y();
+        qreal distance =
+            (config().orientation == FluentCarouselOrientation::Horizontal)
+                ? delta.x()
+                : delta.y();
 
-        bool isSwipe = (std::abs(distance) > m_touchConfig.swipeDistanceThreshold &&
-                       std::abs(m_touchVelocity) > m_touchConfig.swipeVelocityThreshold);
+        bool isSwipe =
+            (std::abs(distance) > m_touchConfig.swipeDistanceThreshold &&
+             std::abs(m_touchVelocity) > m_touchConfig.swipeVelocityThreshold);
 
         if (isSwipe) {
             // Handle swipe
@@ -426,7 +445,9 @@ void FluentTouchCarousel::mouseReleaseEvent(QMouseEvent* event) {
                 goToNext();
             }
 
-            emit swipePerformed(distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture, m_touchVelocity);
+            emit swipePerformed(
+                distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture,
+                m_touchVelocity);
             provideTouchFeedback(FluentCarouselTouchGesture::Swipe);
         } else if (m_momentumScrolling && std::abs(m_touchVelocity) > 100) {
             // Start momentum scrolling
@@ -450,10 +471,12 @@ void FluentTouchCarousel::wheelEvent(QWheelEvent* event) {
     if (m_touchEnabled) {
         // Handle wheel as touch input
         QPoint delta = event->angleDelta();
-        qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                        ? delta.x() : delta.y();
+        qreal distance =
+            (config().orientation == FluentCarouselOrientation::Horizontal)
+                ? delta.x()
+                : delta.y();
 
-        if (std::abs(distance) >= 120) { // Standard wheel step
+        if (std::abs(distance) >= 120) {  // Standard wheel step
             if (distance > 0) {
                 goToPrevious();
             } else {
@@ -480,7 +503,8 @@ void FluentTouchCarousel::paintEvent(QPaintEvent* event) {
     FluentCarousel::paintEvent(event);
 
     // Paint touch feedback if active
-    if (m_feedbackActive && m_touchConfig.feedback == FluentCarouselTouchFeedback::Visual) {
+    if (m_feedbackActive &&
+        m_touchConfig.feedback == FluentCarouselTouchFeedback::Visual) {
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
@@ -514,7 +538,8 @@ void FluentTouchCarousel::paintEvent(QPaintEvent* event) {
 }
 
 // Private slot implementations
-void FluentTouchCarousel::onMomentumAnimationValueChanged(const QVariant& value) {
+void FluentTouchCarousel::onMomentumAnimationValueChanged(
+    const QVariant& value) {
     m_currentOffset = value.toReal();
     emit currentOffsetChanged(m_currentOffset);
     update();
@@ -529,22 +554,22 @@ void FluentTouchCarousel::onMomentumAnimationFinished() {
 
 void FluentTouchCarousel::onScrollerStateChanged(QScroller::State state) {
     switch (state) {
-    case QScroller::Inactive:
-        m_momentumActive = false;
-        emit momentumFinished();
-        break;
-    case QScroller::Pressed:
-        // Touch started
-        break;
-    case QScroller::Dragging:
-        m_momentumActive = true;
-        break;
-    case QScroller::Scrolling:
-        if (!m_momentumActive) {
+        case QScroller::Inactive:
+            m_momentumActive = false;
+            emit momentumFinished();
+            break;
+        case QScroller::Pressed:
+            // Touch started
+            break;
+        case QScroller::Dragging:
             m_momentumActive = true;
-            emit momentumStarted(m_touchVelocity);
-        }
-        break;
+            break;
+        case QScroller::Scrolling:
+            if (!m_momentumActive) {
+                m_momentumActive = true;
+                emit momentumStarted(m_touchVelocity);
+            }
+            break;
     }
 }
 
@@ -556,7 +581,8 @@ void FluentTouchCarousel::onTouchFeedbackTimer() {
 // Private helper methods
 void FluentTouchCarousel::processTouchBegin(QTouchEvent* event) {
     const QList<QTouchEvent::TouchPoint>& touchPoints = event->points();
-    if (touchPoints.isEmpty()) return;
+    if (touchPoints.isEmpty())
+        return;
 
     const QTouchEvent::TouchPoint& point = touchPoints.first();
     m_touchStartPos = point.position();
@@ -579,7 +605,8 @@ void FluentTouchCarousel::processTouchBegin(QTouchEvent* event) {
 
 void FluentTouchCarousel::processTouchUpdate(QTouchEvent* event) {
     const QList<QTouchEvent::TouchPoint>& touchPoints = event->points();
-    if (touchPoints.isEmpty() || !m_touchActive) return;
+    if (touchPoints.isEmpty() || !m_touchActive)
+        return;
 
     const QTouchEvent::TouchPoint& point = touchPoints.first();
     m_touchCurrentPos = point.position();
@@ -589,15 +616,18 @@ void FluentTouchCarousel::processTouchUpdate(QTouchEvent* event) {
 
     // Update offset
     QPointF delta = m_touchCurrentPos - m_touchStartPos;
-    qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                    ? delta.x() : delta.y();
+    qreal distance =
+        (config().orientation == FluentCarouselOrientation::Horizontal)
+            ? delta.x()
+            : delta.y();
 
     updateTouchOffset(distance);
 
     // Detect gesture
     if (!m_gestureRecognized) {
         QPointF gestureDelta = m_touchCurrentPos - m_gestureStartPos;
-        qreal gestureDistance = std::sqrt(gestureDelta.x() * gestureDelta.x() + gestureDelta.y() * gestureDelta.y());
+        qreal gestureDistance = std::sqrt(gestureDelta.x() * gestureDelta.x() +
+                                          gestureDelta.y() * gestureDelta.y());
 
         if (gestureDistance > m_touchConfig.panThreshold) {
             m_currentGesture = FluentCarouselTouchGesture::Pan;
@@ -613,7 +643,8 @@ void FluentTouchCarousel::processTouchUpdate(QTouchEvent* event) {
 }
 
 void FluentTouchCarousel::processTouchEnd(QTouchEvent* event) {
-    if (!m_touchActive) return;
+    if (!m_touchActive)
+        return;
 
     const QList<QTouchEvent::TouchPoint>& touchPoints = event->points();
     if (!touchPoints.isEmpty()) {
@@ -628,18 +659,23 @@ void FluentTouchCarousel::processTouchEnd(QTouchEvent* event) {
 
     // Determine gesture type and handle accordingly
     QPointF delta = m_touchCurrentPos - m_touchStartPos;
-    qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                    ? delta.x() : delta.y();
+    qreal distance =
+        (config().orientation == FluentCarouselOrientation::Horizontal)
+            ? delta.x()
+            : delta.y();
 
     auto now = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_touchStartTime);
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - m_touchStartTime);
 
     // Check for different gesture types
-    if (duration < m_touchConfig.tapTimeout && std::abs(distance) < m_touchConfig.panThreshold) {
+    if (duration < m_touchConfig.tapTimeout &&
+        std::abs(distance) < m_touchConfig.panThreshold) {
         // Tap gesture
         handleTapGesture(m_touchCurrentPos);
     } else if (std::abs(distance) > m_touchConfig.swipeDistanceThreshold &&
-               std::abs(m_touchVelocity) > m_touchConfig.swipeVelocityThreshold) {
+               std::abs(m_touchVelocity) >
+                   m_touchConfig.swipeVelocityThreshold) {
         // Swipe gesture
         if (distance > 0) {
             goToPrevious();
@@ -647,7 +683,8 @@ void FluentTouchCarousel::processTouchEnd(QTouchEvent* event) {
             goToNext();
         }
 
-        emit swipePerformed(distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture, m_touchVelocity);
+        emit swipePerformed(distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture,
+                            m_touchVelocity);
         provideTouchFeedback(FluentCarouselTouchGesture::Swipe);
     } else if (m_momentumScrolling && std::abs(m_touchVelocity) > 100) {
         // Start momentum scrolling
@@ -666,14 +703,18 @@ void FluentTouchCarousel::processTouchEnd(QTouchEvent* event) {
 
 void FluentTouchCarousel::calculateTouchVelocity() {
     auto now = std::chrono::steady_clock::now();
-    auto timeDelta = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_touchLastTime);
+    auto timeDelta = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - m_touchLastTime);
 
     if (timeDelta.count() > 0) {
         QPointF posDelta = m_touchCurrentPos - m_touchLastPos;
-        qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                        ? posDelta.x() : posDelta.y();
+        qreal distance =
+            (config().orientation == FluentCarouselOrientation::Horizontal)
+                ? posDelta.x()
+                : posDelta.y();
 
-        m_touchVelocity = distance / timeDelta.count() * 1000.0; // pixels per second
+        m_touchVelocity =
+            distance / timeDelta.count() * 1000.0;  // pixels per second
     }
 }
 
@@ -686,7 +727,8 @@ void FluentTouchCarousel::updateTouchOffset(qreal offset) {
 
     // Check for edge conditions
     if (isAtEdge()) {
-        emit edgeReached(currentIndex() == 0, currentIndex() == itemCount() - 1);
+        emit edgeReached(currentIndex() == 0,
+                         currentIndex() == itemCount() - 1);
     }
 
     update();
@@ -695,38 +737,40 @@ void FluentTouchCarousel::updateTouchOffset(qreal offset) {
 // Gesture handling methods
 void FluentTouchCarousel::handlePanGesture(QPanGesture* gesture) {
     QPointF delta = gesture->delta();
-    qreal distance = (config().orientation == FluentCarouselOrientation::Horizontal)
-                    ? delta.x() : delta.y();
+    qreal distance =
+        (config().orientation == FluentCarouselOrientation::Horizontal)
+            ? delta.x()
+            : delta.y();
 
     switch (gesture->state()) {
-    case Qt::NoGesture:
-        break;
+        case Qt::NoGesture:
+            break;
 
-    case Qt::GestureStarted:
-        m_currentGesture = FluentCarouselTouchGesture::Pan;
-        stopMomentum();
-        break;
+        case Qt::GestureStarted:
+            m_currentGesture = FluentCarouselTouchGesture::Pan;
+            stopMomentum();
+            break;
 
-    case Qt::GestureUpdated:
-        updateTouchOffset(distance);
-        break;
+        case Qt::GestureUpdated:
+            updateTouchOffset(distance);
+            break;
 
-    case Qt::GestureFinished:
-        if (std::abs(distance) > m_touchConfig.swipeDistanceThreshold) {
-            if (distance > 0) {
-                goToPrevious();
-            } else {
-                goToNext();
+        case Qt::GestureFinished:
+            if (std::abs(distance) > m_touchConfig.swipeDistanceThreshold) {
+                if (distance > 0) {
+                    goToPrevious();
+                } else {
+                    goToNext();
+                }
             }
-        }
-        m_currentGesture = FluentCarouselTouchGesture::None;
-        break;
+            m_currentGesture = FluentCarouselTouchGesture::None;
+            break;
 
-    case Qt::GestureCanceled:
-        m_currentGesture = FluentCarouselTouchGesture::None;
-        m_currentOffset = 0.0;
-        update();
-        break;
+        case Qt::GestureCanceled:
+            m_currentGesture = FluentCarouselTouchGesture::None;
+            m_currentOffset = 0.0;
+            update();
+            break;
     }
 }
 
@@ -741,16 +785,16 @@ void FluentTouchCarousel::handleSwipeGesture(QSwipeGesture* gesture) {
     }
 
     switch (direction) {
-    case QSwipeGesture::Left:
-    case QSwipeGesture::Up:
-        goToNext();
-        break;
-    case QSwipeGesture::Right:
-    case QSwipeGesture::Down:
-        goToPrevious();
-        break;
-    default:
-        return;
+        case QSwipeGesture::Left:
+        case QSwipeGesture::Up:
+            goToNext();
+            break;
+        case QSwipeGesture::Right:
+        case QSwipeGesture::Down:
+            goToPrevious();
+            break;
+        default:
+            return;
     }
 
     emit swipePerformed(Qt::SwipeGesture, 0.0);
@@ -801,7 +845,7 @@ void FluentTouchCarousel::startMomentumAnimation(qreal velocity) {
 
     // Determine target index based on momentum
     int targetIndex = currentIndex();
-    if (std::abs(m_targetOffset) > width() * 0.3) { // 30% threshold
+    if (std::abs(m_targetOffset) > width() * 0.3) {  // 30% threshold
         if (m_targetOffset > 0) {
             targetIndex = std::max(0, currentIndex() - 1);
         } else {
@@ -824,7 +868,8 @@ void FluentTouchCarousel::applyEdgeResistance(qreal& offset) {
             (currentIndex() == itemCount() - 1 && offset < 0)) {
             offset = 0;
         }
-    } else if (m_touchConfig.edgeBehavior == FluentCarouselEdgeBehavior::Resist) {
+    } else if (m_touchConfig.edgeBehavior ==
+               FluentCarouselEdgeBehavior::Resist) {
         // Apply resistance at edges
         if ((currentIndex() == 0 && offset > 0) ||
             (currentIndex() == itemCount() - 1 && offset < 0)) {
@@ -852,35 +897,36 @@ void FluentTouchCarousel::handleEdgeBounce() {
 qreal FluentTouchCarousel::calculateDeceleration(qreal velocity) {
     // Simple deceleration calculation
     qreal friction = m_touchConfig.friction;
-    qreal time = std::abs(velocity) / (friction * 1000.0); // Time to stop
-    return velocity * time * 0.5; // Distance traveled
+    qreal time = std::abs(velocity) / (friction * 1000.0);  // Time to stop
+    return velocity * time * 0.5;                           // Distance traveled
 }
 
 // Feedback methods
-void FluentTouchCarousel::provideTouchFeedback(FluentCarouselTouchGesture gesture) {
+void FluentTouchCarousel::provideTouchFeedback(
+    FluentCarouselTouchGesture gesture) {
     Q_UNUSED(gesture)
     switch (m_touchConfig.feedback) {
-    case FluentCarouselTouchFeedback::None:
-        break;
+        case FluentCarouselTouchFeedback::None:
+            break;
 
-    case FluentCarouselTouchFeedback::Haptic:
-        provideHapticFeedback();
-        break;
-
-    case FluentCarouselTouchFeedback::Visual:
-        provideVisualFeedback(m_touchCurrentPos);
-        break;
-
-    case FluentCarouselTouchFeedback::Audio:
-        provideAudioFeedback();
-        break;
-
-    case FluentCarouselTouchFeedback::Combined:
-        if (m_touchConfig.enableHapticFeedback) {
+        case FluentCarouselTouchFeedback::Haptic:
             provideHapticFeedback();
-        }
-        provideVisualFeedback(m_touchCurrentPos);
-        break;
+            break;
+
+        case FluentCarouselTouchFeedback::Visual:
+            provideVisualFeedback(m_touchCurrentPos);
+            break;
+
+        case FluentCarouselTouchFeedback::Audio:
+            provideAudioFeedback();
+            break;
+
+        case FluentCarouselTouchFeedback::Combined:
+            if (m_touchConfig.enableHapticFeedback) {
+                provideHapticFeedback();
+            }
+            provideVisualFeedback(m_touchCurrentPos);
+            break;
     }
 }
 
@@ -909,7 +955,7 @@ void FluentTouchCarousel::provideAudioFeedback() {
 // Utility methods
 qreal FluentTouchCarousel::normalizeOffset(qreal offset) const {
     // Normalize offset to valid range
-    qreal maxOffset = width(); // or height for vertical
+    qreal maxOffset = width();  // or height for vertical
     return std::clamp(offset, -maxOffset, maxOffset);
 }
 
@@ -937,4 +983,4 @@ void FluentTouchCarousel::updateAccessibilityInfo() {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

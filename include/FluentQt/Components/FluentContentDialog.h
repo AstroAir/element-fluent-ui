@@ -1,72 +1,61 @@
 // include/FluentQt/Components/FluentContentDialog.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
 #include <QDialog>
-#include <QPushButton>
-#include <QLabel>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QPropertyAnimation>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentDialogResult {
-    None,
-    Primary,
-    Secondary,
-    Close
-};
+enum class FluentDialogResult { None, Primary, Secondary, Close };
 
 class FluentContentDialog : public QDialog {
     Q_OBJECT
 
 public:
     explicit FluentContentDialog(QWidget* parent = nullptr);
-    
+
     // Content
     void setTitle(const QString& title);
     QString title() const;
-    
+
     void setContent(const QString& content);
     QString content() const;
-    
+
     void setContentWidget(QWidget* widget);
     QWidget* contentWidget() const;
-    
+
     // Buttons
     void setPrimaryButtonText(const QString& text);
     QString primaryButtonText() const;
-    
+
     void setSecondaryButtonText(const QString& text);
     QString secondaryButtonText() const;
-    
+
     void setCloseButtonText(const QString& text);
     QString closeButtonText() const;
-    
+
     void setPrimaryButtonEnabled(bool enabled);
     void setSecondaryButtonEnabled(bool enabled);
-    
+
     // Result
     FluentDialogResult result() const { return m_result; }
-    
+
     // Static convenience methods
     static FluentDialogResult showMessageDialog(
-        QWidget* parent,
-        const QString& title,
-        const QString& message,
+        QWidget* parent, const QString& title, const QString& message,
         const QString& primaryButton = "OK",
         const QString& secondaryButton = "",
-        const QString& closeButton = "Cancel"
-    );
-    
+        const QString& closeButton = "Cancel");
+
     static FluentDialogResult showConfirmDialog(
-        QWidget* parent,
-        const QString& title,
-        const QString& message,
+        QWidget* parent, const QString& title, const QString& message,
         const QString& confirmButton = "Yes",
-        const QString& cancelButton = "No"
-    );
+        const QString& cancelButton = "No");
 
 protected:
     void showEvent(QShowEvent* event) override;
@@ -94,10 +83,10 @@ private:
     QPushButton* m_primaryButton;
     QPushButton* m_secondaryButton;
     QPushButton* m_closeButton;
-    
+
     FluentDialogResult m_result{FluentDialogResult::None};
     std::unique_ptr<QPropertyAnimation> m_showAnimation;
     std::unique_ptr<QPropertyAnimation> m_hideAnimation;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

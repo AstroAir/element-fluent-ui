@@ -1,25 +1,22 @@
 // include/FluentQt/Components/FluentSplitter.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
+#include <QPropertyAnimation>
 #include <QSplitter>
 #include <QSplitterHandle>
-#include <QPropertyAnimation>
 #include <QTimer>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentSplitterResizeMode {
-    Interactive,
-    Animated,
-    Smooth
-};
+enum class FluentSplitterResizeMode { Interactive, Animated, Smooth };
 
 class FluentSplitterHandle : public QSplitterHandle {
     Q_OBJECT
 
 public:
-    explicit FluentSplitterHandle(Qt::Orientation orientation, QSplitter* parent = nullptr);
+    explicit FluentSplitterHandle(Qt::Orientation orientation,
+                                  QSplitter* parent = nullptr);
 
     Qt::Orientation orientation() const { return m_orientation; }
     void setOrientation(Qt::Orientation orientation);
@@ -51,7 +48,7 @@ private:
     void paintHandle(QPainter& painter, const QRect& rect);
     void paintGrip(QPainter& painter, const QRect& rect);
     void paintCollapseButton(QPainter& painter, const QRect& rect);
-    
+
     QRect getGripRect() const;
     QRect getCollapseButtonRect() const;
 
@@ -66,8 +63,10 @@ private:
 
 class FluentSplitter : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(Qt::Orientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
-    Q_PROPERTY(FluentSplitterResizeMode resizeMode READ resizeMode WRITE setResizeMode)
+    Q_PROPERTY(Qt::Orientation orientation READ orientation WRITE setOrientation
+                   NOTIFY orientationChanged)
+    Q_PROPERTY(
+        FluentSplitterResizeMode resizeMode READ resizeMode WRITE setResizeMode)
     Q_PROPERTY(bool opaqueResize READ opaqueResize WRITE setOpaqueResize)
     Q_PROPERTY(bool collapsible READ collapsible WRITE setCollapsible)
     Q_PROPERTY(int handleWidth READ handleWidth WRITE setHandleWidth)
@@ -75,7 +74,8 @@ class FluentSplitter : public Core::FluentComponent {
 
 public:
     explicit FluentSplitter(QWidget* parent = nullptr);
-    explicit FluentSplitter(Qt::Orientation orientation, QWidget* parent = nullptr);
+    explicit FluentSplitter(Qt::Orientation orientation,
+                            QWidget* parent = nullptr);
 
     // Orientation
     Qt::Orientation orientation() const;
@@ -124,17 +124,17 @@ public:
     // Responsive behavior
     void setResponsiveBreakpoints(const QList<int>& breakpoints);
     QList<int> responsiveBreakpoints() const;
-    
+
     void setResponsiveLayout(int breakpoint, const QList<int>& sizes);
     void setResponsiveLayout(int breakpoint, const QList<double>& proportions);
 
     // Constraints
     void setMinimumSize(int index, int size);
     int minimumSize(int index) const;
-    
+
     void setMaximumSize(int index, int size);
     int maximumSize(int index) const;
-    
+
     void setStretchFactor(int index, int stretch);
     int stretchFactor(int index) const;
 
@@ -196,7 +196,8 @@ private:
     QSplitter* m_splitter{nullptr};
 
     // FluentSplitter specific properties
-    FluentSplitterResizeMode m_resizeMode{FluentSplitterResizeMode::Interactive};
+    FluentSplitterResizeMode m_resizeMode{
+        FluentSplitterResizeMode::Interactive};
     bool m_animatedResize{false};
 
     // Custom handles
@@ -221,4 +222,4 @@ private:
     QTimer* m_responsiveTimer{nullptr};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

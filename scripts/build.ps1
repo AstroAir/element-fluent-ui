@@ -153,6 +153,13 @@ foreach ($path in $msys2Paths) {
             $fullGccPath = Join-Path (Split-Path $path) $gccPath
             $env:PATH = "$fullGccPath;" + $env:PATH
         }
+
+        # Add Qt DLL path for tests
+        $qtBinPath = $path  # Qt DLLs are in the same bin directory as MinGW
+        if (Test-Path $qtBinPath) {
+            $env:PATH = "$qtBinPath;" + $env:PATH
+        }
+
         Write-Host "Using MinGW from: $path" -ForegroundColor Green
         break
     }
@@ -227,6 +234,31 @@ if ($Install) {
 # Test if requested
 if ($Test) {
     Write-Host "Running tests..." -ForegroundColor Yellow
+
+    # Copy FluentQt DLL to test directory for Windows
+    $buildDir = switch ($Preset) {
+        "debug" { "build-debug" }
+        "release" { "build-release" }
+        "static" { "build-static" }
+        "minimal" { "build-minimal" }
+        "development" { "build-dev" }
+        "windows-msys2" { "build-windows-msys2" }
+        "windows-msvc" { "build-windows-msvc" }
+        default { "build" }
+    }
+
+    $fluentQtDll = Join-Path $buildDir "libFluentQt.dll"
+    $testDir = Join-Path $buildDir "tests"
+
+    if ((Test-Path $fluentQtDll) -and (Test-Path $testDir)) {
+        Copy-Item $fluentQtDll $testDir -Force
+        Write-Host "Copied FluentQt DLL to test directory" -ForegroundColor Green
+    }
+
+    # Set Qt platform to offscreen for headless testing
+    $env:QT_QPA_PLATFORM = "offscreen"
+    $env:QT_LOGGING_RULES = "qt.qpa.plugin=false"
+
     $testCmd = "ctest --preset $Preset"
     Write-Host "Running: $testCmd" -ForegroundColor Gray
     Invoke-Expression $testCmd

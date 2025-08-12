@@ -1,7 +1,7 @@
 // tests/FluentTimelineTest.cpp
-#include <QtTest/QtTest>
 #include <QApplication>
 #include <QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentTimeline.h"
 #include "FluentQt/Components/FluentTimelineItem.h"
@@ -52,13 +52,9 @@ void FluentTimelineTest::initTestCase() {
     }
 }
 
-void FluentTimelineTest::cleanupTestCase() {
-    delete m_app;
-}
+void FluentTimelineTest::cleanupTestCase() { delete m_app; }
 
-void FluentTimelineTest::init() {
-    m_timeline = new FluentTimeline();
-}
+void FluentTimelineTest::init() { m_timeline = new FluentTimeline(); }
 
 void FluentTimelineTest::cleanup() {
     delete m_timeline;
@@ -100,12 +96,14 @@ void FluentTimelineTest::testTimelineCreation() {
     // Test factory methods
     auto* verticalTimeline = FluentTimeline::createVerticalTimeline();
     QVERIFY(verticalTimeline != nullptr);
-    QCOMPARE(verticalTimeline->orientation(), FluentTimelineOrientation::Vertical);
+    QCOMPARE(verticalTimeline->orientation(),
+             FluentTimelineOrientation::Vertical);
     delete verticalTimeline;
 
     auto* horizontalTimeline = FluentTimeline::createHorizontalTimeline();
     QVERIFY(horizontalTimeline != nullptr);
-    QCOMPARE(horizontalTimeline->orientation(), FluentTimelineOrientation::Horizontal);
+    QCOMPARE(horizontalTimeline->orientation(),
+             FluentTimelineOrientation::Horizontal);
     delete horizontalTimeline;
 
     auto* compactTimeline = FluentTimeline::createCompactTimeline();
@@ -139,7 +137,8 @@ void FluentTimelineTest::testTimelineConfiguration() {
     QCOMPARE(m_timeline->orientation(), FluentTimelineOrientation::Horizontal);
     QCOMPARE(m_timeline->alignment(), FluentTimelineAlignment::Right);
     QCOMPARE(m_timeline->timelineStyle(), FluentTimelineStyle::Minimal);
-    QCOMPARE(m_timeline->connectorStyle(), FluentTimelineConnectorStyle::Dashed);
+    QCOMPARE(m_timeline->connectorStyle(),
+             FluentTimelineConnectorStyle::Dashed);
     QCOMPARE(m_timeline->itemSpacing(), 25);
     QCOMPARE(m_timeline->connectorWidth(), 3);
     QCOMPARE(m_timeline->indicatorSize(), 15);
@@ -250,13 +249,15 @@ void FluentTimelineTest::testTimelineItemManagement() {
     QCOMPARE(m_timeline->itemCount(), 4);
 
     QIcon testIcon(":/test/icon.png");
-    auto* iconItem = m_timeline->addIconItem(testIcon, "Icon Item", "Icon Description");
+    auto* iconItem =
+        m_timeline->addIconItem(testIcon, "Icon Item", "Icon Description");
     QVERIFY(iconItem != nullptr);
     QCOMPARE(iconItem->title(), QString("Icon Item"));
     QCOMPARE(m_timeline->itemCount(), 5);
 
     QDateTime testDateTime = QDateTime::currentDateTime();
-    auto* dateTimeItem = m_timeline->addDateTimeItem(testDateTime, "DateTime Item", "DateTime Description");
+    auto* dateTimeItem = m_timeline->addDateTimeItem(
+        testDateTime, "DateTime Item", "DateTime Description");
     QVERIFY(dateTimeItem != nullptr);
     QCOMPARE(dateTimeItem->title(), QString("DateTime Item"));
     QCOMPARE(dateTimeItem->dateTime(), testDateTime);
@@ -269,7 +270,7 @@ void FluentTimelineTest::testTimelineItemManagement() {
     QCOMPARE(m_timeline->itemCount(), 5);
     QCOMPARE(removeSpy.count(), 1);
 
-    m_timeline->removeItem(0); // Remove item3
+    m_timeline->removeItem(0);  // Remove item3
     QCOMPARE(m_timeline->itemCount(), 4);
     QCOMPARE(m_timeline->item(0), item2);
 
@@ -290,7 +291,8 @@ void FluentTimelineTest::testTimelineNavigation() {
     m_timeline->addItem(item3);
 
     QSignalSpy currentItemSpy(m_timeline, &FluentTimeline::currentItemChanged);
-    QSignalSpy currentIndexSpy(m_timeline, &FluentTimeline::currentIndexChanged);
+    QSignalSpy currentIndexSpy(m_timeline,
+                               &FluentTimeline::currentIndexChanged);
 
     // Test current item/index
     QCOMPARE(m_timeline->currentItem(), nullptr);
@@ -327,8 +329,8 @@ void FluentTimelineTest::testTimelineSignals() {
 
     // Simulate item click (would normally be triggered by user interaction)
     emit item->clicked();
-    // Note: The timeline's itemClicked signal is connected to item's clicked signal
-    // In a real test, we would simulate mouse events on the item
+    // Note: The timeline's itemClicked signal is connected to item's clicked
+    // signal In a real test, we would simulate mouse events on the item
 }
 
 void FluentTimelineTest::testTimelineItemCreation() {
@@ -482,16 +484,19 @@ void FluentTimelineTest::testTimelineItemFactoryMethods() {
     QDateTime testDateTime = QDateTime::currentDateTime();
 
     // Test milestone creation
-    auto* milestone = FluentTimelineItem::createMilestone("Milestone Title", testDateTime);
+    auto* milestone =
+        FluentTimelineItem::createMilestone("Milestone Title", testDateTime);
     QVERIFY(milestone != nullptr);
     QCOMPARE(milestone->title(), QString("Milestone Title"));
     QCOMPARE(milestone->dateTime(), testDateTime);
     QCOMPARE(milestone->itemType(), FluentTimelineItemType::Milestone);
-    QCOMPARE(milestone->indicatorStyle(), FluentTimelineItemIndicatorStyle::Diamond);
+    QCOMPARE(milestone->indicatorStyle(),
+             FluentTimelineItemIndicatorStyle::Diamond);
     delete milestone;
 
     // Test event creation
-    auto* event = FluentTimelineItem::createEvent("Event Title", "Event Description", testDateTime);
+    auto* event = FluentTimelineItem::createEvent(
+        "Event Title", "Event Description", testDateTime);
     QVERIFY(event != nullptr);
     QCOMPARE(event->title(), QString("Event Title"));
     QCOMPARE(event->description(), QString("Event Description"));
@@ -500,7 +505,8 @@ void FluentTimelineTest::testTimelineItemFactoryMethods() {
     delete event;
 
     // Test task creation
-    auto* task = FluentTimelineItem::createTask("Task Title", FluentTimelineItemState::Current);
+    auto* task = FluentTimelineItem::createTask(
+        "Task Title", FluentTimelineItemState::Current);
     QVERIFY(task != nullptr);
     QCOMPARE(task->title(), QString("Task Title"));
     QCOMPARE(task->itemState(), FluentTimelineItemState::Current);
@@ -508,7 +514,8 @@ void FluentTimelineTest::testTimelineItemFactoryMethods() {
     delete task;
 
     // Test note creation
-    auto* note = FluentTimelineItem::createNote("Note Title", "Note Description");
+    auto* note =
+        FluentTimelineItem::createNote("Note Title", "Note Description");
     QVERIFY(note != nullptr);
     QCOMPARE(note->title(), QString("Note Title"));
     QCOMPARE(note->description(), QString("Note Description"));
@@ -517,21 +524,25 @@ void FluentTimelineTest::testTimelineItemFactoryMethods() {
 
     // Test icon item creation
     QIcon testIcon(":/test/icon.png");
-    auto* iconItem = FluentTimelineItem::createIconItem(testIcon, "Icon Title", "Icon Description");
+    auto* iconItem = FluentTimelineItem::createIconItem(testIcon, "Icon Title",
+                                                        "Icon Description");
     QVERIFY(iconItem != nullptr);
     QCOMPARE(iconItem->title(), QString("Icon Title"));
     QCOMPARE(iconItem->description(), QString("Icon Description"));
-    QCOMPARE(iconItem->indicatorStyle(), FluentTimelineItemIndicatorStyle::Icon);
+    QCOMPARE(iconItem->indicatorStyle(),
+             FluentTimelineItemIndicatorStyle::Icon);
     delete iconItem;
 
     // Test avatar item creation
     QPixmap testAvatar(32, 32);
     testAvatar.fill(Qt::blue);
-    auto* avatarItem = FluentTimelineItem::createAvatarItem(testAvatar, "Avatar Title", "Avatar Description");
+    auto* avatarItem = FluentTimelineItem::createAvatarItem(
+        testAvatar, "Avatar Title", "Avatar Description");
     QVERIFY(avatarItem != nullptr);
     QCOMPARE(avatarItem->title(), QString("Avatar Title"));
     QCOMPARE(avatarItem->description(), QString("Avatar Description"));
-    QCOMPARE(avatarItem->indicatorStyle(), FluentTimelineItemIndicatorStyle::Avatar);
+    QCOMPARE(avatarItem->indicatorStyle(),
+             FluentTimelineItemIndicatorStyle::Avatar);
     delete avatarItem;
 }
 

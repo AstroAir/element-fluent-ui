@@ -1,61 +1,61 @@
 // src/Components/FluentDropdown.cpp
 #include "FluentQt/Components/FluentDropdown.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QAccessible>
+#include <QApplication>
+#include <QFocusEvent>
+#include <QFontMetrics>
+#include <QKeyEvent>
+#include <QListWidgetItem>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
-#include <QApplication>
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QFocusEvent>
 #include <QResizeEvent>
-#include <QWheelEvent>
-#include <QAccessible>
-#include <QListWidgetItem>
 #include <QScrollBar>
+#include <QWheelEvent>
 #include <QtMath>
 #include <algorithm>
 
 namespace FluentQt::Components {
 
 FluentDropdown::FluentDropdown(QWidget* parent)
-    : Core::FluentComponent(parent)
-{
+    : Core::FluentComponent(parent) {
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
     setObjectName("FluentDropdown");
-    
+
     setupUI();
     setupDropdown();
     setupAnimations();
     updateColors();
     updateFonts();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentDropdown::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentDropdown::onThemeChanged);
 }
 
 FluentDropdown::~FluentDropdown() = default;
 
 void FluentDropdown::setupUI() {
     FLUENT_PROFILE("FluentDropdown::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QHBoxLayout(this);
     m_mainLayout->setContentsMargins(8, 4, 8, 4);
     m_mainLayout->setSpacing(8);
-    
+
     // Create display label
     m_displayLabel = new QLabel(this);
     m_displayLabel->setObjectName("FluentDropdown_DisplayLabel");
     m_displayLabel->setText(m_placeholderText);
     m_displayLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_mainLayout->addWidget(m_displayLabel, 1);
-    
+
     // Set minimum height
     setMinimumHeight(32);
     setFixedHeight(32);
@@ -63,18 +63,18 @@ void FluentDropdown::setupUI() {
 
 void FluentDropdown::setupDropdown() {
     FLUENT_PROFILE("FluentDropdown::setupDropdown");
-    
+
     // Create dropdown container
     m_dropdownContainer = new QWidget(this);
     m_dropdownContainer->setObjectName("FluentDropdown_Container");
     m_dropdownContainer->setWindowFlags(Qt::Popup);
     m_dropdownContainer->hide();
-    
+
     // Create dropdown layout
     auto* dropdownLayout = new QVBoxLayout(m_dropdownContainer);
     dropdownLayout->setContentsMargins(1, 1, 1, 1);
     dropdownLayout->setSpacing(0);
-    
+
     // Create list widget
     m_listWidget = new QListWidget(m_dropdownContainer);
     m_listWidget->setObjectName("FluentDropdown_List");
@@ -83,29 +83,31 @@ void FluentDropdown::setupDropdown() {
     m_listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
     dropdownLayout->addWidget(m_listWidget);
-    
+
     // Connect list signals
-    connect(m_listWidget, &QListWidget::itemClicked, [this](QListWidgetItem* item) {
-        const int index = m_listWidget->row(item);
-        onListItemClicked(index);
-    });
+    connect(m_listWidget, &QListWidget::itemClicked,
+            [this](QListWidgetItem* item) {
+                const int index = m_listWidget->row(item);
+                onListItemClicked(index);
+            });
 }
 
 void FluentDropdown::setupAnimations() {
     FLUENT_PROFILE("FluentDropdown::setupAnimations");
-    
+
     // Create opacity effect for dropdown
     m_dropdownOpacityEffect = new QGraphicsOpacityEffect(this);
     m_dropdownOpacityEffect->setOpacity(0.0);
     m_dropdownContainer->setGraphicsEffect(m_dropdownOpacityEffect);
-    
+
     // Create dropdown animation
-    m_dropdownAnimation = std::make_unique<QPropertyAnimation>(m_dropdownOpacityEffect, "opacity");
+    m_dropdownAnimation = std::make_unique<QPropertyAnimation>(
+        m_dropdownOpacityEffect, "opacity");
     m_dropdownAnimation->setDuration(200);
     m_dropdownAnimation->setEasingCurve(QEasingCurve::OutQuad);
-    
-    connect(m_dropdownAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentDropdown::onDropdownAnimationFinished);
+
+    connect(m_dropdownAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentDropdown::onDropdownAnimationFinished);
 }
 
 QString FluentDropdown::currentText() const {
@@ -122,9 +124,7 @@ void FluentDropdown::setCurrentText(const QString& text) {
     }
 }
 
-int FluentDropdown::currentIndex() const {
-    return m_currentIndex;
-}
+int FluentDropdown::currentIndex() const { return m_currentIndex; }
 
 void FluentDropdown::setCurrentIndex(int index) {
     if (index != m_currentIndex && index >= -1 && index < m_items.size()) {
@@ -132,7 +132,7 @@ void FluentDropdown::setCurrentIndex(int index) {
         updateDisplayText();
         m_sizeHintValid = false;
         updateGeometry();
-        
+
         emit currentIndexChanged(index);
         emit currentTextChanged(currentText());
         emit currentDataChanged(currentData());
@@ -147,9 +147,7 @@ QVariant FluentDropdown::currentData() const {
     return QVariant();
 }
 
-QString FluentDropdown::placeholderText() const {
-    return m_placeholderText;
-}
+QString FluentDropdown::placeholderText() const { return m_placeholderText; }
 
 void FluentDropdown::setPlaceholderText(const QString& text) {
     if (m_placeholderText != text) {
@@ -159,9 +157,7 @@ void FluentDropdown::setPlaceholderText(const QString& text) {
     }
 }
 
-bool FluentDropdown::isEditable() const {
-    return m_editable;
-}
+bool FluentDropdown::isEditable() const { return m_editable; }
 
 void FluentDropdown::setEditable(bool editable) {
     if (m_editable != editable) {
@@ -171,27 +167,23 @@ void FluentDropdown::setEditable(bool editable) {
     }
 }
 
-bool FluentDropdown::isDropdownVisible() const {
-    return m_dropdownVisible;
-}
+bool FluentDropdown::isDropdownVisible() const { return m_dropdownVisible; }
 
 void FluentDropdown::setDropdownVisible(bool visible) {
     if (m_dropdownVisible != visible) {
         m_dropdownVisible = visible;
-        
+
         if (visible) {
             startShowDropdownAnimation();
         } else {
             startHideDropdownAnimation();
         }
-        
+
         emit dropdownVisibilityChanged(visible);
     }
 }
 
-int FluentDropdown::maxVisibleItems() const {
-    return m_maxVisibleItems;
-}
+int FluentDropdown::maxVisibleItems() const { return m_maxVisibleItems; }
 
 void FluentDropdown::setMaxVisibleItems(int count) {
     if (m_maxVisibleItems != count && count > 0) {
@@ -205,28 +197,31 @@ void FluentDropdown::addItem(const QString& text, const QVariant& data) {
     addItem(FluentDropdownItem(text, data));
 }
 
-void FluentDropdown::addItem(const QIcon& icon, const QString& text, const QVariant& data) {
+void FluentDropdown::addItem(const QIcon& icon, const QString& text,
+                             const QVariant& data) {
     addItem(FluentDropdownItem(icon, text, data));
 }
 
 void FluentDropdown::addItem(const FluentDropdownItem& item) {
     m_items.append(item);
-    
+
     // Add to list widget
     auto* listItem = new QListWidgetItem();
     listItem->setText(item.text);
     listItem->setIcon(item.icon);
     listItem->setData(Qt::UserRole, item.data);
-    
+
     if (item.separator) {
         listItem->setFlags(Qt::NoItemFlags);
         listItem->setSizeHint(QSize(0, 1));
     } else {
-        listItem->setFlags(item.enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
+        listItem->setFlags(item.enabled
+                               ? Qt::ItemIsEnabled | Qt::ItemIsSelectable
+                               : Qt::NoItemFlags);
     }
-    
+
     m_listWidget->addItem(listItem);
-    
+
     m_sizeHintValid = false;
     updateGeometry();
     updateDropdownSize();
@@ -238,11 +233,13 @@ void FluentDropdown::addSeparator() {
     addItem(separator);
 }
 
-void FluentDropdown::insertItem(int index, const QString& text, const QVariant& data) {
+void FluentDropdown::insertItem(int index, const QString& text,
+                                const QVariant& data) {
     insertItem(index, FluentDropdownItem(text, data));
 }
 
-void FluentDropdown::insertItem(int index, const QIcon& icon, const QString& text, const QVariant& data) {
+void FluentDropdown::insertItem(int index, const QIcon& icon,
+                                const QString& text, const QVariant& data) {
     insertItem(index, FluentDropdownItem(icon, text, data));
 }
 
@@ -251,29 +248,31 @@ void FluentDropdown::insertItem(int index, const FluentDropdownItem& item) {
         addItem(item);
         return;
     }
-    
+
     m_items.insert(index, item);
-    
+
     // Insert to list widget
     auto* listItem = new QListWidgetItem();
     listItem->setText(item.text);
     listItem->setIcon(item.icon);
     listItem->setData(Qt::UserRole, item.data);
-    
+
     if (item.separator) {
         listItem->setFlags(Qt::NoItemFlags);
         listItem->setSizeHint(QSize(0, 1));
     } else {
-        listItem->setFlags(item.enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
+        listItem->setFlags(item.enabled
+                               ? Qt::ItemIsEnabled | Qt::ItemIsSelectable
+                               : Qt::NoItemFlags);
     }
-    
+
     m_listWidget->insertItem(index, listItem);
-    
+
     // Adjust current index if necessary
     if (m_currentIndex >= index) {
         m_currentIndex++;
     }
-    
+
     m_sizeHintValid = false;
     updateGeometry();
     updateDropdownSize();
@@ -288,10 +287,10 @@ void FluentDropdown::insertSeparator(int index) {
 void FluentDropdown::removeItem(int index) {
     if (index >= 0 && index < m_items.size()) {
         m_items.removeAt(index);
-        
+
         // Remove from list widget
         delete m_listWidget->takeItem(index);
-        
+
         // Adjust current index
         if (m_currentIndex == index) {
             m_currentIndex = -1;
@@ -299,7 +298,7 @@ void FluentDropdown::removeItem(int index) {
         } else if (m_currentIndex > index) {
             m_currentIndex--;
         }
-        
+
         m_sizeHintValid = false;
         updateGeometry();
         updateDropdownSize();
@@ -311,15 +310,13 @@ void FluentDropdown::clear() {
     m_listWidget->clear();
     m_currentIndex = -1;
     updateDisplayText();
-    
+
     m_sizeHintValid = false;
     updateGeometry();
     updateDropdownSize();
 }
 
-int FluentDropdown::count() const {
-    return m_items.size();
-}
+int FluentDropdown::count() const { return m_items.size(); }
 
 FluentDropdownItem FluentDropdown::itemAt(int index) const {
     if (index >= 0 && index < m_items.size()) {
@@ -331,20 +328,22 @@ FluentDropdownItem FluentDropdown::itemAt(int index) const {
 void FluentDropdown::setItemAt(int index, const FluentDropdownItem& item) {
     if (index >= 0 && index < m_items.size()) {
         m_items[index] = item;
-        
+
         // Update list widget item
         auto* listItem = m_listWidget->item(index);
         if (listItem) {
             listItem->setText(item.text);
             listItem->setIcon(item.icon);
             listItem->setData(Qt::UserRole, item.data);
-            listItem->setFlags(item.enabled ? Qt::ItemIsEnabled | Qt::ItemIsSelectable : Qt::NoItemFlags);
+            listItem->setFlags(item.enabled
+                                   ? Qt::ItemIsEnabled | Qt::ItemIsSelectable
+                                   : Qt::NoItemFlags);
         }
-        
+
         if (index == m_currentIndex) {
             updateDisplayText();
         }
-        
+
         m_sizeHintValid = false;
         updateGeometry();
     }
@@ -353,11 +352,14 @@ void FluentDropdown::setItemAt(int index, const FluentDropdownItem& item) {
 int FluentDropdown::findText(const QString& text, Qt::MatchFlags flags) const {
     for (int i = 0; i < m_items.size(); ++i) {
         if (flags & Qt::MatchExactly) {
-            if (m_items[i].text == text) return i;
+            if (m_items[i].text == text)
+                return i;
         } else if (flags & Qt::MatchContains) {
-            if (m_items[i].text.contains(text, Qt::CaseInsensitive)) return i;
+            if (m_items[i].text.contains(text, Qt::CaseInsensitive))
+                return i;
         } else if (flags & Qt::MatchStartsWith) {
-            if (m_items[i].text.startsWith(text, Qt::CaseInsensitive)) return i;
+            if (m_items[i].text.startsWith(text, Qt::CaseInsensitive))
+                return i;
         }
     }
     return -1;
@@ -365,7 +367,8 @@ int FluentDropdown::findText(const QString& text, Qt::MatchFlags flags) const {
 
 int FluentDropdown::findData(const QVariant& data) const {
     for (int i = 0; i < m_items.size(); ++i) {
-        if (m_items[i].data == data) return i;
+        if (m_items[i].data == data)
+            return i;
     }
     return -1;
 }
@@ -389,7 +392,8 @@ QSize FluentDropdown::sizeHint() const {
     }
 
     // Add padding and chevron space
-    const int totalWidth = maxWidth + 40; // 16 padding + 16 chevron + 8 spacing
+    const int totalWidth =
+        maxWidth + 40;  // 16 padding + 16 chevron + 8 spacing
 
     m_cachedSizeHint = QSize(totalWidth, 32);
     m_sizeHintValid = true;
@@ -397,17 +401,11 @@ QSize FluentDropdown::sizeHint() const {
     return m_cachedSizeHint;
 }
 
-QSize FluentDropdown::minimumSizeHint() const {
-    return QSize(100, 32);
-}
+QSize FluentDropdown::minimumSizeHint() const { return QSize(100, 32); }
 
-void FluentDropdown::showDropdown() {
-    setDropdownVisible(true);
-}
+void FluentDropdown::showDropdown() { setDropdownVisible(true); }
 
-void FluentDropdown::hideDropdown() {
-    setDropdownVisible(false);
-}
+void FluentDropdown::hideDropdown() { setDropdownVisible(false); }
 
 void FluentDropdown::toggleDropdown() {
     setDropdownVisible(!m_dropdownVisible);
@@ -524,9 +522,9 @@ void FluentDropdown::paintChevron(QPainter& painter, const QRect& rect) {
 
     // Draw chevron down arrow
     QPainterPath chevron;
-    chevron.moveTo(-size, -size/2);
-    chevron.lineTo(0, size/2);
-    chevron.lineTo(size, -size/2);
+    chevron.moveTo(-size, -size / 2);
+    chevron.lineTo(0, size / 2);
+    chevron.lineTo(size, -size / 2);
 
     painter.drawPath(chevron);
 
@@ -596,11 +594,13 @@ void FluentDropdown::keyPressEvent(QKeyEvent* event) {
         case Qt::Key_Down:
             if (m_dropdownVisible) {
                 // Navigate down in dropdown
-                const int newIndex = std::min(static_cast<int>(m_items.size()) - 1, m_currentIndex + 1);
+                const int newIndex = std::min(
+                    static_cast<int>(m_items.size()) - 1, m_currentIndex + 1);
                 setCurrentIndex(newIndex);
             } else {
                 // Navigate items when closed
-                const int newIndex = std::min(static_cast<int>(m_items.size()) - 1, m_currentIndex + 1);
+                const int newIndex = std::min(
+                    static_cast<int>(m_items.size()) - 1, m_currentIndex + 1);
                 setCurrentIndex(newIndex);
             }
             event->accept();
@@ -617,7 +617,8 @@ void FluentDropdown::focusInEvent(QFocusEvent* event) {
 }
 
 void FluentDropdown::focusOutEvent(QFocusEvent* event) {
-    setState(underMouse() ? Core::FluentState::Hovered : Core::FluentState::Normal);
+    setState(underMouse() ? Core::FluentState::Hovered
+                          : Core::FluentState::Normal);
 
     // Hide dropdown when losing focus (unless clicking on dropdown)
     if (m_dropdownVisible && event->reason() != Qt::PopupFocusReason) {
@@ -649,11 +650,10 @@ void FluentDropdown::wheelEvent(QWheelEvent* event) {
     }
 }
 
-void FluentDropdown::updateStateStyle() {
-    update();
-}
+void FluentDropdown::updateStateStyle() { update(); }
 
-void FluentDropdown::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentDropdown::performStateTransition(Core::FluentState from,
+                                            Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     update();
@@ -729,25 +729,28 @@ void FluentDropdown::updateDisplayText() {
 }
 
 void FluentDropdown::updateDropdownPosition() {
-    if (!m_dropdownContainer) return;
+    if (!m_dropdownContainer)
+        return;
 
     const QPoint globalPos = mapToGlobal(QPoint(0, height()));
     m_dropdownContainer->move(globalPos);
 }
 
 void FluentDropdown::updateDropdownSize() {
-    if (!m_dropdownContainer) return;
+    if (!m_dropdownContainer)
+        return;
 
     const int dropdownHeight = calculateDropdownHeight();
 
     m_dropdownContainer->setFixedSize(width(), dropdownHeight);
-    m_listWidget->setFixedHeight(dropdownHeight - 2); // Account for border
+    m_listWidget->setFixedHeight(dropdownHeight - 2);  // Account for border
 }
 
 QRect FluentDropdown::chevronRect() const {
     const int chevronSize = 16;
     const int margin = 8;
-    return QRect(width() - margin - chevronSize, (height() - chevronSize) / 2, chevronSize, chevronSize);
+    return QRect(width() - margin - chevronSize, (height() - chevronSize) / 2,
+                 chevronSize, chevronSize);
 }
 
 QRect FluentDropdown::textRect() const {
@@ -757,9 +760,10 @@ QRect FluentDropdown::textRect() const {
 
 int FluentDropdown::calculateDropdownHeight() const {
     const int itemHeight = 32;
-    const int visibleItems = std::min(m_maxVisibleItems, static_cast<int>(m_items.size()));
+    const int visibleItems =
+        std::min(m_maxVisibleItems, static_cast<int>(m_items.size()));
     const int borderHeight = 2;
     return (visibleItems * itemHeight) + borderHeight;
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

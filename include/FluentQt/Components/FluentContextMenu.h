@@ -1,66 +1,51 @@
 // include/FluentQt/Components/FluentContextMenu.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QMenu>
 #include <QAction>
-#include <QWidgetAction>
 #include <QGraphicsDropShadowEffect>
+#include <QIcon>
+#include <QMenu>
 #include <QPropertyAnimation>
 #include <QVBoxLayout>
-#include <QIcon>
+#include <QWidgetAction>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 // Fluent Design System spacing constants
 namespace FluentSpacing {
-    constexpr int XSmall = 4;
-    constexpr int Small = 8;
-    constexpr int Medium = 12;
-    constexpr int Large = 16;
-    constexpr int XLarge = 20;
-    constexpr int XXLarge = 24;
-}
+constexpr int XSmall = 4;
+constexpr int Small = 8;
+constexpr int Medium = 12;
+constexpr int Large = 16;
+constexpr int XLarge = 20;
+constexpr int XXLarge = 24;
+}  // namespace FluentSpacing
 
 // Fluent Design System typography constants
 namespace FluentTypography {
-    constexpr int CaptionFontSize = 12;
-    constexpr int BodyFontSize = 14;
-    constexpr int SubtitleFontSize = 16;
-    constexpr int TitleFontSize = 20;
-    constexpr int LargeTitleFontSize = 28;
-}
+constexpr int CaptionFontSize = 12;
+constexpr int BodyFontSize = 14;
+constexpr int SubtitleFontSize = 16;
+constexpr int TitleFontSize = 20;
+constexpr int LargeTitleFontSize = 28;
+}  // namespace FluentTypography
 
-enum class FluentMenuSeparatorType {
-    Line,
-    Space,
-    Header
-};
+enum class FluentMenuSeparatorType { Line, Space, Header };
 
-enum class FluentMenuItemType {
-    Action,
-    Toggle,
-    Radio,
-    Separator,
-    Submenu
-};
+enum class FluentMenuItemType { Action, Toggle, Radio, Separator, Submenu };
 
-enum class FluentMenuItemState {
-    Normal,
-    Hovered,
-    Pressed,
-    Disabled,
-    Focused
-};
+enum class FluentMenuItemState { Normal, Hovered, Pressed, Disabled, Focused };
 
 class FluentMenuSeparator : public QWidget {
     Q_OBJECT
 
 public:
-    explicit FluentMenuSeparator(FluentMenuSeparatorType type = FluentMenuSeparatorType::Line, 
-                                QWidget* parent = nullptr);
-    
+    explicit FluentMenuSeparator(
+        FluentMenuSeparatorType type = FluentMenuSeparatorType::Line,
+        QWidget* parent = nullptr);
+
     void setText(const QString& text);  // For header type
     void setSeparatorType(FluentMenuSeparatorType type);
 
@@ -76,7 +61,8 @@ private:
 class FluentMenuItem : public QWidget {
     Q_OBJECT
     Q_PROPERTY(qreal hoverOpacity READ hoverOpacity WRITE setHoverOpacity)
-    Q_PROPERTY(QColor currentBackgroundColor READ currentBackgroundColor WRITE setCurrentBackgroundColor)
+    Q_PROPERTY(QColor currentBackgroundColor READ currentBackgroundColor WRITE
+                   setCurrentBackgroundColor)
     Q_PROPERTY(qreal focusOpacity READ focusOpacity WRITE setFocusOpacity)
 
 public:
@@ -182,14 +168,16 @@ class FluentContextMenu : public QMenu {
 
 public:
     explicit FluentContextMenu(QWidget* parent = nullptr);
-    
+
     // Action management
     QAction* addAction(const QString& text);
     QAction* addAction(const QIcon& icon, const QString& text);
-    QAction* addAction(const QString& text, const QObject* receiver, const char* member);
-    QAction* addAction(const QIcon& icon, const QString& text, const QObject* receiver, const char* member);
-    
-    template<typename Func>
+    QAction* addAction(const QString& text, const QObject* receiver,
+                       const char* member);
+    QAction* addAction(const QIcon& icon, const QString& text,
+                       const QObject* receiver, const char* member);
+
+    template <typename Func>
     QAction* addAction(const QString& text, const Func& slot) {
         auto* action = new QAction(text, this);
         connect(action, &QAction::triggered, slot);
@@ -197,27 +185,36 @@ public:
         return action;
     }
 
-    template<typename Func>
-    QAction* addAction(const QIcon& icon, const QString& text, const Func& slot) {
+    template <typename Func>
+    QAction* addAction(const QIcon& icon, const QString& text,
+                       const Func& slot) {
         auto* action = new QAction(icon, text, this);
         connect(action, &QAction::triggered, slot);
         QMenu::addAction(action);
         return action;
     }
-    
+
     QAction* insertAction(QAction* before, QAction* action);
     void removeAction(QAction* action);
-    
+
     // Fluent-specific actions
-    FluentMenuItem* addFluentAction(const QString& text, const QIcon& icon = QIcon());
-    FluentMenuItem* addFluentAction(const QString& text, const QIcon& icon, const std::function<void()>& callback);
+    FluentMenuItem* addFluentAction(const QString& text,
+                                    const QIcon& icon = QIcon());
+    FluentMenuItem* addFluentAction(const QString& text, const QIcon& icon,
+                                    const std::function<void()>& callback);
 
     // Toggle and radio items
-    FluentMenuItem* addToggleAction(const QString& text, const QIcon& icon = QIcon(), bool checked = false);
-    FluentMenuItem* addRadioAction(const QString& text, const QString& group, const QIcon& icon = QIcon(), bool checked = false);
+    FluentMenuItem* addToggleAction(const QString& text,
+                                    const QIcon& icon = QIcon(),
+                                    bool checked = false);
+    FluentMenuItem* addRadioAction(const QString& text, const QString& group,
+                                   const QIcon& icon = QIcon(),
+                                   bool checked = false);
 
     // Checkable actions
-    FluentMenuItem* addCheckableAction(const QString& text, const QIcon& icon = QIcon(), bool checked = false);
+    FluentMenuItem* addCheckableAction(const QString& text,
+                                       const QIcon& icon = QIcon(),
+                                       bool checked = false);
 
     // Separators
     QAction* addSeparator();
@@ -227,7 +224,8 @@ public:
     // Submenus
     FluentContextMenu* addMenu(const QString& title);
     FluentContextMenu* addMenu(const QIcon& icon, const QString& title);
-    FluentContextMenu* addFluentSubmenu(const QString& title, const QIcon& icon = QIcon());
+    FluentContextMenu* addFluentSubmenu(const QString& title,
+                                        const QIcon& icon = QIcon());
     FluentContextMenu* insertMenu(QAction* before, FluentContextMenu* menu);
 
     // Enhanced submenu positioning
@@ -241,27 +239,27 @@ public:
     void showSubmenuAt(FluentContextMenu* submenu, const QPoint& position);
     void hideAllSubmenus();
     QList<FluentContextMenu*> activeSubmenus() const;
-    
+
     // Widget actions
     QWidgetAction* addWidget(QWidget* widget);
     QWidgetAction* insertWidget(QAction* before, QWidget* widget);
-    
+
     // Menu operations
     void popup(const QPoint& pos);
     void exec(const QPoint& pos);
     void hide();
-    
+
     // Properties
     QList<QAction*> actions() const;
     void clear();
     bool isEmpty() const;
-    
+
     // Appearance
     void setMinimumWidth(int width);
     void setMaximumWidth(int width);
     void setTitle(const QString& title);
     QString title() const;
-    
+
     // Animation
     void setAnimationEnabled(bool enabled);
     bool isAnimationEnabled() const;
@@ -270,10 +268,14 @@ public:
 
     // Enhanced animation types
     void setEntranceAnimation(Animation::FluentAnimationType type);
-    Animation::FluentAnimationType entranceAnimation() const { return m_entranceAnimationType; }
+    Animation::FluentAnimationType entranceAnimation() const {
+        return m_entranceAnimationType;
+    }
 
     void setExitAnimation(Animation::FluentAnimationType type);
-    Animation::FluentAnimationType exitAnimation() const { return m_exitAnimationType; }
+    Animation::FluentAnimationType exitAnimation() const {
+        return m_exitAnimationType;
+    }
 
     void setHoverAnimationEnabled(bool enabled);
     bool isHoverAnimationEnabled() const { return m_hoverAnimationEnabled; }
@@ -325,12 +327,13 @@ private:
     void animateHide();
 
     // Submenu positioning
-    QPoint calculateSubmenuPosition(FluentContextMenu* submenu, const QPoint& triggerPos);
-    
+    QPoint calculateSubmenuPosition(FluentContextMenu* submenu,
+                                    const QPoint& triggerPos);
+
     QAction* actionAt(const QPoint& pos) const;
     QRect actionGeometry(QAction* action) const;
     void updateActionRects();
-    
+
     void paintMenuBackground(QPainter& painter, const QRect& rect);
     void paintMenuBorder(QPainter& painter, const QRect& rect);
     void paintMenuTitle(QPainter& painter, const QRect& rect);
@@ -341,7 +344,7 @@ private:
     QList<QAction*> m_actions;
     QMap<QAction*, FluentMenuItem*> m_menuItems;
     QMap<QAction*, QRect> m_actionRects;
-    
+
     QAction* m_selectedAction{nullptr};
     FluentContextMenu* m_activeSubMenu{nullptr};
     QList<FluentContextMenu*> m_activeSubmenus;
@@ -352,8 +355,10 @@ private:
 
     bool m_animationEnabled{true};
     int m_animationDuration{200};
-    Animation::FluentAnimationType m_entranceAnimationType{Animation::FluentAnimationType::Fade};
-    Animation::FluentAnimationType m_exitAnimationType{Animation::FluentAnimationType::Fade};
+    Animation::FluentAnimationType m_entranceAnimationType{
+        Animation::FluentAnimationType::Fade};
+    Animation::FluentAnimationType m_exitAnimationType{
+        Animation::FluentAnimationType::Fade};
     bool m_hoverAnimationEnabled{true};
     bool m_shadowEnabled{true};
     bool m_roundedCorners{true};
@@ -366,6 +371,4 @@ private:
     int m_maximumWidth{300};
 };
 
-
-
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

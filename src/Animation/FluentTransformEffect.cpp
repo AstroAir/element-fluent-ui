@@ -1,15 +1,14 @@
 #include "FluentQt/Animation/FluentTransformEffect.h"
-#include <QPainter>
+#include <QApplication>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
-#include <QApplication>
+#include <QPainter>
 #include <QWidget>
 
 FluentTransformEffect::FluentTransformEffect(QObject *parent)
-    : QGraphicsEffect(parent)
-    , m_useHardwareAcceleration(true)
-    , m_cacheEnabled(true)
-{
+    : QGraphicsEffect(parent),
+      m_useHardwareAcceleration(true),
+      m_cacheEnabled(true) {
     // Check if hardware acceleration is available
     if (QOpenGLContext::currentContext()) {
         m_hardwareAccelAvailable = true;
@@ -19,52 +18,41 @@ FluentTransformEffect::FluentTransformEffect(QObject *parent)
     }
 }
 
-qreal FluentTransformEffect::scale() const
-{
-    return m_scale;
-}
+qreal FluentTransformEffect::scale() const { return m_scale; }
 
-void FluentTransformEffect::setScale(qreal scale)
-{
+void FluentTransformEffect::setScale(qreal scale) {
     if (m_scale != scale) {
         m_scale = scale;
-        m_cacheValid = false; // Invalidate cache
+        m_cacheValid = false;  // Invalidate cache
         update();
     }
 }
 
-qreal FluentTransformEffect::rotation() const
-{
-    return m_rotation;
-}
+qreal FluentTransformEffect::rotation() const { return m_rotation; }
 
-void FluentTransformEffect::setRotation(qreal rotation)
-{
+void FluentTransformEffect::setRotation(qreal rotation) {
     if (m_rotation != rotation) {
         m_rotation = rotation;
-        m_cacheValid = false; // Invalidate cache
+        m_cacheValid = false;  // Invalidate cache
         update();
     }
 }
 
-QPointF FluentTransformEffect::translation() const
-{
-    return m_translation;
-}
+QPointF FluentTransformEffect::translation() const { return m_translation; }
 
-void FluentTransformEffect::setTranslation(const QPointF &translation)
-{
+void FluentTransformEffect::setTranslation(const QPointF &translation) {
     if (m_translation != translation) {
         m_translation = translation;
-        m_cacheValid = false; // Invalidate cache
+        m_cacheValid = false;  // Invalidate cache
         update();
     }
 }
 
-void FluentTransformEffect::draw(QPainter *painter)
-{
+void FluentTransformEffect::draw(QPainter *painter) {
     QPoint offset;
-    const QPixmap pixmap = sourcePixmap(Qt::DeviceCoordinates, &offset, QGraphicsEffect::PadToEffectiveBoundingRect);
+    const QPixmap pixmap =
+        sourcePixmap(Qt::DeviceCoordinates, &offset,
+                     QGraphicsEffect::PadToEffectiveBoundingRect);
 
     if (pixmap.isNull()) {
         return;
@@ -81,7 +69,8 @@ void FluentTransformEffect::draw(QPainter *painter)
     // Enable hardware acceleration hints
     if (m_useHardwareAcceleration && m_hardwareAccelAvailable) {
         painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
-        // HighQualityAntialiasing isn't available on all Qt builds; Antialiasing covers primary need
+        // HighQualityAntialiasing isn't available on all Qt builds;
+        // Antialiasing covers primary need
         painter->setRenderHint(QPainter::Antialiasing, true);
     }
 
@@ -89,7 +78,8 @@ void FluentTransformEffect::draw(QPainter *painter)
 
     // Use QTransform for better performance with complex transformations
     QTransform transform;
-    transform.translate(center.x() + m_translation.x(), center.y() + m_translation.y());
+    transform.translate(center.x() + m_translation.x(),
+                        center.y() + m_translation.y());
     transform.rotate(m_rotation);
     transform.scale(m_scale, m_scale);
     transform.translate(-center.x(), -center.y());

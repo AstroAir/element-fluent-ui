@@ -1,9 +1,9 @@
 // tests/Components/FluentButtonTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMouseEvent>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -79,7 +79,8 @@ void FluentButtonTest::init() {
     // Create a fresh button before each test
     m_button = new FluentButton();
     m_button->show();
-    QTest::qWaitForWindowExposed(m_button);
+    QVERIFY2(QTest::qWaitForWindowExposed(m_button),
+             "m_button window not exposed within timeout");
 }
 
 void FluentButtonTest::cleanup() {
@@ -91,7 +92,7 @@ void FluentButtonTest::cleanup() {
 void FluentButtonTest::testDefaultConstructor() {
     // Test default constructor
     FluentButton* button = new FluentButton();
-    
+
     // Verify default properties
     QVERIFY(button->text().isEmpty());
     QVERIFY(button->icon().isNull());
@@ -102,7 +103,7 @@ void FluentButtonTest::testDefaultConstructor() {
     QVERIFY(!button->isCheckable());
     QVERIFY(!button->isChecked());
     QVERIFY(button->isEnabled());
-    
+
     delete button;
 }
 
@@ -110,30 +111,30 @@ void FluentButtonTest::testTextConstructor() {
     // Test constructor with text
     const QString buttonText = "Test Button";
     FluentButton* button = new FluentButton(buttonText);
-    
+
     QCOMPARE(button->text(), buttonText);
     QVERIFY(button->icon().isNull());
-    
+
     delete button;
 }
 
 void FluentButtonTest::testIconTextConstructor() {
     // Test constructor with icon and text
     const QString buttonText = "Icon Button";
-    QIcon icon(":/icons/test"); // Assuming test icon exists
-    
+    QIcon icon(":/icons/test");  // Assuming test icon exists
+
     // If no test icon exists, create a simple pixmap
     if (icon.isNull()) {
         QPixmap pixmap(16, 16);
         pixmap.fill(Qt::red);
         icon = QIcon(pixmap);
     }
-    
+
     FluentButton* button = new FluentButton(icon, buttonText);
-    
+
     QCOMPARE(button->text(), buttonText);
     QVERIFY(!button->icon().isNull());
-    
+
     delete button;
 }
 
@@ -143,19 +144,19 @@ void FluentButtonTest::testFactoryMethods() {
     QCOMPARE(primaryButton->text(), QString("Primary"));
     QCOMPARE(primaryButton->buttonStyle(), FluentButtonStyle::Primary);
     delete primaryButton;
-    
+
     // Test accent button factory method
     FluentButton* accentButton = FluentButton::createAccentButton("Accent");
     QCOMPARE(accentButton->text(), QString("Accent"));
     QCOMPARE(accentButton->buttonStyle(), FluentButtonStyle::Accent);
     delete accentButton;
-    
+
     // Test icon button factory method
     QIcon icon;
     QPixmap pixmap(16, 16);
     pixmap.fill(Qt::blue);
     icon = QIcon(pixmap);
-    
+
     FluentButton* iconButton = FluentButton::createIconButton(icon);
     QVERIFY(!iconButton->icon().isNull());
     QCOMPARE(iconButton->buttonStyle(), FluentButtonStyle::Icon);
@@ -166,19 +167,19 @@ void FluentButtonTest::testText() {
     // Test setting and getting text
     const QString text1 = "Button Text";
     const QString text2 = "New Text";
-    
+
     QSignalSpy textChangedSpy(m_button, &FluentButton::textChanged);
-    
+
     m_button->setText(text1);
     QCOMPARE(m_button->text(), text1);
     QCOMPARE(textChangedSpy.count(), 1);
     QCOMPARE(textChangedSpy.first().first().toString(), text1);
-    
+
     m_button->setText(text2);
     QCOMPARE(m_button->text(), text2);
     QCOMPARE(textChangedSpy.count(), 2);
     QCOMPARE(textChangedSpy.last().first().toString(), text2);
-    
+
     // Setting the same text should not emit the signal
     m_button->setText(text2);
     QCOMPARE(textChangedSpy.count(), 2);
@@ -187,21 +188,21 @@ void FluentButtonTest::testText() {
 void FluentButtonTest::testIcon() {
     // Test setting and getting icon
     QSignalSpy iconChangedSpy(m_button, &FluentButton::iconChanged);
-    
+
     QIcon icon1;
     QPixmap pixmap1(16, 16);
     pixmap1.fill(Qt::red);
     icon1 = QIcon(pixmap1);
-    
+
     m_button->setIcon(icon1);
     QVERIFY(!m_button->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 1);
-    
+
     QIcon icon2;
     QPixmap pixmap2(16, 16);
     pixmap2.fill(Qt::green);
     icon2 = QIcon(pixmap2);
-    
+
     m_button->setIcon(icon2);
     QVERIFY(!m_button->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 2);
@@ -210,23 +211,24 @@ void FluentButtonTest::testIcon() {
 void FluentButtonTest::testIconPosition() {
     // Test setting and getting icon position
     QSignalSpy positionChangedSpy(m_button, &FluentButton::iconPositionChanged);
-    
+
     // Default position should be Left
     QCOMPARE(m_button->iconPosition(), FluentIconPosition::Left);
-    
+
     m_button->setIconPosition(FluentIconPosition::Right);
     QCOMPARE(m_button->iconPosition(), FluentIconPosition::Right);
     QCOMPARE(positionChangedSpy.count(), 1);
-    QCOMPARE(positionChangedSpy.first().first().value<FluentIconPosition>(), FluentIconPosition::Right);
-    
+    QCOMPARE(positionChangedSpy.first().first().value<FluentIconPosition>(),
+             FluentIconPosition::Right);
+
     m_button->setIconPosition(FluentIconPosition::Top);
     QCOMPARE(m_button->iconPosition(), FluentIconPosition::Top);
     QCOMPARE(positionChangedSpy.count(), 2);
-    
+
     m_button->setIconPosition(FluentIconPosition::Bottom);
     QCOMPARE(m_button->iconPosition(), FluentIconPosition::Bottom);
     QCOMPARE(positionChangedSpy.count(), 3);
-    
+
     // Setting the same position should not emit the signal
     m_button->setIconPosition(FluentIconPosition::Bottom);
     QCOMPARE(positionChangedSpy.count(), 3);
@@ -235,27 +237,28 @@ void FluentButtonTest::testIconPosition() {
 void FluentButtonTest::testButtonStyle() {
     // Test setting and getting button style
     QSignalSpy styleChangedSpy(m_button, &FluentButton::styleChanged);
-    
+
     // Default style should be Default
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Default);
-    
+
     m_button->setButtonStyle(FluentButtonStyle::Primary);
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Primary);
     QCOMPARE(styleChangedSpy.count(), 1);
-    QCOMPARE(styleChangedSpy.first().first().value<FluentButtonStyle>(), FluentButtonStyle::Primary);
-    
+    QCOMPARE(styleChangedSpy.first().first().value<FluentButtonStyle>(),
+             FluentButtonStyle::Primary);
+
     m_button->setButtonStyle(FluentButtonStyle::Accent);
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Accent);
     QCOMPARE(styleChangedSpy.count(), 2);
-    
+
     m_button->setButtonStyle(FluentButtonStyle::Subtle);
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Subtle);
     QCOMPARE(styleChangedSpy.count(), 3);
-    
+
     m_button->setButtonStyle(FluentButtonStyle::Outline);
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Outline);
     QCOMPARE(styleChangedSpy.count(), 4);
-    
+
     // Setting the same style should not emit the signal
     m_button->setButtonStyle(FluentButtonStyle::Outline);
     QCOMPARE(styleChangedSpy.count(), 4);
@@ -271,7 +274,8 @@ void FluentButtonTest::testButtonSize() {
     m_button->setButtonSize(FluentButtonSize::Small);
     QCOMPARE(m_button->buttonSize(), FluentButtonSize::Small);
     QCOMPARE(sizeChangedSpy.count(), 1);
-    QCOMPARE(sizeChangedSpy.first().first().value<FluentButtonSize>(), FluentButtonSize::Small);
+    QCOMPARE(sizeChangedSpy.first().first().value<FluentButtonSize>(),
+             FluentButtonSize::Small);
 
     m_button->setButtonSize(FluentButtonSize::Large);
     QCOMPARE(m_button->buttonSize(), FluentButtonSize::Large);
@@ -288,7 +292,7 @@ void FluentButtonTest::testButtonSize() {
 
 void FluentButtonTest::testFlat() {
     // Test flat property
-    QVERIFY(!m_button->isFlat()); // Default should be false
+    QVERIFY(!m_button->isFlat());  // Default should be false
 
     m_button->setFlat(true);
     QVERIFY(m_button->isFlat());
@@ -299,7 +303,7 @@ void FluentButtonTest::testFlat() {
 
 void FluentButtonTest::testEnabled() {
     // Test enabled state
-    QVERIFY(m_button->isEnabled()); // Default should be enabled
+    QVERIFY(m_button->isEnabled());  // Default should be enabled
 
     m_button->setEnabled(false);
     QVERIFY(!m_button->isEnabled());
@@ -328,7 +332,7 @@ void FluentButtonTest::testLoading() {
     // Test loading state
     QSignalSpy loadingChangedSpy(m_button, &FluentButton::loadingChanged);
 
-    QVERIFY(!m_button->isLoading()); // Default should be false
+    QVERIFY(!m_button->isLoading());  // Default should be false
 
     m_button->setLoading(true);
     QVERIFY(m_button->isLoading());
@@ -347,7 +351,7 @@ void FluentButtonTest::testLoading() {
 
 void FluentButtonTest::testCheckable() {
     // Test checkable property
-    QVERIFY(!m_button->isCheckable()); // Default should be false
+    QVERIFY(!m_button->isCheckable());  // Default should be false
 
     m_button->setCheckable(true);
     QVERIFY(m_button->isCheckable());
@@ -360,7 +364,7 @@ void FluentButtonTest::testChecked() {
     // Test checked state
     QSignalSpy checkedChangedSpy(m_button, &FluentButton::checkedChanged);
 
-    QVERIFY(!m_button->isChecked()); // Default should be false
+    QVERIFY(!m_button->isChecked());  // Default should be false
 
     // Make button checkable first
     m_button->setCheckable(true);
@@ -387,16 +391,21 @@ void FluentButtonTest::testMouseInteraction() {
     QSignalSpy clickedSpy(m_button, &FluentButton::clicked);
 
     QPoint center = m_button->rect().center();
+    QPoint globalCenter = m_button->mapToGlobal(center);
 
     // Test mouse press
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(globalCenter),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_button, &pressEvent);
 
     QCOMPARE(pressedSpy.count(), 1);
     QCOMPARE(m_button->state(), FluentState::Pressed);
 
     // Test mouse release
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(globalCenter),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_button, &releaseEvent);
 
     QCOMPARE(releasedSpy.count(), 1);
@@ -407,10 +416,13 @@ void FluentButtonTest::testMouseInteraction() {
     pressedSpy.clear();
 
     QPoint outside = m_button->rect().bottomRight() + QPoint(10, 10);
-    QMouseEvent releaseOutsideEvent(QEvent::MouseButtonRelease, outside, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint globalOutside = m_button->mapToGlobal(outside);
+    QMouseEvent releaseOutsideEvent(
+        QEvent::MouseButtonRelease, QPointF(outside), QPointF(outside),
+        QPointF(globalOutside), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_button, &releaseOutsideEvent);
 
-    QCOMPARE(clickedSpy.count(), 1); // Should still be 1, no new click
+    QCOMPARE(clickedSpy.count(), 1);  // Should still be 1, no new click
 }
 
 void FluentButtonTest::testKeyboardInteraction() {
@@ -497,7 +509,8 @@ void FluentButtonTest::testClickedSignal() {
     m_button->setCheckable(true);
     m_button->animateClick();
     QCOMPARE(clickedSpy.count(), 1);
-    QCOMPARE(clickedSpy.first().first().toBool(), true); // Should be checked after click
+    QCOMPARE(clickedSpy.first().first().toBool(),
+             true);  // Should be checked after click
 }
 
 void FluentButtonTest::testPressedSignal() {
@@ -505,7 +518,10 @@ void FluentButtonTest::testPressedSignal() {
     QSignalSpy pressedSpy(m_button, &FluentButton::pressed);
 
     QPoint center = m_button->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint globalCenter = m_button->mapToGlobal(center);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(globalCenter),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_button, &pressEvent);
     QCOMPARE(pressedSpy.count(), 1);
@@ -516,8 +532,13 @@ void FluentButtonTest::testReleasedSignal() {
     QSignalSpy releasedSpy(m_button, &FluentButton::released);
 
     QPoint center = m_button->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint globalCenter = m_button->mapToGlobal(center);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(globalCenter),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(globalCenter),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_button, &pressEvent);
     QApplication::sendEvent(m_button, &releaseEvent);
@@ -533,8 +554,13 @@ void FluentButtonTest::testToggledSignal() {
 
     // Click to toggle
     QPoint center = m_button->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QPoint globalCenter = m_button->mapToGlobal(center);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPointF(center),
+                           QPointF(center), QPointF(globalCenter),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPointF(center),
+                             QPointF(center), QPointF(globalCenter),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_button, &pressEvent);
     QApplication::sendEvent(m_button, &releaseEvent);
@@ -556,7 +582,8 @@ void FluentButtonTest::testContentChangeSignals() {
     QSignalSpy iconChangedSpy(m_button, &FluentButton::iconChanged);
     QSignalSpy styleChangedSpy(m_button, &FluentButton::styleChanged);
     QSignalSpy sizeChangedSpy(m_button, &FluentButton::sizeChanged);
-    QSignalSpy iconPositionChangedSpy(m_button, &FluentButton::iconPositionChanged);
+    QSignalSpy iconPositionChangedSpy(m_button,
+                                      &FluentButton::iconPositionChanged);
 
     // Change text
     m_button->setText("New Text");
@@ -626,8 +653,8 @@ void FluentButtonTest::testThemeIntegration() {
     // Change theme mode
     theme.setDarkMode(!originalDarkMode);
 
-    // Button should update its appearance (this would require checking internal styling)
-    // For now, just verify the button still functions correctly
+    // Button should update its appearance (this would require checking internal
+    // styling) For now, just verify the button still functions correctly
     QVERIFY(m_button->isEnabled());
 
     // Restore original theme

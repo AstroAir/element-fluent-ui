@@ -1,15 +1,15 @@
 // include/FluentQt/Components/FluentTreeView.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
+#include <QCheckBox>
 #include <QHeaderView>
 #include <QLineEdit>
-#include <QCheckBox>
-#include <QVBoxLayout>
 #include <QTimer>
+#include <QTreeWidget>
+#include <QTreeWidgetItem>
+#include <QVBoxLayout>
 #include <functional>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -68,20 +68,28 @@ private:
 
 class FluentTreeView : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentTreeSelectionMode selectionMode READ selectionMode WRITE setSelectionMode)
-    Q_PROPERTY(FluentTreeExpandMode expandMode READ expandMode WRITE setExpandMode)
+    Q_PROPERTY(FluentTreeSelectionMode selectionMode READ selectionMode WRITE
+                   setSelectionMode)
+    Q_PROPERTY(
+        FluentTreeExpandMode expandMode READ expandMode WRITE setExpandMode)
     Q_PROPERTY(bool showHeader READ showHeader WRITE setShowHeader)
-    Q_PROPERTY(bool showRootDecoration READ showRootDecoration WRITE setShowRootDecoration)
-    Q_PROPERTY(bool alternatingRowColors READ alternatingRowColors WRITE setAlternatingRowColors)
+    Q_PROPERTY(bool showRootDecoration READ showRootDecoration WRITE
+                   setShowRootDecoration)
+    Q_PROPERTY(bool alternatingRowColors READ alternatingRowColors WRITE
+                   setAlternatingRowColors)
     Q_PROPERTY(bool sortingEnabled READ sortingEnabled WRITE setSortingEnabled)
-    Q_PROPERTY(bool filteringEnabled READ filteringEnabled WRITE setFilteringEnabled)
-    Q_PROPERTY(bool dragDropEnabled READ dragDropEnabled WRITE setDragDropEnabled)
+    Q_PROPERTY(
+        bool filteringEnabled READ filteringEnabled WRITE setFilteringEnabled)
+    Q_PROPERTY(
+        bool dragDropEnabled READ dragDropEnabled WRITE setDragDropEnabled)
 
 public:
     explicit FluentTreeView(QWidget* parent = nullptr);
 
     // Selection
-    FluentTreeSelectionMode selectionMode() const noexcept { return m_selectionMode; }
+    FluentTreeSelectionMode selectionMode() const noexcept {
+        return m_selectionMode;
+    }
     void setSelectionMode(FluentTreeSelectionMode mode);
 
     // Expansion
@@ -152,7 +160,9 @@ public:
 
     // Column virtualization
     void setColumnVirtualizationEnabled(bool enabled);
-    bool isColumnVirtualizationEnabled() const { return m_columnVirtualizationEnabled; }
+    bool isColumnVirtualizationEnabled() const {
+        return m_columnVirtualizationEnabled;
+    }
 
     // Performance monitoring
     struct VirtualizationMetrics {
@@ -223,7 +233,8 @@ private:
     QLineEdit* m_filterEdit;
     QTreeWidget* m_treeWidget;
 
-    FluentTreeSelectionMode m_selectionMode{FluentTreeSelectionMode::SingleSelection};
+    FluentTreeSelectionMode m_selectionMode{
+        FluentTreeSelectionMode::SingleSelection};
     FluentTreeExpandMode m_expandMode{FluentTreeExpandMode::DoubleClick};
     std::vector<FluentTreeColumn> m_columns;
 
@@ -234,8 +245,8 @@ private:
     // Advanced virtualization state
     bool m_virtualizationEnabled{false};
     bool m_columnVirtualizationEnabled{false};
-    int m_virtualizationOverscan{10}; // rows before/after viewport
-    int m_virtualizationChunkSize{100}; // items to process per chunk
+    int m_virtualizationOverscan{10};    // rows before/after viewport
+    int m_virtualizationChunkSize{100};  // items to process per chunk
 
     // Virtualization data
     mutable VirtualizationWindow m_virtualizationWindow;
@@ -253,4 +264,4 @@ private:
     QTimer m_filterDebounceTimer;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

@@ -1,20 +1,20 @@
 // include/FluentQt/Styling/FluentAdvancedTheme.h
 #pragma once
 
-#include <QObject>
 #include <QColor>
+#include <QFileSystemWatcher>
 #include <QFont>
-#include <QVariant>
-#include <QJsonObject>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QMutex>
+#include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QMutex>
 #include <QTimer>
-#include <QFileSystemWatcher>
+#include <QVariant>
 #include <functional>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace FluentQt::Styling {
 
@@ -34,18 +34,13 @@ enum class FluentTokenType {
 };
 
 // Theme modes
-enum class FluentThemeMode {
-    Light,
-    Dark,
-    HighContrast,
-    Custom
-};
+enum class FluentThemeMode { Light, Dark, HighContrast, Custom };
 
 // Animation preferences
 enum class FluentAnimationPreference {
-    Full,       // All animations enabled
-    Reduced,    // Reduced animations for accessibility
-    None        // No animations
+    Full,     // All animations enabled
+    Reduced,  // Reduced animations for accessibility
+    None      // No animations
 };
 
 // Design token definition
@@ -68,7 +63,7 @@ struct FluentThemeConfig {
     QString version;
     QString description;
     FluentThemeMode mode{FluentThemeMode::Light};
-    QString baseTheme; // Inherit from another theme
+    QString baseTheme;  // Inherit from another theme
     QJsonObject tokens;
     QJsonObject components;
     QJsonObject customProperties;
@@ -91,7 +86,7 @@ class FluentAdvancedThemeManager : public QObject {
 
 public:
     static FluentAdvancedThemeManager& instance();
-    
+
     // Theme management
     void registerTheme(const FluentThemeConfig& themeConfig);
     void unregisterTheme(const QString& themeName);
@@ -99,59 +94,69 @@ public:
     QString getCurrentTheme() const { return m_currentThemeName; }
     QStringList getAvailableThemes() const;
     FluentThemeConfig getThemeConfig(const QString& themeName) const;
-    
+
     // Design tokens
     void registerToken(const FluentDesignToken& token);
     void unregisterToken(const QString& tokenName);
     QVariant getToken(const QString& tokenName) const;
     void setToken(const QString& tokenName, const QVariant& value);
-    QStringList getTokenNames(FluentTokenType type = FluentTokenType::Custom) const;
-    
+    QStringList getTokenNames(
+        FluentTokenType type = FluentTokenType::Custom) const;
+
     // Token resolution with fallbacks
-    QVariant resolveToken(const QString& tokenName, const QVariant& fallback = QVariant()) const;
+    QVariant resolveToken(const QString& tokenName,
+                          const QVariant& fallback = QVariant()) const;
     QString resolveTokenExpression(const QString& expression) const;
-    
+
     // Component theming
-    void setComponentTheme(const QString& componentName, const FluentComponentTheme& theme);
+    void setComponentTheme(const QString& componentName,
+                           const FluentComponentTheme& theme);
     FluentComponentTheme getComponentTheme(const QString& componentName) const;
     void removeComponentTheme(const QString& componentName);
-    
+
     // Dynamic theming
     void enableDynamicTheming(bool enabled = true);
     bool isDynamicThemingEnabled() const { return m_dynamicThemingEnabled; }
-    void setThemeTransitionDuration(int milliseconds) { m_transitionDuration = milliseconds; }
-    
+    void setThemeTransitionDuration(int milliseconds) {
+        m_transitionDuration = milliseconds;
+    }
+
     // CSS-in-JS support
     QString generateCSS(const QString& componentName) const;
     QString generateGlobalCSS() const;
     void injectCSS(const QString& css);
     void clearInjectedCSS();
-    
+
     // Runtime theme switching
     void switchTheme(const QString& themeName, bool animated = true);
-    void toggleThemeMode(); // Light/Dark toggle
+    void toggleThemeMode();  // Light/Dark toggle
     void setAnimationPreference(FluentAnimationPreference preference);
-    FluentAnimationPreference getAnimationPreference() const { return m_animationPreference; }
-    
+    FluentAnimationPreference getAnimationPreference() const {
+        return m_animationPreference;
+    }
+
     // Theme inheritance
-    void setThemeInheritance(const QString& childTheme, const QString& parentTheme);
+    void setThemeInheritance(const QString& childTheme,
+                             const QString& parentTheme);
     QStringList getThemeHierarchy(const QString& themeName) const;
-    
+
     // Custom properties
     void setCustomProperty(const QString& name, const QVariant& value);
-    QVariant getCustomProperty(const QString& name, const QVariant& defaultValue = QVariant()) const;
+    QVariant getCustomProperty(const QString& name,
+                               const QVariant& defaultValue = QVariant()) const;
     void removeCustomProperty(const QString& name);
-    
+
     // Theme validation
     bool validateTheme(const QString& themeName) const;
     QStringList getThemeErrors(const QString& themeName) const;
-    
+
     // Import/Export
     bool loadThemeFromFile(const QString& filename);
-    bool saveThemeToFile(const QString& themeName, const QString& filename) const;
+    bool saveThemeToFile(const QString& themeName,
+                         const QString& filename) const;
     bool loadThemeFromJson(const QJsonObject& json);
     QJsonObject exportThemeToJson(const QString& themeName) const;
-    
+
     // Hot reloading
     void enableHotReload(bool enabled = true);
     void watchThemeFile(const QString& filename);
@@ -159,12 +164,15 @@ public:
 
 signals:
     void themeChanged(const QString& oldTheme, const QString& newTheme);
-    void tokenChanged(const QString& tokenName, const QVariant& oldValue, const QVariant& newValue);
+    void tokenChanged(const QString& tokenName, const QVariant& oldValue,
+                      const QVariant& newValue);
     void componentThemeChanged(const QString& componentName);
-    void themeTransitionStarted(const QString& fromTheme, const QString& toTheme);
+    void themeTransitionStarted(const QString& fromTheme,
+                                const QString& toTheme);
     void themeTransitionCompleted(const QString& themeName);
     void themeFileChanged(const QString& filename);
-    void themeValidationFailed(const QString& themeName, const QStringList& errors);
+    void themeValidationFailed(const QString& themeName,
+                               const QStringList& errors);
 
 private slots:
     void onThemeFileChanged(const QString& path);
@@ -184,24 +192,25 @@ private:
     std::unordered_map<QString, FluentDesignToken> m_tokens;
     std::unordered_map<QString, FluentComponentTheme> m_componentThemes;
     std::unordered_map<QString, QVariant> m_customProperties;
-    
+
     // Dynamic theming
     bool m_dynamicThemingEnabled{true};
     int m_transitionDuration{300};
-    FluentAnimationPreference m_animationPreference{FluentAnimationPreference::Full};
-    
+    FluentAnimationPreference m_animationPreference{
+        FluentAnimationPreference::Full};
+
     // Hot reloading
     bool m_hotReloadEnabled{false};
     std::unique_ptr<QFileSystemWatcher> m_fileWatcher;
-    
+
     // Theme transition
     QTimer* m_transitionTimer;
     QString m_transitionFromTheme;
     QString m_transitionToTheme;
-    
+
     // CSS injection
     QStringList m_injectedCSS;
-    
+
     // Thread safety
     mutable QMutex m_themesMutex;
     mutable QMutex m_tokensMutex;
@@ -212,51 +221,60 @@ private:
 class FluentDesignTokens {
 public:
     // Color tokens
-    static FluentDesignToken colorToken(const QString& name, const QColor& color, 
-                                       const QString& description = "");
-    static FluentDesignToken colorPalette(const QString& baseName, const QColor& baseColor,
-                                         const QList<int>& shades = {50, 100, 200, 300, 400, 500, 600, 700, 800, 900});
-    
+    static FluentDesignToken colorToken(const QString& name,
+                                        const QColor& color,
+                                        const QString& description = "");
+    static FluentDesignToken colorPalette(const QString& baseName,
+                                          const QColor& baseColor,
+                                          const QList<int>& shades = {
+                                              50, 100, 200, 300, 400, 500, 600,
+                                              700, 800, 900});
+
     // Size tokens
-    static FluentDesignToken sizeToken(const QString& name, int size, const QString& unit = "px");
-    static FluentDesignToken spacingScale(const QString& baseName, int baseSize = 8);
-    
+    static FluentDesignToken sizeToken(const QString& name, int size,
+                                       const QString& unit = "px");
+    static FluentDesignToken spacingScale(const QString& baseName,
+                                          int baseSize = 8);
+
     // Typography tokens
     static FluentDesignToken fontToken(const QString& name, const QFont& font);
-    static FluentDesignToken typographyScale(const QString& baseName, const QFont& baseFont);
-    
+    static FluentDesignToken typographyScale(const QString& baseName,
+                                             const QFont& baseFont);
+
     // Shadow tokens
-    static FluentDesignToken shadowToken(const QString& name, const QString& shadowCSS);
-    
+    static FluentDesignToken shadowToken(const QString& name,
+                                         const QString& shadowCSS);
+
     // Animation tokens
-    static FluentDesignToken animationToken(const QString& name, int duration, 
-                                           const QString& easing = "ease-out");
-    
+    static FluentDesignToken animationToken(const QString& name, int duration,
+                                            const QString& easing = "ease-out");
+
     // Computed tokens
-    static FluentDesignToken computedToken(const QString& name, const QString& expression,
-                                          FluentTokenType type = FluentTokenType::Custom);
+    static FluentDesignToken computedToken(
+        const QString& name, const QString& expression,
+        FluentTokenType type = FluentTokenType::Custom);
 };
 
 // CSS-in-JS generator
 class FluentCSSGenerator {
 public:
     explicit FluentCSSGenerator(FluentAdvancedThemeManager* themeManager);
-    
+
     // CSS generation
     QString generateComponentCSS(const QString& componentName) const;
     QString generateUtilityCSS() const;
     QString generateAnimationCSS() const;
     QString generateResponsiveCSS() const;
-    
+
     // CSS utilities
     QString colorToCSS(const QColor& color) const;
     QString fontToCSS(const QFont& font) const;
     QString spacingToCSS(const QVariant& spacing) const;
-    
+
     // CSS optimization
     void enableMinification(bool enabled = true) { m_minifyCSS = enabled; }
     void enableAutoprefixer(bool enabled = true) { m_autoprefix = enabled; }
-    
+
     // CSS variables
     QString generateCSSVariables() const;
     QString generateCSSCustomProperties() const;
@@ -275,28 +293,30 @@ private:
 class FluentThemeBuilder {
 public:
     FluentThemeBuilder(const QString& themeName);
-    
+
     // Basic configuration
     FluentThemeBuilder& setMode(FluentThemeMode mode);
     FluentThemeBuilder& setDescription(const QString& description);
     FluentThemeBuilder& setVersion(const QString& version);
     FluentThemeBuilder& inheritFrom(const QString& baseTheme);
-    
+
     // Token configuration
     FluentThemeBuilder& addToken(const FluentDesignToken& token);
     FluentThemeBuilder& addColorToken(const QString& name, const QColor& color);
     FluentThemeBuilder& addSizeToken(const QString& name, int size);
     FluentThemeBuilder& addFontToken(const QString& name, const QFont& font);
-    
+
     // Component configuration
-    FluentThemeBuilder& setComponentProperty(const QString& component, 
-                                           const QString& property, 
-                                           const QVariant& value);
-    FluentThemeBuilder& setComponentCSS(const QString& component, const QString& css);
-    
+    FluentThemeBuilder& setComponentProperty(const QString& component,
+                                             const QString& property,
+                                             const QVariant& value);
+    FluentThemeBuilder& setComponentCSS(const QString& component,
+                                        const QString& css);
+
     // Custom properties
-    FluentThemeBuilder& setCustomProperty(const QString& name, const QVariant& value);
-    
+    FluentThemeBuilder& setCustomProperty(const QString& name,
+                                          const QVariant& value);
+
     // Build theme
     FluentThemeConfig build() const;
     void registerTheme() const;
@@ -313,11 +333,12 @@ class FluentThemeAnimator : public QObject {
 
 public:
     explicit FluentThemeAnimator(QObject* parent = nullptr);
-    
-    void animateThemeTransition(const QString& fromTheme, const QString& toTheme, int duration = 300);
-    void animateTokenChange(const QString& tokenName, const QVariant& fromValue, 
-                           const QVariant& toValue, int duration = 200);
-    
+
+    void animateThemeTransition(const QString& fromTheme,
+                                const QString& toTheme, int duration = 300);
+    void animateTokenChange(const QString& tokenName, const QVariant& fromValue,
+                            const QVariant& toValue, int duration = 200);
+
     void setEasingCurve(const QString& easing) { m_easingCurve = easing; }
     QString getEasingCurve() const { return m_easingCurve; }
 
@@ -340,13 +361,19 @@ private:
 #define FLUENT_TOKEN(name) \
     FluentQt::Styling::FluentAdvancedThemeManager::instance().getToken(name)
 
-#define FLUENT_COLOR_TOKEN(name) \
-    FluentQt::Styling::FluentAdvancedThemeManager::instance().getToken(name).value<QColor>()
+#define FLUENT_COLOR_TOKEN(name)                              \
+    FluentQt::Styling::FluentAdvancedThemeManager::instance() \
+        .getToken(name)                                       \
+        .value<QColor>()
 
-#define FLUENT_SIZE_TOKEN(name) \
-    FluentQt::Styling::FluentAdvancedThemeManager::instance().getToken(name).toInt()
+#define FLUENT_SIZE_TOKEN(name)                               \
+    FluentQt::Styling::FluentAdvancedThemeManager::instance() \
+        .getToken(name)                                       \
+        .toInt()
 
-#define FLUENT_FONT_TOKEN(name) \
-    FluentQt::Styling::FluentAdvancedThemeManager::instance().getToken(name).value<QFont>()
+#define FLUENT_FONT_TOKEN(name)                               \
+    FluentQt::Styling::FluentAdvancedThemeManager::instance() \
+        .getToken(name)                                       \
+        .value<QFont>()
 
-} // namespace FluentQt::Styling
+}  // namespace FluentQt::Styling

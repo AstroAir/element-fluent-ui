@@ -1,43 +1,33 @@
 // include/FluentQt/Components/FluentRichTextEditor.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
+#include <QColorDialog>
+#include <QFontComboBox>
+#include <QHBoxLayout>
+#include <QSpinBox>
+#include <QTextBlockFormat>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextEdit>
+#include <QToolBar>
+#include <QVBoxLayout>
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentComboBox.h"
-#include <QTextEdit>
-#include <QTextDocument>
-#include <QTextCursor>
-#include <QTextCharFormat>
-#include <QTextBlockFormat>
-#include <QToolBar>
-#include <QFontComboBox>
-#include <QSpinBox>
-#include <QColorDialog>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentTextAlignment {
-    Left,
-    Center,
-    Right,
-    Justify
-};
+enum class FluentTextAlignment { Left, Center, Right, Justify };
 
-enum class FluentTextListType {
-    None,
-    Bullet,
-    Numbered,
-    Checklist
-};
+enum class FluentTextListType { None, Bullet, Numbered, Checklist };
 
 class FluentTextFormatBar : public QWidget {
     Q_OBJECT
 
 public:
     explicit FluentTextFormatBar(QWidget* parent = nullptr);
-    
+
     void updateFromCursor(const QTextCursor& cursor);
     void setEnabled(bool enabled);
 
@@ -84,11 +74,11 @@ private:
 
 private:
     QHBoxLayout* m_layout;
-    
+
     // Font controls
     QFontComboBox* m_fontCombo;
     QSpinBox* m_fontSizeSpinBox;
-    
+
     // Format controls
     FluentButton* m_boldButton;
     FluentButton* m_italicButton;
@@ -96,30 +86,31 @@ private:
     FluentButton* m_strikethroughButton;
     FluentButton* m_textColorButton;
     FluentButton* m_backgroundColorButton;
-    
+
     // Alignment controls
     FluentButton* m_alignLeftButton;
     FluentButton* m_alignCenterButton;
     FluentButton* m_alignRightButton;
     FluentButton* m_alignJustifyButton;
-    
+
     // List controls
     FluentComboBox* m_listTypeCombo;
     FluentButton* m_indentButton;
     FluentButton* m_outdentButton;
-    
+
     // Insert controls
     FluentButton* m_linkButton;
     FluentButton* m_imageButton;
     FluentButton* m_tableButton;
-    
+
     bool m_updating{false};
 };
 
 class FluentRichTextEditor : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString html READ toHtml WRITE setHtml NOTIFY textChanged)
-    Q_PROPERTY(QString plainText READ toPlainText WRITE setPlainText NOTIFY textChanged)
+    Q_PROPERTY(QString plainText READ toPlainText WRITE setPlainText NOTIFY
+                   textChanged)
     Q_PROPERTY(bool readOnly READ isReadOnly WRITE setReadOnly)
     Q_PROPERTY(bool showFormatBar READ showFormatBar WRITE setShowFormatBar)
     Q_PROPERTY(bool acceptRichText READ acceptRichText WRITE setAcceptRichText)
@@ -127,37 +118,37 @@ class FluentRichTextEditor : public Core::FluentComponent {
 
 public:
     explicit FluentRichTextEditor(QWidget* parent = nullptr);
-    
+
     // Content
     QString toHtml() const;
     void setHtml(const QString& html);
-    
+
     QString toPlainText() const;
     void setPlainText(const QString& text);
-    
+
     QTextDocument* document() const;
     void setDocument(QTextDocument* document);
-    
+
     // Properties
     bool isReadOnly() const;
     void setReadOnly(bool readOnly);
-    
+
     bool showFormatBar() const;
     void setShowFormatBar(bool show);
-    
+
     bool acceptRichText() const;
     void setAcceptRichText(bool accept);
-    
+
     bool lineWrapMode() const;
     void setLineWrapMode(bool wrap);
-    
+
     // Cursor and selection
     QTextCursor textCursor() const;
     void setTextCursor(const QTextCursor& cursor);
-    
+
     QString selectedText() const;
     bool hasSelection() const;
-    
+
     // Formatting
     void setFontFamily(const QString& family);
     void setFontSize(int size);
@@ -166,32 +157,35 @@ public:
     void setFontUnderline(bool underline);
     void setTextColor(const QColor& color);
     void setTextBackgroundColor(const QColor& color);
-    
+
     // Paragraph formatting
     void setAlignment(FluentTextAlignment alignment);
     void setListType(FluentTextListType listType);
     void indent();
     void outdent();
-    
+
     // Content insertion
     void insertLink(const QString& url, const QString& text = QString());
     void insertImage(const QString& path, const QString& alt = QString());
     void insertTable(int rows, int cols);
     void insertHorizontalRule();
-    
+
     // Search and replace
-    bool find(const QString& text, QTextDocument::FindFlags flags = QTextDocument::FindFlags());
-    bool replace(const QString& find, const QString& replace, QTextDocument::FindFlags flags = QTextDocument::FindFlags());
-    int replaceAll(const QString& find, const QString& replace, QTextDocument::FindFlags flags = QTextDocument::FindFlags());
-    
+    bool find(const QString& text,
+              QTextDocument::FindFlags flags = QTextDocument::FindFlags());
+    bool replace(const QString& find, const QString& replace,
+                 QTextDocument::FindFlags flags = QTextDocument::FindFlags());
+    int replaceAll(const QString& find, const QString& replace,
+                   QTextDocument::FindFlags flags = QTextDocument::FindFlags());
+
     // Undo/Redo
     bool canUndo() const;
     bool canRedo() const;
-    
+
     // Export
     bool exportToPdf(const QString& fileName);
     bool exportToHtml(const QString& fileName);
-    
+
     // Zoom
     void zoomIn(int delta = 1);
     void zoomOut(int delta = 1);
@@ -241,7 +235,7 @@ private:
     void insertLinkDialog();
     void insertTableDialog();
     void showFindReplaceDialog();
-    
+
     QTextCharFormat currentCharFormat() const;
     QTextBlockFormat currentBlockFormat() const;
     FluentTextAlignment currentAlignment() const;
@@ -252,10 +246,10 @@ private:
     QVBoxLayout* m_layout;
     FluentTextFormatBar* m_formatBar;
     QTextEdit* m_textEdit;
-    
+
     bool m_showFormatBar{true};
     int m_zoomPercent{100};
-    
+
     // Dialogs
     QDialog* m_findDialog{nullptr};
     QDialog* m_linkDialog{nullptr};
@@ -263,4 +257,4 @@ private:
     QDialog* m_tableDialog{nullptr};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

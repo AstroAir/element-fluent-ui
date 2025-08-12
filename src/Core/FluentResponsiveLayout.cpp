@@ -1,12 +1,12 @@
 // src/Core/FluentResponsiveLayout.cpp
 #include "FluentQt/Core/FluentResponsiveLayout.h"
-#include "FluentQt/Core/FluentResponsive.h"
 #include <QApplication>
 #include <QDebug>
 #include <QMutexLocker>
 #include <QTimer>
 #include <QWidget>
 #include <algorithm>
+#include "FluentQt/Core/FluentResponsive.h"
 
 namespace FluentQt::Core {
 
@@ -20,7 +20,8 @@ FluentResponsiveLayout::FluentResponsiveLayout(QWidget* parent)
     qDebug() << "FluentResponsiveLayout initialized";
 }
 
-FluentResponsiveLayout::FluentResponsiveLayout(const FluentResponsiveLayoutConfig& config, QWidget* parent)
+FluentResponsiveLayout::FluentResponsiveLayout(
+    const FluentResponsiveLayoutConfig& config, QWidget* parent)
     : QLayout(parent), m_config(config) {
     // Connect to responsive manager
     auto& responsiveManager = FluentResponsiveManager::instance();
@@ -39,7 +40,8 @@ FluentResponsiveLayout::~FluentResponsiveLayout() {
 
 // QLayout interface implementations
 void FluentResponsiveLayout::addItem(QLayoutItem* item) {
-    if (!item) return;
+    if (!item)
+        return;
 
     m_items.append(item);
     m_itemConfigs.append(FluentLayoutItemConfig{});
@@ -66,23 +68,27 @@ QLayoutItem* FluentResponsiveLayout::takeAt(int index) {
     return item;
 }
 
-int FluentResponsiveLayout::count() const {
-    return m_items.size();
-}
+int FluentResponsiveLayout::count() const { return m_items.size(); }
 
 QSize FluentResponsiveLayout::sizeHint() const {
     if (m_items.isEmpty()) {
         return QSize(100, 100);
     }
-    
+
     QSize totalSize;
     auto& responsiveManager = FluentResponsiveManager::instance();
-    FluentBreakpoint currentBreakpoint = responsiveManager.getCurrentBreakpoint();
-    
-    // Calculate size based on current layout type
+    FluentBreakpoint currentBreakpoint =
+        responsiveManager.getCurrentBreakpoint();
+
+    // Calculate size based on current layout type and breakpoint
     switch (m_config.type) {
         case FluentLayoutType::Grid:
             totalSize = calculateGridSizeHint();
+            // Adjust for smaller breakpoints
+            if (currentBreakpoint == FluentBreakpoint::XSmall ||
+                currentBreakpoint == FluentBreakpoint::Small) {
+                totalSize = totalSize * 0.8;  // Reduce size for smaller screens
+            }
             break;
         case FluentLayoutType::Flexbox:
             totalSize = calculateFlexboxSizeHint();
@@ -91,13 +97,13 @@ QSize FluentResponsiveLayout::sizeHint() const {
             totalSize = calculateMasonrySizeHint();
             break;
         case FluentLayoutType::Flow:
-            totalSize = QSize(200, 200); // Default size
+            totalSize = QSize(200, 200);  // Default size
             break;
         default:
-            totalSize = QSize(200, 200); // Default size
+            totalSize = QSize(200, 200);  // Default size
             break;
     }
-    
+
     return totalSize;
 }
 
@@ -120,15 +126,16 @@ QSize FluentResponsiveLayout::maximumSize() const {
 
 void FluentResponsiveLayout::setGeometry(const QRect& rect) {
     QLayout::setGeometry(rect);
-    
+
     if (m_items.isEmpty()) {
         return;
     }
-    
+
     // Get current breakpoint for future use if needed
     // auto& responsiveManager = FluentResponsiveManager::instance();
-    // FluentBreakpoint currentBreakpoint = responsiveManager.getCurrentBreakpoint();
-    
+    // FluentBreakpoint currentBreakpoint =
+    // responsiveManager.getCurrentBreakpoint();
+
     // Apply layout based on current type
     switch (m_config.type) {
         case FluentLayoutType::Grid:
@@ -149,7 +156,8 @@ void FluentResponsiveLayout::setGeometry(const QRect& rect) {
             for (QLayoutItem* item : m_items) {
                 if (item) {
                     QSize itemSize = item->sizeHint();
-                    item->setGeometry(QRect(rect.left(), y, rect.width(), itemSize.height()));
+                    item->setGeometry(
+                        QRect(rect.left(), y, rect.width(), itemSize.height()));
                     y += itemSize.height();
                 }
             }
@@ -184,7 +192,8 @@ int FluentResponsiveLayout::heightForWidth(int width) const {
             } else {
                 // Add to current row
                 currentRowWidth += itemSize.width();
-                currentRowHeight = std::max(currentRowHeight, itemSize.height());
+                currentRowHeight =
+                    std::max(currentRowHeight, itemSize.height());
             }
         }
     }
@@ -204,14 +213,17 @@ void FluentResponsiveLayout::invalidate() {
 }
 
 // Configuration methods
-void FluentResponsiveLayout::setConfig(const FluentResponsiveLayoutConfig& config) {
+void FluentResponsiveLayout::setConfig(
+    const FluentResponsiveLayoutConfig& config) {
     m_config = config;
     invalidate();
 }
 
 // Widget management methods
-void FluentResponsiveLayout::addWidget(QWidget* widget, const FluentLayoutItemConfig& config) {
-    if (!widget) return;
+void FluentResponsiveLayout::addWidget(QWidget* widget,
+                                       const FluentLayoutItemConfig& config) {
+    if (!widget)
+        return;
 
     addItem(new QWidgetItem(widget));
 
@@ -222,7 +234,8 @@ void FluentResponsiveLayout::addWidget(QWidget* widget, const FluentLayoutItemCo
 }
 
 void FluentResponsiveLayout::removeWidget(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     for (int i = 0; i < m_items.size(); ++i) {
         if (m_items[i] && m_items[i]->widget() == widget) {
@@ -249,7 +262,8 @@ void FluentResponsiveLayout::onAnimationFinished() {
     emit animationFinished();
 }
 
-// Private helper methods - only implement methods that are declared in the header
+// Private helper methods - only implement methods that are declared in the
+// header
 
 // Implement the methods that are actually declared in the header
 void FluentResponsiveLayout::calculateFlexboxLayout(const QRect& rect) {
@@ -258,7 +272,8 @@ void FluentResponsiveLayout::calculateFlexboxLayout(const QRect& rect) {
     for (QLayoutItem* item : m_items) {
         if (item) {
             QSize itemSize = item->sizeHint();
-            item->setGeometry(QRect(rect.left(), y, rect.width(), itemSize.height()));
+            item->setGeometry(
+                QRect(rect.left(), y, rect.width(), itemSize.height()));
             y += itemSize.height();
         }
     }
@@ -267,7 +282,8 @@ void FluentResponsiveLayout::calculateFlexboxLayout(const QRect& rect) {
 void FluentResponsiveLayout::calculateGridLayout(const QRect& rect) {
     // Simplified grid layout calculation using gridColumns size
     int columns = m_config.gridColumns.size();
-    if (columns <= 0) columns = 3; // Default to 3 columns
+    if (columns <= 0)
+        columns = 3;  // Default to 3 columns
 
     int itemWidth = rect.width() / columns;
     int itemHeight = rect.height() / ((m_items.size() + columns - 1) / columns);
@@ -278,8 +294,8 @@ void FluentResponsiveLayout::calculateGridLayout(const QRect& rect) {
             int col = i % columns;
 
             QRect itemRect(rect.left() + col * itemWidth,
-                          rect.top() + row * itemHeight,
-                          itemWidth, itemHeight);
+                           rect.top() + row * itemHeight, itemWidth,
+                           itemHeight);
             m_items[i]->setGeometry(itemRect);
         }
     }
@@ -288,7 +304,8 @@ void FluentResponsiveLayout::calculateGridLayout(const QRect& rect) {
 void FluentResponsiveLayout::calculateMasonryLayout(const QRect& rect) {
     // Simplified masonry layout calculation - use columns from config
     int columns = m_config.masonryColumns;
-    if (columns <= 0) columns = 3;
+    if (columns <= 0)
+        columns = 3;
 
     QList<int> columnHeights(columns, rect.top());
     int itemWidth = rect.width() / columns;
@@ -307,11 +324,11 @@ void FluentResponsiveLayout::calculateMasonryLayout(const QRect& rect) {
             int itemHeight = itemSize.height();
 
             QRect itemRect(rect.left() + shortestCol * itemWidth,
-                          columnHeights[shortestCol],
-                          itemWidth, itemHeight);
+                           columnHeights[shortestCol], itemWidth, itemHeight);
             item->setGeometry(itemRect);
 
-            columnHeights[shortestCol] += itemHeight + m_config.containerSpacing;
+            columnHeights[shortestCol] +=
+                itemHeight + m_config.containerSpacing;
         }
     }
 }
@@ -359,30 +376,35 @@ void FluentResponsiveLayout::calculateAdaptiveLayout(const QRect& rect) {
 }
 
 // Additional method implementations
-void FluentResponsiveLayout::addWidget(QWidget* widget, int stretch, Qt::Alignment alignment) {
+void FluentResponsiveLayout::addWidget(QWidget* widget, int stretch,
+                                       Qt::Alignment alignment) {
     Q_UNUSED(stretch);
     Q_UNUSED(alignment);
     addWidget(widget, FluentLayoutItemConfig{});
 }
 
-void FluentResponsiveLayout::insertWidget(int index, QWidget* widget, const FluentLayoutItemConfig& config) {
+void FluentResponsiveLayout::insertWidget(
+    int index, QWidget* widget, const FluentLayoutItemConfig& config) {
     Q_UNUSED(index);
-    addWidget(widget, config); // Simplified implementation
+    addWidget(widget, config);  // Simplified implementation
 }
 
-void FluentResponsiveLayout::setItemConfig(QWidget* widget, const FluentLayoutItemConfig& config) {
+void FluentResponsiveLayout::setItemConfig(
+    QWidget* widget, const FluentLayoutItemConfig& config) {
     Q_UNUSED(widget);
     Q_UNUSED(config);
     // Simplified implementation
 }
 
-void FluentResponsiveLayout::setItemConfig(int index, const FluentLayoutItemConfig& config) {
+void FluentResponsiveLayout::setItemConfig(
+    int index, const FluentLayoutItemConfig& config) {
     Q_UNUSED(index);
     Q_UNUSED(config);
     // Simplified implementation
 }
 
-FluentLayoutItemConfig FluentResponsiveLayout::getItemConfig(QWidget* widget) const {
+FluentLayoutItemConfig FluentResponsiveLayout::getItemConfig(
+    QWidget* widget) const {
     Q_UNUSED(widget);
     return FluentLayoutItemConfig{};
 }
@@ -392,7 +414,8 @@ FluentLayoutItemConfig FluentResponsiveLayout::getItemConfig(int index) const {
     return FluentLayoutItemConfig{};
 }
 
-void FluentResponsiveLayout::setConfigForBreakpoint(FluentBreakpoint breakpoint, const FluentResponsiveLayoutConfig& config) {
+void FluentResponsiveLayout::setConfigForBreakpoint(
+    FluentBreakpoint breakpoint, const FluentResponsiveLayoutConfig& config) {
     Q_UNUSED(breakpoint);
     Q_UNUSED(config);
     // Simplified implementation
@@ -425,28 +448,32 @@ void FluentResponsiveLayout::animateToLayout() {
     emit animationFinished();
 }
 
-void FluentResponsiveLayout::animateItemToPosition(QWidget* widget, const QRect& targetGeometry) {
+void FluentResponsiveLayout::animateItemToPosition(
+    QWidget* widget, const QRect& targetGeometry) {
     Q_UNUSED(widget);
     Q_UNUSED(targetGeometry);
     // Simplified implementation
 }
 
-QRect FluentResponsiveLayout::calculateItemGeometry(int index, const QRect& containerRect) const {
+QRect FluentResponsiveLayout::calculateItemGeometry(
+    int index, const QRect& containerRect) const {
     Q_UNUSED(index);
-    return containerRect; // Simplified implementation
+    return containerRect;  // Simplified implementation
 }
 
-QSize FluentResponsiveLayout::calculateLayoutSize(const QSize& containerSize) const {
-    return containerSize; // Simplified implementation
+QSize FluentResponsiveLayout::calculateLayoutSize(
+    const QSize& containerSize) const {
+    return containerSize;  // Simplified implementation
 }
 
 int FluentResponsiveLayout::getOptimalColumnCount(int containerWidth) const {
-    return std::max(1, containerWidth / 200); // Simplified implementation
+    return std::max(1, containerWidth / 200);  // Simplified implementation
 }
 
-QList<QRect> FluentResponsiveLayout::calculateMasonryLayout(const QRect& containerRect) const {
+QList<QRect> FluentResponsiveLayout::calculateMasonryLayout(
+    const QRect& containerRect) const {
     Q_UNUSED(containerRect);
-    return QList<QRect>{}; // Simplified implementation
+    return QList<QRect>{};  // Simplified implementation
 }
 
 void FluentResponsiveLayout::enableVirtualization(bool enabled) {
@@ -472,7 +499,7 @@ void FluentResponsiveLayout::optimizeLayout() {
 // Helper method implementations that are declared in the header
 QSize FluentResponsiveLayout::calculateFlexboxSizeHint() const {
     // Simple flexbox size hint calculation
-    QSize totalSize(200, 200); // Default size
+    QSize totalSize(200, 200);  // Default size
 
     if (!m_items.isEmpty()) {
         int totalHeight = 0;
@@ -502,10 +529,11 @@ void FluentResponsiveLayout::alignFlexItems(const QRect& containerRect) {
 
 QSize FluentResponsiveLayout::calculateGridSizeHint() const {
     int columns = m_config.gridColumns.size();
-    if (columns <= 0) columns = 3; // Default to 3 columns
+    if (columns <= 0)
+        columns = 3;  // Default to 3 columns
     int rows = (m_items.size() + columns - 1) / columns;
 
-    QSize itemSize(100, 100); // Default item size
+    QSize itemSize(100, 100);  // Default item size
     if (!m_items.isEmpty() && m_items.first()) {
         itemSize = m_items.first()->sizeHint();
     }
@@ -513,21 +541,23 @@ QSize FluentResponsiveLayout::calculateGridSizeHint() const {
     return QSize(columns * itemSize.width(), rows * itemSize.height());
 }
 
-QList<int> FluentResponsiveLayout::resolveGridTracks(const QList<FluentGridTrack>& tracks, int availableSpace) const {
+QList<int> FluentResponsiveLayout::resolveGridTracks(
+    const QList<FluentGridTrack>& tracks, int availableSpace) const {
     Q_UNUSED(tracks);
     Q_UNUSED(availableSpace);
-    return QList<int>{}; // Simplified implementation
+    return QList<int>{};  // Simplified implementation
 }
 
-int FluentResponsiveLayout::parseGridSize(const QString& size, int availableSpace) const {
+int FluentResponsiveLayout::parseGridSize(const QString& size,
+                                          int availableSpace) const {
     Q_UNUSED(size);
     Q_UNUSED(availableSpace);
-    return 100; // Simplified implementation
+    return 100;  // Simplified implementation
 }
 
 QSize FluentResponsiveLayout::calculateMasonrySizeHint() const {
     // Simple masonry size hint calculation
-    QSize totalSize(300, 200); // Default size
+    QSize totalSize(300, 200);  // Default size
 
     if (!m_items.isEmpty()) {
         int totalHeight = 0;
@@ -542,34 +572,41 @@ QSize FluentResponsiveLayout::calculateMasonrySizeHint() const {
     return totalSize;
 }
 
-QList<int> FluentResponsiveLayout::calculateMasonryColumnHeights(const QRect& containerRect) const {
+QList<int> FluentResponsiveLayout::calculateMasonryColumnHeights(
+    const QRect& containerRect) const {
     Q_UNUSED(containerRect);
-    return QList<int>{}; // Simplified implementation
+    return QList<int>{};  // Simplified implementation
 }
 
-int FluentResponsiveLayout::findShortestColumn(const QList<int>& heights) const {
-    if (heights.isEmpty()) return 0;
-    return std::distance(heights.begin(), std::min_element(heights.begin(), heights.end()));
+int FluentResponsiveLayout::findShortestColumn(
+    const QList<int>& heights) const {
+    if (heights.isEmpty())
+        return 0;
+    return std::distance(heights.begin(),
+                         std::min_element(heights.begin(), heights.end()));
 }
 
 void FluentResponsiveLayout::setupLayoutAnimation() {
     // Simplified implementation
 }
 
-void FluentResponsiveLayout::animateItemsToPositions(const QMap<QWidget*, QRect>& targetPositions) {
+void FluentResponsiveLayout::animateItemsToPositions(
+    const QMap<QWidget*, QRect>& targetPositions) {
     Q_UNUSED(targetPositions);
     // Simplified implementation
 }
 
-FluentResponsiveLayoutConfig FluentResponsiveLayout::getConfigForBreakpoint(FluentBreakpoint breakpoint) const {
+FluentResponsiveLayoutConfig FluentResponsiveLayout::getConfigForBreakpoint(
+    FluentBreakpoint breakpoint) const {
     Q_UNUSED(breakpoint);
-    return m_config; // Simplified implementation
+    return m_config;  // Simplified implementation
 }
 
-FluentLayoutItemConfig FluentResponsiveLayout::getItemConfigForBreakpoint(int index, FluentBreakpoint breakpoint) const {
+FluentLayoutItemConfig FluentResponsiveLayout::getItemConfigForBreakpoint(
+    int index, FluentBreakpoint breakpoint) const {
     Q_UNUSED(index);
     Q_UNUSED(breakpoint);
-    return FluentLayoutItemConfig{}; // Simplified implementation
+    return FluentLayoutItemConfig{};  // Simplified implementation
 }
 
 void FluentResponsiveLayout::updateResponsiveConfiguration() {
@@ -577,17 +614,20 @@ void FluentResponsiveLayout::updateResponsiveConfiguration() {
     invalidate();
 }
 
-QRect FluentResponsiveLayout::applyMargins(const QRect& rect, const QMargins& margins) const {
+QRect FluentResponsiveLayout::applyMargins(const QRect& rect,
+                                           const QMargins& margins) const {
     return rect.marginsRemoved(margins);
 }
 
-QSize FluentResponsiveLayout::applyConstraints(const QSize& size, const QSize& minSize, const QSize& maxSize) const {
+QSize FluentResponsiveLayout::applyConstraints(const QSize& size,
+                                               const QSize& minSize,
+                                               const QSize& maxSize) const {
     return size.boundedTo(maxSize).expandedTo(minSize);
 }
 
 bool FluentResponsiveLayout::shouldShowItem(int index) const {
     Q_UNUSED(index);
-    return true; // Simplified implementation
+    return true;  // Simplified implementation
 }
 
 // FluentFlexLayout implementation
@@ -595,11 +635,12 @@ FluentFlexLayout::FluentFlexLayout(QWidget* parent)
     : FluentResponsiveLayout(parent) {
     FluentResponsiveLayoutConfig config;
     config.type = FluentLayoutType::Flexbox;
-    config.flexDirection = FluentFlexDirection::Column; // Default to column
+    config.flexDirection = FluentFlexDirection::Column;  // Default to column
     setConfig(config);
 }
 
-FluentFlexLayout::FluentFlexLayout(FluentFlexDirection direction, QWidget* parent)
+FluentFlexLayout::FluentFlexLayout(FluentFlexDirection direction,
+                                   QWidget* parent)
     : FluentResponsiveLayout(parent) {
     FluentResponsiveLayoutConfig config;
     config.type = FluentLayoutType::Flexbox;
@@ -612,13 +653,15 @@ FluentGridLayout::FluentGridLayout(QWidget* parent)
     : FluentResponsiveLayout(parent) {
     FluentResponsiveLayoutConfig config;
     config.type = FluentLayoutType::Grid;
-    config.gridColumns = QList<FluentGridTrack>{FluentGridTrack{}, FluentGridTrack{}, FluentGridTrack{}}; // 3 columns default
+    config.gridColumns =
+        QList<FluentGridTrack>{FluentGridTrack{}, FluentGridTrack{},
+                               FluentGridTrack{}};  // 3 columns default
     setConfig(config);
 }
 
 FluentGridLayout::FluentGridLayout(int rows, int columns, QWidget* parent)
     : FluentResponsiveLayout(parent) {
-    Q_UNUSED(rows); // Rows are calculated automatically based on items
+    Q_UNUSED(rows);  // Rows are calculated automatically based on items
 
     FluentResponsiveLayoutConfig config;
     config.type = FluentLayoutType::Grid;
@@ -636,7 +679,7 @@ FluentMasonryLayout::FluentMasonryLayout(QWidget* parent)
     : FluentResponsiveLayout(parent) {
     FluentResponsiveLayoutConfig config;
     config.type = FluentLayoutType::Masonry;
-    config.masonryColumns = 3; // Default to 3 columns
+    config.masonryColumns = 3;  // Default to 3 columns
     setConfig(config);
 }
 
@@ -648,4 +691,4 @@ FluentMasonryLayout::FluentMasonryLayout(int columns, QWidget* parent)
     setConfig(config);
 }
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

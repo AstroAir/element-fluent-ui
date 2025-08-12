@@ -1,9 +1,9 @@
 // tests/Accessibility/FluentAccessibleTest.cpp
-#include <QtTest/QtTest>
-#include <QWidget>
-#include <QApplication>
 #include <QAccessible>
+#include <QApplication>
 #include <QSignalSpy>
+#include <QWidget>
+#include <QtTest/QtTest>
 #include <memory>
 
 #include "FluentQt/Accessibility/FluentAccessible.h"
@@ -19,9 +19,9 @@ public:
         : FluentAccessibleInterface(widget) {}
 
     // Expose protected methods for testing
+    using FluentAccessibleInterface::isObjectValid;
     using FluentAccessibleInterface::safeObject;
     using FluentAccessibleInterface::safeWidget;
-    using FluentAccessibleInterface::isObjectValid;
 };
 
 class FluentAccessibleTest : public QObject {
@@ -90,7 +90,8 @@ void FluentAccessibleTest::testConstructorWithValidWidget() {
     // Test normal constructor usage
     QVERIFY(m_testWidget != nullptr);
 
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
     QVERIFY(m_accessibleInterface != nullptr);
 
     // Verify the interface is properly initialized
@@ -101,9 +102,12 @@ void FluentAccessibleTest::testConstructorWithValidWidget() {
 
 void FluentAccessibleTest::testConstructorWithNullWidget() {
     // Test constructor with null widget - should not crash
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Null widget passed to constructor.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Null widget passed to constructor.*"));
 
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(nullptr);
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(nullptr);
     QVERIFY(m_accessibleInterface != nullptr);
 
     // The interface should handle null widget gracefully
@@ -113,7 +117,8 @@ void FluentAccessibleTest::testConstructorWithNullWidget() {
 }
 
 void FluentAccessibleTest::testSafeObjectAccess() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Test safe object access
     QObject* obj = m_accessibleInterface->safeObject();
@@ -124,13 +129,16 @@ void FluentAccessibleTest::testSafeObjectAccess() {
     m_testWidget.reset();
 
     // This should return nullptr and log a warning, not crash
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*object\\(\\) returned null pointer.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*object\\(\\) returned null pointer.*"));
     obj = m_accessibleInterface->safeObject();
     QVERIFY(obj == nullptr);
 }
 
 void FluentAccessibleTest::testSafeWidgetAccess() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Test safe widget access
     QWidget* widget = m_accessibleInterface->safeWidget();
@@ -141,71 +149,92 @@ void FluentAccessibleTest::testSafeWidgetAccess() {
     m_testWidget.reset();
 
     // This should return nullptr and log a warning, not crash
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*object\\(\\) returned null pointer.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*object\\(\\) returned null pointer.*"));
     widget = m_accessibleInterface->safeWidget();
     QVERIFY(widget == nullptr);
 }
 
 void FluentAccessibleTest::testObjectValidation() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Initially should be valid
     QVERIFY(m_accessibleInterface->isObjectValid());
 
     // After destroying widget, should be invalid
     m_testWidget.reset();
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*object\\(\\) returned null pointer.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*object\\(\\) returned null pointer.*"));
     QVERIFY(!m_accessibleInterface->isObjectValid());
 }
 
 void FluentAccessibleTest::testTextWithDestroyedWidget() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Destroy the widget
     m_testWidget.reset();
 
     // These calls should not crash, just return empty strings with warnings
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, returning empty string.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, returning empty string.*"));
     QString name = m_accessibleInterface->text(QAccessible::Name);
     QVERIFY(name.isEmpty());
 
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, returning empty string.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, returning empty string.*"));
     QString description = m_accessibleInterface->text(QAccessible::Description);
     QVERIFY(description.isEmpty());
 
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, returning empty string.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, returning empty string.*"));
     QString value = m_accessibleInterface->text(QAccessible::Value);
     QVERIFY(value.isEmpty());
 }
 
 void FluentAccessibleTest::testSetTextWithDestroyedWidget() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Destroy the widget
     m_testWidget.reset();
 
     // These calls should not crash, just log warnings
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, cannot set text.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, cannot set text.*"));
     m_accessibleInterface->setText(QAccessible::Name, "TestName");
 
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, cannot set text.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, cannot set text.*"));
     m_accessibleInterface->setText(QAccessible::Description, "TestDescription");
 }
 
 void FluentAccessibleTest::testRoleWithDestroyedWidget() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Destroy the widget
     m_testWidget.reset();
 
     // This should not crash, just return default role with warning
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, returning default role.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, returning default role.*"));
     QAccessible::Role role = m_accessibleInterface->role();
     QCOMPARE(role, QAccessible::Client);
 }
 
 void FluentAccessibleTest::testStateWithDestroyedWidget() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Destroy the widget
     m_testWidget.reset();
@@ -218,24 +247,31 @@ void FluentAccessibleTest::testStateWithDestroyedWidget() {
 }
 
 void FluentAccessibleTest::testHelpWithDestroyedWidget() {
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Destroy the widget
     m_testWidget.reset();
 
     // This should not crash, just return empty help with warning
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Invalid object, returning empty help.*"));
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Invalid object, returning empty help.*"));
     QString help = m_accessibleInterface->help();
     QVERIFY(help.isEmpty());
 }
 
 void FluentAccessibleTest::testFactoryWithInvalidObjects() {
     // Note: This test would need access to the actual factory implementation
-    // For now, we'll just test that our interface handles invalid objects gracefully
+    // For now, we'll just test that our interface handles invalid objects
+    // gracefully
 
     // Test with null widget
-    QTest::ignoreMessage(QtWarningMsg, QRegularExpression(".*Null widget passed to constructor.*"));
-    auto nullInterface = std::make_unique<TestableFluentAccessibleInterface>(nullptr);
+    QTest::ignoreMessage(
+        QtWarningMsg,
+        QRegularExpression(".*Null widget passed to constructor.*"));
+    auto nullInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(nullptr);
     QVERIFY(!nullInterface->isObjectValid());
 }
 
@@ -246,11 +282,12 @@ void FluentAccessibleTest::testFluentButtonAccessibility() {
     m_testWidget->setProperty("checkable", true);
     m_testWidget->setProperty("checked", false);
 
-    m_accessibleInterface = std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
+    m_accessibleInterface =
+        std::make_unique<TestableFluentAccessibleInterface>(m_testWidget.get());
 
     // Test role determination
     QAccessible::Role role = m_accessibleInterface->role();
-    QCOMPARE(role, QAccessible::Client); // Default for non-Fluent widgets
+    QCOMPARE(role, QAccessible::Client);  // Default for non-Fluent widgets
 
     // Test description generation
     QString description = m_accessibleInterface->description();

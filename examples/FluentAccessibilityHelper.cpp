@@ -1,16 +1,16 @@
 // examples/FluentAccessibilityHelper.cpp
 #include "FluentAccessibilityHelper.h"
-#include <QApplication>
-#include <QWidget>
 #include <QAccessible>
-#include <QKeyEvent>
-#include <QTimer>
-#include <QHash>
+#include <QApplication>
 #include <QDebug>
-#include <QStyleHints>
 #include <QFocusFrame>
+#include <QHash>
+#include <QKeyEvent>
 #include <QScrollArea>
 #include <QSettings>
+#include <QStyleHints>
+#include <QTimer>
+#include <QWidget>
 #include <algorithm>
 
 namespace FluentQt::Examples {
@@ -22,14 +22,12 @@ QString FluentAccessibilityHelper::s_pendingAnnouncement;
 bool FluentAccessibilityHelper::s_highContrastMode = false;
 
 FluentAccessibilityHelper::FluentAccessibilityHelper(QObject* parent)
-    : QObject(parent)
-    , m_focusTimer(new QTimer(this))
-{
+    : QObject(parent), m_focusTimer(new QTimer(this)) {
     // Initialize announcement timer
     if (!s_announcementTimer) {
         s_announcementTimer = new QTimer();
         s_announcementTimer->setSingleShot(true);
-        s_announcementTimer->setInterval(100); // Debounce announcements
+        s_announcementTimer->setInterval(100);  // Debounce announcements
     }
 
     // Setup focus tracking
@@ -42,7 +40,8 @@ FluentAccessibilityHelper::FluentAccessibilityHelper(QObject* parent)
     });
 
     // Connect to application focus changes
-    connect(qApp, &QApplication::focusChanged, this, &FluentAccessibilityHelper::onFocusChanged);
+    connect(qApp, &QApplication::focusChanged, this,
+            &FluentAccessibilityHelper::onFocusChanged);
 
     // Detect high contrast mode
     s_highContrastMode = isHighContrastMode();
@@ -50,12 +49,14 @@ FluentAccessibilityHelper::FluentAccessibilityHelper(QObject* parent)
 
 FluentAccessibilityHelper::~FluentAccessibilityHelper() = default;
 
-void FluentAccessibilityHelper::announceToScreenReader(const QString& message, QAccessible::Event event) {
-    if (message.isEmpty()) return;
+void FluentAccessibilityHelper::announceToScreenReader(
+    const QString& message, QAccessible::Event event) {
+    if (message.isEmpty())
+        return;
 
     // Debounce announcements to avoid spam
     s_pendingAnnouncement = message;
-    
+
     if (!s_announcementTimer->isActive()) {
         s_announcementTimer->start();
         QTimer::singleShot(100, []() {
@@ -64,15 +65,17 @@ void FluentAccessibilityHelper::announceToScreenReader(const QString& message, Q
                 auto* tempWidget = new QWidget();
                 tempWidget->setAccessibleName(s_pendingAnnouncement);
                 tempWidget->setAccessibleDescription(s_pendingAnnouncement);
-                
-                QAccessibleEvent accessibleEvent(tempWidget, QAccessible::Alert);
+
+                QAccessibleEvent accessibleEvent(tempWidget,
+                                                 QAccessible::Alert);
                 QAccessible::updateAccessibility(&accessibleEvent);
-                
+
                 // Clean up
                 tempWidget->deleteLater();
                 s_pendingAnnouncement.clear();
-                
-                qDebug() << "Accessibility announcement:" << s_pendingAnnouncement;
+
+                qDebug() << "Accessibility announcement:"
+                         << s_pendingAnnouncement;
             }
         });
     }
@@ -83,9 +86,11 @@ void FluentAccessibilityHelper::announceThemeChange(const QString& newTheme) {
     announceToScreenReader(message, QAccessible::Alert);
 }
 
-void FluentAccessibilityHelper::announceComponentStateChange(QWidget* widget, const QString& state) {
-    if (!widget) return;
-    
+void FluentAccessibilityHelper::announceComponentStateChange(
+    QWidget* widget, const QString& state) {
+    if (!widget)
+        return;
+
     QString widgetName = widget->accessibleName();
     if (widgetName.isEmpty()) {
         widgetName = widget->objectName();
@@ -93,13 +98,15 @@ void FluentAccessibilityHelper::announceComponentStateChange(QWidget* widget, co
     if (widgetName.isEmpty()) {
         widgetName = "Component";
     }
-    
+
     QString message = QString("%1 %2").arg(widgetName, state);
     announceToScreenReader(message, QAccessible::StateChanged);
 }
 
-void FluentAccessibilityHelper::enhanceWidgetAccessibility(QWidget* widget, const QString& role) {
-    if (!widget) return;
+void FluentAccessibilityHelper::enhanceWidgetAccessibility(
+    QWidget* widget, const QString& role) {
+    if (!widget)
+        return;
 
     // Set basic accessible properties
     if (!role.isEmpty()) {
@@ -118,61 +125,68 @@ void FluentAccessibilityHelper::enhanceWidgetAccessibility(QWidget* widget, cons
     }
 }
 
-void FluentAccessibilityHelper::setAccessibleName(QWidget* widget, const QString& name) {
+void FluentAccessibilityHelper::setAccessibleName(QWidget* widget,
+                                                  const QString& name) {
     if (widget) {
         widget->setAccessibleName(name);
     }
 }
 
-void FluentAccessibilityHelper::setAccessibleDescription(QWidget* widget, const QString& description) {
+void FluentAccessibilityHelper::setAccessibleDescription(
+    QWidget* widget, const QString& description) {
     if (widget) {
         widget->setAccessibleDescription(description);
     }
 }
 
-void FluentAccessibilityHelper::setAccessibleRole(QWidget* widget, QAccessible::Role role) {
+void FluentAccessibilityHelper::setAccessibleRole(QWidget* widget,
+                                                  QAccessible::Role role) {
     if (widget) {
         widget->setProperty("accessibleRole", static_cast<int>(role));
     }
 }
 
-bool FluentAccessibilityHelper::handleKeyboardNavigation(QWidget* widget, QKeyEvent* event) {
-    if (!widget || !event) return false;
+bool FluentAccessibilityHelper::handleKeyboardNavigation(QWidget* widget,
+                                                         QKeyEvent* event) {
+    if (!widget || !event)
+        return false;
 
     switch (event->key()) {
-    case Qt::Key_Tab:
-        // Handle tab navigation - let Qt handle this naturally
-        return false; // Let Qt handle tab navigation
+        case Qt::Key_Tab:
+            // Handle tab navigation - let Qt handle this naturally
+            return false;  // Let Qt handle tab navigation
 
-    case Qt::Key_Enter:
-    case Qt::Key_Return:
-    case Qt::Key_Space:
-        // Activate focused element
-        if (widget->hasFocus()) {
-            QAccessibleEvent activateEvent(widget, QAccessible::StateChanged);
-            QAccessible::updateAccessibility(&activateEvent);
-            return true;
-        }
-        break;
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+        case Qt::Key_Space:
+            // Activate focused element
+            if (widget->hasFocus()) {
+                QAccessibleEvent activateEvent(widget,
+                                               QAccessible::StateChanged);
+                QAccessible::updateAccessibility(&activateEvent);
+                return true;
+            }
+            break;
 
-    case Qt::Key_Escape:
-        // Close dialogs or cancel operations
-        announceToScreenReader("Cancelled", QAccessible::Alert);
-        return false; // Let parent handle
+        case Qt::Key_Escape:
+            // Close dialogs or cancel operations
+            announceToScreenReader("Cancelled", QAccessible::Alert);
+            return false;  // Let parent handle
 
-    default:
-        break;
+        default:
+            break;
     }
 
     return false;
 }
 
 void FluentAccessibilityHelper::setupKeyboardNavigation(QWidget* container) {
-    if (!container) return;
+    if (!container)
+        return;
 
     // Create keyboard navigator
     auto* navigator = new FluentKeyboardNavigator(container, container);
-    
+
     // Find all focusable widgets
     auto focusableWidgets = container->findChildren<QWidget*>();
     for (auto* widget : focusableWidgets) {
@@ -186,8 +200,9 @@ bool FluentAccessibilityHelper::isHighContrastMode() {
     // Check system high contrast mode
 #ifdef Q_OS_WIN
     // Windows high contrast detection
-    QSettings registry("HKEY_CURRENT_USER\\Control Panel\\Accessibility\\HighContrast", 
-                      QSettings::NativeFormat);
+    QSettings registry(
+        "HKEY_CURRENT_USER\\Control Panel\\Accessibility\\HighContrast",
+        QSettings::NativeFormat);
     return registry.value("Flags", 0).toInt() & 1;
 #elif defined(Q_OS_MAC)
     // macOS high contrast detection
@@ -200,13 +215,15 @@ bool FluentAccessibilityHelper::isHighContrastMode() {
 }
 
 void FluentAccessibilityHelper::applyHighContrastStyles(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     QString highContrastStyle = getHighContrastStyleSheet(widget->styleSheet());
     widget->setStyleSheet(highContrastStyle);
 }
 
-QString FluentAccessibilityHelper::getHighContrastStyleSheet(const QString& baseStyle) {
+QString FluentAccessibilityHelper::getHighContrastStyleSheet(
+    const QString& baseStyle) {
     QString highContrastAdditions = R"(
         QWidget {
             border: 2px solid black;
@@ -244,21 +261,25 @@ QString FluentAccessibilityHelper::getHighContrastStyleSheet(const QString& base
     return baseStyle + "\n" + highContrastAdditions;
 }
 
-void FluentAccessibilityHelper::setFocusIndicator(QWidget* widget, bool visible) {
-    if (!widget) return;
+void FluentAccessibilityHelper::setFocusIndicator(QWidget* widget,
+                                                  bool visible) {
+    if (!widget)
+        return;
 
     if (visible) {
-        widget->setStyleSheet(widget->styleSheet() + 
-            "\nQWidget:focus { border: 2px solid blue; outline: 1px solid yellow; }");
+        widget->setStyleSheet(widget->styleSheet() +
+                              "\nQWidget:focus { border: 2px solid blue; "
+                              "outline: 1px solid yellow; }");
     }
 }
 
 void FluentAccessibilityHelper::ensureVisibleFocus(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     // Ensure the focused widget is visible
     widget->ensurePolished();
-    
+
     // Scroll to make it visible if in a scroll area
     QWidget* parent = widget->parentWidget();
     while (parent) {
@@ -271,7 +292,8 @@ void FluentAccessibilityHelper::ensureVisibleFocus(QWidget* widget) {
 }
 
 void FluentAccessibilityHelper::announceFocusChange(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     QString widgetName = widget->accessibleName();
     if (widgetName.isEmpty()) {
@@ -285,39 +307,47 @@ void FluentAccessibilityHelper::announceFocusChange(QWidget* widget) {
     announceToScreenReader(message, QAccessible::Focus);
 }
 
-void FluentAccessibilityHelper::setupThemeAccessibility(QWidget* themeControls) {
-    if (!themeControls) return;
+void FluentAccessibilityHelper::setupThemeAccessibility(
+    QWidget* themeControls) {
+    if (!themeControls)
+        return;
 
     enhanceWidgetAccessibility(themeControls, "toolbar");
     setAccessibleName(themeControls, "Theme Controls");
-    setAccessibleDescription(themeControls, "Controls for changing application theme and appearance");
+    setAccessibleDescription(
+        themeControls,
+        "Controls for changing application theme and appearance");
 
     // Setup accessibility for child controls
     auto children = themeControls->findChildren<QWidget*>();
     for (auto* child : children) {
         if (child->objectName().contains("theme", Qt::CaseInsensitive)) {
             setupButtonAccessibility(child, "Change theme mode");
-        } else if (child->objectName().contains("accent", Qt::CaseInsensitive)) {
+        } else if (child->objectName().contains("accent",
+                                                Qt::CaseInsensitive)) {
             setupButtonAccessibility(child, "Change accent color");
-        } else if (child->objectName().contains("contrast", Qt::CaseInsensitive)) {
+        } else if (child->objectName().contains("contrast",
+                                                Qt::CaseInsensitive)) {
             setupButtonAccessibility(child, "Toggle high contrast mode");
         }
     }
 }
 
-void FluentAccessibilityHelper::announceAccentColorChange(const QString& colorName) {
+void FluentAccessibilityHelper::announceAccentColorChange(
+    const QString& colorName) {
     QString message = QString("Accent color changed to %1").arg(colorName);
     announceToScreenReader(message, QAccessible::Alert);
 }
 
 void FluentAccessibilityHelper::announceContrastModeChange(bool highContrast) {
-    QString message = highContrast ? "High contrast mode enabled" : "High contrast mode disabled";
+    QString message = highContrast ? "High contrast mode enabled"
+                                   : "High contrast mode disabled";
     announceToScreenReader(message, QAccessible::Alert);
 }
 
 void FluentAccessibilityHelper::onFocusChanged(QWidget* old, QWidget* now) {
     Q_UNUSED(old)
-    
+
     if (now && now != m_lastFocusedWidget) {
         m_lastFocusedWidget = now;
         m_focusTimer->start();
@@ -332,15 +362,16 @@ void FluentAccessibilityHelper::installEventFilter(QWidget* widget) {
 }
 
 QString FluentAccessibilityHelper::getWidgetDescription(QWidget* widget) {
-    if (!widget) return "Unknown widget";
+    if (!widget)
+        return "Unknown widget";
 
     QString className = widget->metaObject()->className();
-    
+
     // Remove namespace prefixes
     if (className.contains("::")) {
         className = className.split("::").last();
     }
-    
+
     // Convert CamelCase to readable text
     QString result;
     for (int i = 0; i < className.length(); ++i) {
@@ -349,12 +380,13 @@ QString FluentAccessibilityHelper::getWidgetDescription(QWidget* widget) {
         }
         result += className[i].toLower();
     }
-    
+
     return result;
 }
 
 void FluentAccessibilityHelper::updateAccessibleProperties(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     // Ensure widget has accessible name
     if (widget->accessibleName().isEmpty()) {
@@ -371,28 +403,32 @@ void FluentAccessibilityHelper::updateAccessibleProperties(QWidget* widget) {
 }
 
 // FluentKeyboardNavigator implementation
-FluentKeyboardNavigator::FluentKeyboardNavigator(QWidget* container, QObject* parent)
-    : QObject(parent), m_container(container)
-{
+FluentKeyboardNavigator::FluentKeyboardNavigator(QWidget* container,
+                                                 QObject* parent)
+    : QObject(parent), m_container(container) {
     if (m_container) {
         m_container->installEventFilter(this);
     }
 }
 
-void FluentKeyboardNavigator::addNavigableWidget(QWidget* widget, int priority) {
-    if (!widget || m_navigableWidgets.contains(widget)) return;
+void FluentKeyboardNavigator::addNavigableWidget(QWidget* widget,
+                                                 int priority) {
+    if (!widget || m_navigableWidgets.contains(widget))
+        return;
 
     m_navigableWidgets.append(widget);
     m_priorities[widget] = priority;
 
     // Connect to widget destruction
-    connect(widget, &QObject::destroyed, this, &FluentKeyboardNavigator::onWidgetDestroyed);
+    connect(widget, &QObject::destroyed, this,
+            &FluentKeyboardNavigator::onWidgetDestroyed);
 
     updateTabOrder();
 }
 
 void FluentKeyboardNavigator::removeNavigableWidget(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     m_navigableWidgets.removeAll(widget);
     m_priorities.remove(widget);
@@ -405,32 +441,34 @@ void FluentKeyboardNavigator::setNavigationOrder(const QList<QWidget*>& order) {
 }
 
 bool FluentKeyboardNavigator::handleKeyPress(QKeyEvent* event) {
-    if (!event) return false;
+    if (!event)
+        return false;
 
     switch (event->key()) {
-    case Qt::Key_Tab:
-        if (event->modifiers() & Qt::ShiftModifier) {
-            focusPrevious();
-        } else {
-            focusNext();
-        }
-        return true;
+        case Qt::Key_Tab:
+            if (event->modifiers() & Qt::ShiftModifier) {
+                focusPrevious();
+            } else {
+                focusNext();
+            }
+            return true;
 
-    case Qt::Key_Home:
-        focusFirst();
-        return true;
+        case Qt::Key_Home:
+            focusFirst();
+            return true;
 
-    case Qt::Key_End:
-        focusLast();
-        return true;
+        case Qt::Key_End:
+            focusLast();
+            return true;
 
-    default:
-        return false;
+        default:
+            return false;
     }
 }
 
 void FluentKeyboardNavigator::focusNext() {
-    if (m_navigableWidgets.isEmpty()) return;
+    if (m_navigableWidgets.isEmpty())
+        return;
 
     QWidget* current = qApp->focusWidget();
     QWidget* next = findNextWidget(current, true);
@@ -442,7 +480,8 @@ void FluentKeyboardNavigator::focusNext() {
 }
 
 void FluentKeyboardNavigator::focusPrevious() {
-    if (m_navigableWidgets.isEmpty()) return;
+    if (m_navigableWidgets.isEmpty())
+        return;
 
     QWidget* current = qApp->focusWidget();
     QWidget* previous = findNextWidget(current, false);
@@ -491,8 +530,10 @@ void FluentKeyboardNavigator::updateTabOrder() {
     }
 }
 
-QWidget* FluentKeyboardNavigator::findNextWidget(QWidget* current, bool forward) {
-    if (m_navigableWidgets.isEmpty()) return nullptr;
+QWidget* FluentKeyboardNavigator::findNextWidget(QWidget* current,
+                                                 bool forward) {
+    if (m_navigableWidgets.isEmpty())
+        return nullptr;
 
     int currentIndex = m_navigableWidgets.indexOf(current);
 
@@ -523,7 +564,7 @@ QWidget* FluentKeyboardNavigator::findNextWidget(QWidget* current, bool forward)
 
     } while (nextIndex != currentIndex);
 
-    return nullptr; // No navigable widget found
+    return nullptr;  // No navigable widget found
 }
 
 bool FluentKeyboardNavigator::isWidgetNavigable(QWidget* widget) {
@@ -532,25 +573,24 @@ bool FluentKeyboardNavigator::isWidgetNavigable(QWidget* widget) {
 }
 
 // FluentAccessibleWidget implementation
-FluentAccessibleWidget::FluentAccessibleWidget(QWidget* widget, QAccessible::Role role)
-    : QAccessibleWidget(widget), m_role(role)
-{
-}
+FluentAccessibleWidget::FluentAccessibleWidget(QWidget* widget,
+                                               QAccessible::Role role)
+    : QAccessibleWidget(widget), m_role(role) {}
 
 QString FluentAccessibleWidget::text(QAccessible::Text t) const {
     switch (t) {
-    case QAccessible::Name:
-        if (!m_customName.isEmpty()) {
-            return m_customName;
-        }
-        break;
-    case QAccessible::Description:
-        if (!m_customDescription.isEmpty()) {
-            return m_customDescription;
-        }
-        break;
-    default:
-        break;
+        case QAccessible::Name:
+            if (!m_customName.isEmpty()) {
+                return m_customName;
+            }
+            break;
+        case QAccessible::Description:
+            if (!m_customDescription.isEmpty()) {
+                return m_customDescription;
+            }
+            break;
+        default:
+            break;
     }
 
     return QAccessibleWidget::text(t);
@@ -558,15 +598,15 @@ QString FluentAccessibleWidget::text(QAccessible::Text t) const {
 
 void FluentAccessibleWidget::setText(QAccessible::Text t, const QString& text) {
     switch (t) {
-    case QAccessible::Name:
-        m_customName = text;
-        break;
-    case QAccessible::Description:
-        m_customDescription = text;
-        break;
-    default:
-        QAccessibleWidget::setText(t, text);
-        break;
+        case QAccessible::Name:
+            m_customName = text;
+            break;
+        case QAccessible::Description:
+            m_customDescription = text;
+            break;
+        default:
+            QAccessibleWidget::setText(t, text);
+            break;
     }
 }
 
@@ -595,4 +635,4 @@ void FluentAccessibleWidget::setLiveRegion(bool isLive) {
     m_isLiveRegion = isLive;
 }
 
-} // namespace FluentQt::Examples
+}  // namespace FluentQt::Examples

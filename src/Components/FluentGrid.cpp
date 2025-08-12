@@ -1,36 +1,32 @@
 // src/Components/FluentGrid.cpp
 #include "FluentQt/Components/FluentGrid.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QResizeEvent>
 #include <QChildEvent>
-#include <QShowEvent>
-#include <QPropertyAnimation>
+#include <QPainter>
 #include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QResizeEvent>
+#include <QShowEvent>
 #include <QtMath>
 #include <algorithm>
 
 namespace FluentQt::Components {
 
 FluentGrid::FluentGrid(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentGrid");
     setupAnimations();
 }
 
-FluentGrid::FluentGrid(int columns, QWidget* parent)
-    : FluentGrid(parent)
-{
+FluentGrid::FluentGrid(int columns, QWidget* parent) : FluentGrid(parent) {
     setColumns(columns);
 }
 
 FluentGrid::FluentGrid(int columns, int rows, QWidget* parent)
-    : FluentGrid(columns, parent)
-{
+    : FluentGrid(columns, parent) {
     setRows(rows);
 }
 
@@ -41,9 +37,7 @@ void FluentGrid::setupAnimations() {
     // Animation setup is handled per-item in animateToLayout()
 }
 
-int FluentGrid::columns() const {
-    return m_columns;
-}
+int FluentGrid::columns() const { return m_columns; }
 
 void FluentGrid::setColumns(int columns) {
     const int clampedColumns = qMax(-1, columns);
@@ -55,9 +49,7 @@ void FluentGrid::setColumns(int columns) {
     }
 }
 
-int FluentGrid::rows() const {
-    return m_rows;
-}
+int FluentGrid::rows() const { return m_rows; }
 
 void FluentGrid::setRows(int rows) {
     const int clampedRows = qMax(-1, rows);
@@ -69,9 +61,7 @@ void FluentGrid::setRows(int rows) {
     }
 }
 
-FluentGridFlow FluentGrid::flow() const {
-    return m_flow;
-}
+FluentGridFlow FluentGrid::flow() const { return m_flow; }
 
 void FluentGrid::setFlow(FluentGridFlow flow) {
     if (m_flow != flow) {
@@ -82,9 +72,7 @@ void FluentGrid::setFlow(FluentGridFlow flow) {
     }
 }
 
-FluentGridAlignment FluentGrid::alignItems() const {
-    return m_alignItems;
-}
+FluentGridAlignment FluentGrid::alignItems() const { return m_alignItems; }
 
 void FluentGrid::setAlignItems(FluentGridAlignment alignment) {
     if (m_alignItems != alignment) {
@@ -95,9 +83,7 @@ void FluentGrid::setAlignItems(FluentGridAlignment alignment) {
     }
 }
 
-FluentGridAlignment FluentGrid::justifyItems() const {
-    return m_justifyItems;
-}
+FluentGridAlignment FluentGrid::justifyItems() const { return m_justifyItems; }
 
 void FluentGrid::setJustifyItems(FluentGridAlignment alignment) {
     if (m_justifyItems != alignment) {
@@ -108,9 +94,7 @@ void FluentGrid::setJustifyItems(FluentGridAlignment alignment) {
     }
 }
 
-FluentGridAlignment FluentGrid::alignContent() const {
-    return m_alignContent;
-}
+FluentGridAlignment FluentGrid::alignContent() const { return m_alignContent; }
 
 void FluentGrid::setAlignContent(FluentGridAlignment alignment) {
     if (m_alignContent != alignment) {
@@ -134,9 +118,7 @@ void FluentGrid::setJustifyContent(FluentGridAlignment alignment) {
     }
 }
 
-int FluentGrid::spacing() const {
-    return qMax(m_rowSpacing, m_columnSpacing);
-}
+int FluentGrid::spacing() const { return qMax(m_rowSpacing, m_columnSpacing); }
 
 void FluentGrid::setSpacing(int spacing) {
     const int clampedSpacing = qMax(0, spacing);
@@ -151,9 +133,7 @@ void FluentGrid::setSpacing(int spacing) {
     }
 }
 
-int FluentGrid::rowSpacing() const {
-    return m_rowSpacing;
-}
+int FluentGrid::rowSpacing() const { return m_rowSpacing; }
 
 void FluentGrid::setRowSpacing(int spacing) {
     const int clampedSpacing = qMax(0, spacing);
@@ -165,9 +145,7 @@ void FluentGrid::setRowSpacing(int spacing) {
     }
 }
 
-int FluentGrid::columnSpacing() const {
-    return m_columnSpacing;
-}
+int FluentGrid::columnSpacing() const { return m_columnSpacing; }
 
 void FluentGrid::setColumnSpacing(int spacing) {
     const int clampedSpacing = qMax(0, spacing);
@@ -179,9 +157,7 @@ void FluentGrid::setColumnSpacing(int spacing) {
     }
 }
 
-QMargins FluentGrid::padding() const {
-    return m_padding;
-}
+QMargins FluentGrid::padding() const { return m_padding; }
 
 void FluentGrid::setPadding(const QMargins& padding) {
     if (m_padding != padding) {
@@ -196,9 +172,7 @@ void FluentGrid::setPadding(int padding) {
     setPadding(QMargins(padding, padding, padding, padding));
 }
 
-bool FluentGrid::autoColumns() const {
-    return m_autoColumns;
-}
+bool FluentGrid::autoColumns() const { return m_autoColumns; }
 
 void FluentGrid::setAutoColumns(bool auto_) {
     if (m_autoColumns != auto_) {
@@ -209,9 +183,7 @@ void FluentGrid::setAutoColumns(bool auto_) {
     }
 }
 
-bool FluentGrid::autoRows() const {
-    return m_autoRows;
-}
+bool FluentGrid::autoRows() const { return m_autoRows; }
 
 void FluentGrid::setAutoRows(bool auto_) {
     if (m_autoRows != auto_) {
@@ -222,9 +194,7 @@ void FluentGrid::setAutoRows(bool auto_) {
     }
 }
 
-bool FluentGrid::isAnimated() const {
-    return m_animated;
-}
+bool FluentGrid::isAnimated() const { return m_animated; }
 
 void FluentGrid::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -245,7 +215,8 @@ void FluentGrid::addItem(QWidget* widget, int row, int column) {
     }
 }
 
-void FluentGrid::addItem(QWidget* widget, int row, int column, int rowSpan, int columnSpan) {
+void FluentGrid::addItem(QWidget* widget, int row, int column, int rowSpan,
+                         int columnSpan) {
     if (widget) {
         FluentGridItem item(widget, row, column);
         item.rowSpan = qMax(1, rowSpan);
@@ -255,16 +226,18 @@ void FluentGrid::addItem(QWidget* widget, int row, int column, int rowSpan, int 
 }
 
 void FluentGrid::addItem(const FluentGridItem& item) {
-    if (!item.widget) return;
-    
+    if (!item.widget)
+        return;
+
     m_items.append(item);
     item.widget->setParent(this);
-    
-    connect(item.widget, &QObject::destroyed, this, &FluentGrid::onItemDestroyed);
-    
+
+    connect(item.widget, &QObject::destroyed, this,
+            &FluentGrid::onItemDestroyed);
+
     m_layoutDirty = true;
     relayout();
-    
+
     emit itemAdded(m_items.size() - 1);
 }
 
@@ -275,17 +248,19 @@ void FluentGrid::insertItem(int index, QWidget* widget) {
 }
 
 void FluentGrid::insertItem(int index, const FluentGridItem& item) {
-    if (!item.widget) return;
-    
+    if (!item.widget)
+        return;
+
     const int clampedIndex = qBound(0, index, m_items.size());
     m_items.insert(clampedIndex, item);
     item.widget->setParent(this);
-    
-    connect(item.widget, &QObject::destroyed, this, &FluentGrid::onItemDestroyed);
-    
+
+    connect(item.widget, &QObject::destroyed, this,
+            &FluentGrid::onItemDestroyed);
+
     m_layoutDirty = true;
     relayout();
-    
+
     emit itemAdded(clampedIndex);
 }
 
@@ -302,13 +277,14 @@ void FluentGrid::removeItemAt(int index) {
     if (index >= 0 && index < m_items.size()) {
         FluentGridItem item = m_items.takeAt(index);
         if (item.widget) {
-            disconnect(item.widget, &QObject::destroyed, this, &FluentGrid::onItemDestroyed);
+            disconnect(item.widget, &QObject::destroyed, this,
+                       &FluentGrid::onItemDestroyed);
             item.widget->setParent(nullptr);
         }
-        
+
         m_layoutDirty = true;
         relayout();
-        
+
         emit itemRemoved(index);
     }
 }
@@ -316,15 +292,16 @@ void FluentGrid::removeItemAt(int index) {
 void FluentGrid::clear() {
     for (const FluentGridItem& item : m_items) {
         if (item.widget) {
-            disconnect(item.widget, &QObject::destroyed, this, &FluentGrid::onItemDestroyed);
+            disconnect(item.widget, &QObject::destroyed, this,
+                       &FluentGrid::onItemDestroyed);
             item.widget->setParent(nullptr);
         }
     }
-    
+
     m_items.clear();
     m_itemRects.clear();
     m_layoutDirty = true;
     relayout();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

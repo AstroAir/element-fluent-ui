@@ -1,10 +1,10 @@
 // tests/Components/FluentSheetTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMouseEvent>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMainWindow>
+#include <QMouseEvent>
+#include <QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentSheet.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -118,9 +118,11 @@ private slots:
     void testRapidOpenClose();
 
 private:
-    FluentSheet* createSheet(FluentSheetDirection direction = FluentSheetDirection::Bottom);
+    FluentSheet* createSheet(
+        FluentSheetDirection direction = FluentSheetDirection::Bottom);
     QMainWindow* createMainWindow();
-    void simulateMouseDrag(QWidget* widget, const QPoint& start, const QPoint& end);
+    void simulateMouseDrag(QWidget* widget, const QPoint& start,
+                           const QPoint& end);
     void simulateKeyPress(QWidget* widget, Qt::Key key);
     void waitForAnimation(FluentSheet* sheet);
 
@@ -153,7 +155,7 @@ void FluentSheetTest::cleanup() {
 
 void FluentSheetTest::testDefaultConstructor() {
     FluentSheet sheet;
-    
+
     QCOMPARE(sheet.direction(), FluentSheetDirection::Bottom);
     QCOMPARE(sheet.sheetSize(), FluentSheetSize::Medium);
     QCOMPARE(sheet.behavior(), FluentSheetBehavior::Modal);
@@ -205,29 +207,29 @@ void FluentSheetTest::testCreateRightSheet() {
 
 void FluentSheetTest::testDirection() {
     QCOMPARE(m_sheet->direction(), FluentSheetDirection::Bottom);
-    
+
     m_sheet->setDirection(FluentSheetDirection::Top);
     QCOMPARE(m_sheet->direction(), FluentSheetDirection::Top);
-    
+
     m_sheet->setDirection(FluentSheetDirection::Left);
     QCOMPARE(m_sheet->direction(), FluentSheetDirection::Left);
-    
+
     m_sheet->setDirection(FluentSheetDirection::Right);
     QCOMPARE(m_sheet->direction(), FluentSheetDirection::Right);
 }
 
 void FluentSheetTest::testSheetSize() {
     QCOMPARE(m_sheet->sheetSize(), FluentSheetSize::Medium);
-    
+
     m_sheet->setSheetSize(FluentSheetSize::Small);
     QCOMPARE(m_sheet->sheetSize(), FluentSheetSize::Small);
-    
+
     m_sheet->setSheetSize(FluentSheetSize::Large);
     QCOMPARE(m_sheet->sheetSize(), FluentSheetSize::Large);
-    
+
     m_sheet->setSheetSize(FluentSheetSize::Full);
     QCOMPARE(m_sheet->sheetSize(), FluentSheetSize::Full);
-    
+
     m_sheet->setSheetSize(FluentSheetSize::Custom);
     QCOMPARE(m_sheet->sheetSize(), FluentSheetSize::Custom);
 }
@@ -240,11 +242,12 @@ void FluentSheetTest::testCustomSize() {
 
 void FluentSheetTest::testDirectionSignal() {
     QSignalSpy spy(m_sheet, &FluentSheet::directionChanged);
-    
+
     m_sheet->setDirection(FluentSheetDirection::Top);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(spy.last().first().value<FluentSheetDirection>(), FluentSheetDirection::Top);
-    
+    QCOMPARE(spy.last().first().value<FluentSheetDirection>(),
+             FluentSheetDirection::Top);
+
     // Setting same direction should not emit signal
     m_sheet->setDirection(FluentSheetDirection::Top);
     QCOMPARE(spy.count(), 1);
@@ -252,60 +255,62 @@ void FluentSheetTest::testDirectionSignal() {
 
 void FluentSheetTest::testSheetSizeSignal() {
     QSignalSpy spy(m_sheet, &FluentSheet::sheetSizeChanged);
-    
+
     m_sheet->setSheetSize(FluentSheetSize::Large);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(spy.last().first().value<FluentSheetSize>(), FluentSheetSize::Large);
+    QCOMPARE(spy.last().first().value<FluentSheetSize>(),
+             FluentSheetSize::Large);
 }
 
 void FluentSheetTest::testBehavior() {
     QCOMPARE(m_sheet->behavior(), FluentSheetBehavior::Modal);
-    
+
     m_sheet->setBehavior(FluentSheetBehavior::Modeless);
     QCOMPARE(m_sheet->behavior(), FluentSheetBehavior::Modeless);
-    
+
     m_sheet->setBehavior(FluentSheetBehavior::Persistent);
     QCOMPARE(m_sheet->behavior(), FluentSheetBehavior::Persistent);
 }
 
 void FluentSheetTest::testBehaviorSignal() {
     QSignalSpy spy(m_sheet, &FluentSheet::behaviorChanged);
-    
+
     m_sheet->setBehavior(FluentSheetBehavior::Modeless);
     QCOMPARE(spy.count(), 1);
-    QCOMPARE(spy.last().first().value<FluentSheetBehavior>(), FluentSheetBehavior::Modeless);
+    QCOMPARE(spy.last().first().value<FluentSheetBehavior>(),
+             FluentSheetBehavior::Modeless);
 }
 
 void FluentSheetTest::testOverlayVisible() {
     QVERIFY(m_sheet->overlayVisible());
-    
+
     m_sheet->setOverlayVisible(false);
     QVERIFY(!m_sheet->overlayVisible());
-    
+
     m_sheet->setOverlayVisible(true);
     QVERIFY(m_sheet->overlayVisible());
 }
 
 void FluentSheetTest::testOverlayOpacity() {
     QCOMPARE(m_sheet->overlayOpacity(), 0.5);
-    
+
     m_sheet->setOverlayOpacity(0.8);
     QCOMPARE(m_sheet->overlayOpacity(), 0.8);
-    
+
     // Values should be clamped to [0.0, 1.0]
     m_sheet->setOverlayOpacity(1.5);
     QCOMPARE(m_sheet->overlayOpacity(), 1.0);
-    
+
     m_sheet->setOverlayOpacity(-0.5);
     QCOMPARE(m_sheet->overlayOpacity(), 0.0);
 }
 
 void FluentSheetTest::testAnimationDuration() {
     QCOMPARE(m_sheet->animationDuration(), 300);
-    
+
     m_sheet->setAnimationDuration(500);
     QCOMPARE(m_sheet->animationDuration(), 500);
-    
+
     // Negative duration should be ignored
     m_sheet->setAnimationDuration(-100);
     QCOMPARE(m_sheet->animationDuration(), 500);
@@ -313,14 +318,14 @@ void FluentSheetTest::testAnimationDuration() {
 
 void FluentSheetTest::testEasingCurve() {
     QCOMPARE(m_sheet->easingCurve(), QEasingCurve::OutCubic);
-    
+
     m_sheet->setEasingCurve(QEasingCurve::InOutQuad);
     QCOMPARE(m_sheet->easingCurve(), QEasingCurve::InOutQuad);
 }
 
 void FluentSheetTest::testSetContentWidget() {
     QLabel* content = new QLabel("Test Content");
-    
+
     m_sheet->setContentWidget(content);
     QCOMPARE(m_sheet->contentWidget(), content);
 }
@@ -339,10 +344,10 @@ void FluentSheetTest::testSubtitle() {
 
 void FluentSheetTest::testIsOpen() {
     QVERIFY(!m_sheet->isOpen());
-    
+
     m_sheet->open();
     QVERIFY(m_sheet->isOpen());
-    
+
     m_sheet->close();
     waitForAnimation(m_sheet);
     QVERIFY(!m_sheet->isOpen());
@@ -359,14 +364,18 @@ QMainWindow* FluentSheetTest::createMainWindow() {
     return window;
 }
 
-void FluentSheetTest::simulateMouseDrag(QWidget* widget, const QPoint& start, const QPoint& end) {
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, start, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+void FluentSheetTest::simulateMouseDrag(QWidget* widget, const QPoint& start,
+                                        const QPoint& end) {
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, start, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(widget, &pressEvent);
-    
-    QMouseEvent moveEvent(QEvent::MouseMove, end, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+
+    QMouseEvent moveEvent(QEvent::MouseMove, end, Qt::LeftButton,
+                          Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(widget, &moveEvent);
-    
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, end, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, end, Qt::LeftButton,
+                             Qt::NoButton, Qt::NoModifier);
     QApplication::sendEvent(widget, &releaseEvent);
 }
 

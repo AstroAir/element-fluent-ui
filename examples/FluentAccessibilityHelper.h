@@ -3,20 +3,20 @@
 
 #pragma once
 
-#include <QObject>
-#include <QWidget>
 #include <QAccessible>
 #include <QAccessibleWidget>
+#include <QApplication>
 #include <QKeyEvent>
+#include <QObject>
 #include <QString>
 #include <QTimer>
-#include <QApplication>
+#include <QWidget>
 
 namespace FluentQt::Examples {
 
 /**
  * @brief Accessibility helper class for FluentQt components
- * 
+ *
  * Provides comprehensive accessibility support including:
  * - Screen reader announcements
  * - Keyboard navigation
@@ -32,14 +32,18 @@ public:
     ~FluentAccessibilityHelper() override;
 
     // Screen reader announcements
-    static void announceToScreenReader(const QString& message, QAccessible::Event event = QAccessible::Alert);
+    static void announceToScreenReader(
+        const QString& message, QAccessible::Event event = QAccessible::Alert);
     static void announceThemeChange(const QString& newTheme);
-    static void announceComponentStateChange(QWidget* widget, const QString& state);
+    static void announceComponentStateChange(QWidget* widget,
+                                             const QString& state);
 
     // Widget accessibility enhancement
-    static void enhanceWidgetAccessibility(QWidget* widget, const QString& role = QString());
+    static void enhanceWidgetAccessibility(QWidget* widget,
+                                           const QString& role = QString());
     static void setAccessibleName(QWidget* widget, const QString& name);
-    static void setAccessibleDescription(QWidget* widget, const QString& description);
+    static void setAccessibleDescription(QWidget* widget,
+                                         const QString& description);
     static void setAccessibleRole(QWidget* widget, QAccessible::Role role);
 
     // Keyboard navigation
@@ -50,7 +54,8 @@ public:
     // High contrast mode
     static bool isHighContrastMode();
     static void applyHighContrastStyles(QWidget* widget);
-    static QString getHighContrastStyleSheet(const QString& baseStyle = QString());
+    static QString getHighContrastStyleSheet(
+        const QString& baseStyle = QString());
 
     // Focus management
     static void setFocusIndicator(QWidget* widget, bool visible = true);
@@ -63,14 +68,19 @@ public:
     static void announceContrastModeChange(bool highContrast);
 
     // Component-specific accessibility
-    static void setupButtonAccessibility(QWidget* button, const QString& action = QString());
-    static void setupInputAccessibility(QWidget* input, const QString& label = QString());
-    static void setupSliderAccessibility(QWidget* slider, const QString& valueDescription = QString());
-    static void setupProgressAccessibility(QWidget* progress, const QString& description = QString());
+    static void setupButtonAccessibility(QWidget* button,
+                                         const QString& action = QString());
+    static void setupInputAccessibility(QWidget* input,
+                                        const QString& label = QString());
+    static void setupSliderAccessibility(
+        QWidget* slider, const QString& valueDescription = QString());
+    static void setupProgressAccessibility(
+        QWidget* progress, const QString& description = QString());
 
     // Live regions for dynamic content
     static void createLiveRegion(QWidget* parent, const QString& regionId);
-    static void updateLiveRegion(const QString& regionId, const QString& content);
+    static void updateLiveRegion(const QString& regionId,
+                                 const QString& content);
     static void removeLiveRegion(const QString& regionId);
 
     // Validation and error handling
@@ -92,7 +102,8 @@ signals:
 private:
     static void installEventFilter(QWidget* widget);
     static QString getWidgetDescription(QWidget* widget);
-    static QString getThemeDescription(const QString& mode, const QString& accent);
+    static QString getThemeDescription(const QString& mode,
+                                       const QString& accent);
     static void updateAccessibleProperties(QWidget* widget);
 
     // Static members for global state
@@ -111,7 +122,8 @@ private:
  */
 class FluentAccessibleWidget : public QAccessibleWidget {
 public:
-    explicit FluentAccessibleWidget(QWidget* widget, QAccessible::Role role = QAccessible::NoRole);
+    explicit FluentAccessibleWidget(
+        QWidget* widget, QAccessible::Role role = QAccessible::NoRole);
 
     // QAccessibleInterface implementation
     QString text(QAccessible::Text t) const override;
@@ -137,7 +149,8 @@ class FluentKeyboardNavigator : public QObject {
     Q_OBJECT
 
 public:
-    explicit FluentKeyboardNavigator(QWidget* container, QObject* parent = nullptr);
+    explicit FluentKeyboardNavigator(QWidget* container,
+                                     QObject* parent = nullptr);
 
     void addNavigableWidget(QWidget* widget, int priority = 0);
     void removeNavigableWidget(QWidget* widget);
@@ -167,4 +180,4 @@ private:
     int m_currentIndex{-1};
 };
 
-} // namespace FluentQt::Examples
+}  // namespace FluentQt::Examples

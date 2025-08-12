@@ -4,68 +4,67 @@
 #include "FluentQt/Components/FluentSelectItem.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QDebug>
+#include <QFocusEvent>
+#include <QHideEvent>
+#include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QKeyEvent>
-#include <QFocusEvent>
-#include <QShowEvent>
-#include <QHideEvent>
 #include <QResizeEvent>
-#include <QApplication>
 #include <QScreen>
 #include <QScrollBar>
-#include <QDebug>
+#include <QShowEvent>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Styling;
 
 FluentSelectDropdown::FluentSelectDropdown(FluentSelect* parent)
-    : QWidget(parent), m_select(parent)
-{
+    : QWidget(parent), m_select(parent) {
     setupUI();
     setupAnimations();
     setupConnections();
-    
+
     // Connect to theme changes
-    connect(&FluentTheme::instance(), &FluentTheme::themeChanged,
-            this, &FluentSelectDropdown::onThemeChanged);
-    
+    connect(&FluentTheme::instance(), &FluentTheme::themeChanged, this,
+            &FluentSelectDropdown::onThemeChanged);
+
     updateColors();
-    
+
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_DeleteOnClose, false);
     setFocusPolicy(Qt::StrongFocus);
-    
+
     // Install event filter on application to handle clicks outside
     qApp->installEventFilter(this);
 }
 
-FluentSelectDropdown::~FluentSelectDropdown() {
-    qApp->removeEventFilter(this);
-}
+FluentSelectDropdown::~FluentSelectDropdown() { qApp->removeEventFilter(this); }
 
 void FluentSelectDropdown::showAnimated() {
-    if (m_state == FluentDropdownState::Visible || m_state == FluentDropdownState::Showing) {
+    if (m_state == FluentDropdownState::Visible ||
+        m_state == FluentDropdownState::Showing) {
         return;
     }
-    
+
     emit aboutToShow();
     m_state = FluentDropdownState::Showing;
-    
+
     updateGeometry();
     updatePosition();
-    
+
     startShowAnimation();
 }
 
 void FluentSelectDropdown::hideAnimated() {
-    if (m_state == FluentDropdownState::Hidden || m_state == FluentDropdownState::Hiding) {
+    if (m_state == FluentDropdownState::Hidden ||
+        m_state == FluentDropdownState::Hiding) {
         return;
     }
-    
+
     emit aboutToHide();
     m_state = FluentDropdownState::Hiding;
-    
+
     startHideAnimation();
 }
 
@@ -78,7 +77,8 @@ void FluentSelectDropdown::setVisible(bool visible) {
 }
 
 void FluentSelectDropdown::updateGeometry() {
-    if (!m_select) return;
+    if (!m_select)
+        return;
 
     const QRect geometry = calculateGeometry();
 
@@ -89,11 +89,12 @@ void FluentSelectDropdown::updateGeometry() {
 }
 
 void FluentSelectDropdown::updatePosition() {
-    if (!m_select) return;
-    
+    if (!m_select)
+        return;
+
     const QPoint position = getOptimalPosition();
     m_targetPosition = position;
-    
+
     move(position);
 }
 
@@ -101,17 +102,17 @@ QSize FluentSelectDropdown::calculateSize() const {
     if (!m_select) {
         return QSize(200, 100);
     }
-    
+
     const int width = qMax(m_select->width(), m_minWidth);
     const int height = qMin(visibleItemCount() * itemHeight() + 8, m_maxHeight);
-    
+
     return QSize(width, height);
 }
 
 QRect FluentSelectDropdown::calculateGeometry() const {
     const QSize size = calculateSize();
     const QPoint position = getOptimalPosition();
-    
+
     return QRect(position, size);
 }
 
@@ -125,7 +126,8 @@ QAbstractItemModel* FluentSelectDropdown::model() const {
     return m_listView ? m_listView->model() : nullptr;
 }
 
-void FluentSelectDropdown::setSelectionModel(QItemSelectionModel* selectionModel) {
+void FluentSelectDropdown::setSelectionModel(
+    QItemSelectionModel* selectionModel) {
     if (m_listView) {
         m_listView->setSelectionModel(selectionModel);
     }
@@ -138,11 +140,11 @@ QItemSelectionModel* FluentSelectDropdown::selectionModel() const {
 void FluentSelectDropdown::setSearchVisible(bool visible) {
     if (m_searchVisible != visible) {
         m_searchVisible = visible;
-        
+
         if (m_searchEdit) {
             m_searchEdit->setVisible(visible);
         }
-        
+
         updateGeometry();
     }
 }
@@ -191,11 +193,12 @@ void FluentSelectDropdown::setMaxWidth(int width) {
 }
 
 void FluentSelectDropdown::selectNextItem() {
-    if (!m_listView || !m_listView->model()) return;
-    
+    if (!m_listView || !m_listView->model())
+        return;
+
     const QModelIndex current = m_listView->currentIndex();
     const int rowCount = m_listView->model()->rowCount();
-    
+
     if (!current.isValid()) {
         // Select first item
         const QModelIndex first = m_listView->model()->index(0, 0);
@@ -210,16 +213,17 @@ void FluentSelectDropdown::selectNextItem() {
             m_listView->setCurrentIndex(next);
         }
     }
-    
+
     ensureCurrentItemVisible();
 }
 
 void FluentSelectDropdown::selectPreviousItem() {
-    if (!m_listView || !m_listView->model()) return;
-    
+    if (!m_listView || !m_listView->model())
+        return;
+
     const QModelIndex current = m_listView->currentIndex();
     const int rowCount = m_listView->model()->rowCount();
-    
+
     if (!current.isValid()) {
         // Select last item
         const QModelIndex last = m_listView->model()->index(rowCount - 1, 0);
@@ -234,13 +238,14 @@ void FluentSelectDropdown::selectPreviousItem() {
             m_listView->setCurrentIndex(prev);
         }
     }
-    
+
     ensureCurrentItemVisible();
 }
 
 void FluentSelectDropdown::selectFirstItem() {
-    if (!m_listView || !m_listView->model()) return;
-    
+    if (!m_listView || !m_listView->model())
+        return;
+
     const QModelIndex first = m_listView->model()->index(0, 0);
     if (first.isValid()) {
         m_listView->setCurrentIndex(first);
@@ -249,8 +254,9 @@ void FluentSelectDropdown::selectFirstItem() {
 }
 
 void FluentSelectDropdown::selectLastItem() {
-    if (!m_listView || !m_listView->model()) return;
-    
+    if (!m_listView || !m_listView->model())
+        return;
+
     const int rowCount = m_listView->model()->rowCount();
     const QModelIndex last = m_listView->model()->index(rowCount - 1, 0);
     if (last.isValid()) {
@@ -260,8 +266,9 @@ void FluentSelectDropdown::selectLastItem() {
 }
 
 void FluentSelectDropdown::activateCurrentItem() {
-    if (!m_listView) return;
-    
+    if (!m_listView)
+        return;
+
     const QModelIndex current = m_listView->currentIndex();
     if (current.isValid()) {
         emit itemActivated(current);
@@ -276,7 +283,7 @@ int FluentSelectDropdown::visibleItemCount() const {
     if (!m_listView || !m_listView->model()) {
         return 0;
     }
-    
+
     const int totalItems = m_listView->model()->rowCount();
     return qMin(totalItems, m_maxVisibleItems);
 }
@@ -292,14 +299,12 @@ void FluentSelectDropdown::setCurrentIndex(const QModelIndex& index) {
     }
 }
 
-qreal FluentSelectDropdown::opacity() const {
-    return m_opacity;
-}
+qreal FluentSelectDropdown::opacity() const { return m_opacity; }
 
 void FluentSelectDropdown::setOpacity(qreal opacity) {
     if (m_opacity != opacity) {
         m_opacity = opacity;
-        
+
         if (m_opacityEffect) {
             m_opacityEffect->setOpacity(opacity);
         }
@@ -309,15 +314,15 @@ void FluentSelectDropdown::setOpacity(qreal opacity) {
 // Protected event handlers
 void FluentSelectDropdown::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect rect = this->rect();
-    
+
     // Paint background
     paintBackground(painter, rect);
-    
+
     // Paint border
     paintBorder(painter, rect);
 }
@@ -357,7 +362,7 @@ void FluentSelectDropdown::keyPressEvent(QKeyEvent* event) {
 
 void FluentSelectDropdown::focusInEvent(QFocusEvent* event) {
     QWidget::focusInEvent(event);
-    
+
     if (m_searchVisible && m_searchEdit) {
         m_searchEdit->setFocus();
     }
@@ -375,14 +380,14 @@ void FluentSelectDropdown::focusOutEvent(QFocusEvent* event) {
 
 void FluentSelectDropdown::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
-    
+
     m_state = FluentDropdownState::Visible;
     emit shown();
 }
 
 void FluentSelectDropdown::hideEvent(QHideEvent* event) {
     QWidget::hideEvent(event);
-    
+
     m_state = FluentDropdownState::Hidden;
     emit hidden();
 }
@@ -413,9 +418,7 @@ void FluentSelectDropdown::onItemClicked(const QModelIndex& index) {
     emit itemClicked(index);
 }
 
-void FluentSelectDropdown::onSelectionChanged() {
-    emit selectionChanged();
-}
+void FluentSelectDropdown::onSelectionChanged() { emit selectionChanged(); }
 
 void FluentSelectDropdown::onSearchTextChanged(const QString& text) {
     emit searchTextChanged(text);
@@ -480,31 +483,33 @@ void FluentSelectDropdown::setupAnimations() {
     updateShadow();
 
     // Show animation
-    m_showAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
+    m_showAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
     m_showAnimation->setDuration(200);
     m_showAnimation->setEasingCurve(QEasingCurve::OutCubic);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
-    connect(m_showAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentSelectDropdown::onShowAnimationFinished);
+    connect(m_showAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentSelectDropdown::onShowAnimationFinished);
 
     // Hide animation
-    m_hideAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
+    m_hideAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
     m_hideAnimation->setDuration(150);
     m_hideAnimation->setEasingCurve(QEasingCurve::InCubic);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
-    connect(m_hideAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentSelectDropdown::onHideAnimationFinished);
+    connect(m_hideAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentSelectDropdown::onHideAnimationFinished);
 }
 
 void FluentSelectDropdown::setupConnections() {
     // List view connections
     if (m_listView) {
-        connect(m_listView, &QListView::activated,
-                this, &FluentSelectDropdown::onItemActivated);
-        connect(m_listView, &QListView::clicked,
-                this, &FluentSelectDropdown::onItemClicked);
+        connect(m_listView, &QListView::activated, this,
+                &FluentSelectDropdown::onItemActivated);
+        connect(m_listView, &QListView::clicked, this,
+                &FluentSelectDropdown::onItemClicked);
 
         if (auto* selectionModel = m_listView->selectionModel()) {
             connect(selectionModel, &QItemSelectionModel::selectionChanged,
@@ -514,8 +519,8 @@ void FluentSelectDropdown::setupConnections() {
 
     // Search edit connections
     if (m_searchEdit) {
-        connect(m_searchEdit, &QLineEdit::textChanged,
-                this, &FluentSelectDropdown::onSearchTextChanged);
+        connect(m_searchEdit, &QLineEdit::textChanged, this,
+                &FluentSelectDropdown::onSearchTextChanged);
     }
 }
 
@@ -528,17 +533,22 @@ void FluentSelectDropdown::updateColors() {
     m_shadowColor = QColor(0, 0, 0, 60);
 
     // Apply colors to widgets
-    const QString styleSheet = QString(
-        "QListView { background: %1; border: none; }"
-        "QLineEdit { background: %1; border: 1px solid %2; border-radius: 4px; padding: 4px; }"
-        "QLabel { color: %3; }"
-    ).arg(m_backgroundColor.name())
-     .arg(m_borderColor.name())
-     .arg(palette.neutralSecondary.name());
+    const QString styleSheet =
+        QString(
+            "QListView { background: %1; border: none; }"
+            "QLineEdit { background: %1; border: 1px solid %2; border-radius: "
+            "4px; padding: 4px; }"
+            "QLabel { color: %3; }")
+            .arg(m_backgroundColor.name())
+            .arg(m_borderColor.name())
+            .arg(palette.neutralSecondary.name());
 
-    if (m_listView) m_listView->setStyleSheet(styleSheet);
-    if (m_searchEdit) m_searchEdit->setStyleSheet(styleSheet);
-    if (m_emptyLabel) m_emptyLabel->setStyleSheet(styleSheet);
+    if (m_listView)
+        m_listView->setStyleSheet(styleSheet);
+    if (m_searchEdit)
+        m_searchEdit->setStyleSheet(styleSheet);
+    if (m_emptyLabel)
+        m_emptyLabel->setStyleSheet(styleSheet);
 }
 
 void FluentSelectDropdown::updateShadow() {
@@ -550,34 +560,36 @@ void FluentSelectDropdown::updateShadow() {
 }
 
 void FluentSelectDropdown::updateScrollBars() {
-    if (!m_listView) return;
+    if (!m_listView)
+        return;
 
     // Update scroll bar styling
     const auto& theme = FluentTheme::instance();
     const auto& palette = theme.currentPalette();
 
     const QString scrollBarStyle = QString(
-        "QScrollBar:vertical {"
-        "    background: %1;"
-        "    width: 12px;"
-        "    border-radius: 6px;"
-        "}"
-        "QScrollBar::handle:vertical {"
-        "    background: %2;"
-        "    border-radius: 6px;"
-        "    min-height: 20px;"
-        "}"
-        "QScrollBar::handle:vertical:hover {"
-        "    background: %3;"
-        "}"
-    ).arg(palette.neutralLighter.name())
-     .arg(palette.neutralTertiary.name())
-     .arg(palette.neutralSecondary.name());
+                                       "QScrollBar:vertical {"
+                                       "    background: %1;"
+                                       "    width: 12px;"
+                                       "    border-radius: 6px;"
+                                       "}"
+                                       "QScrollBar::handle:vertical {"
+                                       "    background: %2;"
+                                       "    border-radius: 6px;"
+                                       "    min-height: 20px;"
+                                       "}"
+                                       "QScrollBar::handle:vertical:hover {"
+                                       "    background: %3;"
+                                       "}")
+                                       .arg(palette.neutralLighter.name())
+                                       .arg(palette.neutralTertiary.name())
+                                       .arg(palette.neutralSecondary.name());
 
     m_listView->verticalScrollBar()->setStyleSheet(scrollBarStyle);
 }
 
-void FluentSelectDropdown::paintBackground(QPainter& painter, const QRect& rect) {
+void FluentSelectDropdown::paintBackground(QPainter& painter,
+                                           const QRect& rect) {
     const int radius = 8;
 
     QPainterPath path;
@@ -602,16 +614,13 @@ QColor FluentSelectDropdown::getBackgroundColor() const {
     return m_backgroundColor;
 }
 
-QColor FluentSelectDropdown::getBorderColor() const {
-    return m_borderColor;
-}
+QColor FluentSelectDropdown::getBorderColor() const { return m_borderColor; }
 
-QColor FluentSelectDropdown::getShadowColor() const {
-    return m_shadowColor;
-}
+QColor FluentSelectDropdown::getShadowColor() const { return m_shadowColor; }
 
 void FluentSelectDropdown::ensureCurrentItemVisible() {
-    if (!m_listView) return;
+    if (!m_listView)
+        return;
 
     const QModelIndex current = m_listView->currentIndex();
     if (current.isValid()) {
@@ -625,9 +634,7 @@ void FluentSelectDropdown::scrollToItem(const QModelIndex& index) {
     }
 }
 
-QRect FluentSelectDropdown::getDropdownRect() const {
-    return m_targetGeometry;
-}
+QRect FluentSelectDropdown::getDropdownRect() const { return m_targetGeometry; }
 
 QPoint FluentSelectDropdown::getOptimalPosition() const {
     if (!m_select) {
@@ -649,7 +656,8 @@ QPoint FluentSelectDropdown::getOptimalPosition() const {
         // Try to position above
         const QPoint abovePos = m_select->mapToGlobal(selectRect.topLeft());
         if (abovePos.y() - dropdownSize.height() >= screenRect.top()) {
-            position = QPoint(abovePos.x(), abovePos.y() - dropdownSize.height());
+            position =
+                QPoint(abovePos.x(), abovePos.y() - dropdownSize.height());
         }
     }
 
@@ -665,7 +673,8 @@ QPoint FluentSelectDropdown::getOptimalPosition() const {
 }
 
 bool FluentSelectDropdown::shouldDropUp() const {
-    if (!m_select) return false;
+    if (!m_select)
+        return false;
 
     const QRect selectRect = m_select->geometry();
     const QPoint globalPos = m_select->mapToGlobal(selectRect.bottomLeft());

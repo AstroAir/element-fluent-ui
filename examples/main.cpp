@@ -1,14 +1,14 @@
 // examples/main.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMainWindow>
+#include <QVBoxLayout>
 
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
 #include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 
 using namespace FluentQt;
 
@@ -26,8 +26,8 @@ private slots:
     void toggleTheme() {
         auto& theme = Styling::FluentTheme::instance();
         auto newMode = (theme.mode() == Styling::FluentThemeMode::Light)
-            ? Styling::FluentThemeMode::Dark
-            : Styling::FluentThemeMode::Light;
+                           ? Styling::FluentThemeMode::Dark
+                           : Styling::FluentThemeMode::Light;
         theme.setMode(newMode);
     }
 
@@ -46,8 +46,8 @@ private:
 
         auto* themeButton = new Components::FluentButton("Toggle Theme", this);
         themeButton->setButtonStyle(Components::FluentButtonStyle::Accent);
-        connect(themeButton, &Components::FluentButton::clicked,
-                this, &FluentDemo::toggleTheme);
+        connect(themeButton, &Components::FluentButton::clicked, this,
+                &FluentDemo::toggleTheme);
 
         headerLayout->addWidget(titleLabel);
         headerLayout->addStretch();
@@ -101,8 +101,7 @@ private:
                     Animation::FluentAnimationConfig config;
                     config.duration = 400ms;
                     auto animation = Animation::FluentAnimator::slideIn(
-                        card, QPoint(0, 50), config
-                    );
+                        card, QPoint(0, 50), config);
                     animation->start();
                 });
             }
@@ -110,7 +109,7 @@ private:
     }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     // Initialize FluentQt

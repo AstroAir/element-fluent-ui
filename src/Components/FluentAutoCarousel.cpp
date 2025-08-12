@@ -1,31 +1,30 @@
 // src/Components/FluentAutoCarousel.cpp
 #include "FluentQt/Components/FluentAutoCarousel.h"
-#include "FluentQt/Styling/FluentTheme.h"
+#include <QDebug>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QProgressBar>
 #include <QLabel>
 #include <QPainter>
-#include <QStyleOption>
+#include <QProgressBar>
 #include <QPropertyAnimation>
+#include <QStyleOption>
 #include <QTimer>
-#include <QDebug>
+#include <QVBoxLayout>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentAutoCarousel::FluentAutoCarousel(QWidget* parent)
-    : FluentCarousel(parent)
-    , m_autoPlayTimer(std::make_unique<QTimer>(this))
-    , m_progressTimer(std::make_unique<QTimer>(this))
-{
+    : FluentCarousel(parent),
+      m_autoPlayTimer(std::make_unique<QTimer>(this)),
+      m_progressTimer(std::make_unique<QTimer>(this)) {
     initializeAutoCarousel();
 }
 
-FluentAutoCarousel::FluentAutoCarousel(const FluentCarouselConfig& config, QWidget* parent)
-    : FluentCarousel(config, parent)
-    , m_autoPlayTimer(std::make_unique<QTimer>(this))
-    , m_progressTimer(std::make_unique<QTimer>(this))
-{
+FluentAutoCarousel::FluentAutoCarousel(const FluentCarouselConfig& config,
+                                       QWidget* parent)
+    : FluentCarousel(config, parent),
+      m_autoPlayTimer(std::make_unique<QTimer>(this)),
+      m_progressTimer(std::make_unique<QTimer>(this)) {
     initializeAutoCarousel();
 }
 
@@ -38,14 +37,14 @@ void FluentAutoCarousel::initializeAutoCarousel() {
     config.pauseOnFocus = true;
     config.showIndicators = true;
     setConfig(config);
-    
+
     // TODO: Implement UI components when needed
     // createProgressIndicator();
     // createPlayControls();
 
     // Connect signals
-    connect(this, &FluentCarousel::currentIndexChanged,
-            this, &FluentAutoCarousel::onCurrentIndexChanged);
+    connect(this, &FluentCarousel::currentIndexChanged, this,
+            &FluentAutoCarousel::onCurrentIndexChanged);
 }
 
 void FluentAutoCarousel::createProgressIndicator() {
@@ -74,7 +73,8 @@ void FluentAutoCarousel::setAutoPlayInterval(int milliseconds) {
     }
 }
 
-void FluentAutoCarousel::setAutoPlayDirection(FluentCarouselAutoPlay direction) {
+void FluentAutoCarousel::setAutoPlayDirection(
+    FluentCarouselAutoPlay direction) {
     if (m_autoPlayDirection != direction) {
         m_autoPlayDirection = direction;
         emit autoPlayDirectionChanged(direction);
@@ -226,7 +226,7 @@ void FluentAutoCarousel::updateTimeLabel() {
 }
 
 int FluentAutoCarousel::remainingTime() const {
-    return 0; // TODO: Implement
+    return 0;  // TODO: Implement
 }
 
 void FluentAutoCarousel::updateAutoPlayTimer() {
@@ -258,24 +258,27 @@ void FluentAutoCarousel::restoreAutoPlayState() {
 }
 
 // Factory methods
-FluentAutoCarousel* FluentAutoCarousel::createWithInterval(int milliseconds, QWidget* parent) {
+FluentAutoCarousel* FluentAutoCarousel::createWithInterval(int milliseconds,
+                                                           QWidget* parent) {
     FluentCarouselConfig config;
     config.autoPlayInterval = std::chrono::milliseconds(milliseconds);
     return new FluentAutoCarousel(config, parent);
 }
 
-FluentAutoCarousel* FluentAutoCarousel::createPingPong(int milliseconds, QWidget* parent) {
+FluentAutoCarousel* FluentAutoCarousel::createPingPong(int milliseconds,
+                                                       QWidget* parent) {
     FluentCarouselConfig config;
     config.autoPlay = FluentCarouselAutoPlay::PingPong;
     config.autoPlayInterval = std::chrono::milliseconds(milliseconds);
     return new FluentAutoCarousel(config, parent);
 }
 
-FluentAutoCarousel* FluentAutoCarousel::createWithProgress(int milliseconds, QWidget* parent) {
+FluentAutoCarousel* FluentAutoCarousel::createWithProgress(int milliseconds,
+                                                           QWidget* parent) {
     FluentCarouselConfig config;
     config.autoPlayInterval = std::chrono::milliseconds(milliseconds);
     config.showIndicators = true;
     return new FluentAutoCarousel(config, parent);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

@@ -1,16 +1,16 @@
 // include/FluentQt/Core/FluentPerformance.h
 #pragma once
 
-#include <QObject>
-#include <QTimer>
 #include <QElapsedTimer>
 #include <QMutex>
+#include <QObject>
 #include <QThread>
+#include <QTimer>
+#include <atomic>
 #include <chrono>
-#include <unordered_map>
 #include <functional>
 #include <memory>
-#include <atomic>
+#include <unordered_map>
 
 namespace FluentQt::Core {
 
@@ -121,8 +121,10 @@ public:
     // Component-specific monitoring
     void registerComponent(const QString& componentName, QObject* component);
     void unregisterComponent(const QString& componentName);
-    void recordComponentRender(const QString& componentName, std::chrono::milliseconds renderTime);
-    ComponentPerformanceData getComponentData(const QString& componentName) const;
+    void recordComponentRender(const QString& componentName,
+                               std::chrono::milliseconds renderTime);
+    ComponentPerformanceData getComponentData(
+        const QString& componentName) const;
     QList<ComponentPerformanceData> getAllComponentData() const;
 
     // Memory usage tracking
@@ -138,7 +140,8 @@ public:
     void clearProfileData();
 
     // Benchmarking system
-    void runBenchmark(const QString& benchmarkName, std::function<void()> benchmark);
+    void runBenchmark(const QString& benchmarkName,
+                      std::function<void()> benchmark);
     void runComponentBenchmark(const QString& componentName);
     QList<BenchmarkResult> getBenchmarkResults() const;
     void clearBenchmarkResults();
@@ -152,7 +155,9 @@ public:
 
     // Performance mode management
     void enableLowPerformanceMode(bool enable = true);
-    bool isLowPerformanceModeEnabled() const { return m_metrics.isLowPerformanceMode; }
+    bool isLowPerformanceModeEnabled() const {
+        return m_metrics.isLowPerformanceMode;
+    }
 
     // CPU monitoring
     void startCpuMonitoring();
@@ -177,12 +182,16 @@ public:
     // Network monitoring
     void startNetworkMonitoring();
     void stopNetworkMonitoring();
-    std::chrono::milliseconds currentNetworkLatency() const { return m_metrics.networkLatency; }
+    std::chrono::milliseconds currentNetworkLatency() const {
+        return m_metrics.networkLatency;
+    }
 
     // Input latency monitoring
     void recordInputEvent(const QString& eventType);
     void recordInputLatency(std::chrono::milliseconds latency);
-    std::chrono::milliseconds averageInputLatency() const { return m_metrics.inputLatency; }
+    std::chrono::milliseconds averageInputLatency() const {
+        return m_metrics.inputLatency;
+    }
 
     // Battery monitoring
     void startBatteryMonitoring();
@@ -191,16 +200,22 @@ public:
     bool isLowPowerMode() const { return m_metrics.isLowPowerMode; }
 
     // Advanced component monitoring
-    void recordComponentUpdate(const QString& componentName, std::chrono::milliseconds updateTime);
-    void recordComponentLayout(const QString& componentName, std::chrono::milliseconds layoutTime);
-    void recordComponentInteraction(const QString& componentName, std::chrono::milliseconds responseTime);
+    void recordComponentUpdate(const QString& componentName,
+                               std::chrono::milliseconds updateTime);
+    void recordComponentLayout(const QString& componentName,
+                               std::chrono::milliseconds layoutTime);
+    void recordComponentInteraction(const QString& componentName,
+                                    std::chrono::milliseconds responseTime);
     void setComponentVisibility(const QString& componentName, bool visible);
-    void markComponentAsLazyLoaded(const QString& componentName, bool lazyLoaded);
+    void markComponentAsLazyLoaded(const QString& componentName,
+                                   bool lazyLoaded);
 
     // Performance scoring
-    double calculateComponentPerformanceScore(const QString& componentName) const;
+    double calculateComponentPerformanceScore(
+        const QString& componentName) const;
     double calculateOverallPerformanceScore() const;
-    QStringList generateOptimizationSuggestions(const QString& componentName) const;
+    QStringList generateOptimizationSuggestions(
+        const QString& componentName) const;
     QStringList generateGlobalOptimizationSuggestions() const;
 
 signals:
@@ -208,7 +223,8 @@ signals:
     void performanceWarning(const QString& message);
     void performanceCritical(const QString& message);
     void metricsUpdated(const PerformanceMetrics& metrics);
-    void componentPerformanceIssue(const QString& componentName, const QString& issue);
+    void componentPerformanceIssue(const QString& componentName,
+                                   const QString& issue);
     void benchmarkCompleted(const BenchmarkResult& result);
 
     // Enhanced monitoring signals
@@ -218,11 +234,13 @@ signals:
     void lowPowerModeChanged(bool enabled);
     void networkLatencyChanged(std::chrono::milliseconds latency);
     void inputLatencyWarning(std::chrono::milliseconds latency);
-    void componentOptimizationSuggestion(const QString& componentName, const QStringList& suggestions);
+    void componentOptimizationSuggestion(const QString& componentName,
+                                         const QStringList& suggestions);
     void performanceScoreChanged(const QString& componentName, double score);
     void memoryLeakDetected(const QString& componentName, size_t leakSize);
     void throttlingDetected(const QString& reason);
-    void performanceDegradation(const QString& metric, double degradationPercent);
+    void performanceDegradation(const QString& metric,
+                                double degradationPercent);
 
 private slots:
     void updateFrameRate();
@@ -288,15 +306,17 @@ private:
     // Performance thresholds
     static constexpr double LOW_FPS_THRESHOLD = 30.0;
     static constexpr double CRITICAL_FPS_THRESHOLD = 15.0;
-    static constexpr size_t HIGH_MEMORY_THRESHOLD = 512 * 1024 * 1024; // 512MB
+    static constexpr size_t HIGH_MEMORY_THRESHOLD = 512 * 1024 * 1024;  // 512MB
     static constexpr double HIGH_CPU_THRESHOLD = 80.0;
     static constexpr double HIGH_GPU_THRESHOLD = 85.0;
     static constexpr double HIGH_MEMORY_PRESSURE_THRESHOLD = 0.8;
     static constexpr double HIGH_THERMAL_THRESHOLD = 80.0;
-    static constexpr std::chrono::milliseconds HIGH_NETWORK_LATENCY_THRESHOLD{100};
-    static constexpr std::chrono::milliseconds HIGH_INPUT_LATENCY_THRESHOLD{16}; // 60fps = 16ms
+    static constexpr std::chrono::milliseconds HIGH_NETWORK_LATENCY_THRESHOLD{
+        100};
+    static constexpr std::chrono::milliseconds HIGH_INPUT_LATENCY_THRESHOLD{
+        16};  // 60fps = 16ms
     static constexpr double LOW_BATTERY_THRESHOLD = 20.0;
-    static constexpr size_t MEMORY_LEAK_THRESHOLD = 10 * 1024 * 1024; // 10MB
+    static constexpr size_t MEMORY_LEAK_THRESHOLD = 10 * 1024 * 1024;  // 10MB
 
     // Performance monitoring state
     bool m_gpuMonitoringEnabled{false};
@@ -312,14 +332,14 @@ private:
     void initializePlatformMonitoring();
     void cleanupPlatformMonitoring();
     double calculatePerformanceTrend(const QString& metric) const;
-    bool detectPerformanceAnomaly(const PerformanceMetrics& current, const PerformanceMetrics& baseline) const;
+    bool detectPerformanceAnomaly(const PerformanceMetrics& current,
+                                  const PerformanceMetrics& baseline) const;
 };
 
 // Enhanced RAII Performance Profiler
 class FluentProfiler {
 public:
-    explicit FluentProfiler(const QString& operation)
-        : m_operation(operation) {
+    explicit FluentProfiler(const QString& operation) : m_operation(operation) {
         FluentPerformanceMonitor::instance().beginProfile(m_operation);
     }
 
@@ -340,14 +360,14 @@ private:
 class FluentComponentProfiler {
 public:
     explicit FluentComponentProfiler(const QString& componentName)
-        : m_componentName(componentName)
-        , m_timer() {
+        : m_componentName(componentName), m_timer() {
         m_timer.start();
     }
 
     ~FluentComponentProfiler() {
         auto elapsed = std::chrono::milliseconds(m_timer.elapsed());
-        FluentPerformanceMonitor::instance().recordComponentRender(m_componentName, elapsed);
+        FluentPerformanceMonitor::instance().recordComponentRender(
+            m_componentName, elapsed);
     }
 
 private:
@@ -359,17 +379,18 @@ private:
 class FluentMemoryTracker {
 public:
     FluentMemoryTracker() {
-        m_initialMemory = FluentPerformanceMonitor::instance().currentMemoryUsage();
+        m_initialMemory =
+            FluentPerformanceMonitor::instance().currentMemoryUsage();
     }
 
     ~FluentMemoryTracker() {
-        auto currentMemory = FluentPerformanceMonitor::instance().currentMemoryUsage();
-        if (currentMemory > m_initialMemory + 1024 * 1024) { // 1MB threshold
+        auto currentMemory =
+            FluentPerformanceMonitor::instance().currentMemoryUsage();
+        if (currentMemory > m_initialMemory + 1024 * 1024) {  // 1MB threshold
             auto& monitor = FluentPerformanceMonitor::instance();
             emit monitor.performanceWarning(
                 QString("Memory leak detected: %1 MB allocated")
-                .arg((currentMemory - m_initialMemory) / (1024 * 1024))
-            );
+                    .arg((currentMemory - m_initialMemory) / (1024 * 1024)));
         }
     }
 
@@ -387,4 +408,4 @@ private:
 #define FLUENT_TRACK_MEMORY() \
     FluentQt::Core::FluentMemoryTracker _memoryTracker()
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

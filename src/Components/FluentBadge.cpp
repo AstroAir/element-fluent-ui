@@ -1,31 +1,31 @@
 // src/Components/FluentBadge.cpp
 #include "FluentQt/Components/FluentBadge.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QFontMetrics>
-#include <QApplication>
-#include <QTimer>
 #include <QAccessible>
+#include <QApplication>
+#include <QFontMetrics>
 #include <QGraphicsDropShadowEffect>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QTimer>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentBadge::FluentBadge(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-    , m_pulseTimer(new QTimer(this)) {
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
+    m_pulseTimer = new QTimer();
     setupAnimations();
     updateSizeMetrics();
-    setVisible(false); // Hidden by default
+    setVisible(false);  // Hidden by default
     setAttribute(Qt::WA_TransparentForMouseEvents, true);
-    
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentBadge::updateColors);
-    
-    connect(m_pulseTimer, &QTimer::timeout,
-            this, &FluentBadge::onPulseTimer);
-    
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentBadge::updateColors);
+
+    connect(m_pulseTimer, &QTimer::timeout, this, &FluentBadge::onPulseTimer);
+
     updateColors();
     updateVisibility();
     updateAccessibility();
@@ -42,21 +42,25 @@ FluentBadge::FluentBadge(const QString& text, QWidget* parent)
     setBadgeType(FluentBadgeType::Text);
 }
 
-FluentBadge::FluentBadge(int count, QWidget* parent)
-    : FluentBadge(parent) {
+FluentBadge::FluentBadge(int count, QWidget* parent) : FluentBadge(parent) {
     setCount(count);
     setBadgeType(FluentBadgeType::Count);
 }
 
-FluentBadge::~FluentBadge() = default;
-
-QString FluentBadge::text() const {
-    return m_text;
+FluentBadge::FluentBadge(const QIcon& icon, QWidget* parent)
+    : FluentBadge(parent) {
+    setIcon(icon);
+    setBadgeType(FluentBadgeType::Icon);
 }
 
+FluentBadge::~FluentBadge() = default;
+
+QString FluentBadge::text() const { return m_text; }
+
 void FluentBadge::setText(const QString& text) {
-    if (m_text == text) return;
-    
+    if (m_text == text)
+        return;
+
     m_text = text;
     updateContent();
     updateGeometry();
@@ -65,13 +69,12 @@ void FluentBadge::setText(const QString& text) {
     updateAccessibility();
 }
 
-int FluentBadge::count() const {
-    return m_count;
-}
+int FluentBadge::count() const { return m_count; }
 
 void FluentBadge::setCount(int count) {
-    if (m_count == count) return;
-    
+    if (m_count == count)
+        return;
+
     m_count = qMax(0, count);
     updateContent();
     updateVisibility();
@@ -81,13 +84,12 @@ void FluentBadge::setCount(int count) {
     updateAccessibility();
 }
 
-QIcon FluentBadge::icon() const {
-    return m_icon;
-}
+QIcon FluentBadge::icon() const { return m_icon; }
 
 void FluentBadge::setIcon(const QIcon& icon) {
-    if (m_icon.cacheKey() == icon.cacheKey()) return;
-    
+    if (m_icon.cacheKey() == icon.cacheKey())
+        return;
+
     m_icon = icon;
     updateContent();
     updateGeometry();
@@ -95,13 +97,12 @@ void FluentBadge::setIcon(const QIcon& icon) {
     emit iconChanged(m_icon);
 }
 
-FluentBadgeType FluentBadge::badgeType() const {
-    return m_badgeType;
-}
+FluentBadgeType FluentBadge::badgeType() const { return m_badgeType; }
 
 void FluentBadge::setBadgeType(FluentBadgeType type) {
-    if (m_badgeType == type) return;
-    
+    if (m_badgeType == type)
+        return;
+
     m_badgeType = type;
     updateContent();
     updateSizeMetrics();
@@ -111,13 +112,12 @@ void FluentBadge::setBadgeType(FluentBadgeType type) {
     emit badgeTypeChanged(m_badgeType);
 }
 
-FluentBadgeSize FluentBadge::badgeSize() const {
-    return m_badgeSize;
-}
+FluentBadgeSize FluentBadge::badgeSize() const { return m_badgeSize; }
 
 void FluentBadge::setBadgeSize(FluentBadgeSize size) {
-    if (m_badgeSize == size) return;
-    
+    if (m_badgeSize == size)
+        return;
+
     m_badgeSize = size;
     updateSizeMetrics();
     updateGeometry();
@@ -125,144 +125,122 @@ void FluentBadge::setBadgeSize(FluentBadgeSize size) {
     emit badgeSizeChanged(m_badgeSize);
 }
 
-FluentBadgePosition FluentBadge::position() const {
-    return m_position;
-}
+FluentBadgePosition FluentBadge::position() const { return m_position; }
 
 void FluentBadge::setPosition(FluentBadgePosition position) {
-    if (m_position == position) return;
-    
+    if (m_position == position)
+        return;
+
     m_position = position;
     updatePosition();
     emit positionChanged(m_position);
 }
 
-FluentBadgeStatus FluentBadge::status() const {
-    return m_status;
-}
+FluentBadgeStatus FluentBadge::status() const { return m_status; }
 
 void FluentBadge::setStatus(FluentBadgeStatus status) {
-    if (m_status == status) return;
-    
+    if (m_status == status)
+        return;
+
     m_status = status;
     updateColors();
     update();
     emit statusChanged(m_status);
 }
 
-QColor FluentBadge::backgroundColor() const {
-    return m_backgroundColor;
+QColor FluentBadge::getBackgroundColor() const { return m_backgroundColor; }
+
+QColor FluentBadge::getTextColor() const { return m_textColor; }
+
+QColor FluentBadge::customColor() const { return m_customColor; }
+
+void FluentBadge::setCustomColor(const QColor& color) {
+    if (m_customColor != color) {
+        m_customColor = color;
+        emit customColorChanged(color);
+        update();
+    }
 }
 
-void FluentBadge::setBackgroundColor(const QColor& color) {
-    if (m_backgroundColor == color) return;
-    
-    m_backgroundColor = color;
-    m_hasCustomBackgroundColor = true;
-    update();
-    emit backgroundColorChanged(m_backgroundColor);
+FluentBadgeStyle FluentBadge::badgeStyle() const { return m_badgeStyle; }
+
+void FluentBadge::setBadgeStyle(FluentBadgeStyle style) {
+    if (m_badgeStyle != style) {
+        m_badgeStyle = style;
+        emit badgeStyleChanged(style);
+        update();
+    }
 }
 
-QColor FluentBadge::textColor() const {
-    return m_textColor;
+bool FluentBadge::isVisible() const { return QWidget::isVisible(); }
+
+void FluentBadge::setVisible(bool visible) {
+    QWidget::setVisible(visible);
+    emit visibilityChanged(visible);
 }
 
-void FluentBadge::setTextColor(const QColor& color) {
-    if (m_textColor == color) return;
-    
-    m_textColor = color;
-    m_hasCustomTextColor = true;
-    update();
-    emit textColorChanged(m_textColor);
-}
-
-bool FluentBadge::autoHide() const {
-    return m_autoHide;
-}
-
-void FluentBadge::setAutoHide(bool autoHide) {
-    if (m_autoHide == autoHide) return;
-    
-    m_autoHide = autoHide;
-    updateVisibility();
-    emit autoHideChanged(m_autoHide);
-}
-
-bool FluentBadge::showZero() const {
-    return m_showZero;
-}
+bool FluentBadge::showZero() const { return m_showZero; }
 
 void FluentBadge::setShowZero(bool show) {
-    if (m_showZero == show) return;
-    
+    if (m_showZero == show)
+        return;
+
     m_showZero = show;
     updateVisibility();
     emit showZeroChanged(m_showZero);
 }
 
-int FluentBadge::maxCount() const {
-    return m_maxCount;
-}
+int FluentBadge::maxCount() const { return m_maxCount; }
 
 void FluentBadge::setMaxCount(int maxCount) {
-    if (m_maxCount == maxCount) return;
-    
+    if (m_maxCount == maxCount)
+        return;
+
     m_maxCount = qMax(0, maxCount);
     updateContent();
     update();
     emit maxCountChanged(m_maxCount);
 }
 
-bool FluentBadge::pulsing() const {
-    return m_pulsing;
-}
+bool FluentBadge::isPulsing() const { return m_pulsing; }
 
 void FluentBadge::setPulsing(bool pulsing) {
-    if (m_pulsing == pulsing) return;
-    
+    if (m_pulsing == pulsing)
+        return;
+
     m_pulsing = pulsing;
-    
+
     if (m_pulsing) {
         startPulseAnimation();
     } else {
-        stopPulseAnimation();
+        if (m_pulseAnimation) {
+            m_pulseAnimation->stop();
+        }
+        if (m_pulseTimer) {
+            m_pulseTimer->stop();
+        }
+        m_pulseScale = 1.0;
+        update();
     }
-    
+
     emit pulsingChanged(m_pulsing);
 }
 
-bool FluentBadge::isAnimated() const {
-    return m_animated;
-}
+bool FluentBadge::isAnimated() const { return m_animated; }
 
 void FluentBadge::setAnimated(bool animated) {
-    if (m_animated == animated) return;
-    
+    if (m_animated == animated)
+        return;
+
     m_animated = animated;
     emit animatedChanged(m_animated);
-}
-
-QPoint FluentBadge::offset() const {
-    return m_offset;
-}
-
-void FluentBadge::setOffset(const QPoint& offset) {
-    if (m_offset == offset) return;
-    
-    m_offset = offset;
-    updatePosition();
-    emit offsetChanged(m_offset);
-}
-
-void FluentBadge::setOffset(int x, int y) {
-    setOffset(QPoint(x, y));
 }
 
 QString FluentBadge::displayText() const {
     switch (m_badgeType) {
         case FluentBadgeType::Dot:
             return QString();
-            
+
         case FluentBadgeType::Count:
             if (m_count == 0 && !m_showZero) {
                 return QString();
@@ -271,17 +249,17 @@ QString FluentBadge::displayText() const {
                 return QString("%1+").arg(m_maxCount);
             }
             return QString::number(m_count);
-            
+
         case FluentBadgeType::Text:
             return m_text;
-            
+
         case FluentBadgeType::Icon:
             return QString();
-            
+
         case FluentBadgeType::Status:
             return QString();
     }
-    
+
     return QString();
 }
 
@@ -290,56 +268,56 @@ bool FluentBadge::isEmpty() const {
         case FluentBadgeType::Dot:
         case FluentBadgeType::Status:
             return false;
-            
+
         case FluentBadgeType::Count:
             return m_count == 0 && !m_showZero;
-            
+
         case FluentBadgeType::Text:
             return m_text.isEmpty();
-            
+
         case FluentBadgeType::Icon:
             return m_icon.isNull();
     }
-    
+
     return true;
 }
 
 QSize FluentBadge::contentSize() const {
     const QString text = displayText();
-    
-    if (text.isEmpty() && m_badgeType != FluentBadgeType::Dot && 
-        m_badgeType != FluentBadgeType::Icon && m_badgeType != FluentBadgeType::Status) {
+
+    if (text.isEmpty() && m_badgeType != FluentBadgeType::Dot &&
+        m_badgeType != FluentBadgeType::Icon &&
+        m_badgeType != FluentBadgeType::Status) {
         return QSize(0, 0);
     }
-    
+
     switch (m_badgeType) {
         case FluentBadgeType::Dot:
         case FluentBadgeType::Status:
             return QSize(m_dotSize, m_dotSize);
-            
+
         case FluentBadgeType::Icon:
             return QSize(m_iconSize, m_iconSize);
-            
+
         case FluentBadgeType::Count:
         case FluentBadgeType::Text: {
             if (text.isEmpty()) {
                 return QSize(0, 0);
             }
-            
+
             const QFontMetrics fm(font());
             const QSize textSize = fm.size(Qt::TextSingleLine, text);
-            const int width = qMax(textSize.width() + m_padding * 2, m_minWidth);
+            const int width =
+                qMax(textSize.width() + m_padding * 2, m_minWidth);
             const int height = textSize.height() + m_padding * 2;
             return QSize(width, height);
         }
     }
-    
+
     return QSize(0, 0);
 }
 
-QSize FluentBadge::sizeHint() const {
-    return contentSize();
-}
+QSize FluentBadge::sizeHint() const { return contentSize(); }
 
 QRect FluentBadge::badgeRect() const {
     // For now, return current geometry as the badge rect
@@ -351,44 +329,40 @@ QSize FluentBadge::minimumSizeHint() const {
         case FluentBadgeType::Dot:
         case FluentBadgeType::Status:
             return QSize(m_dotSize, m_dotSize);
-            
+
         case FluentBadgeType::Icon:
             return QSize(m_iconSize, m_iconSize);
-            
+
         case FluentBadgeType::Count:
         case FluentBadgeType::Text:
             return QSize(m_minWidth, m_minHeight);
     }
-    
+
     return QSize(0, 0);
 }
 
-void FluentBadge::attachTo(QWidget* widget) {
-    if (m_attachedWidget == widget) return;
-    
+void FluentBadge::attachTo(QWidget* widget, FluentBadgePosition position) {
+    if (m_attachedWidget == widget)
+        return;
+
     if (m_attachedWidget) {
         m_attachedWidget->removeEventFilter(this);
     }
-    
+
     m_attachedWidget = widget;
-    
+    setPosition(position);
+
     if (m_attachedWidget) {
         setParent(m_attachedWidget);
         m_attachedWidget->installEventFilter(this);
         updatePosition();
         raise();
     }
-    
+
     emit attachedWidgetChanged(m_attachedWidget);
 }
 
-void FluentBadge::detach() {
-    attachTo(nullptr);
-}
-
-QWidget* FluentBadge::attachedWidget() const {
-    return m_attachedWidget;
-}
+void FluentBadge::detach() { attachTo(nullptr); }
 
 FluentBadge* FluentBadge::createDotBadge(QWidget* parent) {
     auto* badge = new FluentBadge(FluentBadgeType::Dot, parent);
@@ -400,12 +374,14 @@ FluentBadge* FluentBadge::createCountBadge(int count, QWidget* parent) {
     return badge;
 }
 
-FluentBadge* FluentBadge::createTextBadge(const QString& text, QWidget* parent) {
+FluentBadge* FluentBadge::createTextBadge(const QString& text,
+                                          QWidget* parent) {
     auto* badge = new FluentBadge(text, parent);
     return badge;
 }
 
-FluentBadge* FluentBadge::createStatusBadge(FluentBadgeStatus status, QWidget* parent) {
+FluentBadge* FluentBadge::createStatusBadge(FluentBadgeStatus status,
+                                            QWidget* parent) {
     auto* badge = new FluentBadge(FluentBadgeType::Status, parent);
     badge->setStatus(status);
     return badge;
@@ -427,17 +403,11 @@ void FluentBadge::hide() {
     }
 }
 
-void FluentBadge::increment() {
-    setCount(m_count + 1);
-}
+void FluentBadge::increment() { setCount(m_count + 1); }
 
-void FluentBadge::decrement() {
-    setCount(qMax(0, m_count - 1));
-}
+void FluentBadge::decrement() { setCount(qMax(0, m_count - 1)); }
 
-void FluentBadge::reset() {
-    setCount(0);
-}
+void FluentBadge::reset() { setCount(0); }
 
 void FluentBadge::pulse() {
     if (m_animated) {
@@ -450,8 +420,8 @@ void FluentBadge::setupAnimations() {
     m_showAnimation = new QPropertyAnimation(this, "badgeOpacity", this);
     m_showAnimation->setDuration(200);
     m_showAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_showAnimation, &QPropertyAnimation::finished,
-            this, &FluentBadge::onShowAnimationFinished);
+    connect(m_showAnimation, &QPropertyAnimation::finished, this,
+            &FluentBadge::onShowAnimationFinished);
 
     // Scale animation for show/hide
     m_scaleAnimation = new QPropertyAnimation(this, "badgeScale", this);
@@ -462,9 +432,9 @@ void FluentBadge::setupAnimations() {
     m_pulseAnimation = new QPropertyAnimation(this, "pulseScale", this);
     m_pulseAnimation->setDuration(1000);
     m_pulseAnimation->setEasingCurve(QEasingCurve::InOutSine);
-    m_pulseAnimation->setLoopCount(-1); // Infinite loop
-    connect(m_pulseAnimation, &QPropertyAnimation::finished,
-            this, &FluentBadge::onPulseAnimationFinished);
+    m_pulseAnimation->setLoopCount(-1);  // Infinite loop
+    connect(m_pulseAnimation, &QPropertyAnimation::finished, this,
+            &FluentBadge::onPulseAnimationFinished);
 }
 
 void FluentBadge::updateSizeMetrics() {
@@ -513,7 +483,8 @@ void FluentBadge::updateVisibility() {
 }
 
 void FluentBadge::updatePosition() {
-    if (!m_attachedWidget) return;
+    if (!m_attachedWidget)
+        return;
 
     const QSize badgeSize = sizeHint();
     const QRect parentRect = m_attachedWidget->rect();
@@ -525,39 +496,28 @@ void FluentBadge::updatePosition() {
             break;
 
         case FluentBadgePosition::TopRight:
-            pos = QPoint(parentRect.width() - badgeSize.width() / 2, -badgeSize.height() / 2);
+            pos = QPoint(parentRect.width() - badgeSize.width() / 2,
+                         -badgeSize.height() / 2);
             break;
 
         case FluentBadgePosition::BottomLeft:
-            pos = QPoint(-badgeSize.width() / 2, parentRect.height() - badgeSize.height() / 2);
+            pos = QPoint(-badgeSize.width() / 2,
+                         parentRect.height() - badgeSize.height() / 2);
             break;
 
         case FluentBadgePosition::BottomRight:
             pos = QPoint(parentRect.width() - badgeSize.width() / 2,
-                        parentRect.height() - badgeSize.height() / 2);
-            break;
-
-        case FluentBadgePosition::TopCenter:
-            pos = QPoint(parentRect.width() / 2 - badgeSize.width() / 2, -badgeSize.height() / 2);
-            break;
-
-        case FluentBadgePosition::BottomCenter:
-            pos = QPoint(parentRect.width() / 2 - badgeSize.width() / 2,
-                        parentRect.height() - badgeSize.height() / 2);
-            break;
-
-        case FluentBadgePosition::LeftCenter:
-            pos = QPoint(-badgeSize.width() / 2, parentRect.height() / 2 - badgeSize.height() / 2);
-            break;
-
-        case FluentBadgePosition::RightCenter:
-            pos = QPoint(parentRect.width() - badgeSize.width() / 2,
-                        parentRect.height() / 2 - badgeSize.height() / 2);
+                         parentRect.height() - badgeSize.height() / 2);
             break;
 
         case FluentBadgePosition::Center:
             pos = QPoint(parentRect.width() / 2 - badgeSize.width() / 2,
-                        parentRect.height() / 2 - badgeSize.height() / 2);
+                         parentRect.height() / 2 - badgeSize.height() / 2);
+            break;
+
+        case FluentBadgePosition::Inline:
+            // For inline badges, position at origin (will be handled by layout)
+            pos = QPoint(0, 0);
             break;
     }
 
@@ -568,7 +528,8 @@ void FluentBadge::updatePosition() {
 void FluentBadge::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
 
-    if (isEmpty()) return;
+    if (isEmpty())
+        return;
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
@@ -638,7 +599,8 @@ void FluentBadge::onPulseAnimationFinished() {
 }
 
 void FluentBadge::onPulseTimer() {
-    if (m_pulsing && m_pulseAnimation && m_pulseAnimation->state() != QAbstractAnimation::Running) {
+    if (m_pulsing && m_pulseAnimation &&
+        m_pulseAnimation->state() != QAbstractAnimation::Running) {
         startPulseAnimation();
     }
 }
@@ -648,26 +610,29 @@ void FluentBadge::updateColors() {
 
     if (!m_hasCustomBackgroundColor) {
         switch (m_status) {
-            case FluentBadgeStatus::Default:
-                m_backgroundColor = theme.color(Styling::FluentThemeColor::AccentFillDefault);
+            case FluentBadgeStatus::None:
+                m_backgroundColor = theme.color("accent");
                 break;
             case FluentBadgeStatus::Success:
-                m_backgroundColor = QColor(16, 124, 16); // Green
+                m_backgroundColor = QColor(16, 124, 16);  // Green
                 break;
             case FluentBadgeStatus::Warning:
-                m_backgroundColor = QColor(255, 140, 0); // Orange
+                m_backgroundColor = QColor(255, 140, 0);  // Orange
                 break;
             case FluentBadgeStatus::Error:
-                m_backgroundColor = QColor(196, 43, 28); // Red
+                m_backgroundColor = QColor(196, 43, 28);  // Red
                 break;
             case FluentBadgeStatus::Info:
-                m_backgroundColor = theme.color(Styling::FluentThemeColor::AccentFillDefault);
+                m_backgroundColor = theme.color("accent");
+                break;
+            case FluentBadgeStatus::Neutral:
+                m_backgroundColor = theme.color("neutralSecondary");
                 break;
         }
     }
 
     if (!m_hasCustomTextColor) {
-        m_textColor = theme.color(Styling::FluentThemeColor::TextOnAccentFillPrimary);
+        m_textColor = theme.color("textPrimary");
     }
 
     update();
@@ -722,7 +687,8 @@ void FluentBadge::paintTextBadge(QPainter* painter) {
     const QRect rect = this->rect();
     const QString text = displayText();
 
-    if (text.isEmpty()) return;
+    if (text.isEmpty())
+        return;
 
     // Draw background
     painter->setPen(Qt::NoPen);
@@ -736,7 +702,8 @@ void FluentBadge::paintTextBadge(QPainter* painter) {
 }
 
 void FluentBadge::paintIconBadge(QPainter* painter) {
-    if (m_icon.isNull()) return;
+    if (m_icon.isNull())
+        return;
 
     const QRect rect = this->rect();
 
@@ -747,12 +714,9 @@ void FluentBadge::paintIconBadge(QPainter* painter) {
 
     // Draw icon
     const QSize iconSize(m_iconSize, m_iconSize);
-    const QRect iconRect(
-        rect.center().x() - iconSize.width() / 2,
-        rect.center().y() - iconSize.height() / 2,
-        iconSize.width(),
-        iconSize.height()
-    );
+    const QRect iconRect(rect.center().x() - iconSize.width() / 2,
+                         rect.center().y() - iconSize.height() / 2,
+                         iconSize.width(), iconSize.height());
 
     QIcon::Mode mode = isEnabled() ? QIcon::Normal : QIcon::Disabled;
     QPixmap pixmap = m_icon.pixmap(iconSize, mode);
@@ -760,7 +724,8 @@ void FluentBadge::paintIconBadge(QPainter* painter) {
 }
 
 void FluentBadge::animateIn() {
-    if (!m_showAnimation || !m_scaleAnimation) return;
+    if (!m_showAnimation || !m_scaleAnimation)
+        return;
 
     setVisible(true);
 
@@ -778,7 +743,8 @@ void FluentBadge::animateIn() {
 }
 
 void FluentBadge::animateOut() {
-    if (!m_showAnimation || !m_scaleAnimation) return;
+    if (!m_showAnimation || !m_scaleAnimation)
+        return;
 
     // Animate opacity
     m_showAnimation->stop();
@@ -794,7 +760,8 @@ void FluentBadge::animateOut() {
 }
 
 void FluentBadge::startPulseAnimation() {
-    if (!m_pulseAnimation) return;
+    if (!m_pulseAnimation)
+        return;
 
     m_pulseAnimation->stop();
     m_pulseAnimation->setStartValue(1.0);
@@ -802,23 +769,13 @@ void FluentBadge::startPulseAnimation() {
     m_pulseAnimation->start();
 
     if (m_pulsing) {
-        m_pulseTimer->start(2000); // Pulse every 2 seconds
+        m_pulseTimer->start(2000);  // Pulse every 2 seconds
     }
-}
-
-void FluentBadge::stopPulseAnimation() {
-    if (m_pulseAnimation) {
-        m_pulseAnimation->stop();
-    }
-    if (m_pulseTimer) {
-        m_pulseTimer->stop();
-    }
-    m_pulseScale = 1.0;
-    update();
 }
 
 void FluentBadge::startSinglePulse() {
-    if (!m_pulseAnimation) return;
+    if (!m_pulseAnimation)
+        return;
 
     m_pulseAnimation->stop();
     m_pulseAnimation->setLoopCount(1);
@@ -835,34 +792,51 @@ void FluentBadge::startSinglePulse() {
 }
 
 // Property accessors for animations
-qreal FluentBadge::badgeOpacity() const {
-    return m_badgeOpacity;
-}
-
 void FluentBadge::setBadgeOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_badgeOpacity, opacity)) return;
+    if (qFuzzyCompare(m_badgeOpacity, opacity))
+        return;
     m_badgeOpacity = opacity;
     update();
 }
 
-qreal FluentBadge::badgeScale() const {
-    return m_badgeScale;
-}
-
 void FluentBadge::setBadgeScale(qreal scale) {
-    if (qFuzzyCompare(m_badgeScale, scale)) return;
+    if (qFuzzyCompare(m_badgeScale, scale))
+        return;
     m_badgeScale = scale;
     update();
 }
 
-qreal FluentBadge::pulseScale() const {
-    return m_pulseScale;
+void FluentBadge::mousePressEvent(QMouseEvent* event) {
+    QWidget::mousePressEvent(event);
+    emit clicked();
 }
 
+void FluentBadge::mouseDoubleClickEvent(QMouseEvent* event) {
+    QWidget::mouseDoubleClickEvent(event);
+    emit doubleClicked();
+}
+
+void FluentBadge::resizeEvent(QResizeEvent* event) {
+    QWidget::resizeEvent(event);
+    updatePosition();
+}
+
+void FluentBadge::moveEvent(QMoveEvent* event) {
+    QWidget::moveEvent(event);
+    updatePosition();
+}
+
+void FluentBadge::onHideAnimationFinished() { QWidget::hide(); }
+
+void FluentBadge::stopPulsing() { setPulsing(false); }
+
+qreal FluentBadge::pulseScale() const { return m_pulseScale; }
+
 void FluentBadge::setPulseScale(qreal scale) {
-    if (qFuzzyCompare(m_pulseScale, scale)) return;
+    if (qFuzzyCompare(m_pulseScale, scale))
+        return;
     m_pulseScale = scale;
     update();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

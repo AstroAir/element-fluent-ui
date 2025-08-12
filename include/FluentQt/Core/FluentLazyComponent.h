@@ -1,32 +1,32 @@
 // include/FluentQt/Core/FluentLazyComponent.h
 #pragma once
 
-#include <QObject>
-#include <QWidget>
-#include <QTimer>
 #include <QMutex>
-#include <QWeakPointer>
-#include <QSharedPointer>
+#include <QObject>
 #include <QPointer>
+#include <QSharedPointer>
+#include <QTimer>
+#include <QWeakPointer>
+#include <QWidget>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <unordered_map>
-#include <chrono>
 
 namespace FluentQt::Core {
 
 // Lazy loading strategies
 enum class FluentLazyLoadStrategy {
-    OnFirstAccess,      // Load when first accessed
-    OnVisible,          // Load when widget becomes visible
-    OnInteraction,      // Load when user interacts
-    OnHover,            // Load when mouse hovers
-    OnFocus,            // Load when widget receives focus
-    OnDemand,           // Load only when explicitly requested
-    Preload,            // Load during idle time
-    Background,         // Load in background thread
-    Proximity,          // Load when near viewport
-    Predictive          // Load based on usage patterns
+    OnFirstAccess,  // Load when first accessed
+    OnVisible,      // Load when widget becomes visible
+    OnInteraction,  // Load when user interacts
+    OnHover,        // Load when mouse hovers
+    OnFocus,        // Load when widget receives focus
+    OnDemand,       // Load only when explicitly requested
+    Preload,        // Load during idle time
+    Background,     // Load in background thread
+    Proximity,      // Load when near viewport
+    Predictive      // Load based on usage patterns
 };
 
 // Lazy loading triggers
@@ -57,8 +57,8 @@ struct FluentLazyLoadConfig {
     bool enableCaching{true};
     bool enablePreloading{false};
     bool enableUnloading{false};
-    std::chrono::milliseconds unloadDelay{30000}; // 30 seconds
-    size_t maxMemoryUsage{50 * 1024 * 1024}; // 50MB
+    std::chrono::milliseconds unloadDelay{30000};  // 30 seconds
+    size_t maxMemoryUsage{50 * 1024 * 1024};       // 50MB
     std::function<bool()> loadCondition;
     std::function<void()> onLoadStart;
     std::function<void()> onLoadComplete;
@@ -90,55 +90,57 @@ class FluentLazyComponentManager : public QObject {
 
 public:
     static FluentLazyComponentManager& instance();
-    
+
     // Component registration
-    template<typename T>
-    void registerLazyComponent(const QString& componentId, 
-                              const FluentLazyLoadConfig& config = {}) {
+    template <typename T>
+    void registerLazyComponent(const QString& componentId,
+                               const FluentLazyLoadConfig& config = {}) {
         FluentLazyComponentMetadata metadata;
         metadata.componentId = componentId;
         metadata.componentType = T::staticMetaObject.className();
         metadata.config = config;
         metadata.creationTime = std::chrono::steady_clock::now();
         metadata.factory = []() -> QWidget* { return new T(); };
-        
+
         QMutexLocker locker(&m_mutex);
         m_components[componentId] = metadata;
     }
-    
+
     void registerLazyComponent(const QString& componentId,
-                              std::function<QWidget*()> factory,
-                              const FluentLazyLoadConfig& config = {});
-    
+                               std::function<QWidget*()> factory,
+                               const FluentLazyLoadConfig& config = {});
+
     void unregisterLazyComponent(const QString& componentId);
-    
+
     // Component loading
     QWidget* loadComponent(const QString& componentId);
     void unloadComponent(const QString& componentId);
     bool isComponentLoaded(const QString& componentId) const;
-    FluentLazyComponentState getComponentState(const QString& componentId) const;
-    
+    FluentLazyComponentState getComponentState(
+        const QString& componentId) const;
+
     // Async loading
     void loadComponentAsync(const QString& componentId);
     void preloadComponents(const QStringList& componentIds);
     void loadComponentsInBackground(const QStringList& componentIds);
-    
+
     // Visibility tracking
     void setComponentVisible(const QString& componentId, bool visible);
     void setComponentInViewport(const QString& componentId, bool inViewport);
     void updateViewportComponents(const QRect& viewport);
-    
+
     // Memory management
     void unloadUnusedComponents();
     void setMemoryLimit(size_t limit) { m_memoryLimit = limit; }
     size_t getCurrentMemoryUsage() const;
     size_t getMemoryLimit() const { return m_memoryLimit; }
-    
+
     // Configuration
     void setGlobalConfig(const FluentLazyLoadConfig& config);
     FluentLazyLoadConfig getGlobalConfig() const { return m_globalConfig; }
-    void setComponentConfig(const QString& componentId, const FluentLazyLoadConfig& config);
-    
+    void setComponentConfig(const QString& componentId,
+                            const FluentLazyLoadConfig& config);
+
     // Statistics
     struct LazyLoadingStats {
         int totalComponents{0};
@@ -151,12 +153,13 @@ public:
         int preloadedComponents{0};
         int unloadedComponents{0};
     };
-    
+
     LazyLoadingStats getStatistics() const;
     void resetStatistics();
-    
+
     // Component metadata
-    FluentLazyComponentMetadata getComponentMetadata(const QString& componentId) const;
+    FluentLazyComponentMetadata getComponentMetadata(
+        const QString& componentId) const;
     QStringList getRegisteredComponents() const;
     QStringList getLoadedComponents() const;
     QStringList getUnloadedComponents() const;
@@ -185,20 +188,20 @@ private:
     mutable QMutex m_mutex;
     std::unordered_map<QString, FluentLazyComponentMetadata> m_components;
     FluentLazyLoadConfig m_globalConfig;
-    
+
     // Loading queue and timers
     QStringList m_loadQueue;
     QTimer* m_loadTimer;
     QTimer* m_memoryTimer;
     QTimer* m_statsTimer;
     QTimer* m_cleanupTimer;
-    
+
     // Memory management
-    size_t m_memoryLimit{100 * 1024 * 1024}; // 100MB default
-    
+    size_t m_memoryLimit{100 * 1024 * 1024};  // 100MB default
+
     // Statistics
     LazyLoadingStats m_stats;
-    
+
     // Background loading
     bool m_backgroundLoadingEnabled{true};
     int m_maxConcurrentLoads{3};
@@ -206,29 +209,27 @@ private:
 };
 
 // Lazy component wrapper
-template<typename T>
+template <typename T>
 class FluentLazyComponent {
 public:
     explicit FluentLazyComponent(const QString& componentId,
-                                const FluentLazyLoadConfig& config = {})
-        : m_componentId(componentId)
-        , m_config(config) {
-
+                                 const FluentLazyLoadConfig& config = {})
+        : m_componentId(componentId), m_config(config) {
         auto& manager = FluentLazyComponentManager::instance();
         manager.registerLazyComponent<T>(componentId, config);
 
         // Store callback for when component is loaded
         QObject::connect(&manager, &FluentLazyComponentManager::componentLoaded,
-                [this](const QString& id, QWidget* widget) {
-                    if (id == m_componentId) {
-                        m_widget = qobject_cast<T*>(widget);
-                        if (m_readyCallback) {
-                            m_readyCallback(m_widget);
-                        }
-                    }
-                });
+                         [this](const QString& id, QWidget* widget) {
+                             if (id == m_componentId) {
+                                 m_widget = qobject_cast<T*>(widget);
+                                 if (m_readyCallback) {
+                                     m_readyCallback(m_widget);
+                                 }
+                             }
+                         });
     }
-    
+
     T* get() {
         if (!m_widget) {
             auto& manager = FluentLazyComponentManager::instance();
@@ -237,20 +238,20 @@ public:
         }
         return m_widget;
     }
-    
+
     T* operator->() { return get(); }
     T& operator*() { return *get(); }
-    
+
     bool isLoaded() const {
         auto& manager = FluentLazyComponentManager::instance();
         return manager.isComponentLoaded(m_componentId);
     }
-    
+
     void loadAsync() {
         auto& manager = FluentLazyComponentManager::instance();
         manager.loadComponentAsync(m_componentId);
     }
-    
+
     void unload() {
         auto& manager = FluentLazyComponentManager::instance();
         manager.unloadComponent(m_componentId);
@@ -277,6 +278,7 @@ private:
     FluentQt::Core::FluentLazyComponent<ComponentType>(componentId, config)
 
 #define FLUENT_REGISTER_LAZY_COMPONENT(ComponentType, componentId) \
-    FluentQt::Core::FluentLazyComponentManager::instance().registerLazyComponent<ComponentType>(componentId)
+    FluentQt::Core::FluentLazyComponentManager::instance()         \
+        .registerLazyComponent<ComponentType>(componentId)
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

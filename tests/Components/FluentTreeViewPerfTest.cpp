@@ -1,6 +1,6 @@
 // tests/Components/FluentTreeViewPerfTest.cpp
-#include <QtTest/QtTest>
 #include <QSignalSpy>
+#include <QtTest/QtTest>
 #include "FluentQt/Components/FluentTreeView.h"
 #include "FluentQt/Core/FluentPerformance.h"
 
@@ -30,34 +30,37 @@ void FluentTreeViewPerfTest::debounceFiltering_shouldDelayFilteringWork() {
     t.start();
     view.setFilter("a");
     // Because of debounce (120ms), filtering should not complete immediately.
-    // Give it a short time (< debounce) and verify that another change resets timer.
+    // Give it a short time (< debounce) and verify that another change resets
+    // timer.
     QTest::qWait(60);
     view.setFilter("al");
     // Now wait slightly longer than debounce to allow apply
     QTest::qWait(140);
 
-    // If we reached here without crashing, debounce at least coalesced the two inputs.
-    QVERIFY(t.elapsed() >= 200); // sanity: total wait time was ~200ms
+    // If we reached here without crashing, debounce at least coalesced the two
+    // inputs.
+    QVERIFY(t.elapsed() >= 200);  // sanity: total wait time was ~200ms
 }
 
 void FluentTreeViewPerfTest::styleCaching_shouldReuseCachedStyles() {
     FluentTreeView view;
 
     // First application builds styles
-    view.setFilteringEnabled(true); // triggers UI to be present
+    view.setFilteringEnabled(true);  // triggers UI to be present
     view.show();
     QCoreApplication::processEvents();
 
-    // Call updateTreeStyling twice to simulate themeChanged without palette change
-    view.setStyleSheet(""); // ensure no prior style prevents setStyleSheet
+    // Call updateTreeStyling twice to simulate themeChanged without palette
+    // change
+    view.setStyleSheet("");  // ensure no prior style prevents setStyleSheet
     view.update();
     QMetaObject::invokeMethod(&view, "updateTreeStyling", Qt::DirectConnection);
     QMetaObject::invokeMethod(&view, "updateTreeStyling", Qt::DirectConnection);
 
-    // No direct hook to assert cache hit; at least ensure nothing crashes and widget has stylesheet
+    // No direct hook to assert cache hit; at least ensure nothing crashes and
+    // widget has stylesheet
     QVERIFY(!view.styleSheet().isNull());
 }
 
 QTEST_MAIN(FluentTreeViewPerfTest)
 #include "FluentTreeViewPerfTest.moc"
-

@@ -1,49 +1,58 @@
 // include/FluentQt/Components/FluentLoadingIndicator.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QTimer>
 #include <QPropertyAnimation>
+#include <QTimer>
+#include <memory>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
+#include "FluentQt/Core/FluentErrorBoundary.h"
 
 namespace FluentQt::Components {
 
 enum class FluentLoadingType {
-    Spinner,        // Rotating circle
-    Dots,          // Bouncing dots
-    Pulse,         // Pulsing circle
-    Bars,          // Animated bars
-    Ring,          // Ring with rotating segment
-    Wave           // Wave animation
+    Spinner,  // Rotating circle
+    Dots,     // Bouncing dots
+    Pulse,    // Pulsing circle
+    Bars,     // Animated bars
+    Ring,     // Ring with rotating segment
+    Wave      // Wave animation
 };
 
 enum class FluentLoadingSize {
-    Small,         // 16x16
-    Medium,        // 24x24
-    Large,         // 32x32
-    ExtraLarge     // 48x48
+    Small,      // 16x16
+    Medium,     // 24x24
+    Large,      // 32x32
+    ExtraLarge  // 48x48
 };
 
 class FluentLoadingIndicator : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentLoadingType loadingType READ loadingType WRITE setLoadingType NOTIFY loadingTypeChanged)
-    Q_PROPERTY(FluentLoadingSize loadingSize READ loadingSize WRITE setLoadingSize NOTIFY loadingSizeChanged)
+    Q_PROPERTY(FluentLoadingType loadingType READ loadingType WRITE
+                   setLoadingType NOTIFY loadingTypeChanged)
+    Q_PROPERTY(FluentLoadingSize loadingSize READ loadingSize WRITE
+                   setLoadingSize NOTIFY loadingSizeChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
-    Q_PROPERTY(bool running READ isRunning WRITE setRunning NOTIFY runningChanged)
+    Q_PROPERTY(
+        bool running READ isRunning WRITE setRunning NOTIFY runningChanged)
     Q_PROPERTY(int speed READ speed WRITE setSpeed NOTIFY speedChanged)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
-    Q_PROPERTY(bool textVisible READ isTextVisible WRITE setTextVisible NOTIFY textVisibleChanged)
+    Q_PROPERTY(bool textVisible READ isTextVisible WRITE setTextVisible NOTIFY
+                   textVisibleChanged)
 
 public:
     explicit FluentLoadingIndicator(QWidget* parent = nullptr);
-    explicit FluentLoadingIndicator(FluentLoadingType type, QWidget* parent = nullptr);
-    explicit FluentLoadingIndicator(FluentLoadingType type, FluentLoadingSize size, QWidget* parent = nullptr);
+    explicit FluentLoadingIndicator(FluentLoadingType type,
+                                    QWidget* parent = nullptr);
+    explicit FluentLoadingIndicator(FluentLoadingType type,
+                                    FluentLoadingSize size,
+                                    QWidget* parent = nullptr);
     ~FluentLoadingIndicator() override;
 
     // Type and size
     FluentLoadingType loadingType() const;
     void setLoadingType(FluentLoadingType type);
-    
+
     FluentLoadingSize loadingSize() const;
     void setLoadingSize(FluentLoadingSize size);
 
@@ -54,16 +63,23 @@ public:
     // Animation control
     bool isRunning() const;
     void setRunning(bool running);
-    
-    int speed() const; // Animation speed (1-10, default 5)
+
+    int speed() const;  // Animation speed (1-10, default 5)
     void setSpeed(int speed);
 
     // Text
     QString text() const;
     void setText(const QString& text);
-    
+
     bool isTextVisible() const;
     void setTextVisible(bool visible);
+
+    // Error boundary integration (ElaWidgetTools-inspired)
+    void setErrorBoundary(Core::FluentErrorBoundary* boundary);
+    Core::FluentErrorBoundary* errorBoundary() const { return m_errorBoundary; }
+
+    void setLoadingTimeout(int timeoutMs);
+    int loadingTimeout() const { return m_loadingTimeoutMs; }
 
     // Size hints
     QSize sizeHint() const override;
@@ -99,7 +115,7 @@ private:
     void setupAnimations();
     void updateColors();
     void updateGeometry();
-    
+
     // Drawing methods
     void drawSpinner(QPainter& painter, const QRect& rect);
     void drawDots(QPainter& painter, const QRect& rect);
@@ -108,7 +124,7 @@ private:
     void drawRing(QPainter& painter, const QRect& rect);
     void drawWave(QPainter& painter, const QRect& rect);
     void drawText(QPainter& painter, const QRect& rect);
-    
+
     // Helper methods
     QRect indicatorRect() const;
     QRect textRect() const;
@@ -121,24 +137,28 @@ private:
     FluentLoadingSize m_loadingSize{FluentLoadingSize::Medium};
     QColor m_color;
     bool m_running{false};
-    int m_speed{5}; // 1-10 scale
+    int m_speed{5};  // 1-10 scale
     QString m_text;
     bool m_textVisible{true};
-    
+
     // Animation state
     qreal m_animationProgress{0.0};
     qreal m_rotationAngle{0.0};
-    QList<qreal> m_dotPhases; // For dots animation
-    QList<qreal> m_barHeights; // For bars animation
-    
+    QList<qreal> m_dotPhases;   // For dots animation
+    QList<qreal> m_barHeights;  // For bars animation
+
     // Animation components
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QTimer* m_animationTimer{nullptr};
     QPropertyAnimation* m_rotationAnimation{nullptr};
     QPropertyAnimation* m_pulseAnimation{nullptr};
-    
+
+    // Error boundary integration
+    Core::FluentErrorBoundary* m_errorBoundary{nullptr};
+    int m_loadingTimeoutMs{30000};  // 30 seconds default
+
     // Auto-start behavior
     bool m_autoStart{true};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

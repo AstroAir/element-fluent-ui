@@ -1,23 +1,23 @@
 // examples/EnhancedPerformanceExample.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
+#include <QCheckBox>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
+#include <QMainWindow>
 #include <QProgressBar>
+#include <QPushButton>
+#include <QSpinBox>
 #include <QTextEdit>
 #include <QTimer>
-#include <QGroupBox>
-#include <QGridLayout>
-#include <QSpinBox>
-#include <QCheckBox>
+#include <QVBoxLayout>
 
-#include "FluentQt/Core/FluentPerformance.h"
-#include "FluentQt/Core/FluentLazyComponent.h"
-#include "FluentQt/Core/FluentBundleAnalyzer.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Core/FluentBundleAnalyzer.h"
+#include "FluentQt/Core/FluentLazyComponent.h"
+#include "FluentQt/Core/FluentPerformance.h"
 
 using namespace FluentQt;
 
@@ -34,18 +34,20 @@ public:
 private:
     void setupUI() {
         auto* layout = new QVBoxLayout(this);
-        
+
         auto* label = new QLabel("Heavy Component Loaded!", this);
-        label->setStyleSheet("font-size: 18px; font-weight: bold; color: #0078d4;");
-        
+        label->setStyleSheet(
+            "font-size: 18px; font-weight: bold; color: #0078d4;");
+
         auto* textEdit = new QTextEdit(this);
-        textEdit->setPlainText("This is a heavy component that takes time to load.\n"
-                              "It simulates a complex widget with lots of data processing.");
-        
+        textEdit->setPlainText(
+            "This is a heavy component that takes time to load.\n"
+            "It simulates a complex widget with lots of data processing.");
+
         layout->addWidget(label);
         layout->addWidget(textEdit);
     }
-    
+
     void simulateHeavyInitialization() {
         // Simulate heavy initialization
         QTimer::singleShot(1000, this, [this]() {
@@ -58,7 +60,8 @@ class PerformanceMonitorWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit PerformanceMonitorWidget(QWidget* parent = nullptr) : QWidget(parent) {
+    explicit PerformanceMonitorWidget(QWidget* parent = nullptr)
+        : QWidget(parent) {
         setupUI();
         connectSignals();
         startMonitoring();
@@ -66,19 +69,24 @@ public:
 
 private slots:
     void updateMetrics(const Core::PerformanceMetrics& metrics) {
-        m_fpsLabel->setText(QString("FPS: %1").arg(metrics.frameRate, 0, 'f', 1));
-        m_memoryLabel->setText(QString("Memory: %1 MB").arg(metrics.memoryUsage / (1024 * 1024)));
-        m_cpuLabel->setText(QString("CPU: %1%").arg(metrics.cpuUsage, 0, 'f', 1));
-        
+        m_fpsLabel->setText(
+            QString("FPS: %1").arg(metrics.frameRate, 0, 'f', 1));
+        m_memoryLabel->setText(
+            QString("Memory: %1 MB").arg(metrics.memoryUsage / (1024 * 1024)));
+        m_cpuLabel->setText(
+            QString("CPU: %1%").arg(metrics.cpuUsage, 0, 'f', 1));
+
         m_fpsBar->setValue(static_cast<int>(metrics.frameRate));
-        m_memoryBar->setValue(static_cast<int>(metrics.memoryUsage / (1024 * 1024)));
+        m_memoryBar->setValue(
+            static_cast<int>(metrics.memoryUsage / (1024 * 1024)));
         m_cpuBar->setValue(static_cast<int>(metrics.cpuUsage));
-        
+
         // Update performance score
         auto& monitor = Core::FluentPerformanceMonitor::instance();
         double score = monitor.calculateOverallPerformanceScore();
-        m_scoreLabel->setText(QString("Performance Score: %1/100").arg(score, 0, 'f', 1));
-        
+        m_scoreLabel->setText(
+            QString("Performance Score: %1/100").arg(score, 0, 'f', 1));
+
         // Update suggestions
         auto suggestions = monitor.generateGlobalOptimizationSuggestions();
         m_suggestionsText->clear();
@@ -86,11 +94,11 @@ private slots:
             m_suggestionsText->append("• " + suggestion);
         }
     }
-    
+
     void onPerformanceWarning(const QString& message) {
         m_warningsText->append(QString("[WARNING] %1").arg(message));
     }
-    
+
     void onPerformanceCritical(const QString& message) {
         m_warningsText->append(QString("[CRITICAL] %1").arg(message));
     }
@@ -98,23 +106,23 @@ private slots:
 private:
     void setupUI() {
         auto* layout = new QVBoxLayout(this);
-        
+
         // Performance metrics group
         auto* metricsGroup = new QGroupBox("Performance Metrics", this);
         auto* metricsLayout = new QGridLayout(metricsGroup);
-        
+
         m_fpsLabel = new QLabel("FPS: 0.0", this);
         m_memoryLabel = new QLabel("Memory: 0 MB", this);
         m_cpuLabel = new QLabel("CPU: 0%", this);
         m_scoreLabel = new QLabel("Performance Score: 100/100", this);
-        
+
         m_fpsBar = new QProgressBar(this);
         m_fpsBar->setRange(0, 60);
         m_memoryBar = new QProgressBar(this);
-        m_memoryBar->setRange(0, 1024); // 1GB
+        m_memoryBar->setRange(0, 1024);  // 1GB
         m_cpuBar = new QProgressBar(this);
         m_cpuBar->setRange(0, 100);
-        
+
         metricsLayout->addWidget(m_fpsLabel, 0, 0);
         metricsLayout->addWidget(m_fpsBar, 0, 1);
         metricsLayout->addWidget(m_memoryLabel, 1, 0);
@@ -122,41 +130,42 @@ private:
         metricsLayout->addWidget(m_cpuLabel, 2, 0);
         metricsLayout->addWidget(m_cpuBar, 2, 1);
         metricsLayout->addWidget(m_scoreLabel, 3, 0, 1, 2);
-        
+
         // Optimization suggestions group
-        auto* suggestionsGroup = new QGroupBox("Optimization Suggestions", this);
+        auto* suggestionsGroup =
+            new QGroupBox("Optimization Suggestions", this);
         auto* suggestionsLayout = new QVBoxLayout(suggestionsGroup);
-        
+
         m_suggestionsText = new QTextEdit(this);
         m_suggestionsText->setMaximumHeight(100);
         m_suggestionsText->setReadOnly(true);
         suggestionsLayout->addWidget(m_suggestionsText);
-        
+
         // Warnings group
         auto* warningsGroup = new QGroupBox("Performance Warnings", this);
         auto* warningsLayout = new QVBoxLayout(warningsGroup);
-        
+
         m_warningsText = new QTextEdit(this);
         m_warningsText->setMaximumHeight(100);
         m_warningsText->setReadOnly(true);
         warningsLayout->addWidget(m_warningsText);
-        
+
         layout->addWidget(metricsGroup);
         layout->addWidget(suggestionsGroup);
         layout->addWidget(warningsGroup);
     }
-    
+
     void connectSignals() {
         auto& monitor = Core::FluentPerformanceMonitor::instance();
-        
-        connect(&monitor, &Core::FluentPerformanceMonitor::metricsUpdated,
-                this, &PerformanceMonitorWidget::updateMetrics);
+
+        connect(&monitor, &Core::FluentPerformanceMonitor::metricsUpdated, this,
+                &PerformanceMonitorWidget::updateMetrics);
         connect(&monitor, &Core::FluentPerformanceMonitor::performanceWarning,
                 this, &PerformanceMonitorWidget::onPerformanceWarning);
         connect(&monitor, &Core::FluentPerformanceMonitor::performanceCritical,
                 this, &PerformanceMonitorWidget::onPerformanceCritical);
     }
-    
+
     void startMonitoring() {
         auto& monitor = Core::FluentPerformanceMonitor::instance();
         monitor.startFrameRateMonitoring();
@@ -180,7 +189,8 @@ class LazyLoadingDemoWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LazyLoadingDemoWidget(QWidget* parent = nullptr) : QWidget(parent) {
+    explicit LazyLoadingDemoWidget(QWidget* parent = nullptr)
+        : QWidget(parent) {
         setupUI();
         setupLazyComponents();
     }
@@ -195,7 +205,7 @@ private slots:
             m_loadButton->setEnabled(false);
         }
     }
-    
+
     void onComponentReady(HeavyComponent* component) {
         Q_UNUSED(component)
         qDebug() << "Heavy component is ready for use";
@@ -204,38 +214,42 @@ private slots:
 private:
     void setupUI() {
         auto* layout = new QVBoxLayout(this);
-        
+
         auto* titleLabel = new QLabel("Lazy Loading Demonstration", this);
         titleLabel->setStyleSheet("font-size: 16px; font-weight: bold;");
-        
+
         m_loadButton = new QPushButton("Load Heavy Component", this);
-        connect(m_loadButton, &QPushButton::clicked, this, &LazyLoadingDemoWidget::loadHeavyComponent);
-        
+        connect(m_loadButton, &QPushButton::clicked, this,
+                &LazyLoadingDemoWidget::loadHeavyComponent);
+
         auto* componentGroup = new QGroupBox("Lazy Loaded Component", this);
         m_componentLayout = new QVBoxLayout(componentGroup);
-        
-        auto* placeholderLabel = new QLabel("Component will be loaded here...", this);
+
+        auto* placeholderLabel =
+            new QLabel("Component will be loaded here...", this);
         placeholderLabel->setAlignment(Qt::AlignCenter);
         placeholderLabel->setStyleSheet("color: #666; font-style: italic;");
         m_componentLayout->addWidget(placeholderLabel);
-        
+
         layout->addWidget(titleLabel);
         layout->addWidget(m_loadButton);
         layout->addWidget(componentGroup);
         layout->addStretch();
     }
-    
+
     void setupLazyComponents() {
         // Configure lazy loading
         Core::FluentLazyLoadConfig config;
         config.strategy = Core::FluentLazyLoadStrategy::OnDemand;
         config.enableCaching = true;
         config.loadDelay = std::chrono::milliseconds(500);
-        
+
         // Create lazy component
-        m_lazyHeavyComponent = new Core::FluentLazyComponent<HeavyComponent>("heavy_component", config, this);
-        
-        connect(m_lazyHeavyComponent, &Core::FluentLazyComponent<HeavyComponent>::componentReady,
+        m_lazyHeavyComponent = new Core::FluentLazyComponent<HeavyComponent>(
+            "heavy_component", config, this);
+
+        connect(m_lazyHeavyComponent,
+                &Core::FluentLazyComponent<HeavyComponent>::componentReady,
                 this, &LazyLoadingDemoWidget::onComponentReady);
     }
 
@@ -250,7 +264,8 @@ class EnhancedPerformanceMainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit EnhancedPerformanceMainWindow(QWidget* parent = nullptr) : QMainWindow(parent) {
+    explicit EnhancedPerformanceMainWindow(QWidget* parent = nullptr)
+        : QMainWindow(parent) {
         setupUI();
         setupBundleAnalyzer();
     }
@@ -259,54 +274,58 @@ private:
     void setupUI() {
         setWindowTitle("Enhanced Performance Monitoring Demo");
         setMinimumSize(800, 600);
-        
+
         auto* centralWidget = new QWidget(this);
         setCentralWidget(centralWidget);
-        
+
         auto* layout = new QHBoxLayout(centralWidget);
-        
+
         // Left side: Performance monitoring
         auto* performanceWidget = new PerformanceMonitorWidget(this);
-        
+
         // Right side: Lazy loading demo
         auto* lazyLoadingWidget = new LazyLoadingDemoWidget(this);
-        
+
         layout->addWidget(performanceWidget, 1);
         layout->addWidget(lazyLoadingWidget, 1);
     }
-    
+
     void setupBundleAnalyzer() {
         auto& analyzer = Core::FluentBundleAnalyzer::instance();
-        
+
         // Register some example modules
         analyzer.registerModule("FluentCore", "src/Core/", 150 * 1024);
-        analyzer.registerModule("FluentComponents", "src/Components/", 300 * 1024);
+        analyzer.registerModule("FluentComponents", "src/Components/",
+                                300 * 1024);
         analyzer.registerModule("FluentStyling", "src/Styling/", 100 * 1024);
         analyzer.registerModule("FluentAnimation", "src/Animation/", 80 * 1024);
-        
+
         // Mark core modules
         analyzer.markModuleAsCore("FluentCore", true);
-        
+
         // Set up dependencies
-        analyzer.setModuleDependencies("FluentComponents", {"FluentCore", "FluentStyling"});
+        analyzer.setModuleDependencies("FluentComponents",
+                                       {"FluentCore", "FluentStyling"});
         analyzer.setModuleDependencies("FluentAnimation", {"FluentCore"});
-        
+
         // Analyze bundle
         auto metrics = analyzer.analyzeBundleSize();
-        qDebug() << "Bundle analysis completed. Total size:" << metrics.totalSize << "bytes";
-        
+        qDebug() << "Bundle analysis completed. Total size:"
+                 << metrics.totalSize << "bytes";
+
         // Generate optimization suggestions
         auto suggestions = analyzer.generateOptimizationSuggestions();
-        qDebug() << "Generated" << suggestions.size() << "optimization suggestions";
+        qDebug() << "Generated" << suggestions.size()
+                 << "optimization suggestions";
     }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    
+
     EnhancedPerformanceMainWindow window;
     window.show();
-    
+
     return app.exec();
 }
 

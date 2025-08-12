@@ -4,12 +4,12 @@
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QApplication>
-#include <QScreen>
-#include <QWidget>
-#include <QTimer>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
 #include <QDebug>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QScreen>
+#include <QTimer>
+#include <QWidget>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Styling;
@@ -17,25 +17,24 @@ using namespace FluentQt::Styling;
 // Static instance
 FluentToastManager* FluentToastManager::s_globalInstance = nullptr;
 
-FluentToastManager::FluentToastManager(QObject* parent)
-    : QObject(parent)
-{
+FluentToastManager::FluentToastManager(QObject* parent) : QObject(parent) {
     setupConnections();
     updateScreenGeometry();
-    
+
     // Queue processing timer
     m_queueTimer = new QTimer(this);
     m_queueTimer->setSingleShot(true);
     m_queueTimer->setInterval(100);
-    connect(m_queueTimer, &QTimer::timeout, this, &FluentToastManager::processQueue);
-    
+    connect(m_queueTimer, &QTimer::timeout, this,
+            &FluentToastManager::processQueue);
+
     // Animation group for repositioning
     m_repositionAnimation = std::make_unique<QParallelAnimationGroup>(this);
 }
 
-FluentToastManager::FluentToastManager(const FluentToastManagerConfig& config, QObject* parent)
-    : FluentToastManager(parent)
-{
+FluentToastManager::FluentToastManager(const FluentToastManagerConfig& config,
+                                       QObject* parent)
+    : FluentToastManager(parent) {
     setConfiguration(config);
 }
 
@@ -49,7 +48,7 @@ FluentToastManager::~FluentToastManager() {
             }
         }
     }
-    
+
     // Clean up queued toasts
     while (!m_queuedToasts.isEmpty()) {
         auto* toast = m_queuedToasts.dequeue();
@@ -83,7 +82,7 @@ void FluentToastManager::setDefaultPosition(FluentToastPosition position) {
 void FluentToastManager::setMaxVisible(int max) {
     if (m_config.maxVisible != max) {
         m_config.maxVisible = qMax(1, max);
-        
+
         // Hide excess toasts if needed
         for (auto& toastList : m_visibleToasts) {
             while (toastList.size() > m_config.maxVisible) {
@@ -93,7 +92,7 @@ void FluentToastManager::setMaxVisible(int max) {
                 }
             }
         }
-        
+
         emit maxVisibleChanged(m_config.maxVisible);
     }
 }
@@ -101,7 +100,7 @@ void FluentToastManager::setMaxVisible(int max) {
 void FluentToastManager::setMaxQueued(int max) {
     if (m_config.maxQueued != max) {
         m_config.maxQueued = qMax(0, max);
-        
+
         // Remove excess queued toasts if needed
         while (m_queuedToasts.size() > m_config.maxQueued) {
             auto* toast = m_queuedToasts.dequeue();
@@ -109,7 +108,7 @@ void FluentToastManager::setMaxQueued(int max) {
                 toast->deleteLater();
             }
         }
-        
+
         emit maxQueuedChanged(m_config.maxQueued);
     }
 }
@@ -140,7 +139,7 @@ void FluentToastManager::setAllowDuplicates(bool allow) {
 void FluentToastManager::setStackToasts(bool stack) {
     if (m_config.stackToasts != stack) {
         m_config.stackToasts = stack;
-        
+
         if (!stack) {
             // Hide all but the most recent toast in each position
             for (auto& toastList : m_visibleToasts) {
@@ -152,28 +151,34 @@ void FluentToastManager::setStackToasts(bool stack) {
                 }
             }
         }
-        
+
         emit stackToastsChanged(stack);
     }
 }
 
-void FluentToastManager::setConfiguration(const FluentToastManagerConfig& config) {
-    const bool hasPositionChanged = (m_config.defaultPosition != config.defaultPosition);
-    const bool hasMaxVisibleChanged = (m_config.maxVisible != config.maxVisible);
+void FluentToastManager::setConfiguration(
+    const FluentToastManagerConfig& config) {
+    const bool hasPositionChanged =
+        (m_config.defaultPosition != config.defaultPosition);
+    const bool hasMaxVisibleChanged =
+        (m_config.maxVisible != config.maxVisible);
     const bool hasMaxQueuedChanged = (m_config.maxQueued != config.maxQueued);
-    const bool hasSpacingChanged = (m_config.stackSpacing != config.stackSpacing);
-    const bool hasMarginChanged = (m_config.screenMargin != config.screenMargin);
-    const bool hasDuplicatesChanged = (m_config.allowDuplicates != config.allowDuplicates);
+    const bool hasSpacingChanged =
+        (m_config.stackSpacing != config.stackSpacing);
+    const bool hasMarginChanged =
+        (m_config.screenMargin != config.screenMargin);
+    const bool hasDuplicatesChanged =
+        (m_config.allowDuplicates != config.allowDuplicates);
     const bool hasStackChanged = (m_config.stackToasts != config.stackToasts);
-    
+
     m_config = config;
-    
+
     // Update parent widget if changed
     if (m_config.parentWidget) {
-        connect(m_config.parentWidget, &QObject::destroyed,
-                this, &FluentToastManager::onParentWidgetDestroyed);
+        connect(m_config.parentWidget, &QObject::destroyed, this,
+                &FluentToastManager::onParentWidgetDestroyed);
     }
-    
+
     // Apply constraints
     if (hasMaxVisibleChanged) {
         setMaxVisible(m_config.maxVisible);
@@ -195,46 +200,61 @@ void FluentToastManager::setConfiguration(const FluentToastManagerConfig& config
             }
         }
     }
-    
+
     // Emit change signals
-    if (hasPositionChanged) emit defaultPositionChanged(config.defaultPosition);
-    if (hasMaxVisibleChanged) emit maxVisibleChanged(config.maxVisible);
-    if (hasMaxQueuedChanged) emit maxQueuedChanged(config.maxQueued);
-    if (hasSpacingChanged) emit stackSpacingChanged(config.stackSpacing);
-    if (hasMarginChanged) emit screenMarginChanged(config.screenMargin);
-    if (hasDuplicatesChanged) emit allowDuplicatesChanged(config.allowDuplicates);
-    if (hasStackChanged) emit stackToastsChanged(config.stackToasts);
+    if (hasPositionChanged)
+        emit defaultPositionChanged(config.defaultPosition);
+    if (hasMaxVisibleChanged)
+        emit maxVisibleChanged(config.maxVisible);
+    if (hasMaxQueuedChanged)
+        emit maxQueuedChanged(config.maxQueued);
+    if (hasSpacingChanged)
+        emit stackSpacingChanged(config.stackSpacing);
+    if (hasMarginChanged)
+        emit screenMarginChanged(config.screenMargin);
+    if (hasDuplicatesChanged)
+        emit allowDuplicatesChanged(config.allowDuplicates);
+    if (hasStackChanged)
+        emit stackToastsChanged(config.stackToasts);
 }
 
 void FluentToastManager::setParentWidget(QWidget* parent) {
     if (m_config.parentWidget != parent) {
         if (m_config.parentWidget) {
-            disconnect(m_config.parentWidget, &QObject::destroyed,
-                      this, &FluentToastManager::onParentWidgetDestroyed);
+            disconnect(m_config.parentWidget, &QObject::destroyed, this,
+                       &FluentToastManager::onParentWidgetDestroyed);
         }
-        
+
         m_config.parentWidget = parent;
-        
+
         if (parent) {
-            connect(parent, &QObject::destroyed,
-                    this, &FluentToastManager::onParentWidgetDestroyed);
+            connect(parent, &QObject::destroyed, this,
+                    &FluentToastManager::onParentWidgetDestroyed);
         }
-        
+
         updateScreenGeometry();
         repositionToasts();
     }
 }
 
-FluentToast* FluentToastManager::show(FluentToastType type, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::show(FluentToastType type,
+                                      const QString& title,
+                                      const QString& message) {
     return show(type, title, message, m_config.defaultPosition);
 }
 
-FluentToast* FluentToastManager::show(FluentToastType type, const QString& title, const QString& message, FluentToastPosition position) {
+FluentToast* FluentToastManager::show(FluentToastType type,
+                                      const QString& title,
+                                      const QString& message,
+                                      FluentToastPosition position) {
     auto* toast = new FluentToast(type, title, message);
     return show(toast, position);
 }
 
-FluentToast* FluentToastManager::show(FluentToastType type, const QString& title, const QString& message, const FluentToastConfig& config) {
+FluentToast* FluentToastManager::show(FluentToastType type,
+                                      const QString& title,
+                                      const QString& message,
+                                      const FluentToastConfig& config) {
     // Create toast with the specified type and config
     auto* toast = new FluentToast(type, title, message);
 
@@ -248,26 +268,28 @@ FluentToast* FluentToastManager::show(FluentToast* toast) {
     return show(toast, m_config.defaultPosition);
 }
 
-FluentToast* FluentToastManager::show(FluentToast* toast, FluentToastPosition position) {
-    if (!toast) return nullptr;
-    
+FluentToast* FluentToastManager::show(FluentToast* toast,
+                                      FluentToastPosition position) {
+    if (!toast)
+        return nullptr;
+
     // Check for duplicates if not allowed
     if (!m_config.allowDuplicates && isDuplicate(toast)) {
         toast->deleteLater();
         return nullptr;
     }
-    
+
     // Check if we can show immediately
     if (canShowToast(toast)) {
         addToVisible(toast, position);
         connectToast(toast);
-        
+
         // Position and show the toast
-        const QRect toastRect = getToastRect(position, toast->sizeHint(), 
-                                           visibleCountAt(position) - 1);
+        const QRect toastRect = getToastRect(position, toast->sizeHint(),
+                                             visibleCountAt(position) - 1);
         toast->setGeometry(toastRect);
         toast->showAnimated();
-        
+
         emit toastShown(toast);
         return toast;
     } else {
@@ -278,46 +300,61 @@ FluentToast* FluentToastManager::show(FluentToast* toast, FluentToastPosition po
 }
 
 // Convenience methods
-FluentToast* FluentToastManager::showInfo(const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showInfo(const QString& title,
+                                          const QString& message) {
     return show(FluentToastType::Info, title, message);
 }
 
-FluentToast* FluentToastManager::showSuccess(const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showSuccess(const QString& title,
+                                             const QString& message) {
     return show(FluentToastType::Success, title, message);
 }
 
-FluentToast* FluentToastManager::showWarning(const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showWarning(const QString& title,
+                                             const QString& message) {
     return show(FluentToastType::Warning, title, message);
 }
 
-FluentToast* FluentToastManager::showError(const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showError(const QString& title,
+                                           const QString& message) {
     return show(FluentToastType::Error, title, message);
 }
 
-FluentToast* FluentToastManager::showCustom(const QIcon& icon, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showCustom(const QIcon& icon,
+                                            const QString& title,
+                                            const QString& message) {
     auto* toast = FluentToast::createCustom(icon, title, message);
     return show(toast);
 }
 
 // Position-specific convenience methods
-FluentToast* FluentToastManager::showInfoAt(FluentToastPosition position, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showInfoAt(FluentToastPosition position,
+                                            const QString& title,
+                                            const QString& message) {
     return show(FluentToastType::Info, title, message, position);
 }
 
-FluentToast* FluentToastManager::showSuccessAt(FluentToastPosition position, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showSuccessAt(FluentToastPosition position,
+                                               const QString& title,
+                                               const QString& message) {
     return show(FluentToastType::Success, title, message, position);
 }
 
-FluentToast* FluentToastManager::showWarningAt(FluentToastPosition position, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showWarningAt(FluentToastPosition position,
+                                               const QString& title,
+                                               const QString& message) {
     return show(FluentToastType::Warning, title, message, position);
 }
 
-FluentToast* FluentToastManager::showErrorAt(FluentToastPosition position, const QString& title, const QString& message) {
+FluentToast* FluentToastManager::showErrorAt(FluentToastPosition position,
+                                             const QString& title,
+                                             const QString& message) {
     return show(FluentToastType::Error, title, message, position);
 }
 
 void FluentToastManager::hide(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
     removeFromVisible(toast);
     toast->hideAnimated();
@@ -397,16 +434,21 @@ QList<FluentToast*> FluentToastManager::visibleToasts() const {
     return allToasts;
 }
 
-QList<FluentToast*> FluentToastManager::visibleToastsAt(FluentToastPosition position) const {
+QList<FluentToast*> FluentToastManager::visibleToastsAt(
+    FluentToastPosition position) const {
     return m_visibleToasts.value(position);
 }
 
-QRect FluentToastManager::getToastRect(FluentToastPosition position, const QSize& toastSize, int index) const {
+QRect FluentToastManager::getToastRect(FluentToastPosition position,
+                                       const QSize& toastSize,
+                                       int index) const {
     const QPoint pos = getToastPosition(position, toastSize, index);
     return QRect(pos, toastSize);
 }
 
-QPoint FluentToastManager::getToastPosition(FluentToastPosition position, const QSize& toastSize, int index) const {
+QPoint FluentToastManager::getToastPosition(FluentToastPosition position,
+                                            const QSize& toastSize,
+                                            int index) const {
     return calculateToastPosition(position, toastSize, index);
 }
 
@@ -510,25 +552,35 @@ void FluentToastManager::onParentWidgetDestroyed() {
 void FluentToastManager::setupConnections() {
     // Connect to screen changes
     if (auto* screen = QApplication::primaryScreen()) {
-        connect(screen, &QScreen::geometryChanged, this, &FluentToastManager::onScreenChanged);
-        connect(screen, &QScreen::availableGeometryChanged, this, &FluentToastManager::onScreenChanged);
+        connect(screen, &QScreen::geometryChanged, this,
+                &FluentToastManager::onScreenChanged);
+        connect(screen, &QScreen::availableGeometryChanged, this,
+                &FluentToastManager::onScreenChanged);
     }
 }
 
 void FluentToastManager::connectToast(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
-    connect(toast, &FluentToast::shown, this, &FluentToastManager::onToastShown);
-    connect(toast, &FluentToast::hidden, this, &FluentToastManager::onToastHidden);
-    connect(toast, &FluentToast::dismissed, this, &FluentToastManager::onToastDismissed);
+    connect(toast, &FluentToast::shown, this,
+            &FluentToastManager::onToastShown);
+    connect(toast, &FluentToast::hidden, this,
+            &FluentToastManager::onToastHidden);
+    connect(toast, &FluentToast::dismissed, this,
+            &FluentToastManager::onToastDismissed);
 }
 
 void FluentToastManager::disconnectToast(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
-    disconnect(toast, &FluentToast::shown, this, &FluentToastManager::onToastShown);
-    disconnect(toast, &FluentToast::hidden, this, &FluentToastManager::onToastHidden);
-    disconnect(toast, &FluentToast::dismissed, this, &FluentToastManager::onToastDismissed);
+    disconnect(toast, &FluentToast::shown, this,
+               &FluentToastManager::onToastShown);
+    disconnect(toast, &FluentToast::hidden, this,
+               &FluentToastManager::onToastHidden);
+    disconnect(toast, &FluentToast::dismissed, this,
+               &FluentToastManager::onToastDismissed);
 }
 
 bool FluentToastManager::canShowToast(FluentToast* toast) const {
@@ -544,8 +596,7 @@ bool FluentToastManager::isDuplicate(FluentToast* toast) const {
     // Check for duplicate title and message
     for (const auto& toastList : m_visibleToasts) {
         for (const auto* existingToast : toastList) {
-            if (existingToast &&
-                existingToast->title() == toast->title() &&
+            if (existingToast && existingToast->title() == toast->title() &&
                 existingToast->message() == toast->message()) {
                 return true;
             }
@@ -556,10 +607,12 @@ bool FluentToastManager::isDuplicate(FluentToast* toast) const {
 }
 
 void FluentToastManager::addToQueue(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
     // Remove oldest if queue is full
-    while (m_queuedToasts.size() >= m_config.maxQueued && !m_queuedToasts.isEmpty()) {
+    while (m_queuedToasts.size() >= m_config.maxQueued &&
+           !m_queuedToasts.isEmpty()) {
         auto* oldToast = m_queuedToasts.dequeue();
         if (oldToast) {
             oldToast->deleteLater();
@@ -575,7 +628,8 @@ void FluentToastManager::addToQueue(FluentToast* toast) {
 }
 
 void FluentToastManager::removeFromQueue(FluentToast* toast) {
-    // Note: QQueue doesn't have a remove method, so we need to rebuild the queue
+    // Note: QQueue doesn't have a remove method, so we need to rebuild the
+    // queue
     QQueue<FluentToast*> newQueue;
     while (!m_queuedToasts.isEmpty()) {
         auto* queuedToast = m_queuedToasts.dequeue();
@@ -595,8 +649,10 @@ void FluentToastManager::showNextFromQueue() {
     }
 }
 
-void FluentToastManager::addToVisible(FluentToast* toast, FluentToastPosition position) {
-    if (!toast) return;
+void FluentToastManager::addToVisible(FluentToast* toast,
+                                      FluentToastPosition position) {
+    if (!toast)
+        return;
 
     if (!m_config.stackToasts) {
         // Hide existing toasts at this position
@@ -616,7 +672,8 @@ void FluentToastManager::addToVisible(FluentToast* toast, FluentToastPosition po
 }
 
 void FluentToastManager::removeFromVisible(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
     for (auto& toastList : m_visibleToasts) {
         toastList.removeAll(toast);
@@ -627,7 +684,8 @@ void FluentToastManager::updateToastPositions(FluentToastPosition position) {
     repositionToastsAt(position);
 }
 
-void FluentToastManager::animateToastToPosition(FluentToast* toast, const QPoint& position) {
+void FluentToastManager::animateToastToPosition(FluentToast* toast,
+                                                const QPoint& position) {
     if (!toast) {
         return;
     }
@@ -639,16 +697,21 @@ void FluentToastManager::animateToastToPosition(FluentToast* toast, const QPoint
     animation->setStartValue(toast->pos());
     animation->setEndValue(position);
 
-    connect(animation, &QPropertyAnimation::finished, animation, &QPropertyAnimation::deleteLater);
+    connect(animation, &QPropertyAnimation::finished, animation,
+            &QPropertyAnimation::deleteLater);
     animation->start();
 }
 
-QRect FluentToastManager::calculateToastRect(FluentToastPosition position, const QSize& toastSize, int stackIndex) const {
+QRect FluentToastManager::calculateToastRect(FluentToastPosition position,
+                                             const QSize& toastSize,
+                                             int stackIndex) const {
     const QPoint pos = calculateToastPosition(position, toastSize, stackIndex);
     return QRect(pos, toastSize);
 }
 
-QPoint FluentToastManager::calculateToastPosition(FluentToastPosition position, const QSize& toastSize, int stackIndex) const {
+QPoint FluentToastManager::calculateToastPosition(FluentToastPosition position,
+                                                  const QSize& toastSize,
+                                                  int stackIndex) const {
     const QRect area = getPositionArea(position);
     const int spacing = m_config.stackSpacing;
 
@@ -659,7 +722,8 @@ QPoint FluentToastManager::calculateToastPosition(FluentToastPosition position, 
             basePos = area.topLeft();
             break;
         case FluentToastPosition::TopCenter:
-            basePos = QPoint(area.center().x() - toastSize.width() / 2, area.top());
+            basePos =
+                QPoint(area.center().x() - toastSize.width() / 2, area.top());
             break;
         case FluentToastPosition::TopRight:
             basePos = QPoint(area.right() - toastSize.width(), area.top());
@@ -668,13 +732,16 @@ QPoint FluentToastManager::calculateToastPosition(FluentToastPosition position, 
             basePos = QPoint(area.left(), area.bottom() - toastSize.height());
             break;
         case FluentToastPosition::BottomCenter:
-            basePos = QPoint(area.center().x() - toastSize.width() / 2, area.bottom() - toastSize.height());
+            basePos = QPoint(area.center().x() - toastSize.width() / 2,
+                             area.bottom() - toastSize.height());
             break;
         case FluentToastPosition::BottomRight:
-            basePos = QPoint(area.right() - toastSize.width(), area.bottom() - toastSize.height());
+            basePos = QPoint(area.right() - toastSize.width(),
+                             area.bottom() - toastSize.height());
             break;
         case FluentToastPosition::Center:
-            basePos = QPoint(area.center().x() - toastSize.width() / 2, area.center().y() - toastSize.height() / 2);
+            basePos = QPoint(area.center().x() - toastSize.width() / 2,
+                             area.center().y() - toastSize.height() / 2);
             break;
     }
 
@@ -710,7 +777,8 @@ QRect FluentToastManager::getPositionArea(FluentToastPosition position) const {
 }
 
 void FluentToastManager::cleanupToast(FluentToast* toast) {
-    if (!toast) return;
+    if (!toast)
+        return;
 
     disconnectToast(toast);
     removeFromQueue(toast);
@@ -720,40 +788,35 @@ void FluentToastManager::cleanupToast(FluentToast* toast) {
 void FluentToastManager::updateScreenGeometry() {
     m_screenGeometry = getScreenRect();
     m_screenMargins = QMargins(m_config.screenMargin, m_config.screenMargin,
-                              m_config.screenMargin, m_config.screenMargin);
+                               m_config.screenMargin, m_config.screenMargin);
 }
 
 // Global convenience functions
 namespace FluentQt::Components::FluentToastGlobal {
-    FluentToast* showInfo(const QString& title, const QString& message) {
-        return FluentToastManager::instance().showInfo(title, message);
-    }
-
-    FluentToast* showSuccess(const QString& title, const QString& message) {
-        return FluentToastManager::instance().showSuccess(title, message);
-    }
-
-    FluentToast* showWarning(const QString& title, const QString& message) {
-        return FluentToastManager::instance().showWarning(title, message);
-    }
-
-    FluentToast* showError(const QString& title, const QString& message) {
-        return FluentToastManager::instance().showError(title, message);
-    }
-
-    FluentToast* showCustom(const QIcon& icon, const QString& title, const QString& message) {
-        return FluentToastManager::instance().showCustom(icon, title, message);
-    }
-
-    void hideAll() {
-        FluentToastManager::instance().hideAll();
-    }
-
-    void clear() {
-        FluentToastManager::instance().clear();
-    }
-
-    FluentToastManager& manager() {
-        return FluentToastManager::instance();
-    }
+FluentToast* showInfo(const QString& title, const QString& message) {
+    return FluentToastManager::instance().showInfo(title, message);
 }
+
+FluentToast* showSuccess(const QString& title, const QString& message) {
+    return FluentToastManager::instance().showSuccess(title, message);
+}
+
+FluentToast* showWarning(const QString& title, const QString& message) {
+    return FluentToastManager::instance().showWarning(title, message);
+}
+
+FluentToast* showError(const QString& title, const QString& message) {
+    return FluentToastManager::instance().showError(title, message);
+}
+
+FluentToast* showCustom(const QIcon& icon, const QString& title,
+                        const QString& message) {
+    return FluentToastManager::instance().showCustom(icon, title, message);
+}
+
+void hideAll() { FluentToastManager::instance().hideAll(); }
+
+void clear() { FluentToastManager::instance().clear(); }
+
+FluentToastManager& manager() { return FluentToastManager::instance(); }
+}  // namespace FluentQt::Components::FluentToastGlobal

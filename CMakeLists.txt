@@ -142,7 +142,7 @@ else()
 endif()
 
 # Link Time Optimization
-if(FLUENTQT_ENABLE_LTO)
+if(FLUENTQT_ENABLE_LTO AND NOT FLUENTQT_BUILD_TESTS)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT lto_supported OUTPUT lto_error)
     if(lto_supported)
@@ -150,6 +150,15 @@ if(FLUENTQT_ENABLE_LTO)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
         message(WARNING "LTO not supported: ${lto_error}")
+    endif()
+else()
+    # Explicitly disable LTO flags that might leak in from environment/toolchain defaults
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        add_compile_options(-fno-lto)
+        add_link_options(-fno-lto)
+    endif()
+    if(FLUENTQT_BUILD_TESTS)
+        message(STATUS "Link Time Optimization disabled when building tests to avoid MinGW pseudo-relocation issues")
     endif()
 endif()
 
@@ -216,12 +225,20 @@ set(FLUENTQT_COMPONENT_SOURCES
     src/Components/FluentTimelineItem.cpp
     src/Components/FluentToast.cpp
     src/Components/FluentToastManager.cpp
+    src/Components/FluentTooltip.cpp
     src/Components/FluentSelect.cpp
     src/Components/FluentSelectItem.cpp
     src/Components/FluentSelectDropdown.cpp
     src/Components/FluentResizable.cpp
     src/Components/FluentScrollArea.cpp
     src/Components/FluentSheet.cpp
+    # Form and input components
+    src/Components/FluentBadge.cpp
+    src/Components/FluentCheckBox.cpp
+    src/Components/FluentTextInput.cpp
+    src/Components/FluentSlider.cpp
+    # Temporarily disabled - requires major architectural changes:
+    # src/Components/FluentRadioButton.cpp
     # Component implementations that are currently complete
     src/Components/FluentProgressBar.cpp
 )
@@ -296,12 +313,20 @@ set(FLUENTQT_COMPONENT_HEADERS
     include/FluentQt/Components/FluentTimelineItem.h
     include/FluentQt/Components/FluentToast.h
     include/FluentQt/Components/FluentToastManager.h
+    include/FluentQt/Components/FluentTooltip.h
     include/FluentQt/Components/FluentSelect.h
     include/FluentQt/Components/FluentSelectItem.h
     include/FluentQt/Components/FluentSelectDropdown.h
     include/FluentQt/Components/FluentResizable.h
     include/FluentQt/Components/FluentScrollArea.h
     include/FluentQt/Components/FluentSheet.h
+    # Form and input component headers
+    include/FluentQt/Components/FluentBadge.h
+    include/FluentQt/Components/FluentCheckBox.h
+    include/FluentQt/Components/FluentTextInput.h
+    include/FluentQt/Components/FluentSlider.h
+    # Temporarily disabled - requires major architectural changes:
+    # include/FluentQt/Components/FluentRadioButton.h
     include/FluentQt/Components/FluentProgressBar.h
 )
 

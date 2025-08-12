@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QObject>
-#include <QWidget>
-#include <QSequentialAnimationGroup>
 #include <QParallelAnimationGroup>
+#include <QSequentialAnimationGroup>
+#include <QWidget>
 #include <memory>
 #include "FluentAnimator.h"
 
@@ -17,15 +17,21 @@ public:
     ~FluentAnimation();
 
     // Animation methods
-    FluentAnimation& fadeIn(int duration = 200, FluentEasing easing = FluentEasing::EaseOut);
-    FluentAnimation& fadeOut(int duration = 200, FluentEasing easing = FluentEasing::EaseIn);
-    FluentAnimation& scaleTo(qreal scale, int duration = 200, FluentEasing easing = FluentEasing::EaseOut);
-    FluentAnimation& slideTo(const QPointF& pos, int duration = 200, FluentEasing easing = FluentEasing::EaseOut);
-    FluentAnimation& rotateTo(qreal angle, int duration = 200, FluentEasing easing = FluentEasing::EaseOut);
+    FluentAnimation& fadeIn(int duration = 200,
+                            FluentEasing easing = FluentEasing::EaseOut);
+    FluentAnimation& fadeOut(int duration = 200,
+                             FluentEasing easing = FluentEasing::EaseIn);
+    FluentAnimation& scaleTo(qreal scale, int duration = 200,
+                             FluentEasing easing = FluentEasing::EaseOut);
+    FluentAnimation& slideTo(const QPointF& pos, int duration = 200,
+                             FluentEasing easing = FluentEasing::EaseOut);
+    FluentAnimation& rotateTo(qreal angle, int duration = 200,
+                              FluentEasing easing = FluentEasing::EaseOut);
     FluentAnimation& pause(int duration);
 
     // Control methods
-    FluentAnimation& with(); // Next animation will be parallel with the previous one
+    FluentAnimation&
+    with();  // Next animation will be parallel with the previous one
 
     // Execution
     void start();
@@ -39,4 +45,4 @@ private:
     bool m_parallel = false;
 };
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

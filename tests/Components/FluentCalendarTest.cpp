@@ -1,9 +1,9 @@
 // tests/Components/FluentCalendarTest.cpp
-#include <QtTest/QtTest>
-#include <QtTest/QSignalSpy>
-#include <QMouseEvent>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QWheelEvent>
+#include <QtTest/QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentCalendar.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -104,38 +104,40 @@ void FluentCalendarTest::cleanup() {
 void FluentCalendarTest::testDefaultConstructor() {
     // Test default constructor
     FluentCalendar* calendar = new FluentCalendar();
-    
+
     // Verify default properties
     QCOMPARE(calendar->selectedDate(), QDate::currentDate());
     QCOMPARE(calendar->minimumDate(), QDate(1900, 1, 1));
     QCOMPARE(calendar->maximumDate(), QDate(3000, 1, 1));
-    QCOMPARE(calendar->selectionMode(), FluentCalendarSelectionMode::SingleSelection);
+    QCOMPARE(calendar->selectionMode(),
+             FluentCalendarSelectionMode::SingleSelection);
     QCOMPARE(calendar->viewMode(), FluentCalendarViewMode::Month);
     QVERIFY(calendar->showToday());
     QVERIFY(!calendar->showWeekNumbers());
     QCOMPARE(calendar->firstDayOfWeek(), Qt::Monday);
-    
+
     delete calendar;
 }
 
 void FluentCalendarTest::testSelectedDate() {
     // Test setting and getting selected date
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
-    
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
+
     QDate testDate(2024, 6, 15);
     m_calendar->setSelectedDate(testDate);
-    
+
     QCOMPARE(m_calendar->selectedDate(), testDate);
     QCOMPARE(selectedDateChangedSpy.count(), 1);
     QCOMPARE(selectedDateChangedSpy.first().first().toDate(), testDate);
-    
+
     // Test setting the same date (should not emit signal)
     m_calendar->setSelectedDate(testDate);
     QCOMPARE(selectedDateChangedSpy.count(), 1);
-    
+
     // Test invalid date
     m_calendar->setSelectedDate(QDate());
-    QCOMPARE(m_calendar->selectedDate(), testDate); // Should remain unchanged
+    QCOMPARE(m_calendar->selectedDate(), testDate);  // Should remain unchanged
     QCOMPARE(selectedDateChangedSpy.count(), 1);
 }
 
@@ -144,7 +146,7 @@ void FluentCalendarTest::testMinimumDate() {
     QDate minDate(2020, 1, 1);
     m_calendar->setMinimumDate(minDate);
     QCOMPARE(m_calendar->minimumDate(), minDate);
-    
+
     // Test setting selected date below minimum
     QDate belowMin(2019, 12, 31);
     m_calendar->setSelectedDate(belowMin);
@@ -156,7 +158,7 @@ void FluentCalendarTest::testMaximumDate() {
     QDate maxDate(2025, 12, 31);
     m_calendar->setMaximumDate(maxDate);
     QCOMPARE(m_calendar->maximumDate(), maxDate);
-    
+
     // Test setting selected date above maximum
     QDate aboveMax(2026, 1, 1);
     m_calendar->setSelectedDate(aboveMax);
@@ -167,13 +169,13 @@ void FluentCalendarTest::testDateRange() {
     // Test setting date range
     QDate minDate(2020, 1, 1);
     QDate maxDate(2025, 12, 31);
-    
+
     m_calendar->setMinimumDate(minDate);
     m_calendar->setMaximumDate(maxDate);
-    
+
     QCOMPARE(m_calendar->minimumDate(), minDate);
     QCOMPARE(m_calendar->maximumDate(), maxDate);
-    
+
     // Test that selected date is within range
     QDate validDate(2023, 6, 15);
     m_calendar->setSelectedDate(validDate);
@@ -182,42 +184,51 @@ void FluentCalendarTest::testDateRange() {
 
 void FluentCalendarTest::testSelectionMode() {
     // Test setting and getting selection mode
-    QCOMPARE(m_calendar->selectionMode(), FluentCalendarSelectionMode::SingleSelection);
-    
-    m_calendar->setSelectionMode(FluentCalendarSelectionMode::MultipleSelection);
-    QCOMPARE(m_calendar->selectionMode(), FluentCalendarSelectionMode::MultipleSelection);
-    
+    QCOMPARE(m_calendar->selectionMode(),
+             FluentCalendarSelectionMode::SingleSelection);
+
+    m_calendar->setSelectionMode(
+        FluentCalendarSelectionMode::MultipleSelection);
+    QCOMPARE(m_calendar->selectionMode(),
+             FluentCalendarSelectionMode::MultipleSelection);
+
     m_calendar->setSelectionMode(FluentCalendarSelectionMode::RangeSelection);
-    QCOMPARE(m_calendar->selectionMode(), FluentCalendarSelectionMode::RangeSelection);
-    
+    QCOMPARE(m_calendar->selectionMode(),
+             FluentCalendarSelectionMode::RangeSelection);
+
     m_calendar->setSelectionMode(FluentCalendarSelectionMode::NoSelection);
-    QCOMPARE(m_calendar->selectionMode(), FluentCalendarSelectionMode::NoSelection);
+    QCOMPARE(m_calendar->selectionMode(),
+             FluentCalendarSelectionMode::NoSelection);
 }
 
 void FluentCalendarTest::testMultipleSelection() {
     // Test multiple date selection
-    m_calendar->setSelectionMode(FluentCalendarSelectionMode::MultipleSelection);
-    
-    QSignalSpy selectedDatesChangedSpy(m_calendar, &FluentCalendar::selectedDatesChanged);
-    
+    m_calendar->setSelectionMode(
+        FluentCalendarSelectionMode::MultipleSelection);
+
+    QSignalSpy selectedDatesChangedSpy(m_calendar,
+                                       &FluentCalendar::selectedDatesChanged);
+
     QList<QDate> dates;
     dates << QDate(2024, 6, 15) << QDate(2024, 6, 20) << QDate(2024, 6, 25);
-    
+
     m_calendar->setSelectedDates(dates);
     QCOMPARE(m_calendar->selectedDates(), dates);
     QCOMPARE(selectedDatesChangedSpy.count(), 1);
-    QCOMPARE(selectedDatesChangedSpy.first().first().value<QList<QDate>>(), dates);
+    QCOMPARE(selectedDatesChangedSpy.first().first().value<QList<QDate>>(),
+             dates);
 }
 
 void FluentCalendarTest::testRangeSelection() {
     // Test date range selection
     m_calendar->setSelectionMode(FluentCalendarSelectionMode::RangeSelection);
-    
-    QSignalSpy selectedRangeChangedSpy(m_calendar, &FluentCalendar::selectedRangeChanged);
-    
+
+    QSignalSpy selectedRangeChangedSpy(m_calendar,
+                                       &FluentCalendar::selectedRangeChanged);
+
     FluentDateRange range(QDate(2024, 6, 15), QDate(2024, 6, 25));
     m_calendar->setSelectedRange(range);
-    
+
     QCOMPARE(m_calendar->selectedRange().startDate(), range.startDate());
     QCOMPARE(m_calendar->selectedRange().endDate(), range.endDate());
     QCOMPARE(selectedRangeChangedSpy.count(), 1);
@@ -226,18 +237,19 @@ void FluentCalendarTest::testRangeSelection() {
 void FluentCalendarTest::testViewMode() {
     // Test setting and getting view mode
     QSignalSpy viewModeChangedSpy(m_calendar, &FluentCalendar::viewModeChanged);
-    
+
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Month);
-    
+
     m_calendar->setViewMode(FluentCalendarViewMode::Year);
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Year);
     QCOMPARE(viewModeChangedSpy.count(), 1);
-    QCOMPARE(viewModeChangedSpy.first().first().value<FluentCalendarViewMode>(), FluentCalendarViewMode::Year);
-    
+    QCOMPARE(viewModeChangedSpy.first().first().value<FluentCalendarViewMode>(),
+             FluentCalendarViewMode::Year);
+
     m_calendar->setViewMode(FluentCalendarViewMode::Decade);
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Decade);
     QCOMPARE(viewModeChangedSpy.count(), 2);
-    
+
     // Setting the same view mode should not emit signal
     m_calendar->setViewMode(FluentCalendarViewMode::Decade);
     QCOMPARE(viewModeChangedSpy.count(), 2);
@@ -247,7 +259,7 @@ void FluentCalendarTest::testMonthView() {
     // Test month view functionality
     m_calendar->setViewMode(FluentCalendarViewMode::Month);
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Month);
-    
+
     // Test current page
     QDate currentDate = QDate::currentDate();
     m_calendar->setCurrentPage(currentDate.year(), currentDate.month());
@@ -259,7 +271,7 @@ void FluentCalendarTest::testYearView() {
     // Test year view functionality
     m_calendar->setViewMode(FluentCalendarViewMode::Year);
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Year);
-    
+
     // In year view, should be able to select months
     // This would require more detailed testing of internal behavior
     QVERIFY(true);
@@ -269,7 +281,7 @@ void FluentCalendarTest::testDecadeView() {
     // Test decade view functionality
     m_calendar->setViewMode(FluentCalendarViewMode::Decade);
     QCOMPARE(m_calendar->viewMode(), FluentCalendarViewMode::Decade);
-    
+
     // In decade view, should be able to select years
     // This would require more detailed testing of internal behavior
     QVERIFY(true);
@@ -277,7 +289,7 @@ void FluentCalendarTest::testDecadeView() {
 
 void FluentCalendarTest::testShowToday() {
     // Test show today property
-    QVERIFY(m_calendar->showToday()); // Default should be true
+    QVERIFY(m_calendar->showToday());  // Default should be true
 
     m_calendar->setShowToday(false);
     QVERIFY(!m_calendar->showToday());
@@ -288,7 +300,7 @@ void FluentCalendarTest::testShowToday() {
 
 void FluentCalendarTest::testShowWeekNumbers() {
     // Test show week numbers property
-    QVERIFY(!m_calendar->showWeekNumbers()); // Default should be false
+    QVERIFY(!m_calendar->showWeekNumbers());  // Default should be false
 
     m_calendar->setShowWeekNumbers(true);
     QVERIFY(m_calendar->showWeekNumbers());
@@ -299,7 +311,7 @@ void FluentCalendarTest::testShowWeekNumbers() {
 
 void FluentCalendarTest::testFirstDayOfWeek() {
     // Test first day of week property
-    QCOMPARE(m_calendar->firstDayOfWeek(), Qt::Monday); // Default
+    QCOMPARE(m_calendar->firstDayOfWeek(), Qt::Monday);  // Default
 
     m_calendar->setFirstDayOfWeek(Qt::Sunday);
     QCOMPARE(m_calendar->firstDayOfWeek(), Qt::Sunday);
@@ -310,7 +322,8 @@ void FluentCalendarTest::testFirstDayOfWeek() {
 
 void FluentCalendarTest::testCurrentPage() {
     // Test current page (year/month)
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     int testYear = 2024;
     int testMonth = 6;
@@ -325,7 +338,8 @@ void FluentCalendarTest::testCurrentPage() {
 
 void FluentCalendarTest::testShowNextMonth() {
     // Test show next month navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     int initialMonth = m_calendar->currentMonth();
     int initialYear = m_calendar->currentYear();
@@ -345,7 +359,8 @@ void FluentCalendarTest::testShowNextMonth() {
 
 void FluentCalendarTest::testShowPreviousMonth() {
     // Test show previous month navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     int initialMonth = m_calendar->currentMonth();
     int initialYear = m_calendar->currentYear();
@@ -365,7 +380,8 @@ void FluentCalendarTest::testShowPreviousMonth() {
 
 void FluentCalendarTest::testShowNextYear() {
     // Test show next year navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     int initialYear = m_calendar->currentYear();
     int initialMonth = m_calendar->currentMonth();
@@ -373,13 +389,15 @@ void FluentCalendarTest::testShowNextYear() {
     m_calendar->showNextYear();
 
     QCOMPARE(m_calendar->currentYear(), initialYear + 1);
-    QCOMPARE(m_calendar->currentMonth(), initialMonth); // Month should remain same
+    QCOMPARE(m_calendar->currentMonth(),
+             initialMonth);  // Month should remain same
     QCOMPARE(currentPageChangedSpy.count(), 1);
 }
 
 void FluentCalendarTest::testShowPreviousYear() {
     // Test show previous year navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     int initialYear = m_calendar->currentYear();
     int initialMonth = m_calendar->currentMonth();
@@ -387,14 +405,17 @@ void FluentCalendarTest::testShowPreviousYear() {
     m_calendar->showPreviousYear();
 
     QCOMPARE(m_calendar->currentYear(), initialYear - 1);
-    QCOMPARE(m_calendar->currentMonth(), initialMonth); // Month should remain same
+    QCOMPARE(m_calendar->currentMonth(),
+             initialMonth);  // Month should remain same
     QCOMPARE(currentPageChangedSpy.count(), 1);
 }
 
 void FluentCalendarTest::testGoToToday() {
     // Test go to today navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
 
     // Set calendar to a different date
     m_calendar->setCurrentPage(2020, 1);
@@ -476,13 +497,16 @@ void FluentCalendarTest::testHolidays() {
 void FluentCalendarTest::testMouseInteraction() {
     // Test mouse interaction with calendar
     QSignalSpy dateClickedSpy(m_calendar, &FluentCalendar::dateClicked);
-    QSignalSpy dateDoubleClickedSpy(m_calendar, &FluentCalendar::dateDoubleClicked);
+    QSignalSpy dateDoubleClickedSpy(m_calendar,
+                                    &FluentCalendar::dateDoubleClicked);
 
     // For now, just verify that mouse events can be sent without crashing
     // Detailed testing would require access to internal cell positions
     QPoint center = m_calendar->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_calendar, &pressEvent);
     QApplication::sendEvent(m_calendar, &releaseEvent);
@@ -493,7 +517,8 @@ void FluentCalendarTest::testMouseInteraction() {
 
 void FluentCalendarTest::testKeyboardNavigation() {
     // Test keyboard navigation
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
 
     m_calendar->setFocus();
     QVERIFY(m_calendar->hasFocus());
@@ -533,16 +558,21 @@ void FluentCalendarTest::testKeyboardNavigation() {
 
 void FluentCalendarTest::testWheelNavigation() {
     // Test wheel navigation
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     m_calendar->setFocus();
 
     // Test wheel up (previous month)
-    QWheelEvent wheelUpEvent(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, 120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QWheelEvent wheelUpEvent(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0),
+                             QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                             Qt::NoScrollPhase, false);
     QApplication::sendEvent(m_calendar, &wheelUpEvent);
 
     // Test wheel down (next month)
-    QWheelEvent wheelDownEvent(QPointF(100, 100), QPointF(100, 100), QPoint(0, 0), QPoint(0, -120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QWheelEvent wheelDownEvent(QPointF(100, 100), QPointF(100, 100),
+                               QPoint(0, 0), QPoint(0, -120), Qt::NoButton,
+                               Qt::NoModifier, Qt::NoScrollPhase, false);
     QApplication::sendEvent(m_calendar, &wheelDownEvent);
 
     // Wheel navigation should work without crashing
@@ -552,8 +582,10 @@ void FluentCalendarTest::testWheelNavigation() {
 void FluentCalendarTest::testDateSelectionSignals() {
     // Test date selection signals
     QSignalSpy dateClickedSpy(m_calendar, &FluentCalendar::dateClicked);
-    QSignalSpy dateDoubleClickedSpy(m_calendar, &FluentCalendar::dateDoubleClicked);
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
+    QSignalSpy dateDoubleClickedSpy(m_calendar,
+                                    &FluentCalendar::dateDoubleClicked);
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
 
     QDate testDate(2024, 6, 15);
     m_calendar->setSelectedDate(testDate);
@@ -564,7 +596,8 @@ void FluentCalendarTest::testDateSelectionSignals() {
 
 void FluentCalendarTest::testNavigationSignals() {
     // Test navigation signals
-    QSignalSpy currentPageChangedSpy(m_calendar, &FluentCalendar::currentPageChanged);
+    QSignalSpy currentPageChangedSpy(m_calendar,
+                                     &FluentCalendar::currentPageChanged);
 
     m_calendar->showNextMonth();
     QCOMPARE(currentPageChangedSpy.count(), 1);
@@ -585,16 +618,19 @@ void FluentCalendarTest::testViewModeSignals() {
 
     m_calendar->setViewMode(FluentCalendarViewMode::Year);
     QCOMPARE(viewModeChangedSpy.count(), 1);
-    QCOMPARE(viewModeChangedSpy.first().first().value<FluentCalendarViewMode>(), FluentCalendarViewMode::Year);
+    QCOMPARE(viewModeChangedSpy.first().first().value<FluentCalendarViewMode>(),
+             FluentCalendarViewMode::Year);
 
     m_calendar->setViewMode(FluentCalendarViewMode::Decade);
     QCOMPARE(viewModeChangedSpy.count(), 2);
-    QCOMPARE(viewModeChangedSpy.last().first().value<FluentCalendarViewMode>(), FluentCalendarViewMode::Decade);
+    QCOMPARE(viewModeChangedSpy.last().first().value<FluentCalendarViewMode>(),
+             FluentCalendarViewMode::Decade);
 }
 
 void FluentCalendarTest::testClearSelection() {
     // Test clear selection functionality
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
 
     // Set a date first
     QDate testDate(2024, 6, 15);
@@ -604,15 +640,15 @@ void FluentCalendarTest::testClearSelection() {
     // Clear selection
     m_calendar->clearSelection();
 
-    // For single selection mode, this might reset to current date or invalid date
-    // The exact behavior depends on implementation
+    // For single selection mode, this might reset to current date or invalid
+    // date The exact behavior depends on implementation
     QCOMPARE(selectedDateChangedSpy.count(), 1);
 }
 
 void FluentCalendarTest::testDateValidation() {
     // Test date validation
     QDate validDate(2024, 6, 15);
-    QDate invalidDate; // Invalid date
+    QDate invalidDate;  // Invalid date
 
     // Test setting valid date
     m_calendar->setSelectedDate(validDate);
@@ -621,7 +657,8 @@ void FluentCalendarTest::testDateValidation() {
     // Test setting invalid date (should be ignored)
     QDate previousDate = m_calendar->selectedDate();
     m_calendar->setSelectedDate(invalidDate);
-    QCOMPARE(m_calendar->selectedDate(), previousDate); // Should remain unchanged
+    QCOMPARE(m_calendar->selectedDate(),
+             previousDate);  // Should remain unchanged
 
     // Test date range validation
     m_calendar->setMinimumDate(QDate(2024, 1, 1));
@@ -640,7 +677,8 @@ void FluentCalendarTest::testAccessibility() {
     // Test accessibility features
     m_calendar->setSelectedDate(QDate(2024, 6, 15));
 
-    // Test that calendar can be created and used without accessibility-related crashes
+    // Test that calendar can be created and used without accessibility-related
+    // crashes
     m_calendar->setFocus();
     m_calendar->showNextMonth();
     m_calendar->showPreviousMonth();
@@ -657,14 +695,16 @@ void FluentCalendarTest::testThemeIntegration() {
     auto originalMode = theme.mode();
 
     // Change theme mode
-    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light) ?
-                   FluentQt::Styling::FluentThemeMode::Dark :
-                   FluentQt::Styling::FluentThemeMode::Light;
+    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light)
+                       ? FluentQt::Styling::FluentThemeMode::Dark
+                       : FluentQt::Styling::FluentThemeMode::Light;
     theme.setMode(newMode);
 
-    // Calendar should update its appearance (this would require checking internal styling)
-    // For now, just verify the calendar still functions correctly
-    QSignalSpy selectedDateChangedSpy(m_calendar, &FluentCalendar::selectedDateChanged);
+    // Calendar should update its appearance (this would require checking
+    // internal styling) For now, just verify the calendar still functions
+    // correctly
+    QSignalSpy selectedDateChangedSpy(m_calendar,
+                                      &FluentCalendar::selectedDateChanged);
     QDate testDate(2024, 6, 15);
     m_calendar->setSelectedDate(testDate);
     QCOMPARE(m_calendar->selectedDate(), testDate);

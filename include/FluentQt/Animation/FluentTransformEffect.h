@@ -4,8 +4,7 @@
 #include <QObject>
 #include <QPointF>
 
-class FluentTransformEffect : public QGraphicsEffect
-{
+class FluentTransformEffect : public QGraphicsEffect {
     Q_OBJECT
     Q_PROPERTY(qreal scale READ scale WRITE setScale)
     Q_PROPERTY(qreal rotation READ rotation WRITE setRotation)

@@ -197,18 +197,18 @@ public:
     ParentWidget() {
         auto* childComponent = new ChildComponent(this);
         childComponent->setData(m_data);
-        
+
         // Listen for child events
         connect(childComponent, &ChildComponent::dataChanged,
                 this, &ParentWidget::handleDataChange);
     }
-    
+
 private slots:
     void handleDataChange(const QVariant& newData) {
         m_data = newData;
         updateOtherComponents();
     }
-    
+
 private:
     void updateOtherComponents() {
         // Update other components with new data
@@ -216,7 +216,7 @@ private:
             component->refresh(m_data);
         }
     }
-    
+
     QVariant m_data;
     QList<ComponentBase*> m_relatedComponents;
 };
@@ -233,19 +233,19 @@ public:
         static ApplicationState instance;
         return instance;
     }
-    
+
     void updateUserData(const UserData& data) {
         if (m_userData != data) {
             m_userData = data;
             emit userDataChanged(m_userData);
         }
     }
-    
+
     const UserData& userData() const { return m_userData; }
 
 signals:
     void userDataChanged(const UserData& data);
-    
+
 private:
     UserData m_userData;
 };
@@ -257,14 +257,14 @@ public:
         connect(&ApplicationState::instance(), &ApplicationState::userDataChanged,
                 this, &UserProfileComponent::updateDisplay);
     }
-    
+
 private slots:
     void updateDisplay(const UserData& data) {
         m_nameInput->setText(data.name);
         m_emailInput->setText(data.email);
         // Update other fields...
     }
-    
+
 private:
     FluentTextInput* m_nameInput;
     FluentTextInput* m_emailInput;
@@ -294,17 +294,17 @@ private:
         m_desktopLayout = new QHBoxLayout;
         m_tabletLayout = new QVBoxLayout;
         m_mobileLayout = new QVBoxLayout;
-        
+
         // Add components to layouts
         setupDesktopLayout();
         setupTabletLayout();
         setupMobileLayout();
     }
-    
+
     void updateLayoutForSize(const QSize& size) {
         // Clear current layout
         clearLayout();
-        
+
         // Apply appropriate layout
         if (size.width() > 1200) {
             setLayout(m_desktopLayout);
@@ -317,7 +317,7 @@ private:
             showOnlyEssentialComponents();
         }
     }
-    
+
     QHBoxLayout* m_desktopLayout;
     QVBoxLayout* m_tabletLayout;
     QVBoxLayout* m_mobileLayout;
@@ -401,7 +401,7 @@ public:
             m_components.append(component);
         }
     }
-    
+
 private:
     void configureComponent(QWidget* component, const QJsonObject& config) {
         // Apply configuration to component
@@ -409,7 +409,7 @@ private:
         component->setProperty("data", config["data"].toVariant());
         // Apply other configuration...
     }
-    
+
     QVBoxLayout* m_layout;
     QList<QWidget*> m_components;
 };
@@ -437,14 +437,14 @@ public:
             m_plugins[plugin->name()] = plugin;
         }
     }
-    
+
     QWidget* createPluginWidget(const QString& name, QWidget* parent = nullptr) {
         if (auto* plugin = m_plugins.value(name)) {
             return plugin->createWidget(parent);
         }
         return nullptr;
     }
-    
+
 private:
     QMap<QString, ComponentPlugin*> m_plugins;
 };
@@ -458,28 +458,28 @@ private:
 // Test component integration
 class ComponentIntegrationTest : public QObject {
     Q_OBJECT
-    
+
 private slots:
     void testDataFlow() {
         // Create parent component
         ParentComponent parent;
-        
+
         // Create child components
         auto* input = new FluentTextInput(&parent);
         auto* display = new FluentLabel(&parent);
-        
+
         // Connect components
         parent.connectComponents(input, display);
-        
+
         // Test data flow
         input->setText("test data");
         QCOMPARE(display->text(), "test data");
     }
-    
+
     void testStateManagement() {
         // Test centralized state management
         ApplicationState::instance().updateUserData(testUserData);
-        
+
         // Verify components updated
         QVERIFY(userProfileComponent->isUpdated());
         QVERIFY(navigationComponent->isUpdated());
@@ -493,24 +493,24 @@ private slots:
 // Test complete workflows
 class WorkflowTest : public QObject {
     Q_OBJECT
-    
+
 private slots:
     void testFormSubmissionWorkflow() {
         // Create form with multiple components
         MultiStepForm form;
-        
+
         // Fill out form steps
         form.fillStep1(testData1);
         form.nextStep();
-        
+
         form.fillStep2(testData2);
         form.nextStep();
-        
+
         form.fillStep3(testData3);
-        
+
         // Submit form
         form.submit();
-        
+
         // Verify submission
         QVERIFY(form.isSubmitted());
         QCOMPARE(form.submittedData(), expectedData);

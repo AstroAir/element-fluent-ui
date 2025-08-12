@@ -1,22 +1,21 @@
 // src/Components/FluentBreadcrumb.cpp
 #include "FluentQt/Components/FluentBreadcrumb.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QFontMetrics>
+#include <QMenu>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
 #include <QResizeEvent>
-#include <QMenu>
 #include <QToolTip>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
 FluentBreadcrumb::FluentBreadcrumb(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentBreadcrumb");
     setupUI();
     setupAnimations();
@@ -24,8 +23,7 @@ FluentBreadcrumb::FluentBreadcrumb(QWidget* parent)
 }
 
 FluentBreadcrumb::FluentBreadcrumb(const QStringList& items, QWidget* parent)
-    : FluentBreadcrumb(parent)
-{
+    : FluentBreadcrumb(parent) {
     setItems(items);
 }
 
@@ -33,35 +31,34 @@ FluentBreadcrumb::~FluentBreadcrumb() = default;
 
 void FluentBreadcrumb::setupUI() {
     FLUENT_PROFILE("FluentBreadcrumb::setupUI");
-    
+
     m_layout = new QHBoxLayout(this);
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(4);
-    
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentBreadcrumb::updateColors);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentBreadcrumb::updateColors);
 }
 
 void FluentBreadcrumb::setupAnimations() {
     FLUENT_PROFILE("FluentBreadcrumb::setupAnimations");
-    
+
     // Fade animation for item changes
     m_fadeAnimation = new QPropertyAnimation(this, "windowOpacity", this);
     m_fadeAnimation->setDuration(200);
     m_fadeAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_fadeAnimation, &QPropertyAnimation::finished,
-            this, &FluentBreadcrumb::onAnimationFinished);
-    
+    connect(m_fadeAnimation, &QPropertyAnimation::finished, this,
+            &FluentBreadcrumb::onAnimationFinished);
+
     // Slide animation for path changes
     m_slideAnimation = new QPropertyAnimation(this, "geometry", this);
     m_slideAnimation->setDuration(300);
     m_slideAnimation->setEasingCurve(QEasingCurve::OutCubic);
 }
 
-FluentBreadcrumbStyle FluentBreadcrumb::style() const {
-    return m_style;
-}
+FluentBreadcrumbStyle FluentBreadcrumb::style() const { return m_style; }
 
 void FluentBreadcrumb::setStyle(FluentBreadcrumbStyle style) {
     if (m_style != style) {
@@ -83,9 +80,7 @@ void FluentBreadcrumb::setSeparator(FluentBreadcrumbSeparator separator) {
     }
 }
 
-QString FluentBreadcrumb::customSeparator() const {
-    return m_customSeparator;
-}
+QString FluentBreadcrumb::customSeparator() const { return m_customSeparator; }
 
 void FluentBreadcrumb::setCustomSeparator(const QString& separator) {
     if (m_customSeparator != separator) {
@@ -97,9 +92,7 @@ void FluentBreadcrumb::setCustomSeparator(const QString& separator) {
     }
 }
 
-int FluentBreadcrumb::maxItems() const {
-    return m_maxItems;
-}
+int FluentBreadcrumb::maxItems() const { return m_maxItems; }
 
 void FluentBreadcrumb::setMaxItems(int maxItems) {
     if (m_maxItems != maxItems) {
@@ -109,9 +102,7 @@ void FluentBreadcrumb::setMaxItems(int maxItems) {
     }
 }
 
-bool FluentBreadcrumb::showIcons() const {
-    return m_showIcons;
-}
+bool FluentBreadcrumb::showIcons() const { return m_showIcons; }
 
 void FluentBreadcrumb::setShowIcons(bool show) {
     if (m_showIcons != show) {
@@ -121,9 +112,7 @@ void FluentBreadcrumb::setShowIcons(bool show) {
     }
 }
 
-bool FluentBreadcrumb::isAnimated() const {
-    return m_animated;
-}
+bool FluentBreadcrumb::isAnimated() const { return m_animated; }
 
 void FluentBreadcrumb::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -132,9 +121,7 @@ void FluentBreadcrumb::setAnimated(bool animated) {
     }
 }
 
-int FluentBreadcrumb::currentIndex() const {
-    return m_currentIndex;
-}
+int FluentBreadcrumb::currentIndex() const { return m_currentIndex; }
 
 void FluentBreadcrumb::setCurrentIndex(int index) {
     if (index >= -1 && index < m_items.size() && m_currentIndex != index) {
@@ -142,20 +129,20 @@ void FluentBreadcrumb::setCurrentIndex(int index) {
         if (m_currentIndex >= 0 && m_currentIndex < m_items.size()) {
             m_items[m_currentIndex].current = false;
         }
-        
+
         m_currentIndex = index;
-        
+
         // Update new current item
         if (m_currentIndex >= 0 && m_currentIndex < m_items.size()) {
             m_items[m_currentIndex].current = true;
         }
-        
+
         updateItemStyles();
-        
+
         if (m_animated) {
             animateItemChange(index);
         }
-        
+
         emit currentIndexChanged(index);
     }
 }
@@ -186,7 +173,8 @@ void FluentBreadcrumb::addItem(const QIcon& icon, const QString& text) {
     addItem(FluentBreadcrumbItem(icon, text));
 }
 
-void FluentBreadcrumb::addItem(const QIcon& icon, const QString& text, const QVariant& data) {
+void FluentBreadcrumb::addItem(const QIcon& icon, const QString& text,
+                               const QVariant& data) {
     addItem(FluentBreadcrumbItem(icon, text, data));
 }
 
@@ -198,41 +186,44 @@ void FluentBreadcrumb::insertItem(int index, const QString& text) {
     insertItem(index, FluentBreadcrumbItem(text));
 }
 
-void FluentBreadcrumb::insertItem(int index, const QString& text, const QVariant& data) {
+void FluentBreadcrumb::insertItem(int index, const QString& text,
+                                  const QVariant& data) {
     insertItem(index, FluentBreadcrumbItem(text, data));
 }
 
-void FluentBreadcrumb::insertItem(int index, const QIcon& icon, const QString& text) {
+void FluentBreadcrumb::insertItem(int index, const QIcon& icon,
+                                  const QString& text) {
     insertItem(index, FluentBreadcrumbItem(icon, text));
 }
 
-void FluentBreadcrumb::insertItem(int index, const QIcon& icon, const QString& text, const QVariant& data) {
+void FluentBreadcrumb::insertItem(int index, const QIcon& icon,
+                                  const QString& text, const QVariant& data) {
     insertItem(index, FluentBreadcrumbItem(icon, text, data));
 }
 
 void FluentBreadcrumb::insertItem(int index, const FluentBreadcrumbItem& item) {
     const int clampedIndex = qBound(0, index, m_items.size());
     m_items.insert(clampedIndex, item);
-    
+
     // Adjust current index if necessary
     if (m_currentIndex >= clampedIndex) {
         m_currentIndex++;
     }
-    
+
     rebuildUI();
 }
 
 void FluentBreadcrumb::removeItem(int index) {
     if (index >= 0 && index < m_items.size()) {
         m_items.removeAt(index);
-        
+
         // Adjust current index
         if (m_currentIndex == index) {
             m_currentIndex = -1;
         } else if (m_currentIndex > index) {
             m_currentIndex--;
         }
-        
+
         rebuildUI();
     }
 }
@@ -264,13 +255,9 @@ void FluentBreadcrumb::setItemAt(int index, const FluentBreadcrumbItem& item) {
     }
 }
 
-int FluentBreadcrumb::itemCount() const {
-    return m_items.size();
-}
+int FluentBreadcrumb::itemCount() const { return m_items.size(); }
 
-QList<FluentBreadcrumbItem> FluentBreadcrumb::items() const {
-    return m_items;
-}
+QList<FluentBreadcrumbItem> FluentBreadcrumb::items() const { return m_items; }
 
 void FluentBreadcrumb::setItems(const QList<FluentBreadcrumbItem>& items) {
     m_items = items;
@@ -387,7 +374,8 @@ QString FluentBreadcrumb::path(const QString& separator) const {
     return parts.join(separator);
 }
 
-void FluentBreadcrumb::navigateToPath(const QString& path, const QString& separator) {
+void FluentBreadcrumb::navigateToPath(const QString& path,
+                                      const QString& separator) {
     setPath(path, separator);
     if (!m_items.isEmpty()) {
         setCurrentIndex(m_items.size() - 1);
@@ -416,14 +404,14 @@ QSize FluentBreadcrumb::sizeHint() const {
 
     const QFontMetrics fm(font());
     int totalWidth = 0;
-    int maxHeight = fm.height() + 8; // 8px padding
+    int maxHeight = fm.height() + 8;  // 8px padding
 
     for (int i = 0; i < m_items.size(); ++i) {
         const QString& text = m_items[i].text;
-        totalWidth += fm.horizontalAdvance(text) + 16; // 16px padding
+        totalWidth += fm.horizontalAdvance(text) + 16;  // 16px padding
 
         if (m_showIcons && !m_items[i].icon.isNull()) {
-            totalWidth += 20; // Icon width + spacing
+            totalWidth += 20;  // Icon width + spacing
         }
 
         // Add separator width (except for last item)
@@ -440,9 +428,7 @@ QSize FluentBreadcrumb::minimumSizeHint() const {
     return QSize(50, fm.height() + 8);
 }
 
-void FluentBreadcrumb::refresh() {
-    rebuildUI();
-}
+void FluentBreadcrumb::refresh() { rebuildUI(); }
 
 void FluentBreadcrumb::resizeEvent(QResizeEvent* event) {
     FluentComponent::resizeEvent(event);
@@ -460,7 +446,8 @@ void FluentBreadcrumb::paintEvent(QPaintEvent* event) {
 
 void FluentBreadcrumb::onItemClicked() {
     QPushButton* button = qobject_cast<QPushButton*>(sender());
-    if (!button) return;
+    if (!button)
+        return;
 
     const int index = m_itemButtons.indexOf(button);
     if (index >= 0 && index < m_items.size()) {
@@ -481,7 +468,8 @@ void FluentBreadcrumb::onAnimationFinished() {
 }
 
 void FluentBreadcrumb::rebuildUI() {
-    if (m_rebuildScheduled) return;
+    if (m_rebuildScheduled)
+        return;
     m_rebuildScheduled = true;
 
     // Clear existing widgets
@@ -559,7 +547,8 @@ void FluentBreadcrumb::updateOverflow() {
 }
 
 void FluentBreadcrumb::createItemWidget(int index) {
-    if (index < 0 || index >= m_items.size()) return;
+    if (index < 0 || index >= m_items.size())
+        return;
 
     const FluentBreadcrumbItem& item = m_items[index];
     QPushButton* button = new QPushButton(this);
@@ -571,7 +560,8 @@ void FluentBreadcrumb::createItemWidget(int index) {
         button->setIcon(item.icon);
     }
 
-    connect(button, &QPushButton::clicked, this, &FluentBreadcrumb::onItemClicked);
+    connect(button, &QPushButton::clicked, this,
+            &FluentBreadcrumb::onItemClicked);
 
     m_itemButtons.append(button);
     m_layout->addWidget(button);
@@ -607,19 +597,27 @@ void FluentBreadcrumb::updateItemWidget(int index) {
 
 QString FluentBreadcrumb::getSeparatorText() const {
     switch (m_separator) {
-        case FluentBreadcrumbSeparator::Chevron: return ">";
-        case FluentBreadcrumbSeparator::Slash: return "/";
-        case FluentBreadcrumbSeparator::Backslash: return "\\";
-        case FluentBreadcrumbSeparator::Pipe: return "|";
-        case FluentBreadcrumbSeparator::Arrow: return "→";
-        case FluentBreadcrumbSeparator::Dot: return "•";
-        case FluentBreadcrumbSeparator::Custom: return m_customSeparator;
+        case FluentBreadcrumbSeparator::Chevron:
+            return ">";
+        case FluentBreadcrumbSeparator::Slash:
+            return "/";
+        case FluentBreadcrumbSeparator::Backslash:
+            return "\\";
+        case FluentBreadcrumbSeparator::Pipe:
+            return "|";
+        case FluentBreadcrumbSeparator::Arrow:
+            return "→";
+        case FluentBreadcrumbSeparator::Dot:
+            return "•";
+        case FluentBreadcrumbSeparator::Custom:
+            return m_customSeparator;
     }
     return ">";
 }
 
 QWidget* FluentBreadcrumb::createSeparatorWidget() const {
-    QLabel* separator = new QLabel(getSeparatorText(), const_cast<FluentBreadcrumb*>(this));
+    QLabel* separator =
+        new QLabel(getSeparatorText(), const_cast<FluentBreadcrumb*>(this));
     separator->setAlignment(Qt::AlignCenter);
     applySeparatorStyle(separator);
     const_cast<FluentBreadcrumb*>(this)->m_separatorLabels.append(separator);
@@ -627,7 +625,8 @@ QWidget* FluentBreadcrumb::createSeparatorWidget() const {
 }
 
 void FluentBreadcrumb::animateItemChange(int index) {
-    if (!m_animated || !m_fadeAnimation) return;
+    if (!m_animated || !m_fadeAnimation)
+        return;
 
     m_fadeAnimation->setStartValue(1.0);
     m_fadeAnimation->setEndValue(0.8);
@@ -635,7 +634,8 @@ void FluentBreadcrumb::animateItemChange(int index) {
 }
 
 void FluentBreadcrumb::animatePathChange() {
-    if (!m_animated || !m_slideAnimation) return;
+    if (!m_animated || !m_slideAnimation)
+        return;
 
     const QRect currentGeometry = geometry();
     m_slideAnimation->setStartValue(currentGeometry);
@@ -643,8 +643,10 @@ void FluentBreadcrumb::animatePathChange() {
     m_slideAnimation->start();
 }
 
-void FluentBreadcrumb::applyItemStyle(QPushButton* button, int index, bool isCurrent) const {
-    if (!button) return;
+void FluentBreadcrumb::applyItemStyle(QPushButton* button, int index,
+                                      bool isCurrent) const {
+    if (!button)
+        return;
 
     const auto& theme = Styling::FluentTheme::instance();
     QString styleSheet;
@@ -652,124 +654,133 @@ void FluentBreadcrumb::applyItemStyle(QPushButton* button, int index, bool isCur
     switch (m_style) {
         case FluentBreadcrumbStyle::Default:
             if (isCurrent) {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: transparent; "
-                    "border: none; "
-                    "padding: 4px 8px; "
-                    "font-weight: bold; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %2; "
-                    "}"
-                ).arg(theme.color("textPrimary").name())
-                 .arg(theme.color("subtleFillColorSecondary").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: transparent; "
+                        "border: none; "
+                        "padding: 4px 8px; "
+                        "font-weight: bold; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %2; "
+                        "}")
+                        .arg(theme.color("textPrimary").name())
+                        .arg(theme.color("subtleFillColorSecondary").name());
             } else {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: transparent; "
-                    "border: none; "
-                    "padding: 4px 8px; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %2; "
-                    "color: %3; "
-                    "}"
-                ).arg(theme.color("textSecondary").name())
-                 .arg(theme.color("subtleFillColorSecondary").name())
-                 .arg(theme.color("textPrimary").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: transparent; "
+                        "border: none; "
+                        "padding: 4px 8px; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %2; "
+                        "color: %3; "
+                        "}")
+                        .arg(theme.color("textSecondary").name())
+                        .arg(theme.color("subtleFillColorSecondary").name())
+                        .arg(theme.color("textPrimary").name());
             }
             break;
 
         case FluentBreadcrumbStyle::Compact:
-            styleSheet = QString(
-                "QPushButton { "
-                "color: %1; "
-                "background: transparent; "
-                "border: none; "
-                "padding: 2px 4px; "
-                "font-size: 12px; "
-                "%2"
-                "} "
-                "QPushButton:hover { "
-                "background: %3; "
-                "}"
-            ).arg(isCurrent ? theme.color("textPrimary").name() : theme.color("textSecondary").name())
-             .arg(isCurrent ? "font-weight: bold;" : "")
-             .arg(theme.color("subtleFillColorSecondary").name());
+            styleSheet =
+                QString(
+                    "QPushButton { "
+                    "color: %1; "
+                    "background: transparent; "
+                    "border: none; "
+                    "padding: 2px 4px; "
+                    "font-size: 12px; "
+                    "%2"
+                    "} "
+                    "QPushButton:hover { "
+                    "background: %3; "
+                    "}")
+                    .arg(isCurrent ? theme.color("textPrimary").name()
+                                   : theme.color("textSecondary").name())
+                    .arg(isCurrent ? "font-weight: bold;" : "")
+                    .arg(theme.color("subtleFillColorSecondary").name());
             break;
 
         case FluentBreadcrumbStyle::Pills:
             if (isCurrent) {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: %2; "
-                    "border: 1px solid %3; "
-                    "border-radius: 12px; "
-                    "padding: 4px 12px; "
-                    "font-weight: bold; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %4; "
-                    "}"
-                ).arg(theme.color("textOnAccentPrimary").name())
-                 .arg(theme.color("accent").name())
-                 .arg(theme.color("accent").name())
-                 .arg(theme.color("accentFillColorSecondary").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: %2; "
+                        "border: 1px solid %3; "
+                        "border-radius: 12px; "
+                        "padding: 4px 12px; "
+                        "font-weight: bold; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %4; "
+                        "}")
+                        .arg(theme.color("textOnAccentPrimary").name())
+                        .arg(theme.color("accent").name())
+                        .arg(theme.color("accent").name())
+                        .arg(theme.color("accentFillColorSecondary").name());
             } else {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: %2; "
-                    "border: 1px solid %3; "
-                    "border-radius: 12px; "
-                    "padding: 4px 12px; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %4; "
-                    "}"
-                ).arg(theme.color("textPrimary").name())
-                 .arg(theme.color("cardBackgroundFillColorDefault").name())
-                 .arg(theme.color("controlStrokeDefault").name())
-                 .arg(theme.color("subtleFillColorSecondary").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: %2; "
+                        "border: 1px solid %3; "
+                        "border-radius: 12px; "
+                        "padding: 4px 12px; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %4; "
+                        "}")
+                        .arg(theme.color("textPrimary").name())
+                        .arg(theme.color("cardBackgroundFillColorDefault")
+                                 .name())
+                        .arg(theme.color("controlStrokeDefault").name())
+                        .arg(theme.color("subtleFillColorSecondary").name());
             }
             break;
 
         case FluentBreadcrumbStyle::Underline:
             if (isCurrent) {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: transparent; "
-                    "border: none; "
-                    "border-bottom: 2px solid %2; "
-                    "padding: 4px 8px; "
-                    "font-weight: bold; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %3; "
-                    "}"
-                ).arg(theme.color("textPrimary").name())
-                 .arg(theme.color("accent").name())
-                 .arg(theme.color("subtleFillColorSecondary").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: transparent; "
+                        "border: none; "
+                        "border-bottom: 2px solid %2; "
+                        "padding: 4px 8px; "
+                        "font-weight: bold; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %3; "
+                        "}")
+                        .arg(theme.color("textPrimary").name())
+                        .arg(theme.color("accent").name())
+                        .arg(theme.color("subtleFillColorSecondary").name());
             } else {
-                styleSheet = QString(
-                    "QPushButton { "
-                    "color: %1; "
-                    "background: transparent; "
-                    "border: none; "
-                    "padding: 4px 8px; "
-                    "} "
-                    "QPushButton:hover { "
-                    "background: %2; "
-                    "border-bottom: 2px solid %3; "
-                    "}"
-                ).arg(theme.color("textSecondary").name())
-                 .arg(theme.color("subtleFillColorSecondary").name())
-                 .arg(theme.color("controlStrokeDefault").name());
+                styleSheet =
+                    QString(
+                        "QPushButton { "
+                        "color: %1; "
+                        "background: transparent; "
+                        "border: none; "
+                        "padding: 4px 8px; "
+                        "} "
+                        "QPushButton:hover { "
+                        "background: %2; "
+                        "border-bottom: 2px solid %3; "
+                        "}")
+                        .arg(theme.color("textSecondary").name())
+                        .arg(theme.color("subtleFillColorSecondary").name())
+                        .arg(theme.color("controlStrokeDefault").name());
             }
             break;
     }
@@ -779,16 +790,17 @@ void FluentBreadcrumb::applyItemStyle(QPushButton* button, int index, bool isCur
 }
 
 void FluentBreadcrumb::applySeparatorStyle(QLabel* separator) const {
-    if (!separator) return;
+    if (!separator)
+        return;
 
     const auto& theme = Styling::FluentTheme::instance();
     const QString styleSheet = QString(
-        "QLabel { "
-        "color: %1; "
-        "background: transparent; "
-        "padding: 0px 4px; "
-        "}"
-    ).arg(theme.color("textTertiary").name());
+                                   "QLabel { "
+                                   "color: %1; "
+                                   "background: transparent; "
+                                   "padding: 0px 4px; "
+                                   "}")
+                                   .arg(theme.color("textTertiary").name());
 
     separator->setStyleSheet(styleSheet);
 }
@@ -818,7 +830,8 @@ QList<int> FluentBreadcrumb::getVisibleItemIndices() const {
 }
 
 void FluentBreadcrumb::createOverflowButton() {
-    if (m_overflowButton) return;
+    if (m_overflowButton)
+        return;
 
     m_overflowButton = new QPushButton("...", this);
     m_overflowButton->setToolTip(tr("Show hidden items"));
@@ -833,13 +846,13 @@ void FluentBreadcrumb::createOverflowButton() {
                 const FluentBreadcrumbItem& item = m_items[i];
                 QAction* action = menu.addAction(item.icon, item.text);
                 action->setData(i);
-                connect(action, &QAction::triggered, [this, i]() {
-                    navigateToIndex(i);
-                });
+                connect(action, &QAction::triggered,
+                        [this, i]() { navigateToIndex(i); });
             }
         }
 
-        menu.exec(m_overflowButton->mapToGlobal(QPoint(0, m_overflowButton->height())));
+        menu.exec(m_overflowButton->mapToGlobal(
+            QPoint(0, m_overflowButton->height())));
     });
 
     // Insert overflow button after first item
@@ -848,23 +861,25 @@ void FluentBreadcrumb::createOverflowButton() {
 }
 
 void FluentBreadcrumb::updateOverflowButton() {
-    if (!m_overflowButton) return;
+    if (!m_overflowButton)
+        return;
 
     const auto& theme = Styling::FluentTheme::instance();
-    const QString styleSheet = QString(
-        "QPushButton { "
-        "color: %1; "
-        "background: transparent; "
-        "border: none; "
-        "padding: 4px 8px; "
-        "} "
-        "QPushButton:hover { "
-        "background: %2; "
-        "}"
-    ).arg(theme.color("textSecondary").name())
-     .arg(theme.color("subtleFillColorSecondary").name());
+    const QString styleSheet =
+        QString(
+            "QPushButton { "
+            "color: %1; "
+            "background: transparent; "
+            "border: none; "
+            "padding: 4px 8px; "
+            "} "
+            "QPushButton:hover { "
+            "background: %2; "
+            "}")
+            .arg(theme.color("textSecondary").name())
+            .arg(theme.color("subtleFillColorSecondary").name());
 
     m_overflowButton->setStyleSheet(styleSheet);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

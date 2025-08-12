@@ -1,18 +1,18 @@
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
-#include <QTextEdit>
-#include <QSplitter>
+#include <QMainWindow>
 #include <QMenuBar>
+#include <QPushButton>
+#include <QSplitter>
 #include <QStatusBar>
+#include <QTextEdit>
 #include <QTimer>
+#include <QVBoxLayout>
 
-#include "FluentQt/Components/FluentSidebar.h"
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Animation/FluentOptimizedEasing.h"
+#include "FluentQt/Components/FluentSidebar.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt::Components;
@@ -28,10 +28,10 @@ public:
         setupSidebar();
         setupAnimations();
         setupMenus();
-        
+
         setWindowTitle("Enhanced Sidebar & Animation Demo");
         resize(1200, 800);
-        
+
         // Apply Fluent theme
         FluentTheme::instance().setTheme(FluentTheme::Light);
     }
@@ -39,7 +39,7 @@ public:
 private slots:
     void onSidebarItemClicked(const QString& id) {
         m_contentLabel->setText(QString("Selected: %1").arg(id));
-        
+
         // Demonstrate smooth content transitions
         auto fadeOut = FluentAnimator::fadeOut(m_contentArea);
         connect(fadeOut.get(), &QPropertyAnimation::finished, [this, id]() {
@@ -49,34 +49,30 @@ private slots:
         });
         fadeOut->start();
     }
-    
-    void toggleSidebar() {
-        m_sidebar->toggle();
-    }
-    
-    void setSidebarMode(FluentSidebarMode mode) {
-        m_sidebar->setMode(mode);
-    }
-    
+
+    void toggleSidebar() { m_sidebar->toggle(); }
+
+    void setSidebarMode(FluentSidebarMode mode) { m_sidebar->setMode(mode); }
+
     void demonstrateAnimations() {
         // Demonstrate various optimized animations
         auto config = FluentAnimationConfig{};
         config.duration = std::chrono::milliseconds(300);
         config.easing = FluentEasing::EaseOut;
         config.useHardwareAcceleration = true;
-        
+
         // Stagger animation for sidebar items
         QList<QWidget*> widgets;
         for (int i = 0; i < m_sidebar->itemCount(); ++i) {
             // This would need access to internal widgets
             // widgets.append(m_sidebar->itemWidget(i));
         }
-        
+
         // Demonstrate pulse effect on content
         auto pulse = FluentAnimator::pulseEffect(m_contentArea, config);
         pulse->start();
     }
-    
+
     void onSidebarModeChanged(FluentSidebarMode mode) {
         QString modeText;
         switch (mode) {
@@ -96,7 +92,7 @@ private slots:
                 modeText = "Auto";
                 break;
         }
-        
+
         statusBar()->showMessage(QString("Sidebar mode: %1").arg(modeText));
     }
 
@@ -104,26 +100,27 @@ private:
     void setupUI() {
         auto* centralWidget = new QWidget();
         setCentralWidget(centralWidget);
-        
+
         auto* mainLayout = new QHBoxLayout(centralWidget);
         mainLayout->setContentsMargins(0, 0, 0, 0);
         mainLayout->setSpacing(0);
-        
+
         // Create sidebar
         m_sidebar = new FluentSidebar();
         m_sidebar->setCollapsible(true);
         m_sidebar->setAutoHide(true);
         m_sidebar->enableResponsiveBehavior(true);
         m_sidebar->setResponsiveBreakpoints(768, 480);
-        
+
         // Create content area
         m_contentArea = new QWidget();
         auto* contentLayout = new QVBoxLayout(m_contentArea);
-        
+
         m_contentLabel = new QLabel("Welcome to Enhanced Sidebar Demo");
         m_contentLabel->setAlignment(Qt::AlignCenter);
-        m_contentLabel->setStyleSheet("font-size: 24px; font-weight: bold; margin: 20px;");
-        
+        m_contentLabel->setStyleSheet(
+            "font-size: 24px; font-weight: bold; margin: 20px;");
+
         auto* textEdit = new QTextEdit();
         textEdit->setPlainText(
             "This demo showcases the enhanced sidebar component with:\n\n"
@@ -135,30 +132,30 @@ private:
             "• Optimized easing curves for smooth transitions\n"
             "• Performance monitoring and adaptive quality\n\n"
             "Try resizing the window to see responsive behavior!\n"
-            "Use keyboard navigation to navigate the sidebar items."
-        );
-        
+            "Use keyboard navigation to navigate the sidebar items.");
+
         contentLayout->addWidget(m_contentLabel);
         contentLayout->addWidget(textEdit);
-        
+
         // Add to main layout
         mainLayout->addWidget(m_sidebar);
         mainLayout->addWidget(m_contentArea, 1);
-        
+
         // Connect signals
-        connect(m_sidebar, &FluentSidebar::itemClicked,
-                this, &EnhancedSidebarDemo::onSidebarItemClicked);
-        connect(m_sidebar, &FluentSidebar::modeChanged,
-                this, &EnhancedSidebarDemo::onSidebarModeChanged);
+        connect(m_sidebar, &FluentSidebar::itemClicked, this,
+                &EnhancedSidebarDemo::onSidebarItemClicked);
+        connect(m_sidebar, &FluentSidebar::modeChanged, this,
+                &EnhancedSidebarDemo::onSidebarModeChanged);
     }
-    
+
     void setupSidebar() {
         // Add header
         auto* header = new QLabel("Navigation");
         header->setAlignment(Qt::AlignCenter);
-        header->setStyleSheet("font-weight: bold; padding: 16px; background: #f0f0f0;");
+        header->setStyleSheet(
+            "font-weight: bold; padding: 16px; background: #f0f0f0;");
         m_sidebar->setHeader(header);
-        
+
         // Add navigation items
         FluentSidebarItem homeItem;
         homeItem.id = "home";
@@ -168,7 +165,7 @@ private:
         homeItem.accessibleName = "Home navigation item";
         homeItem.accessibleDescription = "Navigate to the home page";
         m_sidebar->addItem(homeItem);
-        
+
         FluentSidebarItem documentsItem;
         documentsItem.id = "documents";
         documentsItem.text = "Documents";
@@ -176,7 +173,7 @@ private:
         documentsItem.tooltip = "View documents";
         documentsItem.accessibleName = "Documents navigation item";
         m_sidebar->addItem(documentsItem);
-        
+
         FluentSidebarItem settingsItem;
         settingsItem.id = "settings";
         settingsItem.text = "Settings";
@@ -184,12 +181,12 @@ private:
         settingsItem.tooltip = "Application settings";
         settingsItem.accessibleName = "Settings navigation item";
         m_sidebar->addItem(settingsItem);
-        
+
         // Add separator
         FluentSidebarItem separator;
         separator.separator = true;
         m_sidebar->addItem(separator);
-        
+
         FluentSidebarItem helpItem;
         helpItem.id = "help";
         helpItem.text = "Help";
@@ -197,20 +194,21 @@ private:
         helpItem.tooltip = "Get help";
         helpItem.accessibleName = "Help navigation item";
         m_sidebar->addItem(helpItem);
-        
+
         // Set initial selection
         m_sidebar->setSelectedItem("home");
-        
+
         // Add footer with toggle button
         auto* footer = new QWidget();
         auto* footerLayout = new QVBoxLayout(footer);
         auto* toggleButton = new QPushButton("Toggle");
         toggleButton->setToolTip("Toggle sidebar mode");
-        connect(toggleButton, &QPushButton::clicked, this, &EnhancedSidebarDemo::toggleSidebar);
+        connect(toggleButton, &QPushButton::clicked, this,
+                &EnhancedSidebarDemo::toggleSidebar);
         footerLayout->addWidget(toggleButton);
         m_sidebar->setFooter(footer);
     }
-    
+
     void setupAnimations() {
         // Configure optimized easing for better performance
         FluentOptimizedEasing::OptimizationConfig config;
@@ -218,43 +216,41 @@ private:
         config.enableAntiJank = true;
         config.enablePerceptualOptimization = true;
         config.respectReducedMotion = true;
-        
+
         // Set animation properties for sidebar
         m_sidebar->setAnimationDuration(250);
         m_sidebar->setAnimationEasing(QEasingCurve::OutCubic);
     }
-    
+
     void setupMenus() {
         auto* viewMenu = menuBar()->addMenu("&View");
-        
+
         auto* expandAction = viewMenu->addAction("&Expanded");
-        connect(expandAction, &QAction::triggered, [this]() {
-            setSidebarMode(FluentSidebarMode::Expanded);
-        });
-        
+        connect(expandAction, &QAction::triggered,
+                [this]() { setSidebarMode(FluentSidebarMode::Expanded); });
+
         auto* compactAction = viewMenu->addAction("&Compact");
-        connect(compactAction, &QAction::triggered, [this]() {
-            setSidebarMode(FluentSidebarMode::Compact);
-        });
-        
+        connect(compactAction, &QAction::triggered,
+                [this]() { setSidebarMode(FluentSidebarMode::Compact); });
+
         auto* overlayAction = viewMenu->addAction("&Overlay");
-        connect(overlayAction, &QAction::triggered, [this]() {
-            setSidebarMode(FluentSidebarMode::Overlay);
-        });
-        
+        connect(overlayAction, &QAction::triggered,
+                [this]() { setSidebarMode(FluentSidebarMode::Overlay); });
+
         auto* autoAction = viewMenu->addAction("&Auto");
-        connect(autoAction, &QAction::triggered, [this]() {
-            setSidebarMode(FluentSidebarMode::Auto);
-        });
-        
+        connect(autoAction, &QAction::triggered,
+                [this]() { setSidebarMode(FluentSidebarMode::Auto); });
+
         viewMenu->addSeparator();
-        
+
         auto* animationAction = viewMenu->addAction("Demo &Animations");
-        connect(animationAction, &QAction::triggered, this, &EnhancedSidebarDemo::demonstrateAnimations);
-        
-        statusBar()->showMessage("Ready - Try resizing the window or using keyboard navigation!");
+        connect(animationAction, &QAction::triggered, this,
+                &EnhancedSidebarDemo::demonstrateAnimations);
+
+        statusBar()->showMessage(
+            "Ready - Try resizing the window or using keyboard navigation!");
     }
-    
+
     void updateContent(const QString& id) {
         QString content;
         if (id == "home") {
@@ -268,10 +264,10 @@ private:
         } else {
             content = "Unknown Page";
         }
-        
+
         m_contentLabel->setText(content);
     }
-    
+
     FluentSidebar* m_sidebar = nullptr;
     QWidget* m_contentArea = nullptr;
     QLabel* m_contentLabel = nullptr;
@@ -279,13 +275,13 @@ private:
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    
+
     // Initialize FluentQt
     FluentTheme::instance().initialize(&app);
-    
+
     EnhancedSidebarDemo demo;
     demo.show();
-    
+
     return app.exec();
 }
 

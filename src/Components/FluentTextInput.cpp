@@ -1,67 +1,67 @@
 // src/Components/FluentTextInput.cpp
 #include "FluentQt/Components/FluentTextInput.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QClipboard>
+#include <QEnterEvent>
+#include <QFocusEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFocusEvent>
-#include <QEnterEvent>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QUrl>
-#include <QApplication>
-#include <QClipboard>
 
 namespace FluentQt::Components {
 
 FluentTextInput::FluentTextInput(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentTextInput");
     setFocusPolicy(Qt::StrongFocus);
-    
+
     setupUI();
     setupAnimations();
     setupConnections();
     updateColors();
     updateFonts();
-    
+
     // Initialize validation timer
     m_validationTimer = new QTimer(this);
     m_validationTimer->setSingleShot(true);
-    m_validationTimer->setInterval(500); // 500ms delay for validation
-    connect(m_validationTimer, &QTimer::timeout, this, &FluentTextInput::validate);
+    m_validationTimer->setInterval(500);  // 500ms delay for validation
+    connect(m_validationTimer, &QTimer::timeout, this,
+            &FluentTextInput::validate);
 }
 
 FluentTextInput::~FluentTextInput() = default;
 
 void FluentTextInput::setupUI() {
     FLUENT_PROFILE("FluentTextInput::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(4);
-    
+
     // Create label
     m_label = new QLabel(this);
     m_label->setObjectName("FluentTextInput_Label");
-    m_label->hide(); // Initially hidden
+    m_label->hide();  // Initially hidden
     m_mainLayout->addWidget(m_label);
-    
+
     // Create input layout
     m_inputLayout = new QHBoxLayout();
     m_inputLayout->setContentsMargins(0, 0, 0, 0);
     m_inputLayout->setSpacing(0);
-    
+
     // Create line edit
     m_lineEdit = new QLineEdit(this);
     m_lineEdit->setObjectName("FluentTextInput_LineEdit");
     m_lineEdit->setFrame(false);
     m_inputLayout->addWidget(m_lineEdit);
-    
+
     // Create clear button
     m_clearButton = new QPushButton(this);
     m_clearButton->setObjectName("FluentTextInput_ClearButton");
@@ -70,69 +70,74 @@ void FluentTextInput::setupUI() {
     m_clearButton->setFlat(true);
     m_clearButton->hide();
     m_inputLayout->addWidget(m_clearButton);
-    
+
     m_mainLayout->addLayout(m_inputLayout);
-    
+
     // Create helper text label
     m_helperLabel = new QLabel(this);
     m_helperLabel->setObjectName("FluentTextInput_HelperLabel");
     m_helperLabel->hide();
     m_mainLayout->addWidget(m_helperLabel);
-    
+
     // Create error text label
     m_errorLabel = new QLabel(this);
     m_errorLabel->setObjectName("FluentTextInput_ErrorLabel");
     m_errorLabel->hide();
     m_mainLayout->addWidget(m_errorLabel);
-    
+
     // Set minimum height
     setMinimumHeight(32);
 }
 
 void FluentTextInput::setupAnimations() {
     FLUENT_PROFILE("FluentTextInput::setupAnimations");
-    
+
     // Create opacity effects for helper and error labels
     m_helperOpacityEffect = new QGraphicsOpacityEffect(this);
     m_helperOpacityEffect->setOpacity(1.0);
     m_helperLabel->setGraphicsEffect(m_helperOpacityEffect);
-    
+
     m_errorOpacityEffect = new QGraphicsOpacityEffect(this);
     m_errorOpacityEffect->setOpacity(0.0);
     m_errorLabel->setGraphicsEffect(m_errorOpacityEffect);
-    
+
     // Create animations
     m_focusAnimation = new QPropertyAnimation(this, "geometry", this);
     m_focusAnimation->setDuration(200);
     m_focusAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     m_stateAnimation = new QPropertyAnimation(this, "geometry", this);
     m_stateAnimation->setDuration(150);
     m_stateAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    m_validationAnimation = new QPropertyAnimation(m_errorOpacityEffect, "opacity", this);
+
+    m_validationAnimation =
+        new QPropertyAnimation(m_errorOpacityEffect, "opacity", this);
     m_validationAnimation->setDuration(200);
     m_validationAnimation->setEasingCurve(QEasingCurve::OutCubic);
 }
 
 void FluentTextInput::setupConnections() {
     // Connect line edit signals
-    connect(m_lineEdit, &QLineEdit::textChanged, this, &FluentTextInput::onTextChanged);
-    connect(m_lineEdit, &QLineEdit::textEdited, this, &FluentTextInput::onTextEdited);
-    connect(m_lineEdit, &QLineEdit::returnPressed, this, &FluentTextInput::onReturnPressed);
-    connect(m_lineEdit, &QLineEdit::editingFinished, this, &FluentTextInput::onEditingFinished);
-    
+    connect(m_lineEdit, &QLineEdit::textChanged, this,
+            &FluentTextInput::onTextChanged);
+    connect(m_lineEdit, &QLineEdit::textEdited, this,
+            &FluentTextInput::onTextEdited);
+    connect(m_lineEdit, &QLineEdit::returnPressed, this,
+            &FluentTextInput::onReturnPressed);
+    connect(m_lineEdit, &QLineEdit::editingFinished, this,
+            &FluentTextInput::onEditingFinished);
+
     // Connect clear button
-    connect(m_clearButton, &QPushButton::clicked, this, &FluentTextInput::onClearButtonClicked);
-    
+    connect(m_clearButton, &QPushButton::clicked, this,
+            &FluentTextInput::onClearButtonClicked);
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentTextInput::updateAnimations);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentTextInput::updateAnimations);
 }
 
-QString FluentTextInput::text() const {
-    return m_lineEdit->text();
-}
+QString FluentTextInput::text() const { return m_lineEdit->text(); }
 
 void FluentTextInput::setText(const QString& text) {
     if (m_lineEdit->text() != text) {
@@ -153,9 +158,7 @@ void FluentTextInput::setPlaceholderText(const QString& text) {
     }
 }
 
-QString FluentTextInput::labelText() const {
-    return m_label->text();
-}
+QString FluentTextInput::labelText() const { return m_label->text(); }
 
 void FluentTextInput::setLabelText(const QString& text) {
     if (m_label->text() != text) {
@@ -165,9 +168,7 @@ void FluentTextInput::setLabelText(const QString& text) {
     }
 }
 
-QString FluentTextInput::helperText() const {
-    return m_helperLabel->text();
-}
+QString FluentTextInput::helperText() const { return m_helperLabel->text(); }
 
 void FluentTextInput::setHelperText(const QString& text) {
     if (m_helperLabel->text() != text) {
@@ -177,27 +178,23 @@ void FluentTextInput::setHelperText(const QString& text) {
     }
 }
 
-QString FluentTextInput::errorText() const {
-    return m_errorLabel->text();
-}
+QString FluentTextInput::errorText() const { return m_errorLabel->text(); }
 
 void FluentTextInput::setErrorText(const QString& text) {
     if (m_errorLabel->text() != text) {
         m_errorLabel->setText(text);
         m_errorLabel->setVisible(!text.isEmpty());
-        
+
         if (!text.isEmpty()) {
             setInputState(FluentTextInputState::Error);
         }
-        
+
         emit errorTextChanged(text);
         animateValidationChange();
     }
 }
 
-FluentTextInputType FluentTextInput::inputType() const {
-    return m_inputType;
-}
+FluentTextInputType FluentTextInput::inputType() const { return m_inputType; }
 
 void FluentTextInput::setInputType(FluentTextInputType type) {
     if (m_inputType != type) {
@@ -220,9 +217,7 @@ void FluentTextInput::setInputState(FluentTextInputState state) {
     }
 }
 
-bool FluentTextInput::isRequired() const {
-    return m_required;
-}
+bool FluentTextInput::isRequired() const { return m_required; }
 
 void FluentTextInput::setRequired(bool required) {
     if (m_required != required) {
@@ -243,9 +238,7 @@ void FluentTextInput::setClearButtonVisible(bool visible) {
     }
 }
 
-int FluentTextInput::maxLength() const {
-    return m_lineEdit->maxLength();
-}
+int FluentTextInput::maxLength() const { return m_lineEdit->maxLength(); }
 
 void FluentTextInput::setMaxLength(int length) {
     if (m_lineEdit->maxLength() != length) {
@@ -254,9 +247,7 @@ void FluentTextInput::setMaxLength(int length) {
     }
 }
 
-bool FluentTextInput::isReadOnly() const {
-    return m_lineEdit->isReadOnly();
-}
+bool FluentTextInput::isReadOnly() const { return m_lineEdit->isReadOnly(); }
 
 void FluentTextInput::setReadOnly(bool readOnly) {
     if (m_lineEdit->isReadOnly() != readOnly) {
@@ -268,29 +259,27 @@ void FluentTextInput::setReadOnly(bool readOnly) {
     }
 }
 
-bool FluentTextInput::isValid() const {
-    return m_isValid;
-}
+bool FluentTextInput::isValid() const { return m_isValid; }
 
 void FluentTextInput::validate() {
     bool wasValid = m_isValid;
     m_isValid = true;
-    
+
     const QString currentText = text();
-    
+
     // Check required validation
     if (m_required && !validateRequired(currentText)) {
         m_isValid = false;
         setErrorText(tr("This field is required"));
         return;
     }
-    
+
     // Skip other validations if text is empty and not required
     if (currentText.isEmpty()) {
         clearValidation();
         return;
     }
-    
+
     // Type-specific validation and any explicit validationType override
     switch (m_inputType) {
         case FluentTextInputType::Email:
@@ -318,13 +307,22 @@ void FluentTextInput::validate() {
     // Optional explicit validation type
     switch (m_validationType) {
         case FluentTextInput::FluentTextInputValidation::Email:
-            if (!validateEmail(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid email address")); }
+            if (!validateEmail(currentText)) {
+                m_isValid = false;
+                setErrorText(tr("Please enter a valid email address"));
+            }
             break;
         case FluentTextInput::FluentTextInputValidation::URL:
-            if (!validateUrl(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid URL")); }
+            if (!validateUrl(currentText)) {
+                m_isValid = false;
+                setErrorText(tr("Please enter a valid URL"));
+            }
             break;
         case FluentTextInput::FluentTextInputValidation::Number:
-            if (!validateNumber(currentText)) { m_isValid = false; setErrorText(tr("Please enter a valid number")); }
+            if (!validateNumber(currentText)) {
+                m_isValid = false;
+                setErrorText(tr("Please enter a valid number"));
+            }
             break;
         case FluentTextInput::FluentTextInputValidation::Custom:
             if (m_customValidator) {
@@ -339,7 +337,7 @@ void FluentTextInput::validate() {
     if (m_isValid) {
         clearValidation();
     }
-    
+
     if (wasValid != m_isValid) {
         emit validationChanged(m_isValid);
     }
@@ -353,18 +351,12 @@ void FluentTextInput::clearValidation() {
 }
 
 // Focus management
-void FluentTextInput::setFocus() {
-    m_lineEdit->setFocus();
-}
+void FluentTextInput::setFocus() { m_lineEdit->setFocus(); }
 
-void FluentTextInput::clearFocus() {
-    m_lineEdit->clearFocus();
-}
+void FluentTextInput::clearFocus() { m_lineEdit->clearFocus(); }
 
 // Selection
-void FluentTextInput::selectAll() {
-    m_lineEdit->selectAll();
-}
+void FluentTextInput::selectAll() { m_lineEdit->selectAll(); }
 
 void FluentTextInput::selectText(int start, int length) {
     m_lineEdit->setSelection(start, length);
@@ -380,25 +372,15 @@ void FluentTextInput::clear() {
     updateClearButton();
 }
 
-void FluentTextInput::undo() {
-    m_lineEdit->undo();
-}
+void FluentTextInput::undo() { m_lineEdit->undo(); }
 
-void FluentTextInput::redo() {
-    m_lineEdit->redo();
-}
+void FluentTextInput::redo() { m_lineEdit->redo(); }
 
-void FluentTextInput::copy() {
-    m_lineEdit->copy();
-}
+void FluentTextInput::copy() { m_lineEdit->copy(); }
 
-void FluentTextInput::cut() {
-    m_lineEdit->cut();
-}
+void FluentTextInput::cut() { m_lineEdit->cut(); }
 
-void FluentTextInput::paste() {
-    m_lineEdit->paste();
-}
+void FluentTextInput::paste() { m_lineEdit->paste(); }
 
 // Event handlers
 void FluentTextInput::paintEvent(QPaintEvent* event) {
@@ -496,7 +478,8 @@ void FluentTextInput::changeEvent(QEvent* event) {
     FluentComponent::changeEvent(event);
 
     if (event->type() == QEvent::EnabledChange) {
-        setInputState(isEnabled() ? FluentTextInputState::Normal : FluentTextInputState::Disabled);
+        setInputState(isEnabled() ? FluentTextInputState::Normal
+                                  : FluentTextInputState::Disabled);
     }
 }
 
@@ -576,9 +559,12 @@ void FluentTextInput::updateInputState() {
     switch (m_inputState) {
         case FluentTextInputState::Disabled:
             m_lineEdit->setEnabled(false);
+            // Apply disabled styling from theme
+            Q_UNUSED(theme);  // Theme styling would be applied here
             break;
         default:
             m_lineEdit->setEnabled(true);
+            // Apply normal styling from theme
             break;
     }
 
@@ -597,7 +583,8 @@ void FluentTextInput::updateColors() {
     // Update line edit colors
     QPalette editPalette = m_lineEdit->palette();
     editPalette.setColor(QPalette::Text, theme.color("textPrimary"));
-    editPalette.setColor(QPalette::PlaceholderText, theme.color("textSecondary"));
+    editPalette.setColor(QPalette::PlaceholderText,
+                         theme.color("textSecondary"));
     editPalette.setColor(QPalette::Base, Qt::transparent);
     m_lineEdit->setPalette(editPalette);
 
@@ -612,24 +599,25 @@ void FluentTextInput::updateColors() {
     m_errorLabel->setPalette(errorPalette);
 
     // Update clear button style
-    const QString clearButtonStyle = QString(
-        "QPushButton {"
-        "    background: transparent;"
-        "    border: none;"
-        "    color: %1;"
-        "    font-size: 16px;"
-        "    font-weight: bold;"
-        "}"
-        "QPushButton:hover {"
-        "    background: %2;"
-        "    border-radius: 12px;"
-        "}"
-        "QPushButton:pressed {"
-        "    background: %3;"
-        "}"
-    ).arg(theme.color("textSecondary").name(),
-          theme.color("controlFillSecondary").name(),
-          theme.color("controlFillTertiary").name());
+    const QString clearButtonStyle =
+        QString(
+            "QPushButton {"
+            "    background: transparent;"
+            "    border: none;"
+            "    color: %1;"
+            "    font-size: 16px;"
+            "    font-weight: bold;"
+            "}"
+            "QPushButton:hover {"
+            "    background: %2;"
+            "    border-radius: 12px;"
+            "}"
+            "QPushButton:pressed {"
+            "    background: %3;"
+            "}")
+            .arg(theme.color("textSecondary").name(),
+                 theme.color("controlFillSecondary").name(),
+                 theme.color("controlFillTertiary").name());
 
     m_clearButton->setStyleSheet(clearButtonStyle);
 }
@@ -649,7 +637,8 @@ void FluentTextInput::updateGeometry() {
 }
 
 void FluentTextInput::updateClearButton() {
-    const bool shouldShow = m_clearButtonVisible && !text().isEmpty() && !isReadOnly();
+    const bool shouldShow =
+        m_clearButtonVisible && !text().isEmpty() && !isReadOnly();
     m_clearButton->setVisible(shouldShow);
 }
 
@@ -688,7 +677,8 @@ void FluentTextInput::animateValidationChange() {
 
 // Validation helpers
 bool FluentTextInput::validateEmail(const QString& text) const {
-    const QRegularExpression emailRegex(R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
+    const QRegularExpression emailRegex(
+        R"(^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$)");
     return emailRegex.match(text).hasMatch();
 }
 
@@ -707,4 +697,4 @@ bool FluentTextInput::validateRequired(const QString& text) const {
     return !text.trimmed().isEmpty();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

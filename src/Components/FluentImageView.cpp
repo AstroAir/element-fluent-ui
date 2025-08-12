@@ -1,50 +1,48 @@
 // src/Components/FluentImageView.cpp
 #include "FluentQt/Components/FluentImageView.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QAccessible>
+#include <QApplication>
+#include <QFileInfo>
+#include <QFontMetrics>
+#include <QImageReader>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
-#include <QApplication>
-#include <QMouseEvent>
-#include <QWheelEvent>
 #include <QResizeEvent>
-#include <QAccessible>
-#include <QFileInfo>
-#include <QImageReader>
 #include <QTransform>
+#include <QWheelEvent>
 #include <QtMath>
 #include <algorithm>
 
 namespace FluentQt::Components {
 
 FluentImageView::FluentImageView(QWidget* parent)
-    : Core::FluentComponent(parent)
-{
+    : Core::FluentComponent(parent) {
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
     setObjectName("FluentImageView");
-    
+
     setupUI();
     setupControls();
     updateColors();
     updateFonts();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentImageView::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentImageView::onThemeChanged);
 }
 
 FluentImageView::FluentImageView(const QPixmap& pixmap, QWidget* parent)
-    : FluentImageView(parent)
-{
+    : FluentImageView(parent) {
     setPixmap(pixmap);
 }
 
 FluentImageView::FluentImageView(const QString& source, QWidget* parent)
-    : FluentImageView(parent)
-{
+    : FluentImageView(parent) {
     setSource(source);
 }
 
@@ -52,12 +50,12 @@ FluentImageView::~FluentImageView() = default;
 
 void FluentImageView::setupUI() {
     FLUENT_PROFILE("FluentImageView::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-    
+
     // Create scroll area for image
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setObjectName("FluentImageView_ScrollArea");
@@ -66,7 +64,7 @@ void FluentImageView::setupUI() {
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scrollArea->setWidgetResizable(true);
-    
+
     // Create image label
     m_imageLabel = new QLabel(m_scrollArea);
     m_imageLabel->setObjectName("FluentImageView_ImageLabel");
@@ -74,100 +72,104 @@ void FluentImageView::setupUI() {
     m_imageLabel->setMinimumSize(1, 1);
     m_imageLabel->setText(m_placeholderText);
     m_scrollArea->setWidget(m_imageLabel);
-    
+
     m_mainLayout->addWidget(m_scrollArea);
-    
+
     // Set minimum size
     setMinimumSize(100, 100);
 }
 
 void FluentImageView::setupControls() {
     FLUENT_PROFILE("FluentImageView::setupControls");
-    
+
     // Create controls widget
     m_controlsWidget = new QWidget(this);
     m_controlsWidget->setObjectName("FluentImageView_Controls");
     m_controlsWidget->setFixedHeight(40);
-    m_controlsWidget->hide(); // Initially hidden
-    
+    m_controlsWidget->hide();  // Initially hidden
+
     // Create controls layout
     m_controlsLayout = new QHBoxLayout(m_controlsWidget);
     m_controlsLayout->setContentsMargins(8, 4, 8, 4);
     m_controlsLayout->setSpacing(4);
-    
+
     // Create zoom in button
     m_zoomInButton = new QPushButton("🔍+", m_controlsWidget);
     m_zoomInButton->setObjectName("FluentImageView_ZoomInButton");
     m_zoomInButton->setFixedSize(32, 32);
     m_zoomInButton->setToolTip("Zoom In");
     m_controlsLayout->addWidget(m_zoomInButton);
-    
+
     // Create zoom out button
     m_zoomOutButton = new QPushButton("🔍-", m_controlsWidget);
     m_zoomOutButton->setObjectName("FluentImageView_ZoomOutButton");
     m_zoomOutButton->setFixedSize(32, 32);
     m_zoomOutButton->setToolTip("Zoom Out");
     m_controlsLayout->addWidget(m_zoomOutButton);
-    
+
     // Create zoom to fit button
     m_zoomToFitButton = new QPushButton("⬜", m_controlsWidget);
     m_zoomToFitButton->setObjectName("FluentImageView_ZoomToFitButton");
     m_zoomToFitButton->setFixedSize(32, 32);
     m_zoomToFitButton->setToolTip("Zoom to Fit");
     m_controlsLayout->addWidget(m_zoomToFitButton);
-    
+
     // Create actual size button
     m_actualSizeButton = new QPushButton("1:1", m_controlsWidget);
     m_actualSizeButton->setObjectName("FluentImageView_ActualSizeButton");
     m_actualSizeButton->setFixedSize(32, 32);
     m_actualSizeButton->setToolTip("Actual Size");
     m_controlsLayout->addWidget(m_actualSizeButton);
-    
+
     // Add separator
     m_controlsLayout->addSpacing(8);
-    
+
     // Create rotate left button
     m_rotateLeftButton = new QPushButton("↺", m_controlsWidget);
     m_rotateLeftButton->setObjectName("FluentImageView_RotateLeftButton");
     m_rotateLeftButton->setFixedSize(32, 32);
     m_rotateLeftButton->setToolTip("Rotate Left");
     m_controlsLayout->addWidget(m_rotateLeftButton);
-    
+
     // Create rotate right button
     m_rotateRightButton = new QPushButton("↻", m_controlsWidget);
     m_rotateRightButton->setObjectName("FluentImageView_RotateRightButton");
     m_rotateRightButton->setFixedSize(32, 32);
     m_rotateRightButton->setToolTip("Rotate Right");
     m_controlsLayout->addWidget(m_rotateRightButton);
-    
+
     // Add stretch to center controls
     m_controlsLayout->addStretch();
-    
+
     m_mainLayout->addWidget(m_controlsWidget);
-    
+
     // Connect control signals
-    connect(m_zoomInButton, &QPushButton::clicked, this, &FluentImageView::onZoomInClicked);
-    connect(m_zoomOutButton, &QPushButton::clicked, this, &FluentImageView::onZoomOutClicked);
-    connect(m_zoomToFitButton, &QPushButton::clicked, this, &FluentImageView::onZoomToFitClicked);
-    connect(m_actualSizeButton, &QPushButton::clicked, this, &FluentImageView::onActualSizeClicked);
-    connect(m_rotateLeftButton, &QPushButton::clicked, this, &FluentImageView::onRotateLeftClicked);
-    connect(m_rotateRightButton, &QPushButton::clicked, this, &FluentImageView::onRotateRightClicked);
+    connect(m_zoomInButton, &QPushButton::clicked, this,
+            &FluentImageView::onZoomInClicked);
+    connect(m_zoomOutButton, &QPushButton::clicked, this,
+            &FluentImageView::onZoomOutClicked);
+    connect(m_zoomToFitButton, &QPushButton::clicked, this,
+            &FluentImageView::onZoomToFitClicked);
+    connect(m_actualSizeButton, &QPushButton::clicked, this,
+            &FluentImageView::onActualSizeClicked);
+    connect(m_rotateLeftButton, &QPushButton::clicked, this,
+            &FluentImageView::onRotateLeftClicked);
+    connect(m_rotateRightButton, &QPushButton::clicked, this,
+            &FluentImageView::onRotateRightClicked);
 }
 
-QPixmap FluentImageView::pixmap() const {
-    return m_pixmap;
-}
+QPixmap FluentImageView::pixmap() const { return m_pixmap; }
 
 void FluentImageView::setPixmap(const QPixmap& pixmap) {
     if (m_pixmap.cacheKey() != pixmap.cacheKey()) {
         m_pixmap = pixmap;
         m_source.clear();
-        
+
         if (m_movie) {
             m_movie->stop();
             m_movie = nullptr;
         }
-        
+
         updateImageDisplay();
         m_sizeHintValid = false;
         updateGeometry();
@@ -175,19 +177,17 @@ void FluentImageView::setPixmap(const QPixmap& pixmap) {
     }
 }
 
-QString FluentImageView::source() const {
-    return m_source;
-}
+QString FluentImageView::source() const { return m_source; }
 
 void FluentImageView::setSource(const QString& source) {
     if (m_source != source) {
         m_source = source;
-        
+
         if (m_movie) {
             m_movie->stop();
             m_movie = nullptr;
         }
-        
+
         if (!source.isEmpty()) {
             QFileInfo fileInfo(source);
             if (fileInfo.exists()) {
@@ -210,16 +210,14 @@ void FluentImageView::setSource(const QString& source) {
             m_pixmap = QPixmap();
             updateImageDisplay();
         }
-        
+
         m_sizeHintValid = false;
         updateGeometry();
         emit sourceChanged(source);
     }
 }
 
-FluentImageScaleMode FluentImageView::scaleMode() const {
-    return m_scaleMode;
-}
+FluentImageScaleMode FluentImageView::scaleMode() const { return m_scaleMode; }
 
 void FluentImageView::setScaleMode(FluentImageScaleMode mode) {
     if (m_scaleMode != mode) {
@@ -229,9 +227,7 @@ void FluentImageView::setScaleMode(FluentImageScaleMode mode) {
     }
 }
 
-FluentImageAlignment FluentImageView::alignment() const {
-    return m_alignment;
-}
+FluentImageAlignment FluentImageView::alignment() const { return m_alignment; }
 
 void FluentImageView::setAlignment(FluentImageAlignment alignment) {
     if (m_alignment != alignment) {
@@ -253,9 +249,7 @@ void FluentImageView::setSmoothTransformation(bool smooth) {
     }
 }
 
-bool FluentImageView::isZoomEnabled() const {
-    return m_zoomEnabled;
-}
+bool FluentImageView::isZoomEnabled() const { return m_zoomEnabled; }
 
 void FluentImageView::setZoomEnabled(bool enabled) {
     if (m_zoomEnabled != enabled) {
@@ -265,12 +259,11 @@ void FluentImageView::setZoomEnabled(bool enabled) {
     }
 }
 
-qreal FluentImageView::zoomFactor() const {
-    return m_zoomFactor;
-}
+qreal FluentImageView::zoomFactor() const { return m_zoomFactor; }
 
 void FluentImageView::setZoomFactor(qreal factor) {
-    const qreal clampedFactor = qBound(m_minZoomFactor, factor, m_maxZoomFactor);
+    const qreal clampedFactor =
+        qBound(m_minZoomFactor, factor, m_maxZoomFactor);
     if (!qFuzzyCompare(m_zoomFactor, clampedFactor)) {
         m_zoomFactor = clampedFactor;
         updateImageDisplay();
@@ -278,9 +271,7 @@ void FluentImageView::setZoomFactor(qreal factor) {
     }
 }
 
-qreal FluentImageView::minZoomFactor() const {
-    return m_minZoomFactor;
-}
+qreal FluentImageView::minZoomFactor() const { return m_minZoomFactor; }
 
 void FluentImageView::setMinZoomFactor(qreal factor) {
     if (!qFuzzyCompare(m_minZoomFactor, factor) && factor > 0.0) {
@@ -292,9 +283,7 @@ void FluentImageView::setMinZoomFactor(qreal factor) {
     }
 }
 
-qreal FluentImageView::maxZoomFactor() const {
-    return m_maxZoomFactor;
-}
+qreal FluentImageView::maxZoomFactor() const { return m_maxZoomFactor; }
 
 void FluentImageView::setMaxZoomFactor(qreal factor) {
     if (!qFuzzyCompare(m_maxZoomFactor, factor) && factor > 0.0) {
@@ -306,9 +295,7 @@ void FluentImageView::setMaxZoomFactor(qreal factor) {
     }
 }
 
-bool FluentImageView::showControls() const {
-    return m_showControls;
-}
+bool FluentImageView::showControls() const { return m_showControls; }
 
 void FluentImageView::setShowControls(bool show) {
     if (m_showControls != show) {
@@ -318,9 +305,7 @@ void FluentImageView::setShowControls(bool show) {
     }
 }
 
-QString FluentImageView::placeholderText() const {
-    return m_placeholderText;
-}
+QString FluentImageView::placeholderText() const { return m_placeholderText; }
 
 void FluentImageView::setPlaceholderText(const QString& text) {
     if (m_placeholderText != text) {
@@ -332,90 +317,81 @@ void FluentImageView::setPlaceholderText(const QString& text) {
     }
 }
 
-bool FluentImageView::isAnimated() const {
-    return m_movie != nullptr;
-}
+bool FluentImageView::isAnimated() const { return m_movie != nullptr; }
 
 void FluentImageView::setMovie(QMovie* movie) {
     if (m_movie != movie) {
         if (m_movie) {
             m_movie->stop();
         }
-        
+
         m_movie = movie;
         m_pixmap = QPixmap();
         m_source.clear();
-        
+
         if (movie) {
             m_imageLabel->setMovie(movie);
             movie->start();
         } else {
             updateImageDisplay();
         }
-        
+
         m_sizeHintValid = false;
         updateGeometry();
     }
 }
 
-QMovie* FluentImageView::movie() const {
-    return m_movie;
-}
+QMovie* FluentImageView::movie() const { return m_movie; }
 
 QSize FluentImageView::sizeHint() const {
     FLUENT_PROFILE("FluentImageView::sizeHint");
-    
+
     if (m_sizeHintValid) {
         return m_cachedSizeHint;
     }
-    
-    QSize hint(300, 200); // Default size
-    
+
+    QSize hint(300, 200);  // Default size
+
     if (!m_pixmap.isNull()) {
         hint = m_pixmap.size();
         // Limit to reasonable size
         hint = hint.boundedTo(QSize(800, 600));
     }
-    
+
     // Add controls height if visible
     if (m_showControls) {
         hint.setHeight(hint.height() + 40);
     }
-    
+
     m_cachedSizeHint = hint;
     m_sizeHintValid = true;
-    
+
     return hint;
 }
 
-QSize FluentImageView::minimumSizeHint() const {
-    return QSize(100, 100);
-}
+QSize FluentImageView::minimumSizeHint() const { return QSize(100, 100); }
 
-void FluentImageView::zoomIn() {
-    setZoomFactor(m_zoomFactor * 1.25);
-}
+void FluentImageView::zoomIn() { setZoomFactor(m_zoomFactor * 1.25); }
 
-void FluentImageView::zoomOut() {
-    setZoomFactor(m_zoomFactor / 1.25);
-}
+void FluentImageView::zoomOut() { setZoomFactor(m_zoomFactor / 1.25); }
 
 void FluentImageView::zoomToFit() {
-    if (m_pixmap.isNull()) return;
+    if (m_pixmap.isNull())
+        return;
 
     const QSize availableSize = m_scrollArea->viewport()->size();
     const QSize imageSize = m_pixmap.size();
 
-    const qreal scaleX = static_cast<qreal>(availableSize.width()) / imageSize.width();
-    const qreal scaleY = static_cast<qreal>(availableSize.height()) / imageSize.height();
+    const qreal scaleX =
+        static_cast<qreal>(availableSize.width()) / imageSize.width();
+    const qreal scaleY =
+        static_cast<qreal>(availableSize.height()) / imageSize.height();
     const qreal scale = std::min(scaleX, scaleY);
 
     setZoomFactor(scale);
 }
 
-void FluentImageView::zoomToActualSize() {
-    setZoomFactor(1.0);
-}
+void FluentImageView::zoomToActualSize() { setZoomFactor(1.0); }
 
 void FluentImageView::resetZoom() {
     setZoomFactor(1.0);
@@ -523,39 +499,26 @@ void FluentImageView::resizeEvent(QResizeEvent* event) {
     }
 }
 
-void FluentImageView::updateStateStyle() {
-    update();
-}
+void FluentImageView::updateStateStyle() { update(); }
 
-void FluentImageView::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentImageView::performStateTransition(Core::FluentState from,
+                                             Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     update();
 }
 
-void FluentImageView::onZoomInClicked() {
-    zoomIn();
-}
+void FluentImageView::onZoomInClicked() { zoomIn(); }
 
-void FluentImageView::onZoomOutClicked() {
-    zoomOut();
-}
+void FluentImageView::onZoomOutClicked() { zoomOut(); }
 
-void FluentImageView::onZoomToFitClicked() {
-    zoomToFit();
-}
+void FluentImageView::onZoomToFitClicked() { zoomToFit(); }
 
-void FluentImageView::onActualSizeClicked() {
-    zoomToActualSize();
-}
+void FluentImageView::onActualSizeClicked() { zoomToActualSize(); }
 
-void FluentImageView::onRotateLeftClicked() {
-    rotateLeft();
-}
+void FluentImageView::onRotateLeftClicked() { rotateLeft(); }
 
-void FluentImageView::onRotateRightClicked() {
-    rotateRight();
-}
+void FluentImageView::onRotateRightClicked() { rotateRight(); }
 
 void FluentImageView::onThemeChanged() {
     updateColors();
@@ -593,15 +556,18 @@ QPixmap FluentImageView::getScaledPixmap(const QSize& targetSize) const {
             transform.rotate(m_rotation);
         }
 
-        scaledPixmap = scaledPixmap.transformed(transform,
-            m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
+        scaledPixmap = scaledPixmap.transformed(
+            transform, m_smoothTransformation ? Qt::SmoothTransformation
+                                              : Qt::FastTransformation);
     }
 
     // Apply zoom
     if (!qFuzzyCompare(m_zoomFactor, 1.0)) {
         const QSize zoomedSize = scaledPixmap.size() * m_zoomFactor;
         scaledPixmap = scaledPixmap.scaled(zoomedSize, Qt::KeepAspectRatio,
-            m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
+                                           m_smoothTransformation
+                                               ? Qt::SmoothTransformation
+                                               : Qt::FastTransformation);
     }
 
     // Apply scale mode
@@ -612,36 +578,46 @@ QPixmap FluentImageView::getScaledPixmap(const QSize& targetSize) const {
 
         case FluentImageScaleMode::Fit:
             scaledPixmap = scaledPixmap.scaled(targetSize, Qt::KeepAspectRatio,
-                m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
+                                               m_smoothTransformation
+                                                   ? Qt::SmoothTransformation
+                                                   : Qt::FastTransformation);
             break;
 
         case FluentImageScaleMode::Fill:
-            scaledPixmap = scaledPixmap.scaled(targetSize, Qt::KeepAspectRatioByExpanding,
-                m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
+            scaledPixmap = scaledPixmap.scaled(
+                targetSize, Qt::KeepAspectRatioByExpanding,
+                m_smoothTransformation ? Qt::SmoothTransformation
+                                       : Qt::FastTransformation);
             break;
 
         case FluentImageScaleMode::Stretch:
-            scaledPixmap = scaledPixmap.scaled(targetSize, Qt::IgnoreAspectRatio,
-                m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
+            scaledPixmap = scaledPixmap.scaled(
+                targetSize, Qt::IgnoreAspectRatio,
+                m_smoothTransformation ? Qt::SmoothTransformation
+                                       : Qt::FastTransformation);
             break;
 
-        case FluentImageScaleMode::FitWidth:
-            {
-                const qreal scale = static_cast<qreal>(targetSize.width()) / scaledPixmap.width();
-                const QSize newSize(targetSize.width(), scaledPixmap.height() * scale);
-                scaledPixmap = scaledPixmap.scaled(newSize, Qt::IgnoreAspectRatio,
-                    m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
-            }
-            break;
+        case FluentImageScaleMode::FitWidth: {
+            const qreal scale =
+                static_cast<qreal>(targetSize.width()) / scaledPixmap.width();
+            const QSize newSize(targetSize.width(),
+                                scaledPixmap.height() * scale);
+            scaledPixmap = scaledPixmap.scaled(newSize, Qt::IgnoreAspectRatio,
+                                               m_smoothTransformation
+                                                   ? Qt::SmoothTransformation
+                                                   : Qt::FastTransformation);
+        } break;
 
-        case FluentImageScaleMode::FitHeight:
-            {
-                const qreal scale = static_cast<qreal>(targetSize.height()) / scaledPixmap.height();
-                const QSize newSize(scaledPixmap.width() * scale, targetSize.height());
-                scaledPixmap = scaledPixmap.scaled(newSize, Qt::IgnoreAspectRatio,
-                    m_smoothTransformation ? Qt::SmoothTransformation : Qt::FastTransformation);
-            }
-            break;
+        case FluentImageScaleMode::FitHeight: {
+            const qreal scale =
+                static_cast<qreal>(targetSize.height()) / scaledPixmap.height();
+            const QSize newSize(scaledPixmap.width() * scale,
+                                targetSize.height());
+            scaledPixmap = scaledPixmap.scaled(newSize, Qt::IgnoreAspectRatio,
+                                               m_smoothTransformation
+                                                   ? Qt::SmoothTransformation
+                                                   : Qt::FastTransformation);
+        } break;
     }
 
     return scaledPixmap;
@@ -678,8 +654,10 @@ void FluentImageView::updateControlsVisibility() {
 
     // Update button states
     if (shouldShow) {
-        m_zoomInButton->setEnabled(m_zoomEnabled && m_zoomFactor < m_maxZoomFactor);
-        m_zoomOutButton->setEnabled(m_zoomEnabled && m_zoomFactor > m_minZoomFactor);
+        m_zoomInButton->setEnabled(m_zoomEnabled &&
+                                   m_zoomFactor < m_maxZoomFactor);
+        m_zoomOutButton->setEnabled(m_zoomEnabled &&
+                                    m_zoomFactor > m_minZoomFactor);
         m_zoomToFitButton->setEnabled(m_zoomEnabled);
         m_actualSizeButton->setEnabled(m_zoomEnabled);
     }
@@ -708,4 +686,4 @@ void FluentImageView::updateImageDisplay() {
     updateControlsVisibility();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

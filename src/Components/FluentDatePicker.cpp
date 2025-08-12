@@ -1,45 +1,44 @@
 // src/Components/FluentDatePicker.cpp
 #include "FluentQt/Components/FluentDatePicker.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QAccessible>
+#include <QApplication>
+#include <QFocusEvent>
+#include <QFontMetrics>
+#include <QKeyEvent>
+#include <QLocale>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
-#include <QApplication>
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QFocusEvent>
-#include <QResizeEvent>
-#include <QAccessible>
-#include <QLocale>
 #include <QRegularExpression>
+#include <QResizeEvent>
 #include <QStyle>
 
 namespace FluentQt::Components {
 
 FluentDatePicker::FluentDatePicker(QWidget* parent)
-    : Core::FluentComponent(parent)
-{
+    : Core::FluentComponent(parent) {
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
     setObjectName("FluentDatePicker");
-    
+
     setupUI();
     setupCalendar();
     setupAnimations();
     updateColors();
     updateFonts();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentDatePicker::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentDatePicker::onThemeChanged);
 }
 
 FluentDatePicker::FluentDatePicker(const QDate& date, QWidget* parent)
-    : FluentDatePicker(parent)
-{
+    : FluentDatePicker(parent) {
     setSelectedDate(date);
 }
 
@@ -47,20 +46,20 @@ FluentDatePicker::~FluentDatePicker() = default;
 
 void FluentDatePicker::setupUI() {
     FLUENT_PROFILE("FluentDatePicker::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QHBoxLayout(this);
     m_mainLayout->setContentsMargins(1, 1, 1, 1);
     m_mainLayout->setSpacing(0);
-    
+
     // Create line edit for date display
     m_lineEdit = new QLineEdit(this);
     m_lineEdit->setObjectName("FluentDatePicker_LineEdit");
     m_lineEdit->setFrame(false);
     m_lineEdit->setPlaceholderText(m_placeholderText);
-    m_lineEdit->setReadOnly(true); // Always read-only, use calendar for input
+    m_lineEdit->setReadOnly(true);  // Always read-only, use calendar for input
     m_mainLayout->addWidget(m_lineEdit);
-    
+
     // Create calendar button
     m_calendarButton = new QPushButton(this);
     m_calendarButton->setObjectName("FluentDatePicker_CalendarButton");
@@ -68,11 +67,13 @@ void FluentDatePicker::setupUI() {
     m_calendarButton->setFlat(true);
     m_calendarButton->setText("📅");
     m_mainLayout->addWidget(m_calendarButton);
-    
+
     // Connect signals
-    connect(m_lineEdit, &QLineEdit::textChanged, this, &FluentDatePicker::onTextChanged);
-    connect(m_calendarButton, &QPushButton::clicked, this, &FluentDatePicker::toggleCalendar);
-    
+    connect(m_lineEdit, &QLineEdit::textChanged, this,
+            &FluentDatePicker::onTextChanged);
+    connect(m_calendarButton, &QPushButton::clicked, this,
+            &FluentDatePicker::toggleCalendar);
+
     // Set minimum height
     setMinimumHeight(32);
     setFixedHeight(32);
@@ -80,17 +81,17 @@ void FluentDatePicker::setupUI() {
 
 void FluentDatePicker::setupCalendar() {
     FLUENT_PROFILE("FluentDatePicker::setupCalendar");
-    
+
     // Create calendar container
     m_calendarContainer = new QWidget(this);
     m_calendarContainer->setObjectName("FluentDatePicker_CalendarContainer");
     m_calendarContainer->setWindowFlags(Qt::Popup);
     m_calendarContainer->hide();
-    
+
     // Create calendar layout
     auto* calendarLayout = new QVBoxLayout(m_calendarContainer);
     calendarLayout->setContentsMargins(8, 8, 8, 8);
-    
+
     // Create calendar widget
     m_calendar = new QCalendarWidget(m_calendarContainer);
     m_calendar->setObjectName("FluentDatePicker_Calendar");
@@ -98,32 +99,33 @@ void FluentDatePicker::setupCalendar() {
     m_calendar->setMinimumDate(m_minimumDate);
     m_calendar->setMaximumDate(m_maximumDate);
     calendarLayout->addWidget(m_calendar);
-    
+
     // Connect calendar signals
-    connect(m_calendar, &QCalendarWidget::clicked, this, &FluentDatePicker::onCalendarDateSelected);
-    connect(m_calendar, &QCalendarWidget::activated, this, &FluentDatePicker::onCalendarDateSelected);
+    connect(m_calendar, &QCalendarWidget::clicked, this,
+            &FluentDatePicker::onCalendarDateSelected);
+    connect(m_calendar, &QCalendarWidget::activated, this,
+            &FluentDatePicker::onCalendarDateSelected);
 }
 
 void FluentDatePicker::setupAnimations() {
     FLUENT_PROFILE("FluentDatePicker::setupAnimations");
-    
+
     // Create opacity effect for calendar
     m_calendarOpacityEffect = new QGraphicsOpacityEffect(this);
     m_calendarOpacityEffect->setOpacity(0.0);
     m_calendarContainer->setGraphicsEffect(m_calendarOpacityEffect);
-    
+
     // Create calendar animation
-    m_calendarAnimation = std::make_unique<QPropertyAnimation>(m_calendarOpacityEffect, "opacity");
+    m_calendarAnimation = std::make_unique<QPropertyAnimation>(
+        m_calendarOpacityEffect, "opacity");
     m_calendarAnimation->setDuration(200);
     m_calendarAnimation->setEasingCurve(QEasingCurve::OutQuad);
-    
-    connect(m_calendarAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentDatePicker::onCalendarAnimationFinished);
+
+    connect(m_calendarAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentDatePicker::onCalendarAnimationFinished);
 }
 
-QDate FluentDatePicker::selectedDate() const {
-    return m_selectedDate;
-}
+QDate FluentDatePicker::selectedDate() const { return m_selectedDate; }
 
 void FluentDatePicker::setSelectedDate(const QDate& date) {
     if (m_selectedDate != date) {
@@ -139,45 +141,39 @@ void FluentDatePicker::setSelectedDate(const QDate& date) {
     }
 }
 
-QDate FluentDatePicker::minimumDate() const {
-    return m_minimumDate;
-}
+QDate FluentDatePicker::minimumDate() const { return m_minimumDate; }
 
 void FluentDatePicker::setMinimumDate(const QDate& date) {
     if (m_minimumDate != date && date.isValid()) {
         m_minimumDate = date;
         m_calendar->setMinimumDate(date);
-        
+
         // Adjust selected date if necessary
         if (m_selectedDate.isValid() && m_selectedDate < date) {
             setSelectedDate(date);
         }
-        
+
         emit minimumDateChanged(date);
     }
 }
 
-QDate FluentDatePicker::maximumDate() const {
-    return m_maximumDate;
-}
+QDate FluentDatePicker::maximumDate() const { return m_maximumDate; }
 
 void FluentDatePicker::setMaximumDate(const QDate& date) {
     if (m_maximumDate != date && date.isValid()) {
         m_maximumDate = date;
         m_calendar->setMaximumDate(date);
-        
+
         // Adjust selected date if necessary
         if (m_selectedDate.isValid() && m_selectedDate > date) {
             setSelectedDate(date);
         }
-        
+
         emit maximumDateChanged(date);
     }
 }
 
-FluentDateFormat FluentDatePicker::dateFormat() const {
-    return m_dateFormat;
-}
+FluentDateFormat FluentDatePicker::dateFormat() const { return m_dateFormat; }
 
 void FluentDatePicker::setDateFormat(FluentDateFormat format) {
     if (m_dateFormat != format) {
@@ -187,9 +183,7 @@ void FluentDatePicker::setDateFormat(FluentDateFormat format) {
     }
 }
 
-QString FluentDatePicker::customFormat() const {
-    return m_customFormat;
-}
+QString FluentDatePicker::customFormat() const { return m_customFormat; }
 
 void FluentDatePicker::setCustomFormat(const QString& format) {
     if (m_customFormat != format) {
@@ -201,9 +195,7 @@ void FluentDatePicker::setCustomFormat(const QString& format) {
     }
 }
 
-QString FluentDatePicker::placeholderText() const {
-    return m_placeholderText;
-}
+QString FluentDatePicker::placeholderText() const { return m_placeholderText; }
 
 void FluentDatePicker::setPlaceholderText(const QString& text) {
     if (m_placeholderText != text) {
@@ -213,9 +205,7 @@ void FluentDatePicker::setPlaceholderText(const QString& text) {
     }
 }
 
-bool FluentDatePicker::isReadOnly() const {
-    return m_readOnly;
-}
+bool FluentDatePicker::isReadOnly() const { return m_readOnly; }
 
 void FluentDatePicker::setReadOnly(bool readOnly) {
     if (m_readOnly != readOnly) {
@@ -225,20 +215,18 @@ void FluentDatePicker::setReadOnly(bool readOnly) {
     }
 }
 
-bool FluentDatePicker::isCalendarVisible() const {
-    return m_calendarVisible;
-}
+bool FluentDatePicker::isCalendarVisible() const { return m_calendarVisible; }
 
 void FluentDatePicker::setCalendarVisible(bool visible) {
     if (m_calendarVisible != visible) {
         m_calendarVisible = visible;
-        
+
         if (visible) {
             startShowCalendarAnimation();
         } else {
             startHideCalendarAnimation();
         }
-        
+
         emit calendarVisibilityChanged(visible);
     }
 }
@@ -253,34 +241,29 @@ bool FluentDatePicker::isDateInRange(const QDate& date) const {
 
 QSize FluentDatePicker::sizeHint() const {
     FLUENT_PROFILE("FluentDatePicker::sizeHint");
-    
+
     if (m_sizeHintValid) {
         return m_cachedSizeHint;
     }
-    
+
     const QFontMetrics fm(m_lineEdit->font());
-    const QString sampleText = formatDate(QDate(2023, 12, 31)); // Sample long date
-    const int textWidth = fm.horizontalAdvance(sampleText) + 20; // Add padding
+    const QString sampleText =
+        formatDate(QDate(2023, 12, 31));  // Sample long date
+    const int textWidth = fm.horizontalAdvance(sampleText) + 20;  // Add padding
     const int buttonWidth = 32;
-    const int totalWidth = textWidth + buttonWidth + 10; // Add spacing
-    
+    const int totalWidth = textWidth + buttonWidth + 10;  // Add spacing
+
     m_cachedSizeHint = QSize(totalWidth, 32);
     m_sizeHintValid = true;
-    
+
     return m_cachedSizeHint;
 }
 
-QSize FluentDatePicker::minimumSizeHint() const {
-    return QSize(150, 32);
-}
+QSize FluentDatePicker::minimumSizeHint() const { return QSize(150, 32); }
 
-void FluentDatePicker::showCalendar() {
-    setCalendarVisible(true);
-}
+void FluentDatePicker::showCalendar() { setCalendarVisible(true); }
 
-void FluentDatePicker::hideCalendar() {
-    setCalendarVisible(false);
-}
+void FluentDatePicker::hideCalendar() { setCalendarVisible(false); }
 
 void FluentDatePicker::toggleCalendar() {
     setCalendarVisible(!m_calendarVisible);
@@ -295,9 +278,7 @@ void FluentDatePicker::clearDate() {
     }
 }
 
-void FluentDatePicker::setToday() {
-    setSelectedDate(QDate::currentDate());
-}
+void FluentDatePicker::setToday() { setSelectedDate(QDate::currentDate()); }
 
 void FluentDatePicker::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
@@ -456,7 +437,8 @@ void FluentDatePicker::focusInEvent(QFocusEvent* event) {
 }
 
 void FluentDatePicker::focusOutEvent(QFocusEvent* event) {
-    setState(underMouse() ? Core::FluentState::Hovered : Core::FluentState::Normal);
+    setState(underMouse() ? Core::FluentState::Hovered
+                          : Core::FluentState::Normal);
 
     // Hide calendar when losing focus (unless clicking on calendar)
     if (m_calendarVisible && event->reason() != Qt::PopupFocusReason) {
@@ -473,11 +455,10 @@ void FluentDatePicker::resizeEvent(QResizeEvent* event) {
     updateCalendarPosition();
 }
 
-void FluentDatePicker::updateStateStyle() {
-    update();
-}
+void FluentDatePicker::updateStateStyle() { update(); }
 
-void FluentDatePicker::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentDatePicker::performStateTransition(Core::FluentState from,
+                                              Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     update();
@@ -557,7 +538,8 @@ QString FluentDatePicker::formatDate(const QDate& date) const {
         case FluentDateFormat::ISO:
             return date.toString("yyyy-MM-dd");
         case FluentDateFormat::Custom:
-            return m_customFormat.isEmpty() ? date.toString() : date.toString(m_customFormat);
+            return m_customFormat.isEmpty() ? date.toString()
+                                            : date.toString(m_customFormat);
         default:
             return date.toString("MM/dd/yyyy");
     }
@@ -592,11 +574,12 @@ void FluentDatePicker::updateDisplayText() {
 }
 
 void FluentDatePicker::updateCalendarPosition() {
-    if (!m_calendarContainer) return;
+    if (!m_calendarContainer)
+        return;
 
     const QPoint globalPos = mapToGlobal(QPoint(0, height()));
     m_calendarContainer->move(globalPos);
     m_calendarContainer->resize(m_calendar->sizeHint() + QSize(16, 16));
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

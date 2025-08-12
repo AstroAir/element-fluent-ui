@@ -1,51 +1,49 @@
 // src/Components/FluentTimeline.cpp
 #include "FluentQt/Components/FluentTimeline.h"
-#include "FluentQt/Components/FluentTimelineItem.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Components/FluentTimelineItem.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QDebug>
+#include <QKeyEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QResizeEvent>
-#include <QWheelEvent>
-#include <QKeyEvent>
 #include <QScrollBar>
-#include <QApplication>
-#include <QDebug>
+#include <QWheelEvent>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Core;
 using namespace FluentQt::Styling;
 
-FluentTimeline::FluentTimeline(QWidget* parent)
-    : FluentComponent(parent)
-{
+FluentTimeline::FluentTimeline(QWidget* parent) : FluentComponent(parent) {
     setupLayout();
     setupScrollArea();
     setupAnimations();
-    
+
     // Connect to theme changes
-    connect(&FluentTheme::instance(), &FluentTheme::themeChanged,
-            this, &FluentTimeline::onThemeChanged);
-    
+    connect(&FluentTheme::instance(), &FluentTheme::themeChanged, this,
+            &FluentTimeline::onThemeChanged);
+
     updateColors();
     updateAccessibility();
-    
+
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
 }
 
-FluentTimeline::FluentTimeline(FluentTimelineOrientation orientation, QWidget* parent)
-    : FluentTimeline(parent)
-{
+FluentTimeline::FluentTimeline(FluentTimelineOrientation orientation,
+                               QWidget* parent)
+    : FluentTimeline(parent) {
     m_config.orientation = orientation;
     updateLayout();
 }
 
-FluentTimeline::FluentTimeline(const FluentTimelineConfig& config, QWidget* parent)
-    : FluentTimeline(parent)
-{
+FluentTimeline::FluentTimeline(const FluentTimelineConfig& config,
+                               QWidget* parent)
+    : FluentTimeline(parent) {
     setConfiguration(config);
 }
 
@@ -130,14 +128,14 @@ void FluentTimeline::setScrollable(bool scrollable) {
 void FluentTimeline::setInteractive(bool interactive) {
     if (m_config.interactive != interactive) {
         m_config.interactive = interactive;
-        
+
         // Update item interactivity
         for (auto* item : m_items) {
             if (item) {
                 item->setInteractive(interactive);
             }
         }
-        
+
         emit interactiveChanged(interactive);
     }
 }
@@ -153,28 +151,31 @@ void FluentTimeline::setShowConnectors(bool show) {
 void FluentTimeline::setShowIndicators(bool show) {
     if (m_config.showIndicators != show) {
         m_config.showIndicators = show;
-        
+
         // Update item indicator visibility
         for (auto* item : m_items) {
             if (item) {
                 item->setShowIndicator(show);
             }
         }
-        
+
         emit showIndicatorsChanged(show);
     }
 }
 
 void FluentTimeline::setConfiguration(const FluentTimelineConfig& config) {
-    const bool orientationHasChanged = (m_config.orientation != config.orientation);
+    const bool orientationHasChanged =
+        (m_config.orientation != config.orientation);
     const bool alignmentHasChanged = (m_config.alignment != config.alignment);
     const bool styleHasChanged = (m_config.style != config.style);
     const bool spacingHasChanged = (m_config.itemSpacing != config.itemSpacing);
-    const bool indicatorSizeHasChanged = (m_config.indicatorSize != config.indicatorSize);
+    const bool indicatorSizeHasChanged =
+        (m_config.indicatorSize != config.indicatorSize);
 
     m_config = config;
 
-    if (orientationHasChanged || alignmentHasChanged || spacingHasChanged || indicatorSizeHasChanged) {
+    if (orientationHasChanged || alignmentHasChanged || spacingHasChanged ||
+        indicatorSizeHasChanged) {
         m_layoutDirty = true;
         updateLayout();
     }
@@ -187,13 +188,18 @@ void FluentTimeline::setConfiguration(const FluentTimelineConfig& config) {
     updateItemStates();
 
     // Emit change signals
-    if (orientationHasChanged) emit orientationChanged(config.orientation);
-    if (alignmentHasChanged) emit alignmentChanged(config.alignment);
-    if (styleHasChanged) emit styleChanged(config.style);
+    if (orientationHasChanged)
+        emit orientationChanged(config.orientation);
+    if (alignmentHasChanged)
+        emit alignmentChanged(config.alignment);
+    if (styleHasChanged)
+        emit styleChanged(config.style);
     emit connectorStyleChanged(config.connectorStyle);
-    if (spacingHasChanged) emit itemSpacingChanged(config.itemSpacing);
+    if (spacingHasChanged)
+        emit itemSpacingChanged(config.itemSpacing);
     emit connectorWidthChanged(config.connectorWidth);
-    if (indicatorSizeHasChanged) emit indicatorSizeChanged(config.indicatorSize);
+    if (indicatorSizeHasChanged)
+        emit indicatorSizeChanged(config.indicatorSize);
     emit animatedChanged(config.animated);
     emit scrollableChanged(config.scrollable);
     emit interactiveChanged(config.interactive);
@@ -202,45 +208,48 @@ void FluentTimeline::setConfiguration(const FluentTimelineConfig& config) {
 }
 
 void FluentTimeline::addItem(FluentTimelineItem* item) {
-    if (!item) return;
-    
+    if (!item)
+        return;
+
     insertItem(m_items.size(), item);
 }
 
 void FluentTimeline::insertItem(int index, FluentTimelineItem* item) {
-    if (!item || index < 0 || index > m_items.size()) return;
-    
+    if (!item || index < 0 || index > m_items.size())
+        return;
+
     // Set parent and configure item
     item->setParent(m_contentWidget ? m_contentWidget : this);
     item->setInteractive(m_config.interactive);
     item->setShowIndicator(m_config.showIndicators);
-    
+
     // Connect signals
-    connect(item, &FluentTimelineItem::clicked,
-            this, &FluentTimeline::onItemClicked);
-    connect(item, &FluentTimelineItem::doubleClicked,
-            this, &FluentTimeline::onItemDoubleClicked);
-    connect(item, &FluentTimelineItem::itemStateChanged,
-            this, &FluentTimeline::onItemStateChanged);
-    
+    connect(item, &FluentTimelineItem::clicked, this,
+            &FluentTimeline::onItemClicked);
+    connect(item, &FluentTimelineItem::doubleClicked, this,
+            &FluentTimeline::onItemDoubleClicked);
+    connect(item, &FluentTimelineItem::itemStateChanged, this,
+            &FluentTimeline::onItemStateChanged);
+
     // Insert item
     m_items.insert(index, item);
-    
+
     // Update layout
     m_layoutDirty = true;
     updateLayout();
-    
+
     // Animate appearance if enabled
     if (m_config.animated && isVisible()) {
         animateItemAppearance(item);
     }
-    
+
     emit itemAdded(item, index);
 }
 
 void FluentTimeline::removeItem(FluentTimelineItem* item) {
-    if (!item) return;
-    
+    if (!item)
+        return;
+
     const int index = m_items.indexOf(item);
     if (index >= 0) {
         removeItem(index);
@@ -248,18 +257,19 @@ void FluentTimeline::removeItem(FluentTimelineItem* item) {
 }
 
 void FluentTimeline::removeItem(int index) {
-    if (index < 0 || index >= m_items.size()) return;
-    
+    if (index < 0 || index >= m_items.size())
+        return;
+
     FluentTimelineItem* item = m_items.at(index);
-    
+
     // Animate removal if enabled
     if (m_config.animated && isVisible()) {
         animateItemRemoval(item);
     }
-    
+
     // Remove from list
     m_items.removeAt(index);
-    
+
     // Update current item if necessary
     if (m_currentItem == item) {
         m_currentItem = nullptr;
@@ -267,13 +277,13 @@ void FluentTimeline::removeItem(int index) {
             setCurrentIndex(qMin(index, m_items.size() - 1));
         }
     }
-    
+
     // Update layout
     m_layoutDirty = true;
     updateLayout();
-    
+
     emit itemRemoved(item, index);
-    
+
     // Delete item if it's not being animated
     if (!m_config.animated || !isVisible()) {
         item->deleteLater();
@@ -293,39 +303,32 @@ FluentTimelineItem* FluentTimeline::item(int index) const {
     return nullptr;
 }
 
-int FluentTimeline::itemCount() const {
-    return m_items.size();
-}
+int FluentTimeline::itemCount() const { return m_items.size(); }
 
-QList<FluentTimelineItem*> FluentTimeline::items() const {
-    return m_items;
-}
+QList<FluentTimelineItem*> FluentTimeline::items() const { return m_items; }
 
 int FluentTimeline::indexOf(FluentTimelineItem* item) const {
     return m_items.indexOf(item);
 }
 
-int FluentTimeline::currentIndex() const {
-    return indexOf(m_currentItem);
-}
+int FluentTimeline::currentIndex() const { return indexOf(m_currentItem); }
 
 void FluentTimeline::setCurrentItem(FluentTimelineItem* item) {
     if (m_currentItem != item) {
         FluentTimelineItem* previous = m_currentItem;
         m_currentItem = item;
-        
+
         updateItemStates();
-        
+
         emit currentItemChanged(item, previous);
         emit currentIndexChanged(currentIndex());
     }
 }
 
-void FluentTimeline::setCurrentIndex(int index) {
-    setCurrentItem(item(index));
-}
+void FluentTimeline::setCurrentIndex(int index) { setCurrentItem(item(index)); }
 
-FluentTimelineItem* FluentTimeline::addTextItem(const QString& title, const QString& description) {
+FluentTimelineItem* FluentTimeline::addTextItem(const QString& title,
+                                                const QString& description) {
     auto* item = new FluentTimelineItem(title, this);
     if (!description.isEmpty()) {
         item->setDescription(description);
@@ -334,7 +337,9 @@ FluentTimelineItem* FluentTimeline::addTextItem(const QString& title, const QStr
     return item;
 }
 
-FluentTimelineItem* FluentTimeline::addIconItem(const QIcon& icon, const QString& title, const QString& description) {
+FluentTimelineItem* FluentTimeline::addIconItem(const QIcon& icon,
+                                                const QString& title,
+                                                const QString& description) {
     auto* item = new FluentTimelineItem(title, this);
     item->setIcon(icon);
     if (!description.isEmpty()) {
@@ -344,7 +349,9 @@ FluentTimelineItem* FluentTimeline::addIconItem(const QIcon& icon, const QString
     return item;
 }
 
-FluentTimelineItem* FluentTimeline::addDateTimeItem(const QDateTime& dateTime, const QString& title, const QString& description) {
+FluentTimelineItem* FluentTimeline::addDateTimeItem(
+    const QDateTime& dateTime, const QString& title,
+    const QString& description) {
     auto* item = new FluentTimelineItem(title, this);
     item->setDateTime(dateTime);
     if (!description.isEmpty()) {
@@ -359,7 +366,7 @@ void FluentTimeline::animateToItem(FluentTimelineItem* item) {
         scrollToItem(item);
         return;
     }
-    
+
     const int index = indexOf(item);
     if (index >= 0) {
         animateToIndex(index);
@@ -371,33 +378,40 @@ void FluentTimeline::animateToIndex(int index) {
         scrollToIndex(index);
         return;
     }
-    
+
     FluentTimelineItem* targetItem = item(index);
-    if (!targetItem) return;
-    
+    if (!targetItem)
+        return;
+
     const QRect itemRect = getItemRect(index);
     const QRect visibleRect = m_scrollArea->viewport()->rect();
-    
+
     int targetValue = 0;
     if (m_config.orientation == FluentTimelineOrientation::Vertical) {
         targetValue = itemRect.center().y() - visibleRect.height() / 2;
-        targetValue = qBound(0, targetValue, m_scrollArea->verticalScrollBar()->maximum());
+        targetValue = qBound(0, targetValue,
+                             m_scrollArea->verticalScrollBar()->maximum());
     } else {
         targetValue = itemRect.center().x() - visibleRect.width() / 2;
-        targetValue = qBound(0, targetValue, m_scrollArea->horizontalScrollBar()->maximum());
+        targetValue = qBound(0, targetValue,
+                             m_scrollArea->horizontalScrollBar()->maximum());
     }
-    
+
     if (m_scrollAnimation) {
         m_scrollAnimation->stop();
-        
+
         if (m_config.orientation == FluentTimelineOrientation::Vertical) {
-            m_scrollAnimation->setTargetObject(m_scrollArea->verticalScrollBar());
-            m_scrollAnimation->setStartValue(m_scrollArea->verticalScrollBar()->value());
+            m_scrollAnimation->setTargetObject(
+                m_scrollArea->verticalScrollBar());
+            m_scrollAnimation->setStartValue(
+                m_scrollArea->verticalScrollBar()->value());
         } else {
-            m_scrollAnimation->setTargetObject(m_scrollArea->horizontalScrollBar());
-            m_scrollAnimation->setStartValue(m_scrollArea->horizontalScrollBar()->value());
+            m_scrollAnimation->setTargetObject(
+                m_scrollArea->horizontalScrollBar());
+            m_scrollAnimation->setStartValue(
+                m_scrollArea->horizontalScrollBar()->value());
         }
-        
+
         m_scrollAnimation->setPropertyName("value");
         m_scrollAnimation->setEndValue(targetValue);
         m_scrollAnimation->setDuration(300);
@@ -414,15 +428,18 @@ void FluentTimeline::scrollToItem(FluentTimelineItem* item) {
 }
 
 void FluentTimeline::scrollToIndex(int index) {
-    if (!m_scrollArea) return;
-    
+    if (!m_scrollArea)
+        return;
+
     const QRect itemRect = getItemRect(index);
     if (m_config.orientation == FluentTimelineOrientation::Vertical) {
-        m_scrollArea->ensureVisible(itemRect.center().x(), itemRect.center().y(), 
-                                   itemRect.width() / 2, itemRect.height() / 2);
+        m_scrollArea->ensureVisible(itemRect.center().x(),
+                                    itemRect.center().y(), itemRect.width() / 2,
+                                    itemRect.height() / 2);
     } else {
-        m_scrollArea->ensureVisible(itemRect.center().x(), itemRect.center().y(),
-                                   itemRect.width() / 2, itemRect.height() / 2);
+        m_scrollArea->ensureVisible(itemRect.center().x(),
+                                    itemRect.center().y(), itemRect.width() / 2,
+                                    itemRect.height() / 2);
     }
 }
 
@@ -645,7 +662,8 @@ void FluentTimeline::setupLayout() {
 
     // Create content widget
     m_contentWidget = new QWidget(this);
-    m_contentWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_contentWidget->setSizePolicy(QSizePolicy::Expanding,
+                                   QSizePolicy::Expanding);
 
     updateLayout();
 }
@@ -660,10 +678,12 @@ void FluentTimeline::setupScrollArea() {
             m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
             // Connect scroll signals
-            connect(m_scrollArea->verticalScrollBar(), &QScrollBar::valueChanged,
-                    this, &FluentTimeline::onScrollValueChanged);
-            connect(m_scrollArea->horizontalScrollBar(), &QScrollBar::valueChanged,
-                    this, &FluentTimeline::onScrollValueChanged);
+            connect(m_scrollArea->verticalScrollBar(),
+                    &QScrollBar::valueChanged, this,
+                    &FluentTimeline::onScrollValueChanged);
+            connect(m_scrollArea->horizontalScrollBar(),
+                    &QScrollBar::valueChanged, this,
+                    &FluentTimeline::onScrollValueChanged);
 
             m_mainLayout->addWidget(m_scrollArea);
         }
@@ -693,7 +713,8 @@ void FluentTimeline::setupAnimations() {
 }
 
 void FluentTimeline::updateLayout() {
-    if (!m_layoutDirty) return;
+    if (!m_layoutDirty)
+        return;
 
     // Clear existing layout
     if (m_contentLayout) {
@@ -746,7 +767,8 @@ void FluentTimeline::layoutVertical() {
     // Add items to layout
     for (auto* item : m_items) {
         if (item) {
-            // FluentTimelineItem inherits from FluentComponent which inherits from QWidget
+            // FluentTimelineItem inherits from FluentComponent which inherits
+            // from QWidget
             QWidget* widget = static_cast<QWidget*>(item);
             layout->addWidget(widget);
 
@@ -798,7 +820,8 @@ void FluentTimeline::layoutHorizontal() {
     // Add items to layout
     for (auto* item : m_items) {
         if (item) {
-            // Cast to QWidget since FluentTimelineItem inherits from FluentComponent which inherits from QWidget
+            // Cast to QWidget since FluentTimelineItem inherits from
+            // FluentComponent which inherits from QWidget
             QWidget* widget = qobject_cast<QWidget*>(item);
             if (widget) {
                 layout->addWidget(widget);
@@ -815,7 +838,8 @@ void FluentTimeline::layoutHorizontal() {
                         layout->setAlignment(widget, Qt::AlignVCenter);
                         break;
                     case FluentTimelineAlignment::Alternate:
-                        // Alternate alignment will be handled in item positioning
+                        // Alternate alignment will be handled in item
+                        // positioning
                         break;
                 }
             }
@@ -850,9 +874,7 @@ void FluentTimeline::updateItemPositions() {
     update();
 }
 
-void FluentTimeline::updateConnectors() {
-    update();
-}
+void FluentTimeline::updateConnectors() { update(); }
 
 void FluentTimeline::updateColors() {
     const auto& theme = FluentTheme::instance();
@@ -901,8 +923,8 @@ void FluentTimeline::updateColors() {
 void FluentTimeline::updateAccessibility() {
     Accessibility::setAccessibleName(this, "Timeline");
     Accessibility::setAccessibleRole(this, QAccessible::List);
-    Accessibility::setAccessibleDescription(this,
-        QString("Timeline with %1 items").arg(m_items.size()));
+    Accessibility::setAccessibleDescription(
+        this, QString("Timeline with %1 items").arg(m_items.size()));
 }
 
 void FluentTimeline::paintBackground(QPainter& painter) {
@@ -912,7 +934,8 @@ void FluentTimeline::paintBackground(QPainter& painter) {
 }
 
 void FluentTimeline::paintConnectors(QPainter& painter) {
-    if (m_items.size() < 2) return;
+    if (m_items.size() < 2)
+        return;
 
     QPen connectorPen(m_connectorColor, m_config.connectorWidth);
 
@@ -983,10 +1006,10 @@ QPoint FluentTimeline::getConnectorStart(int index) const {
 
     if (m_config.orientation == FluentTimelineOrientation::Vertical) {
         return QPoint(itemRect.left() + m_config.indicatorSize / 2,
-                     itemRect.bottom());
+                      itemRect.bottom());
     } else {
         return QPoint(itemRect.right(),
-                     itemRect.top() + m_config.indicatorSize / 2);
+                      itemRect.top() + m_config.indicatorSize / 2);
     }
 }
 
@@ -995,10 +1018,10 @@ QPoint FluentTimeline::getConnectorEnd(int index) const {
 
     if (m_config.orientation == FluentTimelineOrientation::Vertical) {
         return QPoint(itemRect.left() + m_config.indicatorSize / 2,
-                     itemRect.top());
+                      itemRect.top());
     } else {
         return QPoint(itemRect.left(),
-                     itemRect.top() + m_config.indicatorSize / 2);
+                      itemRect.top() + m_config.indicatorSize / 2);
     }
 }
 
@@ -1028,7 +1051,8 @@ void FluentTimeline::updateItemStates() {
 }
 
 void FluentTimeline::animateItemAppearance(FluentTimelineItem* item) {
-    if (!item || !m_config.animated) return;
+    if (!item || !m_config.animated)
+        return;
 
     // Create fade-in animation
     auto* opacityEffect = new QGraphicsOpacityEffect(item);
@@ -1050,7 +1074,8 @@ void FluentTimeline::animateItemAppearance(FluentTimelineItem* item) {
 }
 
 void FluentTimeline::animateItemRemoval(FluentTimelineItem* item) {
-    if (!item || !m_config.animated) return;
+    if (!item || !m_config.animated)
+        return;
 
     // Create fade-out animation
     auto* opacityEffect = new QGraphicsOpacityEffect(item);
@@ -1071,7 +1096,8 @@ void FluentTimeline::animateItemRemoval(FluentTimelineItem* item) {
 }
 
 void FluentTimeline::animateLayoutChange() {
-    if (!m_config.animated) return;
+    if (!m_config.animated)
+        return;
 
     // Animate layout changes if needed
     // This can be expanded to include more sophisticated layout animations

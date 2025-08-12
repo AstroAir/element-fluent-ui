@@ -1,15 +1,15 @@
 #include "FluentQt/Components/FluentSidebar.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QPainterPath>
-#include <QApplication>
-#include <QScreen>
 #include <QAccessible>
-#include <QToolButton>
+#include <QApplication>
 #include <QFrame>
 #include <QGraphicsOpacityEffect>
+#include <QPainter>
+#include <QPainterPath>
+#include <QScreen>
+#include <QToolButton>
 
 namespace FluentQt::Components {
 
@@ -20,7 +20,8 @@ class FluentSidebarItemWidget : public QToolButton {
     Q_OBJECT
 
 public:
-    explicit FluentSidebarItemWidget(const FluentSidebarItem& item, QWidget* parent = nullptr)
+    explicit FluentSidebarItemWidget(const FluentSidebarItem& item,
+                                     QWidget* parent = nullptr)
         : QToolButton(parent), m_item(item) {
         setupWidget();
     }
@@ -87,7 +88,9 @@ private:
         setAutoRaise(true);
 
         // Accessibility
-        setAccessibleName(m_item.accessibleName.isEmpty() ? m_item.text : m_item.accessibleName);
+        setAccessibleName(m_item.accessibleName.isEmpty()
+                              ? m_item.text
+                              : m_item.accessibleName);
         setAccessibleDescription(m_item.accessibleDescription);
 
         updateLayout();
@@ -110,7 +113,8 @@ private:
         if (m_compactMode) {
             // Center icon in compact mode
             if (!icon().isNull()) {
-                QIcon::Mode mode = isEnabled() ? QIcon::Normal : QIcon::Disabled;
+                QIcon::Mode mode =
+                    isEnabled() ? QIcon::Normal : QIcon::Disabled;
                 QIcon::State state = isChecked() ? QIcon::On : QIcon::Off;
                 QRect iconRect = rect.adjusted(14, 14, -14, -14);
                 icon().paint(painter, iconRect, Qt::AlignCenter, mode, state);
@@ -121,13 +125,16 @@ private:
             const int margin = 16;
             const int spacing = 12;
 
-            QRect iconRect(margin, (rect.height() - iconSize) / 2, iconSize, iconSize);
+            QRect iconRect(margin, (rect.height() - iconSize) / 2, iconSize,
+                           iconSize);
             QRect textRect(margin + iconSize + spacing, 0,
-                          rect.width() - margin - iconSize - spacing - margin, rect.height());
+                           rect.width() - margin - iconSize - spacing - margin,
+                           rect.height());
 
             // Draw icon
             if (!icon().isNull()) {
-                QIcon::Mode mode = isEnabled() ? QIcon::Normal : QIcon::Disabled;
+                QIcon::Mode mode =
+                    isEnabled() ? QIcon::Normal : QIcon::Disabled;
                 QIcon::State state = isChecked() ? QIcon::On : QIcon::Off;
                 icon().paint(painter, iconRect, Qt::AlignCenter, mode, state);
             }
@@ -137,9 +144,11 @@ private:
                 const auto& theme = Styling::FluentTheme::instance();
                 const auto& palette = theme.currentPalette();
 
-                painter->setPen(isEnabled() ? palette.text : palette.textDisabled);
+                painter->setPen(isEnabled() ? palette.text
+                                            : palette.textDisabled);
                 painter->setFont(font());
-                painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, text());
+                painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
+                                  text());
             }
         }
     }
@@ -149,21 +158,22 @@ private:
 };
 
 // FluentSidebar implementation
-FluentSidebar::FluentSidebar(QWidget* parent)
-    : QWidget(parent) {
+FluentSidebar::FluentSidebar(QWidget* parent) : QWidget(parent) {
     setupUI();
     setupAnimations();
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentSidebar::updateItemStyles);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentSidebar::updateItemStyles);
 
     // Setup responsive timer
     m_responsiveTimer = new QTimer(this);
     m_responsiveTimer->setSingleShot(true);
     m_responsiveTimer->setInterval(100);
-    connect(m_responsiveTimer, &QTimer::timeout, this, &FluentSidebar::updateResponsiveMode);
+    connect(m_responsiveTimer, &QTimer::timeout, this,
+            &FluentSidebar::updateResponsiveMode);
 
     updateLayout();
 }
@@ -258,15 +268,14 @@ FluentSidebarItem* FluentSidebar::findItem(const QString& id) {
     return nullptr;
 }
 
-int FluentSidebar::itemCount() const {
-    return m_items.size();
-}
+int FluentSidebar::itemCount() const { return m_items.size(); }
 
 void FluentSidebar::setSelectedItem(const QString& id) {
     if (m_selectedItemId != id) {
         // Deselect previous item
         for (int i = 0; i < m_itemWidgets.size(); ++i) {
-            if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[i])) {
+            if (auto* itemWidget =
+                    qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[i])) {
                 itemWidget->setChecked(itemWidget->item().id == id);
             }
         }
@@ -281,9 +290,7 @@ void FluentSidebar::setSelectedItem(const QString& id) {
     }
 }
 
-void FluentSidebar::clearSelection() {
-    setSelectedItem(QString());
-}
+void FluentSidebar::clearSelection() { setSelectedItem(QString()); }
 
 void FluentSidebar::setupUI() {
     setFixedWidth(m_expandedWidth);
@@ -314,17 +321,19 @@ void FluentSidebar::setupAnimations() {
     m_widthAnimation->setDuration(m_animationDuration);
     m_widthAnimation->setEasingCurve(m_animationEasing);
 
-    connect(m_widthAnimation, &QPropertyAnimation::finished,
-            this, &FluentSidebar::onAnimationFinished);
+    connect(m_widthAnimation, &QPropertyAnimation::finished, this,
+            &FluentSidebar::onAnimationFinished);
 
     m_modeAnimation = new QParallelAnimationGroup(this);
     m_modeAnimation->addAnimation(m_widthAnimation);
 }
 
 void FluentSidebar::setupAccessibility() {
-    setAccessibleName(m_accessibleName.isEmpty() ? tr("Navigation Sidebar") : m_accessibleName);
-    setAccessibleDescription(m_accessibleDescription.isEmpty() ?
-                           tr("Main navigation sidebar") : m_accessibleDescription);
+    setAccessibleName(m_accessibleName.isEmpty() ? tr("Navigation Sidebar")
+                                                 : m_accessibleName);
+    setAccessibleDescription(m_accessibleDescription.isEmpty()
+                                 ? tr("Main navigation sidebar")
+                                 : m_accessibleDescription);
 }
 
 void FluentSidebar::updateLayout() {
@@ -411,8 +420,8 @@ void FluentSidebar::createItemWidget(const FluentSidebarItem& item, int index) {
     } else {
         // Create standard item widget
         auto* itemWidget = new FluentSidebarItemWidget(item, this);
-        connect(itemWidget, &FluentSidebarItemWidget::itemClicked,
-                this, &FluentSidebar::onItemClicked);
+        connect(itemWidget, &FluentSidebarItemWidget::itemClicked, this,
+                &FluentSidebar::onItemClicked);
 
         m_contentLayout->insertWidget(index, itemWidget);
         m_itemWidgets.insert(index, itemWidget);
@@ -490,13 +499,9 @@ void FluentSidebar::announceStateChange(const QString& message) {
 }
 
 // Public slots implementation
-void FluentSidebar::expand() {
-    setMode(FluentSidebarMode::Expanded);
-}
+void FluentSidebar::expand() { setMode(FluentSidebarMode::Expanded); }
 
-void FluentSidebar::collapse() {
-    setMode(FluentSidebarMode::Compact);
-}
+void FluentSidebar::collapse() { setMode(FluentSidebarMode::Compact); }
 
 void FluentSidebar::toggle() {
     if (m_mode == FluentSidebarMode::Expanded) {
@@ -506,13 +511,9 @@ void FluentSidebar::toggle() {
     }
 }
 
-void FluentSidebar::showOverlay() {
-    setMode(FluentSidebarMode::Overlay);
-}
+void FluentSidebar::showOverlay() { setMode(FluentSidebarMode::Overlay); }
 
-void FluentSidebar::hideOverlay() {
-    setMode(FluentSidebarMode::Hidden);
-}
+void FluentSidebar::hideOverlay() { setMode(FluentSidebarMode::Hidden); }
 
 // Event handlers
 void FluentSidebar::resizeEvent(QResizeEvent* event) {
@@ -534,7 +535,8 @@ void FluentSidebar::keyPressEvent(QKeyEvent* event) {
             // Navigate between items
             int currentIndex = -1;
             for (int i = 0; i < m_itemWidgets.size(); ++i) {
-                if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[i])) {
+                if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(
+                        m_itemWidgets[i])) {
                     if (itemWidget->item().id == m_selectedItemId) {
                         currentIndex = i;
                         break;
@@ -547,7 +549,8 @@ void FluentSidebar::keyPressEvent(QKeyEvent* event) {
 
             // Find next valid item
             while (newIndex >= 0 && newIndex < m_itemWidgets.size()) {
-                if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[newIndex])) {
+                if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(
+                        m_itemWidgets[newIndex])) {
                     if (itemWidget->isEnabled()) {
                         setSelectedItem(itemWidget->item().id);
                         itemWidget->setFocus();
@@ -598,7 +601,8 @@ void FluentSidebar::focusInEvent(QFocusEvent* event) {
     // If no item is selected, select the first enabled item
     if (m_selectedItemId.isEmpty() && !m_itemWidgets.isEmpty()) {
         for (auto* widget : m_itemWidgets) {
-            if (auto* itemWidget = qobject_cast<FluentSidebarItemWidget*>(widget)) {
+            if (auto* itemWidget =
+                    qobject_cast<FluentSidebarItemWidget*>(widget)) {
                 if (itemWidget->isEnabled()) {
                     setSelectedItem(itemWidget->item().id);
                     break;
@@ -633,7 +637,8 @@ void FluentSidebar::paintEvent(QPaintEvent* event) {
 
 bool FluentSidebar::eventFilter(QObject* object, QEvent* event) {
     // Handle overlay mode clicks outside
-    if (m_mode == FluentSidebarMode::Overlay && event->type() == QEvent::MouseButtonPress) {
+    if (m_mode == FluentSidebarMode::Overlay &&
+        event->type() == QEvent::MouseButtonPress) {
         if (!rect().contains(mapFromGlobal(QCursor::pos()))) {
             hideOverlay();
             return true;
@@ -644,9 +649,7 @@ bool FluentSidebar::eventFilter(QObject* object, QEvent* event) {
 }
 
 // Additional slots
-void FluentSidebar::onResponsiveTimer() {
-    checkResponsiveBreakpoints();
-}
+void FluentSidebar::onResponsiveTimer() { checkResponsiveBreakpoints(); }
 
 void FluentSidebar::updateResponsiveMode() {
     if (m_mode == FluentSidebarMode::Auto) {
@@ -696,7 +699,8 @@ void FluentSidebar::setFooter(QWidget* footer) {
     }
 }
 
-void FluentSidebar::setResponsiveBreakpoints(int compactBreakpoint, int hiddenBreakpoint) {
+void FluentSidebar::setResponsiveBreakpoints(int compactBreakpoint,
+                                             int hiddenBreakpoint) {
     m_compactBreakpoint = compactBreakpoint;
     m_hiddenBreakpoint = hiddenBreakpoint;
 
@@ -736,6 +740,6 @@ void FluentSidebar::setAccessibleDescription(const QString& description) {
     QWidget::setAccessibleDescription(description);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components
 
 #include "FluentSidebar.moc"

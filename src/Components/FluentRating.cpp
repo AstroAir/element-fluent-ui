@@ -1,30 +1,31 @@
 // src/Components/FluentRating.cpp
 #include "FluentQt/Components/FluentRating.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QFocusEvent>
-#include <QApplication>
-#include <QFontMetrics>
 #include <QAccessible>
+#include <QApplication>
+#include <QFocusEvent>
+#include <QFontMetrics>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QToolTip>
 #include <cmath>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentRating::FluentRating(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setupAnimations();
     updateSizeMetrics();
     setFocusPolicy(Qt::StrongFocus);
     setCursor(Qt::PointingHandCursor);
     setAttribute(Qt::WA_Hover, true);
-    
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentRating::updateColors);
-    
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentRating::updateColors);
+
     updateColors();
     updateLayout();
     updateAccessibility();
@@ -42,54 +43,52 @@ FluentRating::FluentRating(double rating, int maxRating, QWidget* parent)
 
 FluentRating::~FluentRating() = default;
 
-double FluentRating::rating() const {
-    return m_rating;
-}
+double FluentRating::rating() const { return m_rating; }
 
 void FluentRating::setRating(double rating) {
-    const double boundedRating = qBound(0.0, rating, static_cast<double>(m_maxRating));
-    if (qFuzzyCompare(m_rating, boundedRating)) return;
-    
+    const double boundedRating =
+        qBound(0.0, rating, static_cast<double>(m_maxRating));
+    if (qFuzzyCompare(m_rating, boundedRating))
+        return;
+
     m_rating = boundedRating;
-    
+
     if (m_animated) {
         animateRatingChange();
     } else {
         m_animatedRating = m_rating;
         update();
     }
-    
+
     emit ratingChanged(m_rating);
     updateAccessibility();
 }
 
-int FluentRating::maxRating() const {
-    return m_maxRating;
-}
+int FluentRating::maxRating() const { return m_maxRating; }
 
 void FluentRating::setMaxRating(int maxRating) {
-    if (m_maxRating == maxRating) return;
-    
+    if (m_maxRating == maxRating)
+        return;
+
     m_maxRating = qMax(1, maxRating);
-    
+
     // Adjust current rating if it exceeds new maximum
     if (m_rating > m_maxRating) {
         setRating(m_maxRating);
     }
-    
+
     updateLayout();
     updateGeometry();
     update();
     emit maxRatingChanged(m_maxRating);
 }
 
-FluentRatingStyle FluentRating::ratingStyle() const {
-    return m_ratingStyle;
-}
+FluentRatingStyle FluentRating::ratingStyle() const { return m_ratingStyle; }
 
 void FluentRating::setRatingStyle(FluentRatingStyle style) {
-    if (m_ratingStyle == style) return;
-    
+    if (m_ratingStyle == style)
+        return;
+
     m_ratingStyle = style;
     updateSizeMetrics();
     updateLayout();
@@ -98,28 +97,26 @@ void FluentRating::setRatingStyle(FluentRatingStyle style) {
     emit ratingStyleChanged(m_ratingStyle);
 }
 
-FluentRatingPrecision FluentRating::precision() const {
-    return m_precision;
-}
+FluentRatingPrecision FluentRating::precision() const { return m_precision; }
 
 void FluentRating::setPrecision(FluentRatingPrecision precision) {
-    if (m_precision == precision) return;
-    
+    if (m_precision == precision)
+        return;
+
     m_precision = precision;
-    
+
     // Adjust current rating to match new precision
     setRating(snapToGrid(m_rating));
-    
+
     emit precisionChanged(m_precision);
 }
 
-FluentRatingSize FluentRating::ratingSize() const {
-    return m_ratingSize;
-}
+FluentRatingSize FluentRating::ratingSize() const { return m_ratingSize; }
 
 void FluentRating::setRatingSize(FluentRatingSize size) {
-    if (m_ratingSize == size) return;
-    
+    if (m_ratingSize == size)
+        return;
+
     m_ratingSize = size;
     updateSizeMetrics();
     updateLayout();
@@ -128,13 +125,12 @@ void FluentRating::setRatingSize(FluentRatingSize size) {
     emit ratingSizeChanged(m_ratingSize);
 }
 
-Qt::Orientation FluentRating::orientation() const {
-    return m_orientation;
-}
+Qt::Orientation FluentRating::orientation() const { return m_orientation; }
 
 void FluentRating::setOrientation(Qt::Orientation orientation) {
-    if (m_orientation == orientation) return;
-    
+    if (m_orientation == orientation)
+        return;
+
     m_orientation = orientation;
     updateLayout();
     updateGeometry();
@@ -142,26 +138,24 @@ void FluentRating::setOrientation(Qt::Orientation orientation) {
     emit orientationChanged(m_orientation);
 }
 
-bool FluentRating::readOnly() const {
-    return m_readOnly;
-}
+bool FluentRating::readOnly() const { return m_readOnly; }
 
 void FluentRating::setReadOnly(bool readOnly) {
-    if (m_readOnly == readOnly) return;
-    
+    if (m_readOnly == readOnly)
+        return;
+
     m_readOnly = readOnly;
     setCursor(m_readOnly ? Qt::ArrowCursor : Qt::PointingHandCursor);
     updateColors();
     emit readOnlyChanged(m_readOnly);
 }
 
-bool FluentRating::showValue() const {
-    return m_showValue;
-}
+bool FluentRating::showValue() const { return m_showValue; }
 
 void FluentRating::setShowValue(bool show) {
-    if (m_showValue == show) return;
-    
+    if (m_showValue == show)
+        return;
+
     m_showValue = show;
     updateLayout();
     updateGeometry();
@@ -169,120 +163,112 @@ void FluentRating::setShowValue(bool show) {
     emit showValueChanged(m_showValue);
 }
 
-bool FluentRating::showTooltip() const {
-    return m_showTooltip;
-}
+bool FluentRating::showTooltip() const { return m_showTooltip; }
 
 void FluentRating::setShowTooltip(bool show) {
-    if (m_showTooltip == show) return;
-    
+    if (m_showTooltip == show)
+        return;
+
     m_showTooltip = show;
     emit showTooltipChanged(m_showTooltip);
 }
 
-bool FluentRating::isAnimated() const {
-    return m_animated;
-}
+bool FluentRating::isAnimated() const { return m_animated; }
 
 void FluentRating::setAnimated(bool animated) {
-    if (m_animated == animated) return;
-    
+    if (m_animated == animated)
+        return;
+
     m_animated = animated;
     emit animatedChanged(m_animated);
 }
 
-QIcon FluentRating::customIcon() const {
-    return m_customIcon;
-}
+QIcon FluentRating::customIcon() const { return m_customIcon; }
 
 void FluentRating::setCustomIcon(const QIcon& icon) {
-    if (m_customIcon.cacheKey() == icon.cacheKey()) return;
-    
+    if (m_customIcon.cacheKey() == icon.cacheKey())
+        return;
+
     m_customIcon = icon;
-    
+
     if (!m_customIcon.isNull()) {
         setRatingStyle(FluentRatingStyle::Custom);
     }
-    
+
     update();
     emit customIconChanged(m_customIcon);
 }
 
-QStringList FluentRating::ratingLabels() const {
-    return m_ratingLabels;
-}
+QStringList FluentRating::ratingLabels() const { return m_ratingLabels; }
 
 void FluentRating::setRatingLabels(const QStringList& labels) {
-    if (m_ratingLabels == labels) return;
-    
+    if (m_ratingLabels == labels)
+        return;
+
     m_ratingLabels = labels;
     emit ratingLabelsChanged(m_ratingLabels);
 }
 
-double FluentRating::hoverRating() const {
-    return m_hoverRating;
-}
+double FluentRating::hoverRating() const { return m_hoverRating; }
 
-bool FluentRating::isHovering() const {
-    return m_hovering;
-}
+bool FluentRating::isHovering() const { return m_hovering; }
 
-QSize FluentRating::itemSize() const {
-    return QSize(m_itemSize, m_itemSize);
-}
+QSize FluentRating::itemSize() const { return QSize(m_itemSize, m_itemSize); }
 
 QRect FluentRating::itemRect(int index) const {
     if (index < 0 || index >= m_maxRating) {
         return QRect();
     }
-    
+
     if (m_layoutDirty) {
         const_cast<FluentRating*>(this)->updateLayout();
     }
-    
+
     if (index < m_itemRects.size()) {
         return m_itemRects[index];
     }
-    
+
     return QRect();
 }
 
 QSize FluentRating::sizeHint() const {
     const int totalItems = m_maxRating;
     const int spacing = (totalItems - 1) * m_spacing;
-    
+
     if (m_orientation == Qt::Horizontal) {
         int width = totalItems * m_itemSize + spacing;
         int height = m_itemSize;
-        
+
         if (m_showValue) {
             const QFontMetrics fm(font());
             const QString sampleText = QString::number(m_maxRating, 'f', 1);
             width += m_spacing + fm.horizontalAdvance(sampleText);
             height = qMax(height, fm.height());
         }
-        
+
         return QSize(width, height);
     } else {
         int width = m_itemSize;
         int height = totalItems * m_itemSize + spacing;
-        
+
         if (m_showValue) {
             const QFontMetrics fm(font());
             const QString sampleText = QString::number(m_maxRating, 'f', 1);
             width = qMax(width, fm.horizontalAdvance(sampleText));
             height += m_spacing + fm.height();
         }
-        
+
         return QSize(width, height);
     }
 }
 
 QSize FluentRating::minimumSizeHint() const {
     if (m_orientation == Qt::Horizontal) {
-        return QSize(m_itemSize * m_maxRating + (m_maxRating - 1) * m_spacing, m_itemSize);
+        return QSize(m_itemSize * m_maxRating + (m_maxRating - 1) * m_spacing,
+                     m_itemSize);
     } else {
-        return QSize(m_itemSize, m_itemSize * m_maxRating + (m_maxRating - 1) * m_spacing);
+        return QSize(m_itemSize,
+                     m_itemSize * m_maxRating + (m_maxRating - 1) * m_spacing);
     }
 }
 
@@ -310,13 +296,9 @@ FluentRating* FluentRating::createDotRating(int maxRating, QWidget* parent) {
     return rating;
 }
 
-void FluentRating::clear() {
-    setRating(0.0);
-}
+void FluentRating::clear() { setRating(0.0); }
 
-void FluentRating::setFullRating() {
-    setRating(m_maxRating);
-}
+void FluentRating::setFullRating() { setRating(m_maxRating); }
 
 void FluentRating::stepUp() {
     const double step = getStepSize();
@@ -333,14 +315,14 @@ void FluentRating::setupAnimations() {
     m_ratingAnimation = new QPropertyAnimation(this, "animatedRating", this);
     m_ratingAnimation->setDuration(300);
     m_ratingAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_ratingAnimation, &QPropertyAnimation::finished,
-            this, &FluentRating::onRatingAnimationFinished);
-    
+    connect(m_ratingAnimation, &QPropertyAnimation::finished, this,
+            &FluentRating::onRatingAnimationFinished);
+
     // Hover animation
     m_hoverAnimation = new QPropertyAnimation(this, "hoverOpacity", this);
     m_hoverAnimation->setDuration(150);
     m_hoverAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Scale animation for press effect
     m_scaleAnimation = new QPropertyAnimation(this, "itemScale", this);
     m_scaleAnimation->setDuration(100);
@@ -365,7 +347,8 @@ void FluentRating::updateSizeMetrics() {
 }
 
 void FluentRating::updateLayout() {
-    if (!m_layoutDirty) return;
+    if (!m_layoutDirty)
+        return;
 
     m_itemRects.clear();
     m_itemRects.reserve(m_maxRating);
@@ -381,19 +364,13 @@ void FluentRating::updateLayout() {
         const QSize textSize = fm.size(Qt::TextSingleLine, valueText);
 
         if (m_orientation == Qt::Horizontal) {
-            valueRect = QRect(
-                rect.right() - textSize.width(),
-                rect.center().y() - textSize.height() / 2,
-                textSize.width(),
-                textSize.height()
-            );
+            valueRect = QRect(rect.right() - textSize.width(),
+                              rect.center().y() - textSize.height() / 2,
+                              textSize.width(), textSize.height());
         } else {
-            valueRect = QRect(
-                rect.center().x() - textSize.width() / 2,
-                rect.bottom() - textSize.height(),
-                textSize.width(),
-                textSize.height()
-            );
+            valueRect = QRect(rect.center().x() - textSize.width() / 2,
+                              rect.bottom() - textSize.height(),
+                              textSize.width(), textSize.height());
         }
     }
 
@@ -462,14 +439,18 @@ double FluentRating::ratingFromPosition(const QPoint& pos) const {
         if (itemRect.contains(pos)) {
             double rating = i + 1.0;
 
-            // Calculate fractional part based on precision and position within item
+            // Calculate fractional part based on precision and position within
+            // item
             if (m_precision != FluentRatingPrecision::Full) {
                 double fraction = 0.0;
 
                 if (m_orientation == Qt::Horizontal) {
-                    fraction = static_cast<double>(pos.x() - itemRect.left()) / itemRect.width();
+                    fraction = static_cast<double>(pos.x() - itemRect.left()) /
+                               itemRect.width();
                 } else {
-                    fraction = 1.0 - static_cast<double>(pos.y() - itemRect.top()) / itemRect.height();
+                    fraction =
+                        1.0 - static_cast<double>(pos.y() - itemRect.top()) /
+                                  itemRect.height();
                 }
 
                 fraction = qBound(0.0, fraction, 1.0);
@@ -655,13 +636,18 @@ void FluentRating::updateColors() {
     const auto& theme = Styling::FluentTheme::instance();
 
     if (isEnabled() && !m_readOnly) {
-        m_filledColor = theme.color(Styling::FluentThemeColor::AccentFillDefault);
-        m_unfilledColor = theme.color(Styling::FluentThemeColor::ControlStrokeDefault);
-        m_hoverColor = theme.color(Styling::FluentThemeColor::AccentFillSecondary);
+        m_filledColor =
+            theme.color(Styling::FluentThemeColor::AccentFillDefault);
+        m_unfilledColor =
+            theme.color(Styling::FluentThemeColor::ControlStrokeDefault);
+        m_hoverColor =
+            theme.color(Styling::FluentThemeColor::AccentFillSecondary);
         m_textColor = theme.color(Styling::FluentThemeColor::TextFillPrimary);
     } else {
-        m_filledColor = theme.color(Styling::FluentThemeColor::ControlFillDisabled);
-        m_unfilledColor = theme.color(Styling::FluentThemeColor::ControlStrokeDisabled);
+        m_filledColor =
+            theme.color(Styling::FluentThemeColor::ControlFillDisabled);
+        m_unfilledColor =
+            theme.color(Styling::FluentThemeColor::ControlStrokeDisabled);
         m_hoverColor = m_filledColor;
         m_textColor = theme.color(Styling::FluentThemeColor::TextFillDisabled);
     }
@@ -672,7 +658,8 @@ void FluentRating::updateColors() {
 void FluentRating::updateAccessibility() {
 #ifndef QT_NO_ACCESSIBILITY
     if (QAccessible::isActive()) {
-        const QString accessibleText = tr("Rating: %1 out of %2").arg(m_rating).arg(m_maxRating);
+        const QString accessibleText =
+            tr("Rating: %1 out of %2").arg(m_rating).arg(m_maxRating);
         setAccessibleName(accessibleText);
         setAccessibleDescription(accessibleText);
 
@@ -683,7 +670,8 @@ void FluentRating::updateAccessibility() {
 }
 
 void FluentRating::paintRatingItems(QPainter* painter) {
-    const double displayRating = m_hovering && m_hoverRating >= 0 ? m_hoverRating : m_animatedRating;
+    const double displayRating =
+        m_hovering && m_hoverRating >= 0 ? m_hoverRating : m_animatedRating;
 
     for (int i = 0; i < m_maxRating; ++i) {
         const QRect& itemRect = m_itemRects[i];
@@ -694,7 +682,8 @@ void FluentRating::paintRatingItems(QPainter* painter) {
     }
 }
 
-void FluentRating::paintRatingItem(QPainter* painter, const QRect& rect, double fillAmount, bool hovered, int index) {
+void FluentRating::paintRatingItem(QPainter* painter, const QRect& rect,
+                                   double fillAmount, bool hovered, int index) {
     painter->save();
 
     // Apply scale transformation if needed
@@ -740,7 +729,9 @@ void FluentRating::paintRatingItem(QPainter* painter, const QRect& rect, double 
     painter->restore();
 }
 
-void FluentRating::paintStar(QPainter* painter, const QRect& rect, double fillAmount, const QColor& fillColor, const QColor& emptyColor) {
+void FluentRating::paintStar(QPainter* painter, const QRect& rect,
+                             double fillAmount, const QColor& fillColor,
+                             const QColor& emptyColor) {
     const QPointF center = rect.center();
     const qreal radius = qMin(rect.width(), rect.height()) / 2.0 * 0.8;
 
@@ -753,7 +744,8 @@ void FluentRating::paintStar(QPainter* painter, const QRect& rect, double fillAm
     for (int i = 0; i < points * 2; ++i) {
         const qreal angle = i * M_PI / points - M_PI / 2;
         const qreal r = (i % 2 == 0) ? outerRadius : innerRadius;
-        const QPointF point(center.x() + r * cos(angle), center.y() + r * sin(angle));
+        const QPointF point(center.x() + r * cos(angle),
+                            center.y() + r * sin(angle));
 
         if (i == 0) {
             starPath.moveTo(point);
@@ -770,14 +762,18 @@ void FluentRating::paintStar(QPainter* painter, const QRect& rect, double fillAm
 
     // Paint filled portion
     if (fillAmount > 0.0) {
-        painter->setClipRect(rect.left(), rect.top(), rect.width() * qBound(0.0, fillAmount, 1.0), rect.height());
+        painter->setClipRect(rect.left(), rect.top(),
+                             rect.width() * qBound(0.0, fillAmount, 1.0),
+                             rect.height());
         painter->setBrush(fillColor);
         painter->setPen(Qt::NoPen);
         painter->drawPath(starPath);
     }
 }
 
-void FluentRating::paintHeart(QPainter* painter, const QRect& rect, double fillAmount, const QColor& fillColor, const QColor& emptyColor) {
+void FluentRating::paintHeart(QPainter* painter, const QRect& rect,
+                              double fillAmount, const QColor& fillColor,
+                              const QColor& emptyColor) {
     const QPointF center = rect.center();
     const qreal size = qMin(rect.width(), rect.height()) * 0.8;
 
@@ -787,8 +783,11 @@ void FluentRating::paintHeart(QPainter* painter, const QRect& rect, double fillA
     const qreal h = size / 2;
 
     heartPath.moveTo(center.x(), center.y() + h * 0.3);
-    heartPath.cubicTo(center.x() - w, center.y() - h * 0.5, center.x() - w * 0.5, center.y() - h, center.x(), center.y() - h * 0.3);
-    heartPath.cubicTo(center.x() + w * 0.5, center.y() - h, center.x() + w, center.y() - h * 0.5, center.x(), center.y() + h * 0.3);
+    heartPath.cubicTo(center.x() - w, center.y() - h * 0.5,
+                      center.x() - w * 0.5, center.y() - h, center.x(),
+                      center.y() - h * 0.3);
+    heartPath.cubicTo(center.x() + w * 0.5, center.y() - h, center.x() + w,
+                      center.y() - h * 0.5, center.x(), center.y() + h * 0.3);
 
     // Paint unfilled heart
     painter->setPen(QPen(emptyColor, 1));
@@ -797,14 +796,18 @@ void FluentRating::paintHeart(QPainter* painter, const QRect& rect, double fillA
 
     // Paint filled portion
     if (fillAmount > 0.0) {
-        painter->setClipRect(rect.left(), rect.top(), rect.width() * qBound(0.0, fillAmount, 1.0), rect.height());
+        painter->setClipRect(rect.left(), rect.top(),
+                             rect.width() * qBound(0.0, fillAmount, 1.0),
+                             rect.height());
         painter->setBrush(fillColor);
         painter->setPen(Qt::NoPen);
         painter->drawPath(heartPath);
     }
 }
 
-void FluentRating::paintThumb(QPainter* painter, const QRect& rect, double fillAmount, const QColor& fillColor, const QColor& emptyColor) {
+void FluentRating::paintThumb(QPainter* painter, const QRect& rect,
+                              double fillAmount, const QColor& fillColor,
+                              const QColor& emptyColor) {
     const QPointF center = rect.center();
     const qreal size = qMin(rect.width(), rect.height()) * 0.8;
 
@@ -814,9 +817,9 @@ void FluentRating::paintThumb(QPainter* painter, const QRect& rect, double fillA
     const qreal h = size * 0.5;
 
     // Thumb
-    thumbPath.addRect(center.x() - w/2, center.y() - h/4, w, h);
+    thumbPath.addRect(center.x() - w / 2, center.y() - h / 4, w, h);
     // Thumb tip
-    thumbPath.addRect(center.x() - w/4, center.y() - h/2, w/2, h/4);
+    thumbPath.addRect(center.x() - w / 4, center.y() - h / 2, w / 2, h / 4);
 
     QColor color = fillAmount > 0.5 ? fillColor : emptyColor;
     painter->setPen(QPen(color, 1));
@@ -824,7 +827,9 @@ void FluentRating::paintThumb(QPainter* painter, const QRect& rect, double fillA
     painter->drawPath(thumbPath);
 }
 
-void FluentRating::paintDot(QPainter* painter, const QRect& rect, double fillAmount, const QColor& fillColor, const QColor& emptyColor) {
+void FluentRating::paintDot(QPainter* painter, const QRect& rect,
+                            double fillAmount, const QColor& fillColor,
+                            const QColor& emptyColor) {
     const QPointF center = rect.center();
     const qreal radius = qMin(rect.width(), rect.height()) / 2.0 * 0.6;
 
@@ -834,8 +839,11 @@ void FluentRating::paintDot(QPainter* painter, const QRect& rect, double fillAmo
     painter->drawEllipse(center, radius, radius);
 }
 
-void FluentRating::paintCustomIcon(QPainter* painter, const QRect& rect, double fillAmount, const QColor& fillColor, const QColor& emptyColor) {
-    if (m_customIcon.isNull()) return;
+void FluentRating::paintCustomIcon(QPainter* painter, const QRect& rect,
+                                   double fillAmount, const QColor& fillColor,
+                                   const QColor& emptyColor) {
+    if (m_customIcon.isNull())
+        return;
 
     QIcon::Mode mode = fillAmount > 0.5 ? QIcon::Normal : QIcon::Disabled;
     QIcon::State state = fillAmount > 0.5 ? QIcon::On : QIcon::Off;
@@ -845,7 +853,8 @@ void FluentRating::paintCustomIcon(QPainter* painter, const QRect& rect, double 
 }
 
 void FluentRating::paintValueText(QPainter* painter) {
-    if (m_valueRect.isEmpty()) return;
+    if (m_valueRect.isEmpty())
+        return;
 
     painter->save();
 
@@ -859,12 +868,14 @@ void FluentRating::paintValueText(QPainter* painter) {
 }
 
 void FluentRating::paintFocusIndicator(QPainter* painter) {
-    if (!hasFocus()) return;
+    if (!hasFocus())
+        return;
 
     painter->save();
 
     const auto& theme = Styling::FluentTheme::instance();
-    const QColor focusColor = theme.color(Styling::FluentThemeColor::AccentFillDefault);
+    const QColor focusColor =
+        theme.color(Styling::FluentThemeColor::AccentFillDefault);
 
     QPen focusPen(focusColor, 2);
     focusPen.setStyle(Qt::DashLine);
@@ -878,7 +889,8 @@ void FluentRating::paintFocusIndicator(QPainter* painter) {
 }
 
 void FluentRating::animateRatingChange() {
-    if (!m_ratingAnimation) return;
+    if (!m_ratingAnimation)
+        return;
 
     m_ratingAnimation->stop();
     m_ratingAnimation->setStartValue(m_animatedRating);
@@ -887,7 +899,8 @@ void FluentRating::animateRatingChange() {
 }
 
 void FluentRating::startHoverAnimation(bool hover) {
-    if (!m_hoverAnimation) return;
+    if (!m_hoverAnimation)
+        return;
 
     m_hoverAnimation->stop();
     m_hoverAnimation->setStartValue(m_hoverOpacity);
@@ -896,7 +909,8 @@ void FluentRating::startHoverAnimation(bool hover) {
 }
 
 void FluentRating::startPressAnimation() {
-    if (!m_scaleAnimation) return;
+    if (!m_scaleAnimation)
+        return;
 
     m_scaleAnimation->stop();
     m_scaleAnimation->setStartValue(m_itemScale);
@@ -917,7 +931,8 @@ void FluentRating::showRatingTooltip(const QPoint& globalPos) {
     QString tooltipText;
 
     if (m_hoverRating >= 0 && m_hoverRating <= m_maxRating) {
-        if (!m_ratingLabels.isEmpty() && static_cast<int>(m_hoverRating) - 1 < m_ratingLabels.size()) {
+        if (!m_ratingLabels.isEmpty() &&
+            static_cast<int>(m_hoverRating) - 1 < m_ratingLabels.size()) {
             tooltipText = m_ratingLabels[static_cast<int>(m_hoverRating) - 1];
         } else {
             tooltipText = QString::number(m_hoverRating, 'f', 1);
@@ -930,34 +945,31 @@ void FluentRating::showRatingTooltip(const QPoint& globalPos) {
 }
 
 // Property accessors for animations
-double FluentRating::animatedRating() const {
-    return m_animatedRating;
-}
+double FluentRating::animatedRating() const { return m_animatedRating; }
 
 void FluentRating::setAnimatedRating(double rating) {
-    if (qFuzzyCompare(m_animatedRating, rating)) return;
+    if (qFuzzyCompare(m_animatedRating, rating))
+        return;
     m_animatedRating = rating;
     update();
 }
 
-qreal FluentRating::hoverOpacity() const {
-    return m_hoverOpacity;
-}
+qreal FluentRating::hoverOpacity() const { return m_hoverOpacity; }
 
 void FluentRating::setHoverOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_hoverOpacity, opacity)) return;
+    if (qFuzzyCompare(m_hoverOpacity, opacity))
+        return;
     m_hoverOpacity = opacity;
     update();
 }
 
-qreal FluentRating::itemScale() const {
-    return m_itemScale;
-}
+qreal FluentRating::itemScale() const { return m_itemScale; }
 
 void FluentRating::setItemScale(qreal scale) {
-    if (qFuzzyCompare(m_itemScale, scale)) return;
+    if (qFuzzyCompare(m_itemScale, scale))
+        return;
     m_itemScale = scale;
     update();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

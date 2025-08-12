@@ -1,41 +1,40 @@
 // src/Components/FluentAccordion.cpp
 #include "FluentQt/Components/FluentAccordion.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QPainterPath>
-#include <QFontMetrics>
+#include <QAccessible>
 #include <QApplication>
+#include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
 #include <QResizeEvent>
-#include <QAccessible>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
 FluentAccordion::FluentAccordion(QWidget* parent)
-    : Core::FluentComponent(parent)
-{
+    : Core::FluentComponent(parent) {
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
     setObjectName("FluentAccordion");
-    
+
     setupUI();
     setupAnimations();
     updateColors();
     updateFonts();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentAccordion::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentAccordion::onThemeChanged);
 }
 
 FluentAccordion::FluentAccordion(const QString& title, QWidget* parent)
-    : FluentAccordion(parent)
-{
+    : FluentAccordion(parent) {
     setTitle(title);
 }
 
@@ -43,79 +42,79 @@ FluentAccordion::~FluentAccordion() = default;
 
 void FluentAccordion::setupUI() {
     FLUENT_PROFILE("FluentAccordion::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-    
+
     // Create header widget
     m_headerWidget = new QWidget(this);
     m_headerWidget->setObjectName("FluentAccordion_Header");
     m_headerWidget->setFixedHeight(48);
-    
+
     // Create header layout
     m_headerLayout = new QHBoxLayout(m_headerWidget);
     m_headerLayout->setContentsMargins(16, 8, 16, 8);
     m_headerLayout->setSpacing(12);
-    
+
     // Create title label
     m_titleLabel = new QLabel(m_headerWidget);
     m_titleLabel->setObjectName("FluentAccordion_Title");
     m_headerLayout->addWidget(m_titleLabel);
-    
+
     // Add stretch to push chevron to the right
     m_headerLayout->addStretch();
-    
+
     m_mainLayout->addWidget(m_headerWidget);
-    
+
     // Create content container
     m_contentContainer = new QWidget(this);
     m_contentContainer->setObjectName("FluentAccordion_ContentContainer");
     m_contentContainer->setFixedHeight(0);
-    
+
     // Create content layout
     m_contentLayout = new QVBoxLayout(m_contentContainer);
     m_contentLayout->setContentsMargins(16, 8, 16, 16);
     m_contentLayout->setSpacing(8);
-    
+
     m_mainLayout->addWidget(m_contentContainer);
-    
+
     // Set minimum height
     setMinimumHeight(48);
 }
 
 void FluentAccordion::setupAnimations() {
     FLUENT_PROFILE("FluentAccordion::setupAnimations");
-    
+
     // Create opacity effect for content
     m_contentOpacityEffect = new QGraphicsOpacityEffect(this);
     m_contentOpacityEffect->setOpacity(0.0);
     m_contentContainer->setGraphicsEffect(m_contentOpacityEffect);
-    
+
     // Create animation group
     m_animationGroup = std::make_unique<QParallelAnimationGroup>(this);
-    
+
     // Create height animation
-    m_heightAnimation = std::make_unique<QPropertyAnimation>(this, "contentHeight");
+    m_heightAnimation =
+        std::make_unique<QPropertyAnimation>(this, "contentHeight");
     m_heightAnimation->setDuration(250);
     m_heightAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Create opacity animation
-    m_opacityAnimation = std::make_unique<QPropertyAnimation>(this, "contentOpacity");
+    m_opacityAnimation =
+        std::make_unique<QPropertyAnimation>(this, "contentOpacity");
     m_opacityAnimation->setDuration(200);
     m_opacityAnimation->setEasingCurve(QEasingCurve::OutQuad);
-    
+
     m_animationGroup->addAnimation(m_heightAnimation.get());
     m_animationGroup->addAnimation(m_opacityAnimation.get());
-    
-    connect(m_animationGroup.get(), &QParallelAnimationGroup::finished,
-            this, &FluentAccordion::onAnimationFinished);
+
+    connect(m_animationGroup.get(), &QParallelAnimationGroup::finished, this,
+            &FluentAccordion::onAnimationFinished);
 }
 
-QString FluentAccordion::title() const {
-    return m_title;
-}
+QString FluentAccordion::title() const { return m_title; }
 
 void FluentAccordion::setTitle(const QString& title) {
     if (m_title != title) {
@@ -128,9 +127,7 @@ void FluentAccordion::setTitle(const QString& title) {
     }
 }
 
-QString FluentAccordion::description() const {
-    return m_description;
-}
+QString FluentAccordion::description() const { return m_description; }
 
 void FluentAccordion::setDescription(const QString& description) {
     if (m_description != description) {
@@ -142,9 +139,7 @@ void FluentAccordion::setDescription(const QString& description) {
     }
 }
 
-QIcon FluentAccordion::icon() const {
-    return m_icon;
-}
+QIcon FluentAccordion::icon() const { return m_icon; }
 
 void FluentAccordion::setIcon(const QIcon& icon) {
     if (m_icon.cacheKey() != icon.cacheKey()) {
@@ -163,20 +158,18 @@ FluentAccordionState FluentAccordion::accordionState() const {
 void FluentAccordion::setAccordionState(FluentAccordionState state) {
     if (m_accordionState != state) {
         m_accordionState = state;
-        
+
         if (state == FluentAccordionState::Expanded) {
             startExpandAnimation();
         } else {
             startCollapseAnimation();
         }
-        
+
         emit accordionStateChanged(state);
     }
 }
 
-bool FluentAccordion::isCollapsible() const {
-    return m_collapsible;
-}
+bool FluentAccordion::isCollapsible() const { return m_collapsible; }
 
 void FluentAccordion::setCollapsible(bool collapsible) {
     if (m_collapsible != collapsible) {
@@ -185,9 +178,7 @@ void FluentAccordion::setCollapsible(bool collapsible) {
     }
 }
 
-qreal FluentAccordion::contentOpacity() const {
-    return m_contentOpacity;
-}
+qreal FluentAccordion::contentOpacity() const { return m_contentOpacity; }
 
 void FluentAccordion::setContentOpacity(qreal opacity) {
     if (!qFuzzyCompare(m_contentOpacity, opacity)) {
@@ -196,9 +187,7 @@ void FluentAccordion::setContentOpacity(qreal opacity) {
     }
 }
 
-int FluentAccordion::contentHeight() const {
-    return m_contentHeight;
-}
+int FluentAccordion::contentHeight() const { return m_contentHeight; }
 
 void FluentAccordion::setContentHeight(int height) {
     if (m_contentHeight != height) {
@@ -213,7 +202,7 @@ void FluentAccordion::setContentWidget(QWidget* widget) {
         m_contentLayout->removeWidget(m_content);
         m_content->setParent(nullptr);
     }
-    
+
     m_content = widget;
     if (widget) {
         m_contentLayout->addWidget(widget);
@@ -223,38 +212,35 @@ void FluentAccordion::setContentWidget(QWidget* widget) {
     }
 }
 
-QWidget* FluentAccordion::contentWidget() const {
-    return m_content;
-}
+QWidget* FluentAccordion::contentWidget() const { return m_content; }
 
 QSize FluentAccordion::sizeHint() const {
     FLUENT_PROFILE("FluentAccordion::sizeHint");
-    
+
     if (m_sizeHintValid) {
         return m_cachedSizeHint;
     }
-    
-    int width = 200; // Minimum width
-    int height = 48; // Header height
-    
+
+    int width = 200;  // Minimum width
+    int height = 48;  // Header height
+
     if (m_accordionState == FluentAccordionState::Expanded && m_content) {
         height += m_expandedHeight;
     }
-    
+
     m_cachedSizeHint = QSize(width, height);
     m_sizeHintValid = true;
-    
+
     return m_cachedSizeHint;
 }
 
-QSize FluentAccordion::minimumSizeHint() const {
-    return QSize(150, 48);
-}
+QSize FluentAccordion::minimumSizeHint() const { return QSize(150, 48); }
 
 void FluentAccordion::toggle() {
     if (m_collapsible) {
-        setAccordionState(m_accordionState == FluentAccordionState::Expanded ? 
-                         FluentAccordionState::Collapsed : FluentAccordionState::Expanded);
+        setAccordionState(m_accordionState == FluentAccordionState::Expanded
+                              ? FluentAccordionState::Collapsed
+                              : FluentAccordionState::Expanded);
     }
 }
 
@@ -325,11 +311,13 @@ void FluentAccordion::paintHeader(QPainter& painter, const QRect& rect) {
 }
 
 void FluentAccordion::paintIcon(QPainter& painter, const QRect& rect) {
-    if (m_icon.isNull()) return;
+    if (m_icon.isNull())
+        return;
 
-    const QIcon::Mode iconMode = isEnabled() ?
-        (state() == Core::FluentState::Pressed ? QIcon::Selected : QIcon::Normal) :
-        QIcon::Disabled;
+    const QIcon::Mode iconMode =
+        isEnabled() ? (state() == Core::FluentState::Pressed ? QIcon::Selected
+                                                             : QIcon::Normal)
+                    : QIcon::Disabled;
 
     m_icon.paint(&painter, rect, Qt::AlignCenter, iconMode);
 }
@@ -354,9 +342,9 @@ void FluentAccordion::paintChevron(QPainter& painter, const QRect& rect) {
 
     // Draw chevron down arrow
     QPainterPath chevron;
-    chevron.moveTo(-size, -size/2);
-    chevron.lineTo(0, size/2);
-    chevron.lineTo(size, -size/2);
+    chevron.moveTo(-size, -size / 2);
+    chevron.lineTo(0, size / 2);
+    chevron.lineTo(size, -size / 2);
 
     painter.drawPath(chevron);
 
@@ -381,7 +369,8 @@ void FluentAccordion::paintBorder(QPainter& painter, const QRect& rect) {
 }
 
 void FluentAccordion::mousePressEvent(QMouseEvent* event) {
-    if (event->button() == Qt::LeftButton && headerRect().contains(event->pos())) {
+    if (event->button() == Qt::LeftButton &&
+        headerRect().contains(event->pos())) {
         m_pressed = true;
         setState(Core::FluentState::Pressed);
     }
@@ -397,8 +386,8 @@ void FluentAccordion::mouseReleaseEvent(QMouseEvent* event) {
             toggle();
         }
 
-        setState(rect().contains(event->pos()) ?
-                 Core::FluentState::Hovered : Core::FluentState::Normal);
+        setState(rect().contains(event->pos()) ? Core::FluentState::Hovered
+                                               : Core::FluentState::Normal);
     }
 
     Core::FluentComponent::mouseReleaseEvent(event);
@@ -420,7 +409,6 @@ void FluentAccordion::keyPressEvent(QKeyEvent* event) {
 void FluentAccordion::keyReleaseEvent(QKeyEvent* event) {
     if ((event->key() == Qt::Key_Space || event->key() == Qt::Key_Return) &&
         m_pressed && !event->isAutoRepeat()) {
-
         m_pressed = false;
         toggle();
         setState(Core::FluentState::Focused);
@@ -437,11 +425,10 @@ void FluentAccordion::resizeEvent(QResizeEvent* event) {
     m_sizeHintValid = false;
 }
 
-void FluentAccordion::updateStateStyle() {
-    update();
-}
+void FluentAccordion::updateStateStyle() { update(); }
 
-void FluentAccordion::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentAccordion::performStateTransition(Core::FluentState from,
+                                             Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     update();
@@ -508,20 +495,20 @@ void FluentAccordion::startCollapseAnimation() {
 
 void FluentAccordion::updateContentVisibility() {
     if (m_content) {
-        m_content->setVisible(m_accordionState == FluentAccordionState::Expanded);
+        m_content->setVisible(m_accordionState ==
+                              FluentAccordionState::Expanded);
     }
 }
 
-QRect FluentAccordion::headerRect() const {
-    return QRect(0, 0, width(), 48);
-}
+QRect FluentAccordion::headerRect() const { return QRect(0, 0, width(), 48); }
 
 QRect FluentAccordion::contentRect() const {
     return QRect(0, 48, width(), height() - 48);
 }
 
 QRect FluentAccordion::iconRect() const {
-    if (m_icon.isNull()) return QRect();
+    if (m_icon.isNull())
+        return QRect();
 
     const int iconSize = 20;
     const int margin = 16;
@@ -531,15 +518,17 @@ QRect FluentAccordion::iconRect() const {
 QRect FluentAccordion::chevronRect() const {
     const int chevronSize = 16;
     const int margin = 16;
-    return QRect(width() - margin - chevronSize, (48 - chevronSize) / 2, chevronSize, chevronSize);
+    return QRect(width() - margin - chevronSize, (48 - chevronSize) / 2,
+                 chevronSize, chevronSize);
 }
 
 int FluentAccordion::calculateContentHeight() const {
-    if (!m_content) return 0;
+    if (!m_content)
+        return 0;
 
     const int margins = m_contentLayout->contentsMargins().top() +
-                       m_contentLayout->contentsMargins().bottom();
+                        m_contentLayout->contentsMargins().bottom();
     return m_content->sizeHint().height() + margins;
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

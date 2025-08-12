@@ -1,26 +1,25 @@
 // src/Components/FluentPanel.cpp
 #include "FluentQt/Components/FluentPanel.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QFontMetrics>
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QLabel>
 #include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGridLayout>
 #include <QStackedLayout>
-#include <QMouseEvent>
-#include <QFontMetrics>
+#include <QVBoxLayout>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
 FluentPanel::FluentPanel(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentPanel");
     setupUI();
     setupAnimations();
@@ -29,14 +28,12 @@ FluentPanel::FluentPanel(QWidget* parent)
 }
 
 FluentPanel::FluentPanel(FluentPanelType type, QWidget* parent)
-    : FluentPanel(parent)
-{
+    : FluentPanel(parent) {
     setPanelType(type);
 }
 
 FluentPanel::FluentPanel(const QString& title, QWidget* parent)
-    : FluentPanel(parent)
-{
+    : FluentPanel(parent) {
     setTitle(title);
 }
 
@@ -44,39 +41,41 @@ FluentPanel::~FluentPanel() = default;
 
 void FluentPanel::setupUI() {
     FLUENT_PROFILE("FluentPanel::setupUI");
-    
+
     // Main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-    
+
     // Content widget
     m_contentWidget = new QWidget(this);
     m_contentWidget->setObjectName("FluentPanelContent");
-    
+
     // Initially add content widget (title will be added when set)
     m_mainLayout->addWidget(m_contentWidget);
-    
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentPanel::updateColors);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentPanel::updateColors);
 }
 
 void FluentPanel::setupAnimations() {
     FLUENT_PROFILE("FluentPanel::setupAnimations");
-    
+
     // Collapse animation
     m_collapseAnimation = new QPropertyAnimation(this, "maximumHeight", this);
     m_collapseAnimation->setDuration(ANIMATION_DURATION);
     m_collapseAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_collapseAnimation, &QPropertyAnimation::finished,
-            this, &FluentPanel::onCollapseAnimationFinished);
-    
+    connect(m_collapseAnimation, &QPropertyAnimation::finished, this,
+            &FluentPanel::onCollapseAnimationFinished);
+
     // Fade animation for content
-    m_fadeAnimation = new QPropertyAnimation(m_contentWidget, "windowOpacity", this);
+    m_fadeAnimation =
+        new QPropertyAnimation(m_contentWidget, "windowOpacity", this);
     m_fadeAnimation->setDuration(ANIMATION_DURATION / 2);
     m_fadeAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Shadow effect
     m_shadowEffect = new QGraphicsDropShadowEffect(this);
     m_shadowEffect->setBlurRadius(0);
@@ -85,9 +84,7 @@ void FluentPanel::setupAnimations() {
     setGraphicsEffect(m_shadowEffect);
 }
 
-FluentPanelType FluentPanel::panelType() const {
-    return m_panelType;
-}
+FluentPanelType FluentPanel::panelType() const { return m_panelType; }
 
 void FluentPanel::setPanelType(FluentPanelType type) {
     if (m_panelType != type) {
@@ -99,9 +96,7 @@ void FluentPanel::setPanelType(FluentPanelType type) {
     }
 }
 
-FluentPanelElevation FluentPanel::elevation() const {
-    return m_elevation;
-}
+FluentPanelElevation FluentPanel::elevation() const { return m_elevation; }
 
 void FluentPanel::setElevation(FluentPanelElevation elevation) {
     if (m_elevation != elevation) {
@@ -124,9 +119,7 @@ void FluentPanel::setCornerRadius(FluentPanelCornerRadius radius) {
     }
 }
 
-QColor FluentPanel::backgroundColor() const {
-    return m_backgroundColor;
-}
+QColor FluentPanel::backgroundColor() const { return m_backgroundColor; }
 
 void FluentPanel::setBackgroundColor(const QColor& color) {
     if (m_backgroundColor != color) {
@@ -136,9 +129,7 @@ void FluentPanel::setBackgroundColor(const QColor& color) {
     }
 }
 
-QColor FluentPanel::borderColor() const {
-    return m_borderColor;
-}
+QColor FluentPanel::borderColor() const { return m_borderColor; }
 
 void FluentPanel::setBorderColor(const QColor& color) {
     if (m_borderColor != color) {
@@ -148,9 +139,7 @@ void FluentPanel::setBorderColor(const QColor& color) {
     }
 }
 
-int FluentPanel::borderWidth() const {
-    return m_borderWidth;
-}
+int FluentPanel::borderWidth() const { return m_borderWidth; }
 
 void FluentPanel::setBorderWidth(int width) {
     const int clampedWidth = qMax(0, width);
@@ -161,19 +150,17 @@ void FluentPanel::setBorderWidth(int width) {
     }
 }
 
-QMargins FluentPanel::padding() const {
-    return m_padding;
-}
+QMargins FluentPanel::padding() const { return m_padding; }
 
 void FluentPanel::setPadding(const QMargins& padding) {
     if (m_padding != padding) {
         m_padding = padding;
-        
+
         // Update content widget margins
         if (m_contentWidget && m_contentWidget->layout()) {
             m_contentWidget->layout()->setContentsMargins(padding);
         }
-        
+
         update();
         emit paddingChanged(padding);
     }
@@ -187,9 +174,7 @@ void FluentPanel::setPadding(int left, int top, int right, int bottom) {
     setPadding(QMargins(left, top, right, bottom));
 }
 
-bool FluentPanel::isAnimated() const {
-    return m_animated;
-}
+bool FluentPanel::isAnimated() const { return m_animated; }
 
 void FluentPanel::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -198,9 +183,7 @@ void FluentPanel::setAnimated(bool animated) {
     }
 }
 
-QString FluentPanel::title() const {
-    return m_title;
-}
+QString FluentPanel::title() const { return m_title; }
 
 void FluentPanel::setTitle(const QString& title) {
     if (m_title != title) {
@@ -211,9 +194,7 @@ void FluentPanel::setTitle(const QString& title) {
     }
 }
 
-bool FluentPanel::isCollapsible() const {
-    return m_collapsible;
-}
+bool FluentPanel::isCollapsible() const { return m_collapsible; }
 
 void FluentPanel::setCollapsible(bool collapsible) {
     if (m_collapsible != collapsible) {
@@ -223,14 +204,12 @@ void FluentPanel::setCollapsible(bool collapsible) {
     }
 }
 
-bool FluentPanel::isCollapsed() const {
-    return m_collapsed;
-}
+bool FluentPanel::isCollapsed() const { return m_collapsed; }
 
 void FluentPanel::setCollapsed(bool collapsed) {
     if (m_collapsed != collapsed) {
         m_collapsed = collapsed;
-        
+
         if (m_animated) {
             if (collapsed) {
                 startCollapseAnimation();
@@ -240,7 +219,7 @@ void FluentPanel::setCollapsed(bool collapsed) {
         } else {
             m_contentWidget->setVisible(!collapsed);
         }
-        
+
         emit collapsedChanged(collapsed);
     }
 }
@@ -282,9 +261,7 @@ QStackedLayout* FluentPanel::createStackedLayout() {
     return layout;
 }
 
-QWidget* FluentPanel::contentWidget() const {
-    return m_contentWidget;
-}
+QWidget* FluentPanel::contentWidget() const { return m_contentWidget; }
 
 void FluentPanel::setContentWidget(QWidget* widget) {
     if (widget && widget != m_contentWidget) {
@@ -293,11 +270,11 @@ void FluentPanel::setContentWidget(QWidget* widget) {
             m_mainLayout->removeWidget(m_contentWidget);
             m_contentWidget->deleteLater();
         }
-        
+
         // Set new content widget
         m_contentWidget = widget;
         m_contentWidget->setParent(this);
-        
+
         // Add to layout (after title if present)
         if (m_titleLabel) {
             m_mainLayout->addWidget(m_contentWidget);
@@ -309,45 +286,39 @@ void FluentPanel::setContentWidget(QWidget* widget) {
 
 QSize FluentPanel::sizeHint() const {
     QSize hint = FluentComponent::sizeHint();
-    
+
     // Add title height if present
     if (!m_title.isEmpty()) {
         hint.setHeight(hint.height() + getTitleHeight());
     }
-    
+
     // Add padding
     hint += QSize(m_padding.left() + m_padding.right(),
                   m_padding.top() + m_padding.bottom());
-    
+
     return hint;
 }
 
 QSize FluentPanel::minimumSizeHint() const {
     QSize hint = FluentComponent::minimumSizeHint();
-    
+
     // Add title height if present
     if (!m_title.isEmpty()) {
         hint.setHeight(hint.height() + getTitleHeight());
     }
-    
+
     // Add padding
     hint += QSize(m_padding.left() + m_padding.right(),
                   m_padding.top() + m_padding.bottom());
-    
+
     return hint;
 }
 
-void FluentPanel::expand() {
-    setCollapsed(false);
-}
+void FluentPanel::expand() { setCollapsed(false); }
 
-void FluentPanel::collapse() {
-    setCollapsed(true);
-}
+void FluentPanel::collapse() { setCollapsed(true); }
 
-void FluentPanel::toggleCollapsed() {
-    setCollapsed(!m_collapsed);
-}
+void FluentPanel::toggleCollapsed() { setCollapsed(!m_collapsed); }
 
 void FluentPanel::animateIn() {
     if (m_animator) {
@@ -363,16 +334,16 @@ void FluentPanel::animateOut() {
 
 void FluentPanel::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     drawPanel(painter);
 }
 
 void FluentPanel::resizeEvent(QResizeEvent* event) {
     FluentComponent::resizeEvent(event);
-    
+
     // Store expanded height for collapse animation
     if (!m_collapsed) {
         m_expandedHeight = height();
@@ -382,7 +353,7 @@ void FluentPanel::resizeEvent(QResizeEvent* event) {
 void FluentPanel::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         m_isPressed = true;
-        
+
         // Check if click is on title area and panel is collapsible
         if (m_collapsible && !m_title.isEmpty()) {
             const QRect titleRect = getTitleRect();
@@ -391,17 +362,17 @@ void FluentPanel::mousePressEvent(QMouseEvent* event) {
                 return;
             }
         }
-        
+
         update();
     }
-    
+
     FluentComponent::mousePressEvent(event);
 }
 
 void FluentPanel::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && m_isPressed) {
         m_isPressed = false;
-        
+
         // Check if click is on title area and panel is collapsible
         if (m_collapsible && !m_title.isEmpty()) {
             const QRect titleRect = getTitleRect();
@@ -410,11 +381,11 @@ void FluentPanel::mouseReleaseEvent(QMouseEvent* event) {
                 return;
             }
         }
-        
+
         emit clicked();
         update();
     }
-    
+
     FluentComponent::mouseReleaseEvent(event);
 }
 
@@ -446,13 +417,15 @@ void FluentPanel::updateColors() {
     if (!m_backgroundColor.isValid()) {
         switch (m_panelType) {
             case FluentPanelType::Card:
-                m_backgroundColor = theme.color("cardBackgroundFillColorDefault");
+                m_backgroundColor =
+                    theme.color("cardBackgroundFillColorDefault");
                 break;
             case FluentPanelType::Surface:
                 m_backgroundColor = theme.color("layerFillColorDefault");
                 break;
             case FluentPanelType::Acrylic:
-                m_backgroundColor = theme.color("acrylicBackgroundFillColorDefault");
+                m_backgroundColor =
+                    theme.color("acrylicBackgroundFillColorDefault");
                 break;
             case FluentPanelType::Mica:
                 m_backgroundColor = theme.color("micaBackgroundFillColorBase");
@@ -490,7 +463,8 @@ void FluentPanel::onExpandAnimationFinished() {
 }
 
 void FluentPanel::updateShadowEffect() {
-    if (!m_shadowEffect) return;
+    if (!m_shadowEffect)
+        return;
 
     const auto& theme = Styling::FluentTheme::instance();
 
@@ -502,22 +476,31 @@ void FluentPanel::updateShadowEffect() {
     if (m_panelType == FluentPanelType::Card ||
         m_panelType == FluentPanelType::Dialog ||
         m_panelType == FluentPanelType::Flyout) {
-
         switch (m_elevation) {
             case FluentPanelElevation::None:
-                blurRadius = 0; offsetY = 0; alpha = 0;
+                blurRadius = 0;
+                offsetY = 0;
+                alpha = 0;
                 break;
             case FluentPanelElevation::Low:
-                blurRadius = 4; offsetY = 1; alpha = 20;
+                blurRadius = 4;
+                offsetY = 1;
+                alpha = 20;
                 break;
             case FluentPanelElevation::Medium:
-                blurRadius = 8; offsetY = 2; alpha = 30;
+                blurRadius = 8;
+                offsetY = 2;
+                alpha = 30;
                 break;
             case FluentPanelElevation::High:
-                blurRadius = 16; offsetY = 4; alpha = 40;
+                blurRadius = 16;
+                offsetY = 4;
+                alpha = 40;
                 break;
             case FluentPanelElevation::VeryHigh:
-                blurRadius = 24; offsetY = 8; alpha = 50;
+                blurRadius = 24;
+                offsetY = 8;
+                alpha = 50;
                 break;
         }
     }
@@ -565,8 +548,9 @@ void FluentPanel::updateTitleVisibility() {
 
         const auto& theme = Styling::FluentTheme::instance();
         m_titleLabel->setFont(theme.subtitleFont());
-        m_titleLabel->setStyleSheet(QString("color: %1; padding: 8px 16px;")
-                                   .arg(theme.color("textPrimary").name()));
+        m_titleLabel->setStyleSheet(
+            QString("color: %1; padding: 8px 16px;")
+                .arg(theme.color("textPrimary").name()));
 
         // Create title layout with collapse button if collapsible
         auto* titleWidget = new QWidget(this);
@@ -577,15 +561,18 @@ void FluentPanel::updateTitleVisibility() {
         if (m_collapsible) {
             m_collapseButton = new QPushButton(this);
             m_collapseButton->setObjectName("FluentPanelCollapseButton");
-            m_collapseButton->setFixedSize(COLLAPSE_BUTTON_SIZE, COLLAPSE_BUTTON_SIZE);
+            m_collapseButton->setFixedSize(COLLAPSE_BUTTON_SIZE,
+                                           COLLAPSE_BUTTON_SIZE);
             m_collapseButton->setText(m_collapsed ? "▶" : "▼");
 
-            connect(m_collapseButton, &QPushButton::clicked, this, &FluentPanel::toggleCollapsed);
-            connect(this, &FluentPanel::collapsedChanged, [this](bool collapsed) {
-                if (m_collapseButton) {
-                    m_collapseButton->setText(collapsed ? "▶" : "▼");
-                }
-            });
+            connect(m_collapseButton, &QPushButton::clicked, this,
+                    &FluentPanel::toggleCollapsed);
+            connect(this, &FluentPanel::collapsedChanged,
+                    [this](bool collapsed) {
+                        if (m_collapseButton) {
+                            m_collapseButton->setText(collapsed ? "▶" : "▼");
+                        }
+                    });
 
             titleLayout->addWidget(m_collapseButton);
         }
@@ -640,13 +627,15 @@ void FluentPanel::drawBorder(QPainter& painter, const QRect& rect) {
 
     if (radius > 0) {
         QPainterPath path;
-        const QRectF borderRect = rect.adjusted(m_borderWidth/2.0, m_borderWidth/2.0,
-                                               -m_borderWidth/2.0, -m_borderWidth/2.0);
+        const QRectF borderRect =
+            rect.adjusted(m_borderWidth / 2.0, m_borderWidth / 2.0,
+                          -m_borderWidth / 2.0, -m_borderWidth / 2.0);
         path.addRoundedRect(borderRect, radius, radius);
         painter.drawPath(path);
     } else {
-        const QRect borderRect = rect.adjusted(m_borderWidth/2, m_borderWidth/2,
-                                              -m_borderWidth/2, -m_borderWidth/2);
+        const QRect borderRect =
+            rect.adjusted(m_borderWidth / 2, m_borderWidth / 2,
+                          -m_borderWidth / 2, -m_borderWidth / 2);
         painter.drawRect(borderRect);
     }
 }
@@ -663,19 +652,22 @@ QRect FluentPanel::getContentRect() const {
     return QRect(0, titleHeight, width(), height() - titleHeight);
 }
 
-int FluentPanel::getTitleHeight() const {
-    return TITLE_HEIGHT;
-}
+int FluentPanel::getTitleHeight() const { return TITLE_HEIGHT; }
 
 int FluentPanel::getCornerRadiusPixels() const {
     const auto& theme = Styling::FluentTheme::instance();
 
     switch (m_cornerRadius) {
-        case FluentPanelCornerRadius::None: return 0;
-        case FluentPanelCornerRadius::Small: return theme.borderRadius("small");
-        case FluentPanelCornerRadius::Medium: return theme.borderRadius("medium");
-        case FluentPanelCornerRadius::Large: return theme.borderRadius("large");
-        case FluentPanelCornerRadius::ExtraLarge: return theme.borderRadius("extraLarge");
+        case FluentPanelCornerRadius::None:
+            return 0;
+        case FluentPanelCornerRadius::Small:
+            return theme.borderRadius("small");
+        case FluentPanelCornerRadius::Medium:
+            return theme.borderRadius("medium");
+        case FluentPanelCornerRadius::Large:
+            return theme.borderRadius("large");
+        case FluentPanelCornerRadius::ExtraLarge:
+            return theme.borderRadius("extraLarge");
     }
     return theme.borderRadius("medium");
 }
@@ -684,7 +676,8 @@ QColor FluentPanel::getBackgroundColor() const {
     if (m_backgroundColor.isValid()) {
         return m_backgroundColor;
     }
-    return Styling::FluentTheme::instance().color("cardBackgroundFillColorDefault");
+    return Styling::FluentTheme::instance().color(
+        "cardBackgroundFillColorDefault");
 }
 
 QColor FluentPanel::getBorderColor() const {
@@ -725,4 +718,4 @@ void FluentPanel::startExpandAnimation() {
     m_collapseAnimation->start();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

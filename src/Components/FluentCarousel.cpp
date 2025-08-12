@@ -1,46 +1,45 @@
 // src/Components/FluentCarousel.cpp
 #include "FluentQt/Components/FluentCarousel.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Accessibility/FluentAccessible.h"
-#include "FluentQt/Core/FluentPerformance.h"
 #include <QApplication>
+#include <QDebug>
+#include <QGestureEvent>
+#include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QStackedLayout>
-#include <QPainter>
-#include <QStyleOption>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <QWheelEvent>
-#include <QTouchEvent>
-#include <QGestureEvent>
+#include <QPainter>
+#include <QParallelAnimationGroup>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
-#include <QGraphicsOpacityEffect>
+#include <QStackedLayout>
+#include <QStyleOption>
 #include <QTimer>
-#include <QDebug>
+#include <QTouchEvent>
+#include <QVBoxLayout>
+#include <QWheelEvent>
 #include <algorithm>
 #include <cmath>
+#include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentCarousel::FluentCarousel(QWidget* parent)
-    : FluentComponent(parent)
-    , m_autoPlayTimer(std::make_unique<QTimer>(this))
-    , m_transitionAnimation(std::make_unique<QPropertyAnimation>(this))
-    , m_transitionGroup(std::make_unique<QSequentialAnimationGroup>(this))
-{
+    : FluentComponent(parent),
+      m_autoPlayTimer(std::make_unique<QTimer>(this)),
+      m_transitionAnimation(std::make_unique<QPropertyAnimation>(this)),
+      m_transitionGroup(std::make_unique<QSequentialAnimationGroup>(this)) {
     initializeComponent();
 }
 
-FluentCarousel::FluentCarousel(const FluentCarouselConfig& config, QWidget* parent)
-    : FluentComponent(parent)
-    , m_config(config)
-    , m_autoPlayTimer(std::make_unique<QTimer>(this))
-    , m_transitionAnimation(std::make_unique<QPropertyAnimation>(this))
-    , m_transitionGroup(std::make_unique<QSequentialAnimationGroup>(this))
-{
+FluentCarousel::FluentCarousel(const FluentCarouselConfig& config,
+                               QWidget* parent)
+    : FluentComponent(parent),
+      m_config(config),
+      m_autoPlayTimer(std::make_unique<QTimer>(this)),
+      m_transitionAnimation(std::make_unique<QPropertyAnimation>(this)),
+      m_transitionGroup(std::make_unique<QSequentialAnimationGroup>(this)) {
     initializeComponent();
 }
 
@@ -57,13 +56,14 @@ void FluentCarousel::initializeComponent() {
     initializeAccessibility();
 
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentCarousel::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentCarousel::onThemeChanged);
 
     // Setup auto-play timer
     m_autoPlayTimer->setSingleShot(false);
-    connect(m_autoPlayTimer.get(), &QTimer::timeout,
-            this, &FluentCarousel::onAutoPlayTimer);
+    connect(m_autoPlayTimer.get(), &QTimer::timeout, this,
+            &FluentCarousel::onAutoPlayTimer);
 
     updateAutoPlayTimer();
 }
@@ -95,7 +95,8 @@ void FluentCarousel::initializeAnimations() {
     // Setup transition animation
     m_transitionAnimation->setTargetObject(this);
     m_transitionAnimation->setPropertyName("transitionProgress");
-    m_transitionAnimation->setDuration(static_cast<int>(m_config.transitionDuration.count()));
+    m_transitionAnimation->setDuration(
+        static_cast<int>(m_config.transitionDuration.count()));
     m_transitionAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
     // Respect reduced motion preference
@@ -105,8 +106,8 @@ void FluentCarousel::initializeAnimations() {
 
     connect(m_transitionAnimation.get(), &QPropertyAnimation::valueChanged,
             this, &FluentCarousel::onTransitionAnimationValueChanged);
-    connect(m_transitionAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentCarousel::onTransitionAnimationFinished);
+    connect(m_transitionAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentCarousel::onTransitionAnimationFinished);
 
     // Setup transition group for complex animations
     m_transitionGroup->addAnimation(m_transitionAnimation.get());
@@ -134,7 +135,8 @@ void FluentCarousel::initializeGestures() {
 void FluentCarousel::initializeAccessibility() {
     if (m_config.enableAccessibility) {
         setAccessibleName(m_config.ariaLabel);
-        setAccessibleDescription("Carousel with " + QString::number(itemCount()) + " items");
+        setAccessibleDescription("Carousel with " +
+                                 QString::number(itemCount()) + " items");
         updateAccessibilityInfo();
     }
 }
@@ -143,11 +145,11 @@ void FluentCarousel::setConfig(const FluentCarouselConfig& config) {
     if (m_config.transition != config.transition ||
         m_config.navigationStyle != config.navigationStyle ||
         m_config.orientation != config.orientation) {
-
         m_config = config;
 
         // Update animations
-        m_transitionAnimation->setDuration(static_cast<int>(m_config.transitionDuration.count()));
+        m_transitionAnimation->setDuration(
+            static_cast<int>(m_config.transitionDuration.count()));
 
         // Update layout
         updateLayout();
@@ -178,14 +180,16 @@ void FluentCarousel::setConfig(const FluentCarouselConfig& config) {
 }
 
 void FluentCarousel::addItem(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     FluentCarouselItemData itemData(widget);
     addItem(itemData);
 }
 
 void FluentCarousel::addItem(const FluentCarouselItemData& itemData) {
-    if (!itemData.widget) return;
+    if (!itemData.widget)
+        return;
 
     m_items.push_back(itemData);
     m_stackedWidget->addWidget(itemData.widget);
@@ -207,14 +211,17 @@ void FluentCarousel::addItem(const FluentCarouselItemData& itemData) {
 }
 
 void FluentCarousel::insertItem(int index, QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     FluentCarouselItemData itemData(widget);
     insertItem(index, itemData);
 }
 
-void FluentCarousel::insertItem(int index, const FluentCarouselItemData& itemData) {
-    if (!itemData.widget || index < 0 || index > static_cast<int>(m_items.size())) {
+void FluentCarousel::insertItem(int index,
+                                const FluentCarouselItemData& itemData) {
+    if (!itemData.widget || index < 0 ||
+        index > static_cast<int>(m_items.size())) {
         return;
     }
 
@@ -243,7 +250,8 @@ void FluentCarousel::insertItem(int index, const FluentCarouselItemData& itemDat
 }
 
 void FluentCarousel::removeItem(int index) {
-    if (!isValidIndex(index)) return;
+    if (!isValidIndex(index))
+        return;
 
     QWidget* widget = m_items[index].widget;
     m_items.erase(m_items.begin() + index);
@@ -252,7 +260,8 @@ void FluentCarousel::removeItem(int index) {
     // Adjust current index
     if (index < m_currentIndex) {
         m_currentIndex--;
-    } else if (index == m_currentIndex && m_currentIndex >= static_cast<int>(m_items.size())) {
+    } else if (index == m_currentIndex &&
+               m_currentIndex >= static_cast<int>(m_items.size())) {
         m_currentIndex = std::max(0, static_cast<int>(m_items.size()) - 1);
     }
 
@@ -272,12 +281,13 @@ void FluentCarousel::removeItem(int index) {
 }
 
 void FluentCarousel::removeItem(QWidget* widget) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     auto it = std::find_if(m_items.begin(), m_items.end(),
-                          [widget](const FluentCarouselItemData& item) {
-                              return item.widget == widget;
-                          });
+                           [widget](const FluentCarouselItemData& item) {
+                               return item.widget == widget;
+                           });
 
     if (it != m_items.end()) {
         int index = static_cast<int>(std::distance(m_items.begin(), it));
@@ -307,17 +317,21 @@ void FluentCarousel::clearItems() {
 }
 
 QWidget* FluentCarousel::itemAt(int index) const {
-    if (!isValidIndex(index)) return nullptr;
+    if (!isValidIndex(index))
+        return nullptr;
     return m_items[index].widget;
 }
 
 FluentCarouselItemData FluentCarousel::itemData(int index) const {
-    if (!isValidIndex(index)) return FluentCarouselItemData();
+    if (!isValidIndex(index))
+        return FluentCarouselItemData();
     return m_items[index];
 }
 
-void FluentCarousel::setItemData(int index, const FluentCarouselItemData& data) {
-    if (!isValidIndex(index) || !data.widget) return;
+void FluentCarousel::setItemData(int index,
+                                 const FluentCarouselItemData& data) {
+    if (!isValidIndex(index) || !data.widget)
+        return;
 
     m_items[index] = data;
 
@@ -339,7 +353,8 @@ void FluentCarousel::setItemData(int index, const FluentCarouselItemData& data) 
 }
 
 void FluentCarousel::setCurrentIndex(int index, bool animated) {
-    if (!isValidIndex(index) || index == m_currentIndex) return;
+    if (!isValidIndex(index) || index == m_currentIndex)
+        return;
 
     int oldIndex = m_currentIndex;
 
@@ -364,7 +379,8 @@ bool FluentCarousel::canGoToPrevious() const {
 }
 
 bool FluentCarousel::canGoToNext() const {
-    return m_config.infinite || m_currentIndex < static_cast<int>(m_items.size()) - 1;
+    return m_config.infinite ||
+           m_currentIndex < static_cast<int>(m_items.size()) - 1;
 }
 
 void FluentCarousel::setTransition(FluentCarouselTransition transition) {
@@ -392,7 +408,9 @@ void FluentCarousel::setOrientation(FluentCarouselOrientation orientation) {
 }
 
 void FluentCarousel::setAutoPlayEnabled(bool enabled) {
-    FluentCarouselAutoPlay newAutoPlay = enabled ? FluentCarouselAutoPlay::Forward : FluentCarouselAutoPlay::None;
+    FluentCarouselAutoPlay newAutoPlay = enabled
+                                             ? FluentCarouselAutoPlay::Forward
+                                             : FluentCarouselAutoPlay::None;
 
     if (m_config.autoPlay != newAutoPlay) {
         m_config.autoPlay = newAutoPlay;
@@ -435,17 +453,42 @@ void FluentCarousel::setTouchEnabled(bool enabled) {
     }
 }
 
+void FluentCarousel::setTransitionDuration(int duration) {
+    if (duration > 0) {
+        m_config.transitionDuration = std::chrono::milliseconds(duration);
+        // No signal emission needed as this is handled by setConfig
+    }
+}
+
+void FluentCarousel::setWrapAround(bool wrap) {
+    if (m_config.infinite != wrap) {
+        m_config.infinite = wrap;
+        m_config.wrapAround = wrap;  // Keep alias in sync
+        emit infiniteChanged(wrap);
+    }
+}
+
+void FluentCarousel::setShowNavigationButtons(bool show) {
+    if (m_config.showNavigation != show) {
+        m_config.showNavigation = show;
+        m_config.showNavigationButtons = show;  // Keep alias in sync
+        updateNavigationVisibility();
+        // No specific signal for this, but it's part of navigation style
+    }
+}
+
 QSize FluentCarousel::sizeHint() const {
     if (!m_sizeHintValid) {
-        QSize hint(400, 300); // Default size
+        QSize hint(400, 300);  // Default size
 
         if (!m_items.empty() && m_stackedWidget) {
             hint = m_stackedWidget->sizeHint();
         }
 
         // Add margins
-        hint += QSize(m_config.contentMargins.left() + m_config.contentMargins.right(),
-                     m_config.contentMargins.top() + m_config.contentMargins.bottom());
+        hint += QSize(
+            m_config.contentMargins.left() + m_config.contentMargins.right(),
+            m_config.contentMargins.top() + m_config.contentMargins.bottom());
 
         m_cachedSizeHint = hint;
         m_sizeHintValid = true;
@@ -455,22 +498,24 @@ QSize FluentCarousel::sizeHint() const {
 }
 
 QSize FluentCarousel::minimumSizeHint() const {
-    QSize hint(200, 150); // Minimum size
+    QSize hint(200, 150);  // Minimum size
 
     if (!m_items.empty() && m_stackedWidget) {
         hint = m_stackedWidget->minimumSizeHint();
     }
 
     // Add margins
-    hint += QSize(m_config.contentMargins.left() + m_config.contentMargins.right(),
-                 m_config.contentMargins.top() + m_config.contentMargins.bottom());
+    hint +=
+        QSize(m_config.contentMargins.left() + m_config.contentMargins.right(),
+              m_config.contentMargins.top() + m_config.contentMargins.bottom());
 
     return hint;
 }
 
 // Navigation slots
 void FluentCarousel::goToPrevious(bool animated) {
-    if (!canGoToPrevious()) return;
+    if (!canGoToPrevious())
+        return;
 
     int newIndex = m_currentIndex - 1;
     if (newIndex < 0 && m_config.infinite) {
@@ -483,7 +528,8 @@ void FluentCarousel::goToPrevious(bool animated) {
 }
 
 void FluentCarousel::goToNext(bool animated) {
-    if (!canGoToNext()) return;
+    if (!canGoToNext())
+        return;
 
     int newIndex = m_currentIndex + 1;
     if (newIndex >= static_cast<int>(m_items.size()) && m_config.infinite) {
@@ -495,9 +541,7 @@ void FluentCarousel::goToNext(bool animated) {
     }
 }
 
-void FluentCarousel::goToFirst(bool animated) {
-    setCurrentIndex(0, animated);
-}
+void FluentCarousel::goToFirst(bool animated) { setCurrentIndex(0, animated); }
 
 void FluentCarousel::goToLast(bool animated) {
     if (!m_items.empty()) {
@@ -508,7 +552,8 @@ void FluentCarousel::goToLast(bool animated) {
 // Auto-play control
 void FluentCarousel::startAutoPlay() {
     if (m_config.autoPlay != FluentCarouselAutoPlay::None && !m_items.empty()) {
-        m_autoPlayTimer->start(static_cast<int>(m_config.autoPlayInterval.count()));
+        m_autoPlayTimer->start(
+            static_cast<int>(m_config.autoPlayInterval.count()));
         emit autoPlayStarted();
     }
 }
@@ -565,7 +610,9 @@ void FluentCarousel::paintEvent(QPaintEvent* event) {
         const int radius = theme.borderRadius("control");
         QPen focusPen(theme.currentPalette().focusIndicator, ring);
         painter.setPen(focusPen);
-        painter.drawRoundedRect(rect().adjusted(ring/2, ring/2, -ring/2, -ring/2), radius, radius);
+        painter.drawRoundedRect(
+            rect().adjusted(ring / 2, ring / 2, -ring / 2, -ring / 2), radius,
+            radius);
     }
 }
 
@@ -598,8 +645,10 @@ void FluentCarousel::mouseMoveEvent(QMouseEvent* event) {
 
         // Calculate drag distance
         QPointF delta = m_touchCurrentPos - m_touchStartPos;
-        qreal distance = (m_config.orientation == FluentCarouselOrientation::Horizontal)
-                        ? delta.x() : delta.y();
+        qreal distance =
+            (m_config.orientation == FluentCarouselOrientation::Horizontal)
+                ? delta.x()
+                : delta.y();
 
         // Update visual feedback for drag
         if (std::abs(distance) > 10) {
@@ -616,24 +665,28 @@ void FluentCarousel::mouseReleaseEvent(QMouseEvent* event) {
 
         // Calculate swipe
         QPointF delta = m_touchCurrentPos - m_touchStartPos;
-        qreal distance = (m_config.orientation == FluentCarouselOrientation::Horizontal)
-                        ? delta.x() : delta.y();
+        qreal distance =
+            (m_config.orientation == FluentCarouselOrientation::Horizontal)
+                ? delta.x()
+                : delta.y();
 
         auto now = std::chrono::steady_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_touchStartTime);
-        qreal velocity = std::abs(distance) / duration.count() * 1000.0; // pixels per second
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now - m_touchStartTime);
+        qreal velocity = std::abs(distance) / duration.count() *
+                         1000.0;  // pixels per second
 
         // Check for swipe gesture
         if (std::abs(distance) > m_config.swipeThreshold * width() &&
             velocity > m_config.velocityThreshold) {
-
             if (distance > 0) {
                 goToPrevious();
             } else {
                 goToNext();
             }
 
-            emit swipeDetected(distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture, velocity);
+            emit swipeDetected(
+                distance > 0 ? Qt::SwipeGesture : Qt::SwipeGesture, velocity);
         }
 
         // Resume auto-play if it was paused
@@ -654,57 +707,57 @@ void FluentCarousel::keyPressEvent(QKeyEvent* event) {
     bool handled = true;
 
     switch (event->key()) {
-    case Qt::Key_Left:
-        if (m_config.orientation == FluentCarouselOrientation::Horizontal) {
-            goToPrevious();
-        } else {
+        case Qt::Key_Left:
+            if (m_config.orientation == FluentCarouselOrientation::Horizontal) {
+                goToPrevious();
+            } else {
+                handled = false;
+            }
+            break;
+
+        case Qt::Key_Right:
+            if (m_config.orientation == FluentCarouselOrientation::Horizontal) {
+                goToNext();
+            } else {
+                handled = false;
+            }
+            break;
+
+        case Qt::Key_Up:
+            if (m_config.orientation == FluentCarouselOrientation::Vertical) {
+                goToPrevious();
+            } else {
+                handled = false;
+            }
+            break;
+
+        case Qt::Key_Down:
+            if (m_config.orientation == FluentCarouselOrientation::Vertical) {
+                goToNext();
+            } else {
+                handled = false;
+            }
+            break;
+
+        case Qt::Key_Home:
+            goToFirst();
+            break;
+
+        case Qt::Key_End:
+            goToLast();
+            break;
+
+        case Qt::Key_Space:
+            if (m_autoPlayTimer->isActive()) {
+                pauseAutoPlay();
+            } else if (m_autoPlayPaused) {
+                resumeAutoPlay();
+            }
+            break;
+
+        default:
             handled = false;
-        }
-        break;
-
-    case Qt::Key_Right:
-        if (m_config.orientation == FluentCarouselOrientation::Horizontal) {
-            goToNext();
-        } else {
-            handled = false;
-        }
-        break;
-
-    case Qt::Key_Up:
-        if (m_config.orientation == FluentCarouselOrientation::Vertical) {
-            goToPrevious();
-        } else {
-            handled = false;
-        }
-        break;
-
-    case Qt::Key_Down:
-        if (m_config.orientation == FluentCarouselOrientation::Vertical) {
-            goToNext();
-        } else {
-            handled = false;
-        }
-        break;
-
-    case Qt::Key_Home:
-        goToFirst();
-        break;
-
-    case Qt::Key_End:
-        goToLast();
-        break;
-
-    case Qt::Key_Space:
-        if (m_autoPlayTimer->isActive()) {
-            pauseAutoPlay();
-        } else if (m_autoPlayPaused) {
-            resumeAutoPlay();
-        }
-        break;
-
-    default:
-        handled = false;
-        break;
+            break;
     }
 
     if (!handled) {
@@ -727,7 +780,7 @@ void FluentCarousel::wheelEvent(QWheelEvent* event) {
         steps = delta.y();
     }
 
-    if (std::abs(steps) >= 120) { // Standard wheel step
+    if (std::abs(steps) >= 120) {  // Standard wheel step
         if (steps > 0) {
             goToPrevious();
         } else {
@@ -786,15 +839,15 @@ void FluentCarousel::changeEvent(QEvent* event) {
 
 bool FluentCarousel::event(QEvent* event) {
     switch (event->type()) {
-    case QEvent::Gesture:
-        return gestureEvent(static_cast<QGestureEvent*>(event));
-    case QEvent::TouchBegin:
-    case QEvent::TouchUpdate:
-    case QEvent::TouchEnd:
-        touchEvent(static_cast<QTouchEvent*>(event));
-        return true;
-    default:
-        return FluentComponent::event(event);
+        case QEvent::Gesture:
+            return gestureEvent(static_cast<QGestureEvent*>(event));
+        case QEvent::TouchBegin:
+        case QEvent::TouchUpdate:
+        case QEvent::TouchEnd:
+            touchEvent(static_cast<QTouchEvent*>(event));
+            return true;
+        default:
+            return FluentComponent::event(event);
     }
 }
 
@@ -834,18 +887,18 @@ void FluentCarousel::onAutoPlayTimer() {
     }
 
     switch (m_config.autoPlay) {
-    case FluentCarouselAutoPlay::Forward:
-        goToNext();
-        break;
-    case FluentCarouselAutoPlay::Backward:
-        goToPrevious();
-        break;
-    case FluentCarouselAutoPlay::PingPong:
-        // Implementation for ping-pong would go here
-        goToNext();
-        break;
-    default:
-        break;
+        case FluentCarouselAutoPlay::Forward:
+            goToNext();
+            break;
+        case FluentCarouselAutoPlay::Backward:
+            goToPrevious();
+            break;
+        case FluentCarouselAutoPlay::PingPong:
+            // Implementation for ping-pong would go here
+            goToNext();
+            break;
+        default:
+            break;
     }
 }
 
@@ -888,14 +941,14 @@ void FluentCarousel::onIndicatorClicked(int index) {
     // Indicator clicked - signal would be defined in subclasses
 }
 
-void FluentCarousel::onThemeChanged() {
-    update();
-}
+void FluentCarousel::onThemeChanged() { update(); }
 
 // Private helper methods
 void FluentCarousel::updateLayout() {
-    QElapsedTimer timer; timer.start();
-    if (!m_mainLayout) return;
+    QElapsedTimer timer;
+    timer.start();
+    if (!m_mainLayout)
+        return;
 
     // Update layout direction based on orientation
     if (m_config.orientation == FluentCarouselOrientation::Vertical) {
@@ -911,17 +964,18 @@ void FluentCarousel::updateLayout() {
     m_mainLayout->setSpacing(m_config.itemSpacing);
 
     auto elapsed = std::chrono::milliseconds(timer.elapsed());
-    FluentQt::Core::FluentPerformanceMonitor::instance()
-        .recordComponentLayout("FluentCarousel", elapsed);
+    FluentQt::Core::FluentPerformanceMonitor::instance().recordComponentLayout(
+        "FluentCarousel", elapsed);
 }
 
 void FluentCarousel::updateItemPositions() {
-    QElapsedTimer timer; timer.start();
+    QElapsedTimer timer;
+    timer.start();
     // This method would handle positioning for non-stacked layouts
     // For now, we use QStackedWidget which handles positioning automatically
     auto elapsed = std::chrono::milliseconds(timer.elapsed());
-    FluentQt::Core::FluentPerformanceMonitor::instance()
-        .recordComponentLayout("FluentCarousel", elapsed);
+    FluentQt::Core::FluentPerformanceMonitor::instance().recordComponentLayout(
+        "FluentCarousel", elapsed);
 }
 
 void FluentCarousel::updateNavigationVisibility() {
@@ -932,7 +986,8 @@ void FluentCarousel::updateIndicatorVisibility() {
     // This would be implemented by subclasses that have indicators
 }
 
-void FluentCarousel::startTransition(int fromIndex, int toIndex, bool animated) {
+void FluentCarousel::startTransition(int fromIndex, int toIndex,
+                                     bool animated) {
     if (m_transitioning || fromIndex == toIndex) {
         return;
     }
@@ -969,11 +1024,13 @@ void FluentCarousel::updateTransitionProgress(qreal progress) {
 void FluentCarousel::handlePanGesture(QPanGesture* gesture) {
     // Basic pan gesture handling
     QPointF delta = gesture->delta();
-    qreal distance = (m_config.orientation == FluentCarouselOrientation::Horizontal)
-                    ? delta.x() : delta.y();
+    qreal distance =
+        (m_config.orientation == FluentCarouselOrientation::Horizontal)
+            ? delta.x()
+            : delta.y();
 
     if (gesture->state() == Qt::GestureFinished) {
-        if (std::abs(distance) > 50) { // Threshold for pan
+        if (std::abs(distance) > 50) {  // Threshold for pan
             if (distance > 0) {
                 goToPrevious();
             } else {
@@ -994,57 +1051,61 @@ void FluentCarousel::handleSwipeGesture(QSwipeGesture* gesture) {
     }
 
     switch (direction) {
-    case QSwipeGesture::Left:
-    case QSwipeGesture::Up:
-        goToNext();
-        break;
-    case QSwipeGesture::Right:
-    case QSwipeGesture::Down:
-        goToPrevious();
-        break;
-    default:
-        break;
+        case QSwipeGesture::Left:
+        case QSwipeGesture::Up:
+            goToNext();
+            break;
+        case QSwipeGesture::Right:
+        case QSwipeGesture::Down:
+            goToPrevious();
+            break;
+        default:
+            break;
     }
 
     emit swipeDetected(Qt::SwipeGesture, 0.0);
 }
 
-void FluentCarousel::processTouchPoints(const QList<QTouchEvent::TouchPoint>& touchPoints) {
+void FluentCarousel::processTouchPoints(
+    const QList<QTouchEvent::TouchPoint>& touchPoints) {
     // Basic touch processing - could be enhanced for multi-touch
     if (touchPoints.size() == 1) {
         const QTouchEvent::TouchPoint& point = touchPoints.first();
 
         switch (point.state()) {
-        case QEventPoint::Pressed:
-            m_touchStartPos = point.position();
-            m_touchStartTime = std::chrono::steady_clock::now();
-            break;
-        case QEventPoint::Updated:
-            m_touchCurrentPos = point.position();
-            break;
-        case QEventPoint::Released: {
-            QPointF delta = m_touchCurrentPos - m_touchStartPos;
-            qreal distance = (m_config.orientation == FluentCarouselOrientation::Horizontal)
-                            ? delta.x() : delta.y();
+            case QEventPoint::Pressed:
+                m_touchStartPos = point.position();
+                m_touchStartTime = std::chrono::steady_clock::now();
+                break;
+            case QEventPoint::Updated:
+                m_touchCurrentPos = point.position();
+                break;
+            case QEventPoint::Released: {
+                QPointF delta = m_touchCurrentPos - m_touchStartPos;
+                qreal distance = (m_config.orientation ==
+                                  FluentCarouselOrientation::Horizontal)
+                                     ? delta.x()
+                                     : delta.y();
 
-            if (std::abs(distance) > 50) {
-                if (distance > 0) {
-                    goToPrevious();
-                } else {
-                    goToNext();
+                if (std::abs(distance) > 50) {
+                    if (distance > 0) {
+                        goToPrevious();
+                    } else {
+                        goToNext();
+                    }
                 }
+                break;
             }
-            break;
-        }
-        default:
-            break;
+            default:
+                break;
         }
     }
 }
 
 void FluentCarousel::updateAutoPlayTimer() {
     if (m_config.autoPlay != FluentCarouselAutoPlay::None && !m_items.empty()) {
-        m_autoPlayTimer->setInterval(static_cast<int>(m_config.autoPlayInterval.count()));
+        m_autoPlayTimer->setInterval(
+            static_cast<int>(m_config.autoPlayInterval.count()));
         if (isVisible() && isEnabled()) {
             startAutoPlay();
         }
@@ -1061,7 +1122,8 @@ void FluentCarousel::resetAutoPlayTimer() {
 }
 
 int FluentCarousel::normalizeIndex(int index) const {
-    if (m_items.empty()) return 0;
+    if (m_items.empty())
+        return 0;
 
     int size = static_cast<int>(m_items.size());
     if (m_config.infinite) {
@@ -1086,13 +1148,15 @@ QPoint FluentCarousel::getItemPosition(int index) const {
 }
 
 void FluentCarousel::updateAccessibilityInfo() {
-    if (!m_config.enableAccessibility) return;
+    if (!m_config.enableAccessibility)
+        return;
 
     QString description = QString("Carousel item %1 of %2")
-                         .arg(m_currentIndex + 1)
-                         .arg(m_items.size());
+                              .arg(m_currentIndex + 1)
+                              .arg(m_items.size());
 
-    if (isValidIndex(m_currentIndex) && !m_items[m_currentIndex].title.isEmpty()) {
+    if (isValidIndex(m_currentIndex) &&
+        !m_items[m_currentIndex].title.isEmpty()) {
         description += ": " + m_items[m_currentIndex].title;
     }
 
@@ -1100,11 +1164,11 @@ void FluentCarousel::updateAccessibilityInfo() {
 }
 
 void FluentCarousel::announceCurrentItem() {
-    if (!m_config.announceChanges || !isValidIndex(m_currentIndex)) return;
+    if (!m_config.announceChanges || !isValidIndex(m_currentIndex))
+        return;
 
-    QString announcement = QString("Item %1 of %2")
-                          .arg(m_currentIndex + 1)
-                          .arg(m_items.size());
+    QString announcement =
+        QString("Item %1 of %2").arg(m_currentIndex + 1).arg(m_items.size());
 
     if (!m_items[m_currentIndex].title.isEmpty()) {
         announcement += ": " + m_items[m_currentIndex].title;
@@ -1132,11 +1196,12 @@ void FluentCarousel::scheduleCoalescedUpdate() {
     }
 }
 
-void FluentCarousel::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentCarousel::performStateTransition(Core::FluentState from,
+                                            Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     // Perform any state transition animations or effects
     updateStateStyle();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

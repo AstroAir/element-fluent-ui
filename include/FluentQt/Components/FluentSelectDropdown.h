@@ -1,23 +1,23 @@
 // include/FluentQt/Components/FluentSelectDropdown.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Components/FluentSelectItem.h"
-#include <QWidget>
-#include <QListView>
-#include <QScrollArea>
-#include <QVBoxLayout>
-#include <QLineEdit>
-#include <QLabel>
-#include <QPropertyAnimation>
+#include <QAbstractItemModel>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
-#include <QAbstractItemModel>
 #include <QItemSelectionModel>
-#include <QTimer>
-#include <QRect>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListView>
 #include <QPoint>
+#include <QPropertyAnimation>
+#include <QRect>
+#include <QScrollArea>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <memory>
+#include "FluentQt/Components/FluentSelectItem.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -26,12 +26,7 @@ class FluentSelect;
 class FluentSelectModel;
 class FluentSelectItemDelegate;
 
-enum class FluentDropdownState {
-    Hidden,
-    Showing,
-    Visible,
-    Hiding
-};
+enum class FluentDropdownState { Hidden, Showing, Visible, Hiding };
 
 class FluentSelectDropdown : public QWidget {
     Q_OBJECT
@@ -46,8 +41,11 @@ public:
     void showAnimated();
     void hideAnimated();
     void setVisible(bool visible) override;
-    
-    bool isAnimating() const { return m_state == FluentDropdownState::Showing || m_state == FluentDropdownState::Hiding; }
+
+    bool isAnimating() const {
+        return m_state == FluentDropdownState::Showing ||
+               m_state == FluentDropdownState::Hiding;
+    }
     FluentDropdownState state() const { return m_state; }
 
     // Geometry and positioning
@@ -140,64 +138,64 @@ private:
     void setupUI();
     void setupAnimations();
     void setupConnections();
-    
+
     void updateColors();
     void updateShadow();
     void updateScrollBars();
-    
+
     void paintBackground(QPainter& painter, const QRect& rect);
     void paintBorder(QPainter& painter, const QRect& rect);
-    
+
     QColor getBackgroundColor() const;
     QColor getBorderColor() const;
     QColor getShadowColor() const;
-    
+
     void ensureCurrentItemVisible();
     void scrollToItem(const QModelIndex& index);
-    
+
     QRect getDropdownRect() const;
     QPoint getOptimalPosition() const;
     bool shouldDropUp() const;
-    
+
     void startShowAnimation();
     void startHideAnimation();
 
 private:
     FluentSelect* m_select;
     FluentDropdownState m_state{FluentDropdownState::Hidden};
-    
+
     // UI Components
     QVBoxLayout* m_mainLayout{nullptr};
     QLineEdit* m_searchEdit{nullptr};
     QListView* m_listView{nullptr};
     QScrollArea* m_scrollArea{nullptr};
     QLabel* m_emptyLabel{nullptr};
-    
+
     // Delegate
     FluentSelectItemDelegate* m_itemDelegate{nullptr};
-    
+
     // Animation and effects
     std::unique_ptr<QPropertyAnimation> m_showAnimation;
     std::unique_ptr<QPropertyAnimation> m_hideAnimation;
     std::unique_ptr<QGraphicsOpacityEffect> m_opacityEffect;
     std::unique_ptr<QGraphicsDropShadowEffect> m_shadowEffect;
-    
+
     // Configuration
     int m_maxVisibleItems{10};
     int m_maxHeight{300};
     int m_minWidth{0};
     int m_maxWidth{0};
     bool m_searchVisible{false};
-    
+
     // State
     qreal m_opacity{1.0};
     QRect m_targetGeometry;
     QPoint m_targetPosition;
-    
+
     // Colors (cached from theme)
     QColor m_backgroundColor;
     QColor m_borderColor;
     QColor m_shadowColor;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

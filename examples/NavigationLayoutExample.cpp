@@ -1,39 +1,39 @@
 // examples/NavigationLayoutExample.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QGridLayout>
-#include <QGroupBox>
-#include <QLabel>
-#include <QTextEdit>
-#include <QListWidget>
-#include <QTreeWidget>
-#include <QTableWidget>
-#include <QHeaderView>
-#include <QSplitter>
-#include <QStackedWidget>
-#include <QScrollArea>
-#include <QTimer>
-#include <QRandomGenerator>
-#include <QDateTime>
-#include <QProgressBar>
-#include <QSlider>
-#include <QSpinBox>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
+#include <QGridLayout>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QLabel>
+#include <QListWidget>
+#include <QMainWindow>
+#include <QProgressBar>
+#include <QRandomGenerator>
+#include <QScrollArea>
+#include <QSlider>
+#include <QSpinBox>
+#include <QSplitter>
+#include <QStackedWidget>
+#include <QTableWidget>
+#include <QTextEdit>
+#include <QTimer>
+#include <QTreeWidget>
+#include <QVBoxLayout>
 
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
-#include "FluentQt/Components/FluentPanel.h"
-#include "FluentQt/Components/FluentNavigationView.h"
-#include "FluentQt/Components/FluentTabView.h"
-#include "FluentQt/Components/FluentSplitter.h"
-#include "FluentQt/Components/FluentTextInput.h"
-#include "FluentQt/Components/FluentComboBox.h"
 #include "FluentQt/Components/FluentCheckBox.h"
+#include "FluentQt/Components/FluentComboBox.h"
+#include "FluentQt/Components/FluentNavigationView.h"
+#include "FluentQt/Components/FluentPanel.h"
+#include "FluentQt/Components/FluentSplitter.h"
+#include "FluentQt/Components/FluentTabView.h"
+#include "FluentQt/Components/FluentTextInput.h"
 #include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 
 using namespace FluentQt;
 
@@ -68,20 +68,20 @@ private:
     void setupConnections();
     void setupTheme();
     void loadSampleData();
-    
+
     // Content creation methods
     QWidget* createDashboardContent();
     QWidget* createDocumentsContent();
     QWidget* createSettingsContent();
     QWidget* createAnalyticsContent();
     QWidget* createHelpContent();
-    
+
     // Tab content creation
     QWidget* createOverviewTab();
     QWidget* createDataTab();
     QWidget* createChartsTab();
     QWidget* createReportsTab();
-    
+
     // Helper methods
     void createSampleChart(QWidget* parent);
     void createSampleTable(QWidget* parent);
@@ -91,41 +91,41 @@ private:
 private:
     // Main Navigation
     Components::FluentNavigationView* m_navigationView{nullptr};
-    
+
     // Tab Views for different sections
     Components::FluentTabView* m_dashboardTabs{nullptr};
     Components::FluentTabView* m_documentsTabs{nullptr};
-    
+
     // Splitters for layout management
     Components::FluentSplitter* m_mainSplitter{nullptr};
     Components::FluentSplitter* m_contentSplitter{nullptr};
     Components::FluentSplitter* m_detailSplitter{nullptr};
-    
+
     // Content widgets
     QWidget* m_dashboardContent{nullptr};
     QWidget* m_documentsContent{nullptr};
     QWidget* m_settingsContent{nullptr};
     QWidget* m_analyticsContent{nullptr};
     QWidget* m_helpContent{nullptr};
-    
+
     // Dashboard components
     QLabel* m_welcomeLabel{nullptr};
     QLabel* m_statsLabel{nullptr};
     QProgressBar* m_progressBar{nullptr};
     QListWidget* m_recentItems{nullptr};
     QTextEdit* m_notesArea{nullptr};
-    
+
     // Settings components
     Components::FluentComboBox* m_themeCombo{nullptr};
     Components::FluentCheckBox* m_animationsCheck{nullptr};
     QSlider* m_opacitySlider{nullptr};
     QSpinBox* m_refreshInterval{nullptr};
-    
+
     // Data and timers
     QTimer* m_dashboardTimer{nullptr};
     QTimer* m_animationTimer{nullptr};
     Animation::FluentAnimator* m_animator{nullptr};
-    
+
     // State
     int m_currentNavigationIndex{0};
     bool m_animationsEnabled{true};
@@ -136,23 +136,24 @@ void NavigationLayoutExample::setupUI() {
     setWindowTitle("FluentQt Navigation and Layout Example");
     setMinimumSize(1200, 800);
     resize(1400, 900);
-    
+
     // Create main navigation view
     m_navigationView = new Components::FluentNavigationView(this);
     m_navigationView->setHeader("FluentQt Demo");
-    m_navigationView->setDisplayMode(Components::FluentNavigationDisplayMode::Auto);
+    m_navigationView->setDisplayMode(
+        Components::FluentNavigationDisplayMode::Auto);
     m_navigationView->setBackButtonVisible(false);
     m_navigationView->setSettingsVisible(true);
-    
+
     setCentralWidget(m_navigationView);
-    
+
     // Initialize animator
     m_animator = new Animation::FluentAnimator(this);
-    
+
     // Setup timers
     m_dashboardTimer = new QTimer(this);
-    m_dashboardTimer->setInterval(5000); // Update every 5 seconds
-    
+    m_dashboardTimer->setInterval(5000);  // Update every 5 seconds
+
     m_animationTimer = new QTimer(this);
     m_animationTimer->setInterval(100);
     m_animationTimer->setSingleShot(true);
@@ -166,7 +167,7 @@ void NavigationLayoutExample::setupNavigationItems() {
     dashboardItem.tag = "dashboard";
     dashboardItem.content = createDashboardContent();
     m_navigationView->addNavigationItem(dashboardItem);
-    
+
     // Documents item
     Components::FluentNavigationItem documentsItem;
     documentsItem.text = "Documents";
@@ -174,7 +175,7 @@ void NavigationLayoutExample::setupNavigationItems() {
     documentsItem.tag = "documents";
     documentsItem.content = createDocumentsContent();
     m_navigationView->addNavigationItem(documentsItem);
-    
+
     // Analytics item
     Components::FluentNavigationItem analyticsItem;
     analyticsItem.text = "Analytics";
@@ -182,7 +183,7 @@ void NavigationLayoutExample::setupNavigationItems() {
     analyticsItem.tag = "analytics";
     analyticsItem.content = createAnalyticsContent();
     m_navigationView->addNavigationItem(analyticsItem);
-    
+
     // Settings item
     Components::FluentNavigationItem settingsItem;
     settingsItem.text = "Settings";
@@ -190,7 +191,7 @@ void NavigationLayoutExample::setupNavigationItems() {
     settingsItem.tag = "settings";
     settingsItem.content = createSettingsContent();
     m_navigationView->addNavigationItem(settingsItem);
-    
+
     // Help item
     Components::FluentNavigationItem helpItem;
     helpItem.text = "Help";
@@ -198,7 +199,7 @@ void NavigationLayoutExample::setupNavigationItems() {
     helpItem.tag = "help";
     helpItem.content = createHelpContent();
     m_navigationView->addNavigationItem(helpItem);
-    
+
     // Set initial selection
     m_navigationView->setSelectedIndex(0);
 }
@@ -206,34 +207,34 @@ void NavigationLayoutExample::setupNavigationItems() {
 QWidget* NavigationLayoutExample::createDashboardContent() {
     m_dashboardContent = new QWidget();
     auto* layout = new QVBoxLayout(m_dashboardContent);
-    
+
     // Create dashboard tabs
     m_dashboardTabs = new Components::FluentTabView(m_dashboardContent);
     m_dashboardTabs->setTabPosition(Components::FluentTabPosition::Top);
     m_dashboardTabs->setTabStyle(Components::FluentTabStyle::Standard);
     m_dashboardTabs->setShowAddButton(true);
     m_dashboardTabs->setTabsClosable(true);
-    
+
     // Add initial tabs
     Components::FluentTabData overviewTab;
     overviewTab.text = "Overview";
     overviewTab.icon = QIcon(":/icons/overview.png");
     overviewTab.content = createOverviewTab();
-    overviewTab.closeable = false; // Don't allow closing the main tab
+    overviewTab.closeable = false;  // Don't allow closing the main tab
     m_dashboardTabs->addTab(overviewTab);
-    
+
     Components::FluentTabData dataTab;
     dataTab.text = "Data";
     dataTab.icon = QIcon(":/icons/data.png");
     dataTab.content = createDataTab();
     m_dashboardTabs->addTab(dataTab);
-    
+
     Components::FluentTabData chartsTab;
     chartsTab.text = "Charts";
     chartsTab.icon = QIcon(":/icons/chart.png");
     chartsTab.content = createChartsTab();
     m_dashboardTabs->addTab(chartsTab);
-    
+
     layout->addWidget(m_dashboardTabs);
     return m_dashboardContent;
 }
@@ -241,26 +242,28 @@ QWidget* NavigationLayoutExample::createDashboardContent() {
 QWidget* NavigationLayoutExample::createDocumentsContent() {
     m_documentsContent = new QWidget();
     auto* layout = new QVBoxLayout(m_documentsContent);
-    
+
     // Create documents tabs
     m_documentsTabs = new Components::FluentTabView(m_documentsContent);
     m_documentsTabs->setTabPosition(Components::FluentTabPosition::Top);
     m_documentsTabs->setTabStyle(Components::FluentTabStyle::Pill);
-    
+
     // Create main splitter for documents area
-    m_contentSplitter = new Components::FluentSplitter(Qt::Horizontal, m_documentsContent);
+    m_contentSplitter =
+        new Components::FluentSplitter(Qt::Horizontal, m_documentsContent);
     m_contentSplitter->setCollapsible(true);
     m_contentSplitter->setAnimatedResize(true);
-    
+
     // Left panel - File browser
-    auto* filePanel = new Components::FluentPanel("File Browser", m_documentsContent);
+    auto* filePanel =
+        new Components::FluentPanel("File Browser", m_documentsContent);
     filePanel->setPanelType(Components::FluentPanelType::Sidebar);
     auto* filePanelLayout = filePanel->createVerticalLayout();
-    
+
     auto* fileTree = new QTreeWidget(filePanel);
     fileTree->setHeaderLabel("Documents");
     fileTree->setMinimumWidth(200);
-    
+
     // Add sample file structure
     auto* rootItem = new QTreeWidgetItem(fileTree, QStringList("My Documents"));
     auto* projectsItem = new QTreeWidgetItem(rootItem, QStringList("Projects"));
@@ -269,40 +272,42 @@ QWidget* NavigationLayoutExample::createDocumentsContent() {
     auto* reportsItem = new QTreeWidgetItem(rootItem, QStringList("Reports"));
     new QTreeWidgetItem(reportsItem, QStringList("Q1 Analysis"));
     new QTreeWidgetItem(reportsItem, QStringList("User Feedback"));
-    
+
     fileTree->expandAll();
     filePanelLayout->addWidget(fileTree);
-    
+
     // Right panel - Document content
-    auto* contentPanel = new Components::FluentPanel("Document Content", m_documentsContent);
+    auto* contentPanel =
+        new Components::FluentPanel("Document Content", m_documentsContent);
     contentPanel->setPanelType(Components::FluentPanelType::Content);
     auto* contentPanelLayout = contentPanel->createVerticalLayout();
-    
+
     auto* documentArea = new QTextEdit(contentPanel);
     documentArea->setPlainText(
         "Welcome to the Documents section!\n\n"
-        "This area demonstrates advanced layout capabilities using FluentSplitter components.\n\n"
+        "This area demonstrates advanced layout capabilities using "
+        "FluentSplitter components.\n\n"
         "Features shown:\n"
         "• Resizable panels with animated transitions\n"
         "• Collapsible sidebar with file browser\n"
         "• Responsive layout that adapts to window size\n"
         "• Smooth splitter handles with hover effects\n"
         "• Multiple tab styles and positions\n\n"
-        "Try resizing the panels by dragging the splitter handles, or collapse/expand panels using the controls."
-    );
+        "Try resizing the panels by dragging the splitter handles, or "
+        "collapse/expand panels using the controls.");
     contentPanelLayout->addWidget(documentArea);
-    
+
     m_contentSplitter->addWidget(filePanel);
     m_contentSplitter->addWidget(contentPanel);
     m_contentSplitter->setSizes({250, 550});
-    
+
     // Add documents tab
     Components::FluentTabData documentsTab;
     documentsTab.text = "Documents";
     documentsTab.content = m_contentSplitter;
     documentsTab.closeable = false;
     m_documentsTabs->addTab(documentsTab);
-    
+
     layout->addWidget(m_documentsTabs);
     return m_documentsContent;
 }
@@ -312,7 +317,8 @@ QWidget* NavigationLayoutExample::createSettingsContent() {
     auto* layout = new QVBoxLayout(m_settingsContent);
 
     // Create settings panel
-    auto* settingsPanel = new Components::FluentPanel("Application Settings", m_settingsContent);
+    auto* settingsPanel =
+        new Components::FluentPanel("Application Settings", m_settingsContent);
     settingsPanel->setPanelType(Components::FluentPanelType::Card);
     settingsPanel->setElevation(Components::FluentPanelElevation::Medium);
 
@@ -329,7 +335,8 @@ QWidget* NavigationLayoutExample::createSettingsContent() {
     themeLayout->addWidget(m_themeCombo, 0, 1);
 
     themeLayout->addWidget(new QLabel("Enable Animations:"), 1, 0);
-    m_animationsCheck = new Components::FluentCheckBox("Enable smooth animations", themeGroup);
+    m_animationsCheck =
+        new Components::FluentCheckBox("Enable smooth animations", themeGroup);
     m_animationsCheck->setChecked(true);
     themeLayout->addWidget(m_animationsCheck, 1, 1);
 
@@ -351,7 +358,8 @@ QWidget* NavigationLayoutExample::createSettingsContent() {
     m_refreshInterval->setValue(5);
     perfLayout->addWidget(m_refreshInterval, 0, 1);
 
-    auto* refreshButton = new Components::FluentButton("Apply Settings", perfGroup);
+    auto* refreshButton =
+        new Components::FluentButton("Apply Settings", perfGroup);
     perfLayout->addWidget(refreshButton, 1, 0, 1, 2);
 
     settingsLayout->addWidget(perfGroup);
@@ -360,9 +368,12 @@ QWidget* NavigationLayoutExample::createSettingsContent() {
     auto* layoutGroup = new QGroupBox("Layout Settings", settingsPanel);
     auto* layoutGroupLayout = new QVBoxLayout(layoutGroup);
 
-    auto* resetLayoutButton = new Components::FluentButton("Reset Layout to Default", layoutGroup);
-    auto* saveLayoutButton = new Components::FluentButton("Save Current Layout", layoutGroup);
-    auto* loadLayoutButton = new Components::FluentButton("Load Saved Layout", layoutGroup);
+    auto* resetLayoutButton =
+        new Components::FluentButton("Reset Layout to Default", layoutGroup);
+    auto* saveLayoutButton =
+        new Components::FluentButton("Save Current Layout", layoutGroup);
+    auto* loadLayoutButton =
+        new Components::FluentButton("Load Saved Layout", layoutGroup);
 
     layoutGroupLayout->addWidget(resetLayoutButton);
     layoutGroupLayout->addWidget(saveLayoutButton);
@@ -371,10 +382,10 @@ QWidget* NavigationLayoutExample::createSettingsContent() {
     settingsLayout->addWidget(layoutGroup);
 
     // Connect settings controls
-    connect(refreshButton, &Components::FluentButton::clicked, this, &NavigationLayoutExample::updateLayoutSettings);
-    connect(m_animationsCheck, &Components::FluentCheckBox::toggled, [this](bool enabled) {
-        m_animationsEnabled = enabled;
-    });
+    connect(refreshButton, &Components::FluentButton::clicked, this,
+            &NavigationLayoutExample::updateLayoutSettings);
+    connect(m_animationsCheck, &Components::FluentCheckBox::toggled,
+            [this](bool enabled) { m_animationsEnabled = enabled; });
     connect(m_opacitySlider, &QSlider::valueChanged, [this](int value) {
         m_contentOpacity = value / 100.0;
         // Apply opacity to content areas
@@ -394,11 +405,14 @@ QWidget* NavigationLayoutExample::createAnalyticsContent() {
     auto* layout = new QVBoxLayout(m_analyticsContent);
 
     // Create analytics splitter for complex layout
-    m_detailSplitter = new Components::FluentSplitter(Qt::Vertical, m_analyticsContent);
-    m_detailSplitter->setResizeMode(Components::FluentSplitterResizeMode::Animated);
+    m_detailSplitter =
+        new Components::FluentSplitter(Qt::Vertical, m_analyticsContent);
+    m_detailSplitter->setResizeMode(
+        Components::FluentSplitterResizeMode::Animated);
 
     // Top section - Charts and metrics
-    auto* metricsPanel = new Components::FluentPanel("Analytics Dashboard", m_analyticsContent);
+    auto* metricsPanel =
+        new Components::FluentPanel("Analytics Dashboard", m_analyticsContent);
     metricsPanel->setPanelType(Components::FluentPanelType::Surface);
     auto* metricsLayout = metricsPanel->createHorizontalLayout();
 
@@ -410,8 +424,11 @@ QWidget* NavigationLayoutExample::createAnalyticsContent() {
         metricCard->setMinimumSize(150, 100);
 
         auto* cardLayout = new QVBoxLayout(metricCard);
-        auto* valueLabel = new QLabel(QString("%1%").arg(QRandomGenerator::global()->bounded(100)), metricCard);
-        valueLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #0078d4;");
+        auto* valueLabel = new QLabel(
+            QString("%1%").arg(QRandomGenerator::global()->bounded(100)),
+            metricCard);
+        valueLabel->setStyleSheet(
+            "font-size: 24px; font-weight: bold; color: #0078d4;");
         valueLabel->setAlignment(Qt::AlignCenter);
         cardLayout->addWidget(valueLabel);
 
@@ -419,21 +436,38 @@ QWidget* NavigationLayoutExample::createAnalyticsContent() {
     }
 
     // Bottom section - Data table
-    auto* dataPanel = new Components::FluentPanel("Detailed Analytics", m_analyticsContent);
+    auto* dataPanel =
+        new Components::FluentPanel("Detailed Analytics", m_analyticsContent);
     dataPanel->setPanelType(Components::FluentPanelType::Content);
     auto* dataLayout = dataPanel->createVerticalLayout();
 
     auto* dataTable = new QTableWidget(10, 5, dataPanel);
-    dataTable->setHorizontalHeaderLabels({"Date", "Users", "Sessions", "Bounce Rate", "Revenue"});
+    dataTable->setHorizontalHeaderLabels(
+        {"Date", "Users", "Sessions", "Bounce Rate", "Revenue"});
     dataTable->horizontalHeader()->setStretchLastSection(true);
 
     // Fill with sample data
     for (int row = 0; row < 10; ++row) {
-        dataTable->setItem(row, 0, new QTableWidgetItem(QDateTime::currentDateTime().addDays(-row).toString("yyyy-MM-dd")));
-        dataTable->setItem(row, 1, new QTableWidgetItem(QString::number(QRandomGenerator::global()->bounded(1000, 5000))));
-        dataTable->setItem(row, 2, new QTableWidgetItem(QString::number(QRandomGenerator::global()->bounded(500, 2000))));
-        dataTable->setItem(row, 3, new QTableWidgetItem(QString("%1%").arg(QRandomGenerator::global()->bounded(20, 80))));
-        dataTable->setItem(row, 4, new QTableWidgetItem(QString("$%1").arg(QRandomGenerator::global()->bounded(100, 1000))));
+        dataTable->setItem(
+            row, 0,
+            new QTableWidgetItem(
+                QDateTime::currentDateTime().addDays(-row).toString(
+                    "yyyy-MM-dd")));
+        dataTable->setItem(
+            row, 1,
+            new QTableWidgetItem(QString::number(
+                QRandomGenerator::global()->bounded(1000, 5000))));
+        dataTable->setItem(
+            row, 2,
+            new QTableWidgetItem(QString::number(
+                QRandomGenerator::global()->bounded(500, 2000))));
+        dataTable->setItem(row, 3,
+                           new QTableWidgetItem(QString("%1%").arg(
+                               QRandomGenerator::global()->bounded(20, 80))));
+        dataTable->setItem(
+            row, 4,
+            new QTableWidgetItem(QString("$%1").arg(
+                QRandomGenerator::global()->bounded(100, 1000))));
     }
 
     dataLayout->addWidget(dataTable);
@@ -450,7 +484,8 @@ QWidget* NavigationLayoutExample::createHelpContent() {
     m_helpContent = new QWidget();
     auto* layout = new QVBoxLayout(m_helpContent);
 
-    auto* helpPanel = new Components::FluentPanel("Help & Documentation", m_helpContent);
+    auto* helpPanel =
+        new Components::FluentPanel("Help & Documentation", m_helpContent);
     helpPanel->setPanelType(Components::FluentPanelType::Card);
 
     auto* helpLayout = helpPanel->createVerticalLayout();
@@ -508,7 +543,8 @@ QWidget* NavigationLayoutExample::createOverviewTab() {
     auto* leftLayout = leftPanel->createVerticalLayout();
 
     m_welcomeLabel = new QLabel("Welcome to FluentQt Dashboard!", leftPanel);
-    m_welcomeLabel->setStyleSheet("font-size: 18px; font-weight: bold; margin: 10px;");
+    m_welcomeLabel->setStyleSheet(
+        "font-size: 18px; font-weight: bold; margin: 10px;");
     leftLayout->addWidget(m_welcomeLabel);
 
     m_statsLabel = new QLabel("Loading statistics...", leftPanel);
@@ -519,14 +555,17 @@ QWidget* NavigationLayoutExample::createOverviewTab() {
     m_progressBar->setValue(75);
     leftLayout->addWidget(m_progressBar);
 
-    auto* refreshButton = new Components::FluentButton("Refresh Dashboard", leftPanel);
-    connect(refreshButton, &Components::FluentButton::clicked, this, &NavigationLayoutExample::refreshDashboard);
+    auto* refreshButton =
+        new Components::FluentButton("Refresh Dashboard", leftPanel);
+    connect(refreshButton, &Components::FluentButton::clicked, this,
+            &NavigationLayoutExample::refreshDashboard);
     leftLayout->addWidget(refreshButton);
 
     leftLayout->addStretch();
 
     // Right side - Recent items and notes
-    auto* rightPanel = new Components::FluentPanel("Recent Activity", overviewWidget);
+    auto* rightPanel =
+        new Components::FluentPanel("Recent Activity", overviewWidget);
     rightPanel->setPanelType(Components::FluentPanelType::Surface);
     auto* rightLayout = rightPanel->createVerticalLayout();
 
@@ -552,7 +591,8 @@ QWidget* NavigationLayoutExample::createDataTab() {
     auto* dataWidget = new QWidget();
     auto* layout = new QVBoxLayout(dataWidget);
 
-    auto* dataPanel = new Components::FluentPanel("Data Management", dataWidget);
+    auto* dataPanel =
+        new Components::FluentPanel("Data Management", dataWidget);
     dataPanel->setPanelType(Components::FluentPanelType::Content);
     auto* dataLayout = dataPanel->createVerticalLayout();
 
@@ -563,10 +603,16 @@ QWidget* NavigationLayoutExample::createDataTab() {
     // Fill with sample data
     QStringList statuses = {"Active", "Pending", "Completed", "Error"};
     for (int row = 0; row < 8; ++row) {
-        dataTable->setItem(row, 0, new QTableWidgetItem(QString("ID_%1").arg(row + 1)));
-        dataTable->setItem(row, 1, new QTableWidgetItem(QString("Item %1").arg(row + 1)));
-        dataTable->setItem(row, 2, new QTableWidgetItem(QString::number(QRandomGenerator::global()->bounded(100, 1000))));
-        dataTable->setItem(row, 3, new QTableWidgetItem(statuses[row % statuses.size()]));
+        dataTable->setItem(row, 0,
+                           new QTableWidgetItem(QString("ID_%1").arg(row + 1)));
+        dataTable->setItem(
+            row, 1, new QTableWidgetItem(QString("Item %1").arg(row + 1)));
+        dataTable->setItem(
+            row, 2,
+            new QTableWidgetItem(QString::number(
+                QRandomGenerator::global()->bounded(100, 1000))));
+        dataTable->setItem(
+            row, 3, new QTableWidgetItem(statuses[row % statuses.size()]));
     }
 
     dataTable->horizontalHeader()->setStretchLastSection(true);
@@ -576,7 +622,8 @@ QWidget* NavigationLayoutExample::createDataTab() {
     auto* buttonLayout = new QHBoxLayout();
     auto* addButton = new Components::FluentButton("Add Item", dataPanel);
     auto* editButton = new Components::FluentButton("Edit Selected", dataPanel);
-    auto* deleteButton = new Components::FluentButton("Delete Selected", dataPanel);
+    auto* deleteButton =
+        new Components::FluentButton("Delete Selected", dataPanel);
 
     buttonLayout->addWidget(addButton);
     buttonLayout->addWidget(editButton);
@@ -637,7 +684,8 @@ QWidget* NavigationLayoutExample::createReportsTab() {
     reportsText->setReadOnly(true);
     reportsLayout->addWidget(reportsText);
 
-    auto* generateButton = new Components::FluentButton("Generate Report", reportsPanel);
+    auto* generateButton =
+        new Components::FluentButton("Generate Report", reportsPanel);
     reportsLayout->addWidget(generateButton);
 
     layout->addWidget(reportsPanel);
@@ -651,14 +699,15 @@ void NavigationLayoutExample::setupTabContent() {
 
 void NavigationLayoutExample::setupConnections() {
     // Navigation view connections
-    connect(m_navigationView, &Components::FluentNavigationView::selectionChanged,
-            this, &NavigationLayoutExample::onNavigationSelectionChanged);
+    connect(m_navigationView,
+            &Components::FluentNavigationView::selectionChanged, this,
+            &NavigationLayoutExample::onNavigationSelectionChanged);
 
     // Dashboard tabs connections
-    connect(m_dashboardTabs, &Components::FluentTabView::currentChanged,
-            this, &NavigationLayoutExample::onTabChanged);
-    connect(m_dashboardTabs, &Components::FluentTabView::addTabRequested,
-            this, &NavigationLayoutExample::addNewTab);
+    connect(m_dashboardTabs, &Components::FluentTabView::currentChanged, this,
+            &NavigationLayoutExample::onTabChanged);
+    connect(m_dashboardTabs, &Components::FluentTabView::addTabRequested, this,
+            &NavigationLayoutExample::addNewTab);
     connect(m_dashboardTabs, &Components::FluentTabView::tabCloseRequested,
             this, &NavigationLayoutExample::closeTab);
 
@@ -669,8 +718,10 @@ void NavigationLayoutExample::setupConnections() {
     }
 
     // Timer connections
-    connect(m_dashboardTimer, &QTimer::timeout, this, &NavigationLayoutExample::updateDashboardData);
-    connect(m_animationTimer, &QTimer::timeout, this, &NavigationLayoutExample::animateContentTransition);
+    connect(m_dashboardTimer, &QTimer::timeout, this,
+            &NavigationLayoutExample::updateDashboardData);
+    connect(m_animationTimer, &QTimer::timeout, this,
+            &NavigationLayoutExample::animateContentTransition);
 
     // Start dashboard updates
     m_dashboardTimer->start();
@@ -704,9 +755,11 @@ void NavigationLayoutExample::onNavigationSelectionChanged(int index) {
     }
 
     // Update window title based on selection
-    QStringList sections = {"Dashboard", "Documents", "Analytics", "Settings", "Help"};
+    QStringList sections = {"Dashboard", "Documents", "Analytics", "Settings",
+                            "Help"};
     if (index >= 0 && index < sections.size()) {
-        setWindowTitle(QString("FluentQt Navigation Example - %1").arg(sections[index]));
+        setWindowTitle(
+            QString("FluentQt Navigation Example - %1").arg(sections[index]));
     }
 }
 
@@ -719,7 +772,8 @@ void NavigationLayoutExample::onTabChanged(int index) {
 
         auto* currentWidget = m_dashboardTabs->currentWidget();
         if (currentWidget) {
-            auto fadeAnimation = Animation::FluentAnimator::fadeIn(currentWidget, config);
+            auto fadeAnimation =
+                Animation::FluentAnimator::fadeIn(currentWidget, config);
             fadeAnimation->start();
         }
     }
@@ -738,7 +792,8 @@ void NavigationLayoutExample::toggleNavigationPane() {
 }
 
 void NavigationLayoutExample::addNewTab() {
-    if (!m_dashboardTabs) return;
+    if (!m_dashboardTabs)
+        return;
 
     // Create a new reports tab
     Components::FluentTabData newTab;
@@ -752,7 +807,7 @@ void NavigationLayoutExample::addNewTab() {
 }
 
 void NavigationLayoutExample::closeTab(int index) {
-    if (m_dashboardTabs && index > 0) { // Don't allow closing the first tab
+    if (m_dashboardTabs && index > 0) {  // Don't allow closing the first tab
         m_dashboardTabs->removeTab(index);
     }
 }
@@ -794,7 +849,8 @@ void NavigationLayoutExample::updateLayoutSettings() {
 }
 
 void NavigationLayoutExample::animateContentTransition() {
-    if (!m_animationsEnabled) return;
+    if (!m_animationsEnabled)
+        return;
 
     // Animate content transition
     Animation::FluentAnimationConfig config;
@@ -803,22 +859,24 @@ void NavigationLayoutExample::animateContentTransition() {
 
     auto* currentContent = m_navigationView->currentContent();
     if (currentContent) {
-        auto fadeAnimation = Animation::FluentAnimator::fadeIn(currentContent, config);
+        auto fadeAnimation =
+            Animation::FluentAnimator::fadeIn(currentContent, config);
         fadeAnimation->start();
     }
 }
 
 void NavigationLayoutExample::updateDashboardData() {
     if (m_statsLabel) {
-        QString stats = QString(
-            "📊 Active Users: %1\n"
-            "📈 Sessions Today: %2\n"
-            "💰 Revenue: $%3\n"
-            "⏱️ Last Updated: %4"
-        ).arg(QRandomGenerator::global()->bounded(1000, 5000))
-         .arg(QRandomGenerator::global()->bounded(500, 2000))
-         .arg(QRandomGenerator::global()->bounded(1000, 10000))
-         .arg(QDateTime::currentDateTime().toString("hh:mm:ss"));
+        QString stats =
+            QString(
+                "📊 Active Users: %1\n"
+                "📈 Sessions Today: %2\n"
+                "💰 Revenue: $%3\n"
+                "⏱️ Last Updated: %4")
+                .arg(QRandomGenerator::global()->bounded(1000, 5000))
+                .arg(QRandomGenerator::global()->bounded(500, 2000))
+                .arg(QRandomGenerator::global()->bounded(1000, 10000))
+                .arg(QDateTime::currentDateTime().toString("hh:mm:ss"));
 
         m_statsLabel->setText(stats);
     }
@@ -830,7 +888,7 @@ void NavigationLayoutExample::updateDashboardData() {
 }
 
 // Main function
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("FluentQt Navigation and Layout Example");
     app.setApplicationVersion("1.0");

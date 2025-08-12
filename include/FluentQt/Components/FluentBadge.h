@@ -1,34 +1,34 @@
 // include/FluentQt/Components/FluentBadge.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QWidget>
+#include <QIcon>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
-#include <QIcon>
+#include <QWidget>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentBadgeType {
-    Dot,            // Small dot indicator
-    Count,          // Numeric count badge
-    Text,           // Text-based badge
-    Icon,           // Icon badge
-    Status          // Status indicator with color
+    Dot,    // Small dot indicator
+    Count,  // Numeric count badge
+    Text,   // Text-based badge
+    Icon,   // Icon badge
+    Status  // Status indicator with color
 };
 
 enum class FluentBadgeSize {
-    Small,          // 16px height
-    Medium,         // 20px height
-    Large           // 24px height
+    Small,   // 16px height
+    Medium,  // 20px height
+    Large    // 24px height
 };
 
 enum class FluentBadgeStyle {
-    Filled,         // Solid background
-    Outline,        // Border only
-    Subtle,         // Light background
-    Ghost           // Minimal styling
+    Filled,   // Solid background
+    Outline,  // Border only
+    Subtle,   // Light background
+    Ghost     // Minimal styling
 };
 
 enum class FluentBadgePosition {
@@ -37,34 +37,38 @@ enum class FluentBadgePosition {
     BottomLeft,
     BottomRight,
     Center,
-    Inline          // Not positioned, flows with content
+    Inline  // Not positioned, flows with content
 };
 
-enum class FluentBadgeStatus {
-    None,
-    Success,
-    Warning,
-    Error,
-    Info,
-    Neutral
-};
+enum class FluentBadgeStatus { None, Success, Warning, Error, Info, Neutral };
 
 class FluentBadge : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
     Q_PROPERTY(int count READ count WRITE setCount NOTIFY countChanged)
-    Q_PROPERTY(int maxCount READ maxCount WRITE setMaxCount NOTIFY maxCountChanged)
+    Q_PROPERTY(
+        int maxCount READ maxCount WRITE setMaxCount NOTIFY maxCountChanged)
     Q_PROPERTY(QIcon icon READ icon WRITE setIcon NOTIFY iconChanged)
-    Q_PROPERTY(FluentBadgeType badgeType READ badgeType WRITE setBadgeType NOTIFY badgeTypeChanged)
-    Q_PROPERTY(FluentBadgeSize badgeSize READ badgeSize WRITE setBadgeSize NOTIFY badgeSizeChanged)
-    Q_PROPERTY(FluentBadgeStyle badgeStyle READ badgeStyle WRITE setBadgeStyle NOTIFY badgeStyleChanged)
-    Q_PROPERTY(FluentBadgePosition position READ position WRITE setPosition NOTIFY positionChanged)
-    Q_PROPERTY(FluentBadgeStatus status READ status WRITE setStatus NOTIFY statusChanged)
-    Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY customColorChanged)
-    Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(bool showZero READ showZero WRITE setShowZero NOTIFY showZeroChanged)
-    Q_PROPERTY(bool pulsing READ isPulsing WRITE setPulsing NOTIFY pulsingChanged)
+    Q_PROPERTY(FluentBadgeType badgeType READ badgeType WRITE setBadgeType
+                   NOTIFY badgeTypeChanged)
+    Q_PROPERTY(FluentBadgeSize badgeSize READ badgeSize WRITE setBadgeSize
+                   NOTIFY badgeSizeChanged)
+    Q_PROPERTY(FluentBadgeStyle badgeStyle READ badgeStyle WRITE setBadgeStyle
+                   NOTIFY badgeStyleChanged)
+    Q_PROPERTY(FluentBadgePosition position READ position WRITE setPosition
+                   NOTIFY positionChanged)
+    Q_PROPERTY(FluentBadgeStatus status READ status WRITE setStatus NOTIFY
+                   statusChanged)
+    Q_PROPERTY(QColor customColor READ customColor WRITE setCustomColor NOTIFY
+                   customColorChanged)
+    Q_PROPERTY(
+        bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(
+        bool showZero READ showZero WRITE setShowZero NOTIFY showZeroChanged)
+    Q_PROPERTY(
+        bool pulsing READ isPulsing WRITE setPulsing NOTIFY pulsingChanged)
 
 public:
     explicit FluentBadge(QWidget* parent = nullptr);
@@ -77,45 +81,45 @@ public:
     // Content properties
     QString text() const;
     void setText(const QString& text);
-    
+
     int count() const;
     void setCount(int count);
-    
+
     int maxCount() const;
     void setMaxCount(int maxCount);
-    
+
     QIcon icon() const;
     void setIcon(const QIcon& icon);
 
     // Type and appearance
     FluentBadgeType badgeType() const;
     void setBadgeType(FluentBadgeType type);
-    
+
     FluentBadgeSize badgeSize() const;
     void setBadgeSize(FluentBadgeSize size);
-    
+
     FluentBadgeStyle badgeStyle() const;
     void setBadgeStyle(FluentBadgeStyle style);
-    
+
     FluentBadgePosition position() const;
     void setPosition(FluentBadgePosition position);
-    
+
     FluentBadgeStatus status() const;
     void setStatus(FluentBadgeStatus status);
-    
+
     QColor customColor() const;
     void setCustomColor(const QColor& color);
 
     // Behavior properties
     bool isVisible() const;
     void setVisible(bool visible) override;
-    
+
     bool isAnimated() const;
     void setAnimated(bool animated);
-    
+
     bool showZero() const;
     void setShowZero(bool show);
-    
+
     bool isPulsing() const;
     void setPulsing(bool pulsing);
 
@@ -125,7 +129,8 @@ public:
     bool isEmpty() const;
 
     // Positioning for parent widget
-    void attachTo(QWidget* parent, FluentBadgePosition position = FluentBadgePosition::TopRight);
+    void attachTo(QWidget* parent,
+                  FluentBadgePosition position = FluentBadgePosition::TopRight);
     void detach();
     QWidget* attachedWidget() const { return m_attachedWidget; }
 
@@ -135,9 +140,11 @@ public:
 
     // Static convenience methods
     static FluentBadge* createCountBadge(int count, QWidget* parent = nullptr);
-    static FluentBadge* createStatusBadge(FluentBadgeStatus status, QWidget* parent = nullptr);
+    static FluentBadge* createStatusBadge(FluentBadgeStatus status,
+                                          QWidget* parent = nullptr);
     static FluentBadge* createDotBadge(QWidget* parent = nullptr);
-    static FluentBadge* createTextBadge(const QString& text, QWidget* parent = nullptr);
+    static FluentBadge* createTextBadge(const QString& text,
+                                        QWidget* parent = nullptr);
 
 public slots:
     void show();
@@ -228,11 +235,11 @@ private:
     QColor getTextColor() const;
     QColor getBorderColor() const;
     QColor getStatusColor() const;
-    
+
     QFont getFont() const;
     int getBorderWidth() const;
     int getPadding() const;
-    
+
     void updateAttachedPosition();
     void installAttachedEventFilter();
     void removeAttachedEventFilter();
@@ -243,7 +250,7 @@ private:
     int m_count{0};
     int m_maxCount{99};
     QIcon m_icon;
-    
+
     // Type and appearance
     FluentBadgeType m_badgeType{FluentBadgeType::Count};
     FluentBadgeSize m_badgeSize{FluentBadgeSize::Medium};
@@ -251,20 +258,20 @@ private:
     FluentBadgePosition m_position{FluentBadgePosition::TopRight};
     FluentBadgeStatus m_status{FluentBadgeStatus::None};
     QColor m_customColor;
-    
+
     // Behavior properties
     bool m_animated{true};
     bool m_showZero{false};
     bool m_pulsing{false};
-    
+
     // State
     bool m_isEmpty{true};
     QString m_displayText;
-    
+
     // Attachment
     QWidget* m_attachedWidget{nullptr};
     QPoint m_attachmentOffset;
-    
+
     // Size metrics (updated based on m_badgeSize)
     int m_height{20};
     int m_minWidth{20};
@@ -310,4 +317,4 @@ private:
     void setPulseScale(qreal scale);
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

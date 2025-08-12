@@ -1,12 +1,12 @@
 /**
  * @file Animation.h
  * @brief Comprehensive header for FluentQt animation system
- * 
+ *
  * This header includes all animation-related classes and utilities for
  * creating smooth, performant animations in FluentQt applications.
  * It provides access to the animation engine, easing functions,
  * performance optimization, and specialized animation types.
- * 
+ *
  * @author Max Qian
  * @copyright MIT License
  * @version 1.0.0
@@ -15,8 +15,8 @@
 #pragma once
 
 // Core Animation System
-#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Animation/FluentAnimationPerformanceManager.h"
+#include "FluentQt/Animation/FluentAnimator.h"
 
 // Advanced Animation Features
 #include "FluentQt/Animation/FluentAdvancedAnimator.h"
@@ -35,18 +35,18 @@
 /**
  * @namespace FluentQt::Animation
  * @brief Namespace containing all animation functionality
- * 
+ *
  * The Animation namespace provides a comprehensive animation system
  * designed for smooth, performant UI animations that follow Fluent
  * Design principles. It includes:
- * 
+ *
  * **Core Animation Features:**
  * - FluentAnimator - Main animation engine
  * - 36 easing functions (linear to advanced elastic/bounce)
  * - 28+ animation types (fade, slide, scale, rotate, etc.)
  * - Hardware acceleration support
  * - Reduced motion accessibility support
- * 
+ *
  * **Animation Types:**
  * - Fade animations (in/out with various directions)
  * - Slide animations (up/down/left/right)
@@ -56,42 +56,42 @@
  * - Reveal animations (Fluent signature effect)
  * - Connected animations (for navigation)
  * - Stagger animations (for lists/grids)
- * 
+ *
  * **Micro-interactions:**
  * - Hover effects
  * - Press feedback
  * - Focus indication
  * - Attention effects (pulse, shake, bounce)
  * - Loading states
- * 
+ *
  * **Performance Features:**
  * - GPU acceleration when available
  * - Automatic performance monitoring
  * - Frame rate optimization
  * - Memory usage tracking
  * - Battery-aware animations
- * 
+ *
  * **Accessibility:**
  * - Respects system reduced motion settings
  * - Alternative feedback for motion-sensitive users
  * - Screen reader compatible animations
  * - High contrast mode support
- * 
+ *
  * @code
  * // Basic animation usage
  * auto* animator = new FluentQt::Animation::FluentAnimator(this);
- * 
+ *
  * // Fade in animation
  * auto* fadeIn = animator->fadeIn(widget, 300, FluentEasing::CubicOut);
  * fadeIn->start();
- * 
+ *
  * // Slide animation with callback
  * auto* slideUp = animator->slideUp(widget, 250);
  * connect(slideUp, &QPropertyAnimation::finished, [=]() {
  *     qDebug() << "Animation completed!";
  * });
  * slideUp->start();
- * 
+ *
  * // Micro-interaction
  * animator->hoverEffect(button);
  * animator->pressEffect(button);
@@ -111,7 +111,7 @@ enum class FluentAnimationType {
     FadeInDown,
     FadeInLeft,
     FadeInRight,
-    
+
     // Slide animations
     SlideUp,
     SlideDown,
@@ -121,7 +121,7 @@ enum class FluentAnimationType {
     SlideInDown,
     SlideInLeft,
     SlideInRight,
-    
+
     // Scale animations
     ScaleIn,
     ScaleOut,
@@ -130,13 +130,13 @@ enum class FluentAnimationType {
     ScaleInTopRight,
     ScaleInBottomLeft,
     ScaleInBottomRight,
-    
+
     // Rotation animations
     RotateIn,
     RotateOut,
     RotateClockwise,
     RotateCounterClockwise,
-    
+
     // Special effects
     Reveal,
     Morph,
@@ -145,7 +145,7 @@ enum class FluentAnimationType {
     Shake,
     Wobble,
     Flip,
-    
+
     // Connected animations
     Connected,
     Stagger
@@ -158,52 +158,52 @@ enum class FluentAnimationType {
 enum class FluentEasing {
     // Basic easing
     Linear,
-    
+
     // Quadratic
     QuadIn,
     QuadOut,
     QuadInOut,
-    
+
     // Cubic
     CubicIn,
     CubicOut,
     CubicInOut,
-    
+
     // Quartic
     QuartIn,
     QuartOut,
     QuartInOut,
-    
+
     // Quintic
     QuintIn,
     QuintOut,
     QuintInOut,
-    
+
     // Sinusoidal
     SineIn,
     SineOut,
     SineInOut,
-    
+
     // Exponential
     ExpoIn,
     ExpoOut,
     ExpoInOut,
-    
+
     // Circular
     CircIn,
     CircOut,
     CircInOut,
-    
+
     // Back
     BackIn,
     BackOut,
     BackInOut,
-    
+
     // Elastic
     ElasticIn,
     ElasticOut,
     ElasticInOut,
-    
+
     // Bounce
     BounceIn,
     BounceOut,
@@ -231,31 +231,34 @@ enum class FluentAnimationDirection {
  * @brief Configuration for animations
  */
 struct FluentAnimationConfig {
-    int duration = 300;                           ///< Animation duration in milliseconds
-    FluentEasing easing = FluentEasing::CubicOut; ///< Easing function
-    int delay = 0;                                ///< Delay before starting in milliseconds
-    bool respectReducedMotion = true;             ///< Honor accessibility reduced motion setting
-    bool useHardwareAcceleration = true;          ///< Use GPU acceleration when available
-    double opacity = 1.0;                         ///< Target opacity (for fade animations)
-    QPoint offset = QPoint(0, 0);                 ///< Offset for slide animations
-    double scale = 1.0;                           ///< Scale factor for scale animations
-    double rotation = 0.0;                        ///< Rotation angle in degrees
-    FluentAnimationDirection direction = FluentAnimationDirection::Up; ///< Animation direction
+    int duration = 300;  ///< Animation duration in milliseconds
+    FluentEasing easing = FluentEasing::CubicOut;  ///< Easing function
+    int delay = 0;  ///< Delay before starting in milliseconds
+    bool respectReducedMotion =
+        true;  ///< Honor accessibility reduced motion setting
+    bool useHardwareAcceleration =
+        true;                      ///< Use GPU acceleration when available
+    double opacity = 1.0;          ///< Target opacity (for fade animations)
+    QPoint offset = QPoint(0, 0);  ///< Offset for slide animations
+    double scale = 1.0;            ///< Scale factor for scale animations
+    double rotation = 0.0;         ///< Rotation angle in degrees
+    FluentAnimationDirection direction =
+        FluentAnimationDirection::Up;  ///< Animation direction
 };
 
 /**
  * @brief Initialize the animation system
- * 
+ *
  * This function initializes the FluentQt animation system, sets up
  * performance monitoring, and configures accessibility settings.
- * 
+ *
  * @return true if initialization was successful
  */
 bool initializeAnimation();
 
 /**
  * @brief Create an animator instance
- * 
+ *
  * @param parent Parent object for the animator
  * @return Pointer to a new FluentAnimator instance
  */
@@ -320,4 +323,4 @@ FluentEasing fromQtEasing(QEasingCurve::Type curve);
  */
 QEasingCurve::Type toQtEasing(FluentEasing easing);
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

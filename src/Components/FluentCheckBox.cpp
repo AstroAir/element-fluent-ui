@@ -1,38 +1,36 @@
 // src/Components/FluentCheckBox.cpp
 #include "FluentQt/Components/FluentCheckBox.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QEnterEvent>
+#include <QFocusEvent>
+#include <QFontMetrics>
+#include <QKeyEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QFocusEvent>
-#include <QEnterEvent>
-#include <QFontMetrics>
-#include <QApplication>
 
 namespace FluentQt::Components {
 
 FluentCheckBox::FluentCheckBox(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentCheckBox");
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover, true);
-    
+
     setupAnimations();
     updateColors();
     updateFonts();
-    
+
     // Set minimum size
     setMinimumSize(m_iconSize.width() + 8, m_iconSize.height());
 }
 
 FluentCheckBox::FluentCheckBox(const QString& text, QWidget* parent)
-    : FluentCheckBox(parent)
-{
+    : FluentCheckBox(parent) {
     setText(text);
 }
 
@@ -40,29 +38,28 @@ FluentCheckBox::~FluentCheckBox() = default;
 
 void FluentCheckBox::setupAnimations() {
     FLUENT_PROFILE("FluentCheckBox::setupAnimations");
-    
+
     // Create opacity effect for check mark
     m_checkOpacityEffect = new QGraphicsOpacityEffect(this);
     m_checkOpacityEffect->setOpacity(0.0);
-    
+
     // Create check animation
     m_checkAnimation = new QPropertyAnimation(this, "checkProgress", this);
     m_checkAnimation->setDuration(200);
     m_checkAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Create state animation
     m_stateAnimation = new QPropertyAnimation(this, "geometry", this);
     m_stateAnimation->setDuration(150);
     m_stateAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentCheckBox::updateAnimations);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentCheckBox::updateAnimations);
 }
 
-QString FluentCheckBox::text() const {
-    return m_text;
-}
+QString FluentCheckBox::text() const { return m_text; }
 
 void FluentCheckBox::setText(const QString& text) {
     if (m_text != text) {
@@ -73,9 +70,7 @@ void FluentCheckBox::setText(const QString& text) {
     }
 }
 
-FluentCheckState FluentCheckBox::checkState() const {
-    return m_checkState;
-}
+FluentCheckState FluentCheckBox::checkState() const { return m_checkState; }
 
 void FluentCheckBox::setCheckState(FluentCheckState state) {
     if (m_checkState != state) {
@@ -83,8 +78,9 @@ void FluentCheckBox::setCheckState(FluentCheckState state) {
         animateCheckChange();
         emit checkStateChanged(state);
         emit stateChanged(static_cast<int>(state));
-        
-        if (state == FluentCheckState::Checked || state == FluentCheckState::Unchecked) {
+
+        if (state == FluentCheckState::Checked ||
+            state == FluentCheckState::Unchecked) {
             emit toggled(state == FluentCheckState::Checked);
         }
     }
@@ -95,12 +91,11 @@ bool FluentCheckBox::isChecked() const {
 }
 
 void FluentCheckBox::setChecked(bool checked) {
-    setCheckState(checked ? FluentCheckState::Checked : FluentCheckState::Unchecked);
+    setCheckState(checked ? FluentCheckState::Checked
+                          : FluentCheckState::Unchecked);
 }
 
-bool FluentCheckBox::isTristate() const {
-    return m_tristate;
-}
+bool FluentCheckBox::isTristate() const { return m_tristate; }
 
 void FluentCheckBox::setTristate(bool tristate) {
     if (m_tristate != tristate) {
@@ -109,9 +104,7 @@ void FluentCheckBox::setTristate(bool tristate) {
     }
 }
 
-bool FluentCheckBox::autoExclusive() const {
-    return m_autoExclusive;
-}
+bool FluentCheckBox::autoExclusive() const { return m_autoExclusive; }
 
 void FluentCheckBox::setAutoExclusive(bool autoExclusive) {
     if (m_autoExclusive != autoExclusive) {
@@ -120,9 +113,7 @@ void FluentCheckBox::setAutoExclusive(bool autoExclusive) {
     }
 }
 
-QSize FluentCheckBox::iconSize() const {
-    return m_iconSize;
-}
+QSize FluentCheckBox::iconSize() const { return m_iconSize; }
 
 void FluentCheckBox::setIconSize(const QSize& size) {
     if (m_iconSize != size) {
@@ -135,10 +126,11 @@ void FluentCheckBox::setIconSize(const QSize& size) {
 
 QSize FluentCheckBox::sizeHint() const {
     const QFontMetrics fm(font());
-    const int textWidth = m_text.isEmpty() ? 0 : fm.horizontalAdvance(m_text) + 8;
+    const int textWidth =
+        m_text.isEmpty() ? 0 : fm.horizontalAdvance(m_text) + 8;
     const int width = m_iconSize.width() + textWidth;
     const int height = qMax(m_iconSize.height(), fm.height());
-    
+
     return QSize(width, height);
 }
 
@@ -146,9 +138,7 @@ QSize FluentCheckBox::minimumSizeHint() const {
     return QSize(m_iconSize.width(), m_iconSize.height());
 }
 
-void FluentCheckBox::toggle() {
-    nextCheckState();
-}
+void FluentCheckBox::toggle() { nextCheckState(); }
 
 void FluentCheckBox::click() {
     nextCheckState();
@@ -157,23 +147,23 @@ void FluentCheckBox::click() {
 
 void FluentCheckBox::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect checkRect = checkBoxRect();
     const QRect textRect = this->textRect();
-    
+
     // Draw checkbox
     drawCheckBox(painter, checkRect);
-    
+
     // Draw check mark or partial mark
     if (m_checkState == FluentCheckState::Checked) {
         drawCheckMark(painter, checkRect);
     } else if (m_checkState == FluentCheckState::PartiallyChecked) {
         drawPartialMark(painter, checkRect);
     }
-    
+
     // Draw text
     if (!m_text.isEmpty()) {
         const auto& theme = Styling::FluentTheme::instance();
@@ -181,7 +171,7 @@ void FluentCheckBox::paintEvent(QPaintEvent* event) {
         painter.setFont(font());
         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, m_text);
     }
-    
+
     // Draw focus indicator
     if (hasFocus()) {
         const auto& theme = Styling::FluentTheme::instance();
@@ -206,11 +196,11 @@ void FluentCheckBox::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && m_pressed) {
         m_pressed = false;
         setState(Core::FluentState::Hovered);
-        
+
         if (rect().contains(event->pos())) {
             click();
         }
-        
+
         animateStateChange();
         update();
     }
@@ -258,9 +248,10 @@ void FluentCheckBox::leaveEvent(QEvent* event) {
 
 void FluentCheckBox::changeEvent(QEvent* event) {
     FluentComponent::changeEvent(event);
-    
+
     if (event->type() == QEvent::EnabledChange) {
-        setState(isEnabled() ? Core::FluentState::Normal : Core::FluentState::Disabled);
+        setState(isEnabled() ? Core::FluentState::Normal
+                             : Core::FluentState::Disabled);
         update();
     } else if (event->type() == QEvent::FontChange) {
         updateGeometry();
@@ -286,7 +277,7 @@ void FluentCheckBox::animateStateChange() {
     if (m_stateAnimation->state() == QAbstractAnimation::Running) {
         m_stateAnimation->stop();
     }
-    
+
     m_stateAnimation->setStartValue(geometry());
     m_stateAnimation->setEndValue(geometry());
     m_stateAnimation->start();
@@ -296,14 +287,14 @@ void FluentCheckBox::animateCheckChange() {
     if (m_checkAnimation->state() == QAbstractAnimation::Running) {
         m_checkAnimation->stop();
     }
-    
+
     qreal targetProgress = 0.0;
     if (m_checkState == FluentCheckState::Checked) {
         targetProgress = 1.0;
     } else if (m_checkState == FluentCheckState::PartiallyChecked) {
         targetProgress = 0.5;
     }
-    
+
     m_checkAnimation->setStartValue(m_checkProgress);
     m_checkAnimation->setEndValue(targetProgress);
     m_checkAnimation->start();
@@ -320,7 +311,8 @@ void FluentCheckBox::drawCheckBox(QPainter& painter, const QRect& rect) const {
     if (!isEnabled()) {
         backgroundColor = theme.color("controlFillDisabled");
         borderColor = theme.color("controlStrokeDisabled");
-    } else if (m_checkState == FluentCheckState::Checked || m_checkState == FluentCheckState::PartiallyChecked) {
+    } else if (m_checkState == FluentCheckState::Checked ||
+               m_checkState == FluentCheckState::PartiallyChecked) {
         backgroundColor = theme.color("accent");
         borderColor = theme.color("accent");
         borderWidth = 2;
@@ -364,7 +356,8 @@ void FluentCheckBox::drawCheckMark(QPainter& painter, const QRect& rect) const {
         checkColor = theme.color("textDisabled");
     }
 
-    painter.setPen(QPen(checkColor, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    painter.setPen(
+        QPen(checkColor, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
     // Draw check mark path
     const QPointF center = rect.center();
@@ -382,7 +375,8 @@ void FluentCheckBox::drawCheckMark(QPainter& painter, const QRect& rect) const {
     painter.setOpacity(1.0);
 }
 
-void FluentCheckBox::drawPartialMark(QPainter& painter, const QRect& rect) const {
+void FluentCheckBox::drawPartialMark(QPainter& painter,
+                                     const QRect& rect) const {
     const auto& theme = Styling::FluentTheme::instance();
 
     // Use white color for partial mark on accent background
@@ -397,7 +391,8 @@ void FluentCheckBox::drawPartialMark(QPainter& painter, const QRect& rect) const
     const QPointF center = rect.center();
     const qreal width = rect.width() * 0.5;
 
-    painter.drawLine(center.x() - width/2, center.y(), center.x() + width/2, center.y());
+    painter.drawLine(center.x() - width / 2, center.y(), center.x() + width / 2,
+                     center.y());
 }
 
 QRect FluentCheckBox::checkBoxRect() const {
@@ -422,7 +417,8 @@ void FluentCheckBox::nextCheckState() {
     if (m_autoExclusive && m_checkState != FluentCheckState::Checked) {
         // For auto-exclusive checkboxes, uncheck siblings
         if (parentWidget()) {
-            const auto siblings = parentWidget()->findChildren<FluentCheckBox*>();
+            const auto siblings =
+                parentWidget()->findChildren<FluentCheckBox*>();
             for (auto* sibling : siblings) {
                 if (sibling != this && sibling->autoExclusive()) {
                     sibling->setChecked(false);
@@ -451,4 +447,4 @@ void FluentCheckBox::nextCheckState() {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

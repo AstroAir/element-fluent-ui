@@ -1,9 +1,9 @@
 // tests/Performance/FluentTreeViewVirtualizationTest.cpp
-#include <QtTest/QtTest>
 #include <QApplication>
 #include <QElapsedTimer>
-#include <QTreeWidgetItem>
 #include <QScrollBar>
+#include <QTreeWidgetItem>
+#include <QtTest/QtTest>
 #include "FluentQt/Components/FluentTreeView.h"
 #include "FluentQt/Core/FluentPerformance.h"
 
@@ -32,10 +32,11 @@ private slots:
 private:
     QWidget* m_testWidget{nullptr};
     FluentPerformanceMonitor* m_monitor{nullptr};
-    
+
     // Helper methods
     void populateTreeWithLargeDataset(FluentTreeView* treeView, int itemCount);
-    void createHierarchicalData(FluentTreeView* treeView, int depth, int childrenPerNode);
+    void createHierarchicalData(FluentTreeView* treeView, int depth,
+                                int childrenPerNode);
     void measureScrollPerformance(FluentTreeView* treeView, int scrollDistance);
 };
 
@@ -61,18 +62,18 @@ void FluentTreeViewVirtualizationTest::cleanup() {
 void FluentTreeViewVirtualizationTest::testLargeDatasetPerformance() {
     auto* treeView = new FluentTreeView(m_testWidget);
     treeView->resize(600, 400);
-    
+
     // Test without virtualization
     treeView->setVirtualizationEnabled(false);
-    
+
     QElapsedTimer timer;
     timer.start();
     populateTreeWithLargeDataset(treeView, 10000);
     qint64 nonVirtualizedTime = timer.elapsed();
-    
+
     treeView->show();
     QTest::qWaitForWindowExposed(m_testWidget);
-    
+
     // Measure rendering time without virtualization
     timer.restart();
     for (int i = 0; i < 10; ++i) {
@@ -80,16 +81,16 @@ void FluentTreeViewVirtualizationTest::testLargeDatasetPerformance() {
         QApplication::processEvents();
     }
     qint64 nonVirtualizedRenderTime = timer.elapsed();
-    
+
     // Clear and test with virtualization
     treeView->clear();
     treeView->setVirtualizationEnabled(true);
     treeView->setVirtualizationChunkSize(100);
-    
+
     timer.restart();
     populateTreeWithLargeDataset(treeView, 10000);
     qint64 virtualizedTime = timer.elapsed();
-    
+
     // Measure rendering time with virtualization
     timer.restart();
     for (int i = 0; i < 10; ++i) {
@@ -97,26 +98,28 @@ void FluentTreeViewVirtualizationTest::testLargeDatasetPerformance() {
         QApplication::processEvents();
     }
     qint64 virtualizedRenderTime = timer.elapsed();
-    
+
     qDebug() << "Large dataset performance (10,000 items):";
     qDebug() << "  Population - Non-virtualized:" << nonVirtualizedTime << "ms";
     qDebug() << "  Population - Virtualized:" << virtualizedTime << "ms";
-    qDebug() << "  Rendering - Non-virtualized:" << nonVirtualizedRenderTime << "ms";
+    qDebug() << "  Rendering - Non-virtualized:" << nonVirtualizedRenderTime
+             << "ms";
     qDebug() << "  Rendering - Virtualized:" << virtualizedRenderTime << "ms";
-    
+
     // Virtualization should significantly improve rendering performance
     QVERIFY(virtualizedRenderTime < nonVirtualizedRenderTime);
-    
+
     // Population time might be similar, but rendering should be much faster
-    double renderingImprovement = (double)nonVirtualizedRenderTime / virtualizedRenderTime;
-    QVERIFY(renderingImprovement >= 2.0); // At least 2x improvement
-    
+    double renderingImprovement =
+        (double)nonVirtualizedRenderTime / virtualizedRenderTime;
+    QVERIFY(renderingImprovement >= 2.0);  // At least 2x improvement
+
     // Check virtualization metrics
     auto metrics = treeView->getVirtualizationMetrics();
     QVERIFY(metrics.totalItems == 10000);
     QVERIFY(metrics.visibleItems < metrics.totalItems);
     QVERIFY(metrics.renderedItems <= metrics.visibleItems);
-    
+
     qDebug() << "  Virtualization metrics:";
     qDebug() << "    Total items:" << metrics.totalItems;
     qDebug() << "    Visible items:" << metrics.visibleItems;
@@ -128,38 +131,39 @@ void FluentTreeViewVirtualizationTest::testScrollingPerformance() {
     auto* treeView = new FluentTreeView(m_testWidget);
     treeView->setVirtualizationEnabled(true);
     treeView->resize(600, 400);
-    
+
     populateTreeWithLargeDataset(treeView, 5000);
     treeView->show();
     QTest::qWaitForWindowExposed(m_testWidget);
-    
+
     // Measure scrolling performance
     auto* scrollBar = treeView->findChild<QScrollBar*>();
     QVERIFY(scrollBar != nullptr);
-    
+
     QElapsedTimer timer;
     timer.start();
-    
+
     // Simulate smooth scrolling
     const int scrollSteps = 100;
     const int maxScroll = scrollBar->maximum();
     const int stepSize = maxScroll / scrollSteps;
-    
+
     for (int i = 0; i < scrollSteps; ++i) {
         scrollBar->setValue(i * stepSize);
         QApplication::processEvents();
     }
-    
+
     qint64 scrollTime = timer.elapsed();
-    
+
     qDebug() << "Scrolling performance:";
     qDebug() << "  Scrolled through 5,000 items in" << scrollTime << "ms";
-    qDebug() << "  Average time per scroll step:" << (double)scrollTime / scrollSteps << "ms";
-    
+    qDebug() << "  Average time per scroll step:"
+             << (double)scrollTime / scrollSteps << "ms";
+
     // Scrolling should be smooth (less than 16ms per step for 60fps)
     double avgTimePerStep = (double)scrollTime / scrollSteps;
     QVERIFY(avgTimePerStep < 16.0);
-    
+
     // Check that virtualization window updates correctly
     auto metrics = treeView->getVirtualizationMetrics();
     QVERIFY(metrics.visibleItems > 0);
@@ -170,7 +174,7 @@ void FluentTreeViewVirtualizationTest::testColumnVirtualization() {
     auto* treeView = new FluentTreeView(m_testWidget);
     treeView->setVirtualizationEnabled(true);
     treeView->setColumnVirtualizationEnabled(true);
-    
+
     // Add many columns
     for (int i = 0; i < 50; ++i) {
         FluentTreeColumn column;
@@ -178,7 +182,7 @@ void FluentTreeViewVirtualizationTest::testColumnVirtualization() {
         column.width = 100;
         treeView->addColumn(column);
     }
-    
+
     // Add items with data in all columns
     for (int i = 0; i < 1000; ++i) {
         auto* item = treeView->addTopLevelItem(QString("Item %1").arg(i));
@@ -186,11 +190,11 @@ void FluentTreeViewVirtualizationTest::testColumnVirtualization() {
             item->setText(col, QString("Data %1-%2").arg(i).arg(col));
         }
     }
-    
-    treeView->resize(400, 300); // Small width to force horizontal scrolling
+
+    treeView->resize(400, 300);  // Small width to force horizontal scrolling
     treeView->show();
     QTest::qWaitForWindowExposed(m_testWidget);
-    
+
     // Test horizontal scrolling performance
     auto* hScrollBar = treeView->findChild<QScrollBar*>();
     // Find horizontal scroll bar specifically
@@ -200,75 +204,80 @@ void FluentTreeViewVirtualizationTest::testColumnVirtualization() {
             break;
         }
     }
-    
+
     if (hScrollBar && hScrollBar->maximum() > 0) {
         QElapsedTimer timer;
         timer.start();
-        
+
         // Scroll horizontally
         for (int i = 0; i <= hScrollBar->maximum(); i += 50) {
             hScrollBar->setValue(i);
             QApplication::processEvents();
         }
-        
+
         qint64 hScrollTime = timer.elapsed();
-        
+
         qDebug() << "Column virtualization performance:";
         qDebug() << "  Horizontal scroll time:" << hScrollTime << "ms";
-        
+
         // Should handle column virtualization efficiently
-        QVERIFY(hScrollTime < 1000); // Less than 1 second for full scroll
+        QVERIFY(hScrollTime < 1000);  // Less than 1 second for full scroll
     }
 }
 
 void FluentTreeViewVirtualizationTest::testMemoryEfficiency() {
     auto* treeView = new FluentTreeView(m_testWidget);
-    
+
     // Measure memory without virtualization
     size_t initialMemory = m_monitor->currentMemoryUsage();
-    
+
     treeView->setVirtualizationEnabled(false);
     populateTreeWithLargeDataset(treeView, 2000);
     treeView->show();
     QApplication::processEvents();
-    
+
     size_t memoryWithoutVirtualization = m_monitor->currentMemoryUsage();
-    
+
     // Clear and test with virtualization
     treeView->clear();
     treeView->setVirtualizationEnabled(true);
     populateTreeWithLargeDataset(treeView, 2000);
     QApplication::processEvents();
-    
+
     size_t memoryWithVirtualization = m_monitor->currentMemoryUsage();
-    
+
     qDebug() << "Memory efficiency:";
     qDebug() << "  Initial memory:" << initialMemory << "bytes";
-    qDebug() << "  Without virtualization:" << memoryWithoutVirtualization << "bytes";
+    qDebug() << "  Without virtualization:" << memoryWithoutVirtualization
+             << "bytes";
     qDebug() << "  With virtualization:" << memoryWithVirtualization << "bytes";
-    
+
     size_t nonVirtualizedOverhead = memoryWithoutVirtualization - initialMemory;
     size_t virtualizedOverhead = memoryWithVirtualization - initialMemory;
-    
-    qDebug() << "  Memory overhead - Non-virtualized:" << nonVirtualizedOverhead << "bytes";
-    qDebug() << "  Memory overhead - Virtualized:" << virtualizedOverhead << "bytes";
-    
-    // Virtualization might use slightly more memory for caching, but should be reasonable
-    // The main benefit is in rendering performance, not necessarily memory usage
-    QVERIFY(virtualizedOverhead < nonVirtualizedOverhead * 1.5); // At most 50% more memory
+
+    qDebug() << "  Memory overhead - Non-virtualized:" << nonVirtualizedOverhead
+             << "bytes";
+    qDebug() << "  Memory overhead - Virtualized:" << virtualizedOverhead
+             << "bytes";
+
+    // Virtualization might use slightly more memory for caching, but should be
+    // reasonable The main benefit is in rendering performance, not necessarily
+    // memory usage
+    QVERIFY(virtualizedOverhead <
+            nonVirtualizedOverhead * 1.5);  // At most 50% more memory
 }
 
 void FluentTreeViewVirtualizationTest::testVirtualizationMetrics() {
     auto* treeView = new FluentTreeView(m_testWidget);
     treeView->setVirtualizationEnabled(true);
     treeView->resize(400, 300);
-    
+
     populateTreeWithLargeDataset(treeView, 1000);
     treeView->show();
     QTest::qWaitForWindowExposed(m_testWidget);
-    
+
     auto metrics = treeView->getVirtualizationMetrics();
-    
+
     qDebug() << "Virtualization metrics validation:";
     qDebug() << "  Total items:" << metrics.totalItems;
     qDebug() << "  Visible items:" << metrics.visibleItems;
@@ -276,7 +285,7 @@ void FluentTreeViewVirtualizationTest::testVirtualizationMetrics() {
     qDebug() << "  Cached items:" << metrics.cachedItems;
     qDebug() << "  Render time:" << metrics.renderTime << "ms";
     qDebug() << "  Memory usage:" << metrics.memoryUsage << "bytes";
-    
+
     // Validate metrics make sense
     QVERIFY(metrics.totalItems == 1000);
     QVERIFY(metrics.visibleItems > 0);
@@ -288,41 +297,44 @@ void FluentTreeViewVirtualizationTest::testVirtualizationMetrics() {
 void FluentTreeViewVirtualizationTest::testChunkProcessing() {
     auto* treeView = new FluentTreeView(m_testWidget);
     treeView->setVirtualizationEnabled(true);
-    
+
     // Test different chunk sizes
     const QList<int> chunkSizes = {10, 50, 100, 200, 500};
-    
+
     for (int chunkSize : chunkSizes) {
         treeView->clear();
         treeView->setVirtualizationChunkSize(chunkSize);
-        
+
         QElapsedTimer timer;
         timer.start();
-        
+
         populateTreeWithLargeDataset(treeView, 2000);
         treeView->show();
         QApplication::processEvents();
-        
+
         qint64 processingTime = timer.elapsed();
-        
-        qDebug() << "Chunk size" << chunkSize << "processing time:" << processingTime << "ms";
-        
+
+        qDebug() << "Chunk size" << chunkSize
+                 << "processing time:" << processingTime << "ms";
+
         // All chunk sizes should complete in reasonable time
-        QVERIFY(processingTime < 5000); // Less than 5 seconds
-        
+        QVERIFY(processingTime < 5000);  // Less than 5 seconds
+
         auto metrics = treeView->getVirtualizationMetrics();
         QVERIFY(metrics.totalItems == 2000);
     }
 }
 
-void FluentTreeViewVirtualizationTest::populateTreeWithLargeDataset(FluentTreeView* treeView, int itemCount) {
+void FluentTreeViewVirtualizationTest::populateTreeWithLargeDataset(
+    FluentTreeView* treeView, int itemCount) {
     for (int i = 0; i < itemCount; ++i) {
         auto* item = treeView->addTopLevelItem(QString("Item %1").arg(i));
-        
+
         // Add some child items for hierarchy
         if (i % 10 == 0) {
             for (int j = 0; j < 3; ++j) {
-                treeView->addChildItem(item, QString("Child %1-%2").arg(i).arg(j));
+                treeView->addChildItem(item,
+                                       QString("Child %1-%2").arg(i).arg(j));
             }
         }
     }

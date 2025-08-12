@@ -1,55 +1,56 @@
 // src/Components/FluentSlider.cpp
 #include "FluentQt/Components/FluentSlider.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QWheelEvent>
 #include <QApplication>
-#include <QToolTip>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
+#include <QKeyEvent>
 #include <QLabel>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QStyleOption>
+#include <QTimer>
+#include <QToolTip>
+#include <QVBoxLayout>
+#include <QWheelEvent>
 #include <QtMath>
+#include <memory>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentSlider::FluentSlider(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-    , m_tooltipTimer(new QTimer(this))
-{
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
+    m_tooltipTimer = new QTimer();
     setupAnimations();
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover, true);
     setMouseTracking(true);
-    
+
     // Default value formatter
     m_valueFormatter = [](qreal value) {
         return QString::number(value, 'f', 1);
     };
-    
-    connect(m_tooltipTimer, &QTimer::timeout, this, &FluentSlider::onTooltipTimer);
+
+    connect(m_tooltipTimer, &QTimer::timeout, this,
+            &FluentSlider::onTooltipTimer);
     m_tooltipTimer->setSingleShot(true);
-    
+
     updateLayout();
 }
 
 FluentSlider::FluentSlider(FluentSliderOrientation orientation, QWidget* parent)
-    : FluentSlider(parent)
-{
+    : FluentSlider(parent) {
     setOrientation(orientation);
 }
 
 FluentSlider::FluentSlider(qreal minimum, qreal maximum, QWidget* parent)
-    : FluentSlider(parent)
-{
+    : FluentSlider(parent) {
     setRange(minimum, maximum);
 }
 
-FluentSlider::FluentSlider(qreal minimum, qreal maximum, qreal value, QWidget* parent)
-    : FluentSlider(minimum, maximum, parent)
-{
+FluentSlider::FluentSlider(qreal minimum, qreal maximum, qreal value,
+                           QWidget* parent)
+    : FluentSlider(minimum, maximum, parent) {
     setValue(value);
 }
 
@@ -69,14 +70,12 @@ void FluentSlider::setOrientation(FluentSliderOrientation orientation) {
     }
 }
 
-FluentSliderMode FluentSlider::mode() const {
-    return m_mode;
-}
+FluentSliderMode FluentSlider::mode() const { return m_mode; }
 
 void FluentSlider::setMode(FluentSliderMode mode) {
     if (m_mode != mode) {
         m_mode = mode;
-        
+
         // Initialize range values if switching to range mode
         if (mode == FluentSliderMode::Range) {
             if (m_lowerValue >= m_upperValue) {
@@ -84,7 +83,7 @@ void FluentSlider::setMode(FluentSliderMode mode) {
                 m_upperValue = m_maximum;
             }
         }
-        
+
         m_layoutDirty = true;
         updateLayout();
         update();
@@ -92,45 +91,41 @@ void FluentSlider::setMode(FluentSliderMode mode) {
     }
 }
 
-qreal FluentSlider::minimum() const {
-    return m_minimum;
-}
+qreal FluentSlider::minimum() const { return m_minimum; }
 
 void FluentSlider::setMinimum(qreal minimum) {
     if (!qFuzzyCompare(m_minimum, minimum)) {
         m_minimum = minimum;
-        
+
         if (m_maximum < m_minimum) {
             m_maximum = m_minimum;
         }
-        
+
         constrainValues();
         m_layoutDirty = true;
         updateLayout();
         update();
-        
+
         emit minimumChanged(minimum);
         emit rangeChanged(m_minimum, m_maximum);
     }
 }
 
-qreal FluentSlider::maximum() const {
-    return m_maximum;
-}
+qreal FluentSlider::maximum() const { return m_maximum; }
 
 void FluentSlider::setMaximum(qreal maximum) {
     if (!qFuzzyCompare(m_maximum, maximum)) {
         m_maximum = maximum;
-        
+
         if (m_minimum > m_maximum) {
             m_minimum = m_maximum;
         }
-        
+
         constrainValues();
         m_layoutDirty = true;
         updateLayout();
         update();
-        
+
         emit maximumChanged(maximum);
         emit rangeChanged(m_minimum, m_maximum);
     }
@@ -140,35 +135,35 @@ void FluentSlider::setRange(qreal minimum, qreal maximum) {
     if (minimum > maximum) {
         qSwap(minimum, maximum);
     }
-    
+
     bool minChanged = !qFuzzyCompare(m_minimum, minimum);
     bool maxChanged = !qFuzzyCompare(m_maximum, maximum);
-    
+
     if (minChanged || maxChanged) {
         m_minimum = minimum;
         m_maximum = maximum;
-        
+
         constrainValues();
         m_layoutDirty = true;
         updateLayout();
         update();
-        
-        if (minChanged) emit minimumChanged(minimum);
-        if (maxChanged) emit maximumChanged(maximum);
+
+        if (minChanged)
+            emit minimumChanged(minimum);
+        if (maxChanged)
+            emit maximumChanged(maximum);
         emit rangeChanged(minimum, maximum);
     }
 }
 
-qreal FluentSlider::value() const {
-    return m_value;
-}
+qreal FluentSlider::value() const { return m_value; }
 
 void FluentSlider::setValue(qreal value) {
     qreal constrainedValue = constrainValue(value);
     if (m_snapToTicks) {
         constrainedValue = snapValue(constrainedValue);
     }
-    
+
     if (!qFuzzyCompare(m_value, constrainedValue)) {
         m_value = constrainedValue;
         updateHandlePositions();
@@ -177,21 +172,19 @@ void FluentSlider::setValue(qreal value) {
     }
 }
 
-qreal FluentSlider::lowerValue() const {
-    return m_lowerValue;
-}
+qreal FluentSlider::lowerValue() const { return m_lowerValue; }
 
 void FluentSlider::setLowerValue(qreal value) {
     qreal constrainedValue = constrainValue(value);
     if (m_snapToTicks) {
         constrainedValue = snapValue(constrainedValue);
     }
-    
+
     // Ensure lower value doesn't exceed upper value
     if (constrainedValue > m_upperValue) {
         constrainedValue = m_upperValue;
     }
-    
+
     if (!qFuzzyCompare(m_lowerValue, constrainedValue)) {
         m_lowerValue = constrainedValue;
         updateHandlePositions();
@@ -201,21 +194,19 @@ void FluentSlider::setLowerValue(qreal value) {
     }
 }
 
-qreal FluentSlider::upperValue() const {
-    return m_upperValue;
-}
+qreal FluentSlider::upperValue() const { return m_upperValue; }
 
 void FluentSlider::setUpperValue(qreal value) {
     qreal constrainedValue = constrainValue(value);
     if (m_snapToTicks) {
         constrainedValue = snapValue(constrainedValue);
     }
-    
+
     // Ensure upper value doesn't go below lower value
     if (constrainedValue < m_lowerValue) {
         constrainedValue = m_lowerValue;
     }
-    
+
     if (!qFuzzyCompare(m_upperValue, constrainedValue)) {
         m_upperValue = constrainedValue;
         updateHandlePositions();
@@ -229,27 +220,29 @@ void FluentSlider::setValues(qreal lower, qreal upper) {
     if (lower > upper) {
         qSwap(lower, upper);
     }
-    
+
     lower = constrainValue(lower);
     upper = constrainValue(upper);
-    
+
     if (m_snapToTicks) {
         lower = snapValue(lower);
         upper = snapValue(upper);
     }
-    
+
     bool lowerChanged = !qFuzzyCompare(m_lowerValue, lower);
     bool upperChanged = !qFuzzyCompare(m_upperValue, upper);
-    
+
     if (lowerChanged || upperChanged) {
         m_lowerValue = lower;
         m_upperValue = upper;
-        
+
         updateHandlePositions();
         update();
-        
-        if (lowerChanged) emit lowerValueChanged(lower);
-        if (upperChanged) emit upperValueChanged(upper);
+
+        if (lowerChanged)
+            emit lowerValueChanged(lower);
+        if (upperChanged)
+            emit upperValueChanged(upper);
         emit valuesChanged(lower, upper);
     }
 }
@@ -258,9 +251,7 @@ QPair<qreal, qreal> FluentSlider::values() const {
     return qMakePair(m_lowerValue, m_upperValue);
 }
 
-qreal FluentSlider::step() const {
-    return m_step;
-}
+qreal FluentSlider::step() const { return m_step; }
 
 void FluentSlider::setStep(qreal step) {
     if (step > 0 && !qFuzzyCompare(m_step, step)) {
@@ -269,9 +260,7 @@ void FluentSlider::setStep(qreal step) {
     }
 }
 
-qreal FluentSlider::pageStep() const {
-    return m_pageStep;
-}
+qreal FluentSlider::pageStep() const { return m_pageStep; }
 
 void FluentSlider::setPageStep(qreal step) {
     if (step > 0 && !qFuzzyCompare(m_pageStep, step)) {
@@ -294,9 +283,7 @@ void FluentSlider::setTickPosition(FluentSliderTickPosition position) {
     }
 }
 
-int FluentSlider::tickInterval() const {
-    return m_tickInterval;
-}
+int FluentSlider::tickInterval() const { return m_tickInterval; }
 
 void FluentSlider::setTickInterval(int interval) {
     if (interval > 0 && m_tickInterval != interval) {
@@ -309,9 +296,7 @@ void FluentSlider::setTickInterval(int interval) {
     }
 }
 
-void FluentSlider::addTick(qreal value) {
-    addTick(FluentSliderTick(value));
-}
+void FluentSlider::addTick(qreal value) { addTick(FluentSliderTick(value)); }
 
 void FluentSlider::addTick(qreal value, const QString& label) {
     addTick(FluentSliderTick(value, label));
@@ -321,14 +306,15 @@ void FluentSlider::addTick(const FluentSliderTick& tick) {
     if (isValidValue(tick.value)) {
         // Remove existing tick at same value
         removeTick(tick.value);
-        
+
         // Insert in sorted order
-        auto it = std::lower_bound(m_ticks.begin(), m_ticks.end(), tick,
-                                   [](const FluentSliderTick& a, const FluentSliderTick& b) {
-                                       return a.value < b.value;
-                                   });
+        auto it = std::lower_bound(
+            m_ticks.begin(), m_ticks.end(), tick,
+            [](const FluentSliderTick& a, const FluentSliderTick& b) {
+                return a.value < b.value;
+            });
         m_ticks.insert(it, tick);
-        
+
         m_layoutDirty = true;
         updateLayout();
         update();
@@ -340,7 +326,7 @@ void FluentSlider::removeTick(qreal value) {
                            [value](const FluentSliderTick& tick) {
                                return qFuzzyCompare(tick.value, value);
                            });
-    
+
     if (it != m_ticks.end()) {
         m_ticks.erase(it);
         m_layoutDirty = true;
@@ -358,9 +344,7 @@ void FluentSlider::clearTicks() {
     }
 }
 
-QList<FluentSliderTick> FluentSlider::ticks() const {
-    return m_ticks;
-}
+QList<FluentSliderTick> FluentSlider::ticks() const { return m_ticks; }
 
 void FluentSlider::setTicks(const QList<FluentSliderTick>& ticks) {
     m_ticks.clear();
@@ -369,21 +353,19 @@ void FluentSlider::setTicks(const QList<FluentSliderTick>& ticks) {
             m_ticks.append(tick);
         }
     }
-    
+
     // Sort by value
     std::sort(m_ticks.begin(), m_ticks.end(),
               [](const FluentSliderTick& a, const FluentSliderTick& b) {
                   return a.value < b.value;
               });
-    
+
     m_layoutDirty = true;
     updateLayout();
     update();
 }
 
-bool FluentSlider::showLabels() const {
-    return m_showLabels;
-}
+bool FluentSlider::showLabels() const { return m_showLabels; }
 
 void FluentSlider::setShowLabels(bool show) {
     if (m_showLabels != show) {
@@ -395,9 +377,7 @@ void FluentSlider::setShowLabels(bool show) {
     }
 }
 
-bool FluentSlider::showTooltip() const {
-    return m_showTooltip;
-}
+bool FluentSlider::showTooltip() const { return m_showTooltip; }
 
 void FluentSlider::setShowTooltip(bool show) {
     if (m_showTooltip != show) {
@@ -411,9 +391,7 @@ void FluentSlider::setValueFormatter(std::function<QString(qreal)> formatter) {
     update();
 }
 
-bool FluentSlider::isAnimated() const {
-    return m_animated;
-}
+bool FluentSlider::isAnimated() const { return m_animated; }
 
 void FluentSlider::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -422,14 +400,12 @@ void FluentSlider::setAnimated(bool animated) {
     }
 }
 
-bool FluentSlider::snapToTicks() const {
-    return m_snapToTicks;
-}
+bool FluentSlider::snapToTicks() const { return m_snapToTicks; }
 
 void FluentSlider::setSnapToTicks(bool snap) {
     if (m_snapToTicks != snap) {
         m_snapToTicks = snap;
-        
+
         // Re-snap current values if enabling
         if (snap) {
             setValue(m_value);
@@ -437,7 +413,7 @@ void FluentSlider::setSnapToTicks(bool snap) {
                 setValues(m_lowerValue, m_upperValue);
             }
         }
-        
+
         emit snapToTicksChanged(snap);
     }
 }
@@ -452,15 +428,14 @@ QPoint FluentSlider::positionFromValue(qreal value) const {
 
 QRect FluentSlider::handleRect(bool isUpper) const {
     if (m_mode == FluentSliderMode::Single || !isUpper) {
-        return getHandleRect(m_mode == FluentSliderMode::Single ? m_value : m_lowerValue);
+        return getHandleRect(m_mode == FluentSliderMode::Single ? m_value
+                                                                : m_lowerValue);
     } else {
         return getHandleRect(m_upperValue);
     }
 }
 
-QRect FluentSlider::trackRect() const {
-    return getTrackRect();
-}
+QRect FluentSlider::trackRect() const { return getTrackRect(); }
 
 bool FluentSlider::isValidValue(qreal value) const {
     return value >= m_minimum && value <= m_maximum;
@@ -515,7 +490,7 @@ QSize FluentSlider::sizeHint() const {
             width += 16;
         }
         if (m_showLabels) {
-            width += 60; // Approximate label width
+            width += 60;  // Approximate label width
         }
 
         return QSize(width, height);
@@ -552,8 +527,8 @@ void FluentSlider::animateToValue(qreal value, int duration) {
     m_valueAnimation->setEndValue(targetValue);
     m_valueAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-    connect(m_valueAnimation, &QPropertyAnimation::finished,
-            this, &FluentSlider::onAnimationFinished);
+    connect(m_valueAnimation, &QPropertyAnimation::finished, this,
+            &FluentSlider::onAnimationFinished);
 
     m_valueAnimation->start();
 }
@@ -600,10 +575,10 @@ void FluentSlider::animateToValues(qreal lower, qreal upper, int duration) {
     m_upperValueAnimation->setEndValue(targetUpper);
     m_upperValueAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-    connect(m_lowerValueAnimation, &QPropertyAnimation::finished,
-            this, &FluentSlider::onAnimationFinished);
-    connect(m_upperValueAnimation, &QPropertyAnimation::finished,
-            this, &FluentSlider::onAnimationFinished);
+    connect(m_lowerValueAnimation, &QPropertyAnimation::finished, this,
+            &FluentSlider::onAnimationFinished);
+    connect(m_upperValueAnimation, &QPropertyAnimation::finished, this,
+            &FluentSlider::onAnimationFinished);
 
     m_lowerValueAnimation->start();
     m_upperValueAnimation->start();
@@ -612,14 +587,17 @@ void FluentSlider::animateToValues(qreal lower, qreal upper, int duration) {
 void FluentSlider::setupAnimations() {
     // Connect to theme changes
     auto& theme = Styling::FluentTheme::instance();
-    connect(&theme, &Styling::FluentTheme::themeChanged,
-            this, &FluentSlider::updateColors);
-    connect(&theme, &Styling::FluentTheme::accentColorChanged,
-            this, &FluentSlider::updateColors);
+    connect(&theme, &Styling::FluentTheme::themeChanged, this,
+            &FluentSlider::updateColors);
+    connect(
+        &theme,
+        QOverload<const QColor&>::of(&Styling::FluentTheme::accentColorChanged),
+        this, &FluentSlider::updateColors);
 }
 
 void FluentSlider::updateLayout() {
-    if (!m_layoutDirty) return;
+    if (!m_layoutDirty)
+        return;
 
     m_trackRect = getTrackRect();
     updateHandlePositions();
@@ -653,13 +631,9 @@ void FluentSlider::onAnimationFinished() {
     }
 }
 
-void FluentSlider::onTooltipTimer() {
-    hideValueTooltip();
-}
+void FluentSlider::onTooltipTimer() { hideValueTooltip(); }
 
-void FluentSlider::updateColors() {
-    update();
-}
+void FluentSlider::updateColors() { update(); }
 
 void FluentSlider::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
@@ -732,8 +706,10 @@ void FluentSlider::mouseMoveEvent(QMouseEvent* event) {
         updateDrag(event->pos());
 
         if (m_showTooltip) {
-            qreal currentValue = m_mode == FluentSliderMode::Single ? m_value :
-                               (m_activeHandle == 0 ? m_lowerValue : m_upperValue);
+            qreal currentValue =
+                m_mode == FluentSliderMode::Single
+                    ? m_value
+                    : (m_activeHandle == 0 ? m_lowerValue : m_upperValue);
             showValueTooltip(event->pos(), currentValue);
         }
     } else {
@@ -907,14 +883,18 @@ void FluentSlider::paintProgress(QPainter* painter) {
             qreal progress = (m_value - m_minimum) / (m_maximum - m_minimum);
             int progressWidth = qRound((width() - 20) * progress);
             QRect progressRect(10, y, progressWidth, trackHeight);
-            painter->drawRoundedRect(progressRect, trackHeight / 2, trackHeight / 2);
+            painter->drawRoundedRect(progressRect, trackHeight / 2,
+                                     trackHeight / 2);
         } else {
-            qreal lowerProgress = (m_lowerValue - m_minimum) / (m_maximum - m_minimum);
-            qreal upperProgress = (m_upperValue - m_minimum) / (m_maximum - m_minimum);
+            qreal lowerProgress =
+                (m_lowerValue - m_minimum) / (m_maximum - m_minimum);
+            qreal upperProgress =
+                (m_upperValue - m_minimum) / (m_maximum - m_minimum);
             int startX = qRound(10 + (width() - 20) * lowerProgress);
             int endX = qRound(10 + (width() - 20) * upperProgress);
             QRect progressRect(startX, y, endX - startX, trackHeight);
-            painter->drawRoundedRect(progressRect, trackHeight / 2, trackHeight / 2);
+            painter->drawRoundedRect(progressRect, trackHeight / 2,
+                                     trackHeight / 2);
         }
     } else {
         int trackWidth = 4;
@@ -925,14 +905,19 @@ void FluentSlider::paintProgress(QPainter* painter) {
             int progressHeight = qRound((height() - 20) * progress);
             int startY = height() - 10 - progressHeight;
             QRect progressRect(x, startY, trackWidth, progressHeight);
-            painter->drawRoundedRect(progressRect, trackWidth / 2, trackWidth / 2);
+            painter->drawRoundedRect(progressRect, trackWidth / 2,
+                                     trackWidth / 2);
         } else {
-            qreal lowerProgress = (m_lowerValue - m_minimum) / (m_maximum - m_minimum);
-            qreal upperProgress = (m_upperValue - m_minimum) / (m_maximum - m_minimum);
-            int startY = qRound(height() - 10 - (height() - 20) * upperProgress);
+            qreal lowerProgress =
+                (m_lowerValue - m_minimum) / (m_maximum - m_minimum);
+            qreal upperProgress =
+                (m_upperValue - m_minimum) / (m_maximum - m_minimum);
+            int startY =
+                qRound(height() - 10 - (height() - 20) * upperProgress);
             int endY = qRound(height() - 10 - (height() - 20) * lowerProgress);
             QRect progressRect(x, startY, trackWidth, endY - startY);
-            painter->drawRoundedRect(progressRect, trackWidth / 2, trackWidth / 2);
+            painter->drawRoundedRect(progressRect, trackWidth / 2,
+                                     trackWidth / 2);
         }
     }
 
@@ -951,7 +936,8 @@ void FluentSlider::paintTicks(QPainter* painter) {
 
     // Draw interval ticks
     if (m_tickInterval > 0) {
-        for (qreal value = m_minimum; value <= m_maximum; value += m_tickInterval) {
+        for (qreal value = m_minimum; value <= m_maximum;
+             value += m_tickInterval) {
             drawTick(painter, value, 6);
         }
     }
@@ -977,7 +963,8 @@ void FluentSlider::paintLabels(QPainter* painter) {
 
     // Draw interval labels
     if (m_tickInterval > 0) {
-        for (qreal value = m_minimum; value <= m_maximum; value += m_tickInterval) {
+        for (qreal value = m_minimum; value <= m_maximum;
+             value += m_tickInterval) {
             drawLabel(painter, value, formatValue(value));
         }
     }
@@ -1010,23 +997,32 @@ void FluentSlider::drawTick(QPainter* painter, qreal value, int length) {
     QPoint pos = getPositionFromValue(value);
 
     if (m_orientation == FluentSliderOrientation::Horizontal) {
-        if (m_tickPosition == FluentSliderTickPosition::Above || m_tickPosition == FluentSliderTickPosition::Both) {
-            painter->drawLine(pos.x(), pos.y() - 10, pos.x(), pos.y() - 10 - length);
+        if (m_tickPosition == FluentSliderTickPosition::Above ||
+            m_tickPosition == FluentSliderTickPosition::Both) {
+            painter->drawLine(pos.x(), pos.y() - 10, pos.x(),
+                              pos.y() - 10 - length);
         }
-        if (m_tickPosition == FluentSliderTickPosition::Below || m_tickPosition == FluentSliderTickPosition::Both) {
-            painter->drawLine(pos.x(), pos.y() + 10, pos.x(), pos.y() + 10 + length);
+        if (m_tickPosition == FluentSliderTickPosition::Below ||
+            m_tickPosition == FluentSliderTickPosition::Both) {
+            painter->drawLine(pos.x(), pos.y() + 10, pos.x(),
+                              pos.y() + 10 + length);
         }
     } else {
-        if (m_tickPosition == FluentSliderTickPosition::Above || m_tickPosition == FluentSliderTickPosition::Both) {
-            painter->drawLine(pos.x() - 10, pos.y(), pos.x() - 10 - length, pos.y());
+        if (m_tickPosition == FluentSliderTickPosition::Above ||
+            m_tickPosition == FluentSliderTickPosition::Both) {
+            painter->drawLine(pos.x() - 10, pos.y(), pos.x() - 10 - length,
+                              pos.y());
         }
-        if (m_tickPosition == FluentSliderTickPosition::Below || m_tickPosition == FluentSliderTickPosition::Both) {
-            painter->drawLine(pos.x() + 10, pos.y(), pos.x() + 10 + length, pos.y());
+        if (m_tickPosition == FluentSliderTickPosition::Below ||
+            m_tickPosition == FluentSliderTickPosition::Both) {
+            painter->drawLine(pos.x() + 10, pos.y(), pos.x() + 10 + length,
+                              pos.y());
         }
     }
 }
 
-void FluentSlider::drawLabel(QPainter* painter, qreal value, const QString& text) {
+void FluentSlider::drawLabel(QPainter* painter, qreal value,
+                             const QString& text) {
     QPoint pos = getPositionFromValue(value);
     QFontMetrics fm(painter->font());
     QRect textRect = fm.boundingRect(text);
@@ -1040,7 +1036,8 @@ void FluentSlider::drawLabel(QPainter* painter, qreal value, const QString& text
     painter->drawText(textRect, Qt::AlignCenter, text);
 }
 
-void FluentSlider::paintHandle(QPainter* painter, qreal value, int handleIndex) {
+void FluentSlider::paintHandle(QPainter* painter, qreal value,
+                               int handleIndex) {
     QPoint center = getPositionFromValue(value);
     int radius = 8;
 
@@ -1103,7 +1100,7 @@ qreal FluentSlider::getValueFromPosition(const QPoint& position) const {
 }
 
 int FluentSlider::getHandleAtPosition(const QPoint& position) const {
-    const int handleRadius = 12; // Slightly larger for easier clicking
+    const int handleRadius = 12;  // Slightly larger for easier clicking
 
     if (m_mode == FluentSliderMode::Single) {
         QPoint handlePos = getPositionFromValue(m_value);
@@ -1118,13 +1115,13 @@ int FluentSlider::getHandleAtPosition(const QPoint& position) const {
         int upperDist = (position - upperPos).manhattanLength();
 
         if (lowerDist <= handleRadius && lowerDist <= upperDist) {
-            return 0; // Lower handle
+            return 0;  // Lower handle
         } else if (upperDist <= handleRadius) {
-            return 1; // Upper handle
+            return 1;  // Upper handle
         }
     }
 
-    return -1; // No handle
+    return -1;  // No handle
 }
 
 QString FluentSlider::formatValue(qreal value) const {
@@ -1157,7 +1154,8 @@ void FluentSlider::startDrag(int handleIndex, const QPoint& position) {
 }
 
 void FluentSlider::updateDrag(const QPoint& position) {
-    if (!m_dragging) return;
+    if (!m_dragging)
+        return;
 
     qreal newValue = getValueFromPosition(position);
 
@@ -1183,7 +1181,8 @@ void FluentSlider::endDrag() {
 }
 
 void FluentSlider::showValueTooltip(const QPoint& position, qreal value) {
-    if (!m_showTooltip) return;
+    if (!m_showTooltip)
+        return;
 
     // Implementation would create and show tooltip widget
     // For now, just a placeholder
@@ -1198,7 +1197,8 @@ void FluentSlider::hideValueTooltip() {
 }
 
 qreal FluentSlider::snapValueToTick(qreal value) const {
-    if (!m_snapToTicks) return value;
+    if (!m_snapToTicks)
+        return value;
 
     qreal closestTick = value;
     qreal minDistance = std::numeric_limits<qreal>::max();
@@ -1244,7 +1244,8 @@ QRect FluentSlider::getTrackRect() const {
 QRect FluentSlider::getHandleRect(qreal value) const {
     QPoint center = getPositionFromValue(value);
     int radius = 8;
-    return QRect(center.x() - radius, center.y() - radius, radius * 2, radius * 2);
+    return QRect(center.x() - radius, center.y() - radius, radius * 2,
+                 radius * 2);
 }
 
 QPoint FluentSlider::getHandleCenter(qreal value) const {
@@ -1280,4 +1281,4 @@ void FluentSlider::constrainValues() {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

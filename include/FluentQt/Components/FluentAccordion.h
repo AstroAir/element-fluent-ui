@@ -1,30 +1,30 @@
 // include/FluentQt/Components/FluentAccordion.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
 #include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
 #include <QIcon>
+#include <QLabel>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QVBoxLayout>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentAccordionState {
-    Expanded,
-    Collapsed
-};
+enum class FluentAccordionState { Expanded, Collapsed };
 
 class FluentAccordion : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
-    Q_PROPERTY(QString description READ description WRITE setDescription NOTIFY descriptionChanged)
+    Q_PROPERTY(QString description READ description WRITE setDescription NOTIFY
+                   descriptionChanged)
     Q_PROPERTY(QIcon icon READ icon WRITE setIcon NOTIFY iconChanged)
-    Q_PROPERTY(FluentAccordionState accordionState READ accordionState WRITE setAccordionState NOTIFY accordionStateChanged)
-    Q_PROPERTY(bool collapsible READ isCollapsible WRITE setCollapsible NOTIFY collapsibleChanged)
+    Q_PROPERTY(FluentAccordionState accordionState READ accordionState WRITE
+                   setAccordionState NOTIFY accordionStateChanged)
+    Q_PROPERTY(bool collapsible READ isCollapsible WRITE setCollapsible NOTIFY
+                   collapsibleChanged)
     Q_PROPERTY(qreal contentOpacity READ contentOpacity WRITE setContentOpacity)
     Q_PROPERTY(int contentHeight READ contentHeight WRITE setContentHeight)
 
@@ -87,10 +87,11 @@ protected:
     void keyPressEvent(QKeyEvent* event) override;
     void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    
+
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onThemeChanged();
@@ -126,13 +127,13 @@ private:
     QString m_title;
     QString m_description;
     QIcon m_icon;
-    
+
     // State
     FluentAccordionState m_accordionState{FluentAccordionState::Collapsed};
     bool m_collapsible{true};
     bool m_pressed{false};
     bool m_headerHovered{false};
-    
+
     // Layout
     QVBoxLayout* m_mainLayout{nullptr};
     QWidget* m_headerWidget{nullptr};
@@ -142,21 +143,21 @@ private:
     QWidget* m_contentContainer{nullptr};
     QVBoxLayout* m_contentLayout{nullptr};
     QWidget* m_content{nullptr};
-    
+
     // Animation
     std::unique_ptr<QParallelAnimationGroup> m_animationGroup;
     std::unique_ptr<QPropertyAnimation> m_heightAnimation;
     std::unique_ptr<QPropertyAnimation> m_opacityAnimation;
     QGraphicsOpacityEffect* m_contentOpacityEffect{nullptr};
-    
+
     // Animation properties
     qreal m_contentOpacity{0.0};
     int m_contentHeight{0};
     int m_expandedHeight{0};
-    
+
     // Cached values
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

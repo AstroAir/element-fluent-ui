@@ -3,23 +3,23 @@
 
 #pragma once
 
-#include <QObject>
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
-#include <QGraphicsOpacityEffect>
-#include <QGraphicsColorizeEffect>
-#include <QTimer>
-#include <QEasingCurve>
 #include <QColor>
+#include <QEasingCurve>
+#include <QGraphicsColorizeEffect>
+#include <QGraphicsOpacityEffect>
+#include <QObject>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
 #include <QRect>
+#include <QSequentialAnimationGroup>
+#include <QTimer>
+#include <QWidget>
 
 namespace FluentQt::Examples {
 
 /**
  * @brief Visual feedback manager for enhanced user interactions
- * 
+ *
  * Provides comprehensive visual feedback including:
  * - Theme transition animations
  * - Loading states and progress indicators
@@ -58,20 +58,26 @@ public:
 
     // Theme transition effects
     void animateThemeTransition(QWidget* widget, int duration = 300);
-    void animateColorTransition(QWidget* widget, const QColor& fromColor, const QColor& toColor, int duration = 300);
-    void animateOpacityTransition(QWidget* widget, qreal fromOpacity, qreal toOpacity, int duration = 300);
+    void animateColorTransition(QWidget* widget, const QColor& fromColor,
+                                const QColor& toColor, int duration = 300);
+    void animateOpacityTransition(QWidget* widget, qreal fromOpacity,
+                                  qreal toOpacity, int duration = 300);
 
     // Component feedback effects
-    void showSuccessFeedback(QWidget* widget, const QString& message = QString());
+    void showSuccessFeedback(QWidget* widget,
+                             const QString& message = QString());
     void showErrorFeedback(QWidget* widget, const QString& message = QString());
-    void showWarningFeedback(QWidget* widget, const QString& message = QString());
+    void showWarningFeedback(QWidget* widget,
+                             const QString& message = QString());
     void showInfoFeedback(QWidget* widget, const QString& message = QString());
 
     // Loading and progress effects
-    void showLoadingState(QWidget* widget, const QString& message = "Loading...");
+    void showLoadingState(QWidget* widget,
+                          const QString& message = "Loading...");
     void hideLoadingState(QWidget* widget);
     void updateProgress(QWidget* widget, int percentage);
-    void showProgressFeedback(QWidget* widget, int progress, const QString& message = QString());
+    void showProgressFeedback(QWidget* widget, int progress,
+                              const QString& message = QString());
 
     // Interaction effects
     void animateButtonPress(QWidget* button);
@@ -81,19 +87,26 @@ public:
 
     // Custom animations
     void animateWidget(QWidget* widget, AnimationType type, int duration = 300);
-    void animateProperty(QWidget* widget, const QByteArray& property, const QVariant& startValue, const QVariant& endValue, int duration = 300);
-    void animateGeometry(QWidget* widget, const QRect& startGeometry, const QRect& endGeometry, int duration = 300);
+    void animateProperty(QWidget* widget, const QByteArray& property,
+                         const QVariant& startValue, const QVariant& endValue,
+                         int duration = 300);
+    void animateGeometry(QWidget* widget, const QRect& startGeometry,
+                         const QRect& endGeometry, int duration = 300);
 
     // Confirmation and status effects
     void showConfirmationEffect(QWidget* widget, bool confirmed);
-    void showStatusChange(QWidget* widget, const QString& status, FeedbackType type);
-    void showValidationFeedback(QWidget* widget, bool valid, const QString& message = QString());
+    void showStatusChange(QWidget* widget, const QString& status,
+                          FeedbackType type);
+    void showValidationFeedback(QWidget* widget, bool valid,
+                                const QString& message = QString());
 
     // Utility methods
     void setDefaultDuration(int duration) { m_defaultDuration = duration; }
     int defaultDuration() const { return m_defaultDuration; }
-    
-    void setDefaultEasing(const QEasingCurve& easing) { m_defaultEasing = easing; }
+
+    void setDefaultEasing(const QEasingCurve& easing) {
+        m_defaultEasing = easing;
+    }
     QEasingCurve defaultEasing() const { return m_defaultEasing; }
 
     // Global effects
@@ -109,21 +122,25 @@ public slots:
 signals:
     void animationStarted(QWidget* widget, AnimationType type);
     void animationFinished(QWidget* widget, AnimationType type);
-    void feedbackShown(QWidget* widget, FeedbackType type, const QString& message);
+    void feedbackShown(QWidget* widget, FeedbackType type,
+                       const QString& message);
 
 private slots:
     void onAnimationFinished();
     void onEffectFinished();
 
 private:
-    void setupAnimation(QPropertyAnimation* animation, QWidget* widget, const QByteArray& property);
+    void setupAnimation(QPropertyAnimation* animation, QWidget* widget,
+                        const QByteArray& property);
     void setupEffect(QGraphicsEffect* effect, QWidget* widget);
     void cleanupAnimation(QPropertyAnimation* animation);
     void cleanupEffect(QGraphicsEffect* effect);
 
     QGraphicsOpacityEffect* createOpacityEffect(QWidget* widget);
-    QGraphicsColorizeEffect* createColorizeEffect(QWidget* widget, const QColor& color);
-    QPropertyAnimation* createPropertyAnimation(QWidget* widget, const QByteArray& property);
+    QGraphicsColorizeEffect* createColorizeEffect(QWidget* widget,
+                                                  const QColor& color);
+    QPropertyAnimation* createPropertyAnimation(QWidget* widget,
+                                                const QByteArray& property);
     QSequentialAnimationGroup* createSequentialGroup();
     QParallelAnimationGroup* createParallelGroup();
 
@@ -138,7 +155,8 @@ private:
     void animateScale(QWidget* widget, int duration);
     void animateRotate(QWidget* widget, int duration);
 
-    void showTemporaryMessage(QWidget* widget, const QString& message, FeedbackType type);
+    void showTemporaryMessage(QWidget* widget, const QString& message,
+                              FeedbackType type);
     void updateWidgetStyle(QWidget* widget, FeedbackType type);
     void restoreWidgetStyle(QWidget* widget);
 
@@ -175,8 +193,10 @@ public:
     // Sequence building
     FluentAnimationSequence* addFadeIn(QWidget* widget, int duration = 300);
     FluentAnimationSequence* addFadeOut(QWidget* widget, int duration = 300);
-    FluentAnimationSequence* addSlide(QWidget* widget, const QPoint& from, const QPoint& to, int duration = 300);
-    FluentAnimationSequence* addScale(QWidget* widget, qreal fromScale, qreal toScale, int duration = 300);
+    FluentAnimationSequence* addSlide(QWidget* widget, const QPoint& from,
+                                      const QPoint& to, int duration = 300);
+    FluentAnimationSequence* addScale(QWidget* widget, qreal fromScale,
+                                      qreal toScale, int duration = 300);
     FluentAnimationSequence* addDelay(int milliseconds);
     FluentAnimationSequence* addCustomAnimation(QPropertyAnimation* animation);
 
@@ -210,4 +230,4 @@ private:
     bool m_inParallelGroup{false};
 };
 
-} // namespace FluentQt::Examples
+}  // namespace FluentQt::Examples

@@ -1,62 +1,60 @@
 // src/Components/FluentToast.cpp
 #include "FluentQt/Components/FluentToast.h"
-#include "FluentQt/Components/FluentButton.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QDebug>
+#include <QFontMetrics>
+#include <QHideEvent>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QMouseEvent>
 #include <QResizeEvent>
-#include <QShowEvent>
-#include <QHideEvent>
-#include <QApplication>
 #include <QScreen>
-#include <QFontMetrics>
-#include <QDebug>
+#include <QShowEvent>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Core;
 using namespace FluentQt::Styling;
 
-FluentToast::FluentToast(QWidget* parent)
-    : FluentComponent(parent)
-{
+FluentToast::FluentToast(QWidget* parent) : FluentComponent(parent) {
     setupUI();
     setupAnimations();
     setupTimer();
-    
+
     // Connect to theme changes
-    connect(&FluentTheme::instance(), &FluentTheme::themeChanged,
-            this, &FluentToast::onThemeChanged);
-    
+    connect(&FluentTheme::instance(), &FluentTheme::themeChanged, this,
+            &FluentToast::onThemeChanged);
+
     updateColors();
     updateAccessibility();
-    
+
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_DeleteOnClose);
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint |
+                   Qt::WindowStaysOnTopHint);
 }
 
-FluentToast::FluentToast(FluentToastType type, const QString& title, QWidget* parent)
-    : FluentToast(parent)
-{
+FluentToast::FluentToast(FluentToastType type, const QString& title,
+                         QWidget* parent)
+    : FluentToast(parent) {
     m_config.type = type;
     setTitle(title);
 }
 
-FluentToast::FluentToast(FluentToastType type, const QString& title, const QString& message, QWidget* parent)
-    : FluentToast(parent)
-{
+FluentToast::FluentToast(FluentToastType type, const QString& title,
+                         const QString& message, QWidget* parent)
+    : FluentToast(parent) {
     m_config.type = type;
     setTitle(title);
     setMessage(message);
 }
 
 FluentToast::FluentToast(const FluentToastConfig& config, QWidget* parent)
-    : FluentToast(parent)
-{
+    : FluentToast(parent) {
     setConfiguration(config);
 }
 
@@ -154,18 +152,20 @@ void FluentToast::setConfiguration(const FluentToastConfig& config) {
     const bool hasTypeChanged = (m_config.type != config.type);
     const bool hasDurationChanged = (m_config.duration != config.duration);
     const bool hasClosableChanged = (m_config.closable != config.closable);
-    const bool hasShowProgressChanged = (m_config.showProgress != config.showProgress);
-    const bool hasPersistentChanged = (m_config.persistent != config.persistent);
-    
+    const bool hasShowProgressChanged =
+        (m_config.showProgress != config.showProgress);
+    const bool hasPersistentChanged =
+        (m_config.persistent != config.persistent);
+
     m_config = config;
-    
+
     m_sizeHintValid = false;
     updateLayout();
     updateColors();
     updateIcon();
     updateProgress();
     updateAccessibility();
-    
+
     // Update timer if needed
     if (hasDurationChanged || hasPersistentChanged) {
         if (m_autoHideTimer) {
@@ -178,11 +178,16 @@ void FluentToast::setConfiguration(const FluentToastConfig& config) {
     }
 
     // Emit change signals
-    if (hasTypeChanged) emit typeChanged(config.type);
-    if (hasDurationChanged) emit durationChanged(config.duration);
-    if (hasClosableChanged) emit closableChanged(config.closable);
-    if (hasShowProgressChanged) emit showProgressChanged(config.showProgress);
-    if (hasPersistentChanged) emit persistentChanged(config.persistent);
+    if (hasTypeChanged)
+        emit typeChanged(config.type);
+    if (hasDurationChanged)
+        emit durationChanged(config.duration);
+    if (hasClosableChanged)
+        emit closableChanged(config.closable);
+    if (hasShowProgressChanged)
+        emit showProgressChanged(config.showProgress);
+    if (hasPersistentChanged)
+        emit persistentChanged(config.persistent);
     emit pauseOnHoverChanged(config.pauseOnHover);
 }
 
@@ -192,11 +197,13 @@ void FluentToast::addAction(const FluentToastAction& action) {
     updateLayout();
 }
 
-void FluentToast::addAction(const QString& text, std::function<void()> callback, bool primary) {
+void FluentToast::addAction(const QString& text, std::function<void()> callback,
+                            bool primary) {
     addAction(FluentToastAction(text, std::move(callback), primary));
 }
 
-void FluentToast::addAction(const QIcon& icon, const QString& text, std::function<void()> callback, bool primary) {
+void FluentToast::addAction(const QIcon& icon, const QString& text,
+                            std::function<void()> callback, bool primary) {
     addAction(FluentToastAction(icon, text, std::move(callback), primary));
 }
 
@@ -231,9 +238,7 @@ int FluentToast::progressMaximum() const {
     return m_progressBar ? m_progressBar->maximum() : 100;
 }
 
-void FluentToast::setUserData(const QVariant& data) {
-    m_userData = data;
-}
+void FluentToast::setUserData(const QVariant& data) { m_userData = data; }
 
 void FluentToast::setOpacity(qreal opacity) {
     if (m_opacity != opacity) {
@@ -265,111 +270,124 @@ QSize FluentToast::calculateSizeHint() const {
     const auto& theme = FluentTheme::instance();
     const QFontMetrics titleMetrics(theme.titleSmallFont());
     const QFontMetrics messageMetrics(theme.bodyFont());
-    
+
     int width = m_config.minWidth;
-    int height = 16; // Top padding
-    
+    int height = 16;  // Top padding
+
     // Icon space
     const int iconSize = 24;
     const int iconSpace = iconSize + 8;
-    
+
     // Calculate text width
-    int textWidth = width - iconSpace - 16; // Margins
+    int textWidth = width - iconSpace - 16;  // Margins
     if (m_config.closable) {
-        textWidth -= 32; // Close button space
+        textWidth -= 32;  // Close button space
     }
-    
+
     // Title height
     if (!m_title.isEmpty()) {
-        const QRect titleRect = titleMetrics.boundingRect(QRect(0, 0, textWidth, 0), 
-                                                         Qt::TextWordWrap, m_title);
+        const QRect titleRect = titleMetrics.boundingRect(
+            QRect(0, 0, textWidth, 0), Qt::TextWordWrap, m_title);
         height += titleRect.height() + 4;
         width = qMax(width, titleRect.width() + iconSpace + 32);
     }
-    
+
     // Message height
     if (!m_message.isEmpty()) {
-        const QRect messageRect = messageMetrics.boundingRect(QRect(0, 0, textWidth, 0), 
-                                                             Qt::TextWordWrap, m_message);
+        const QRect messageRect = messageMetrics.boundingRect(
+            QRect(0, 0, textWidth, 0), Qt::TextWordWrap, m_message);
         height += messageRect.height() + 4;
         width = qMax(width, messageRect.width() + iconSpace + 32);
     }
-    
+
     // Progress bar height
     if (m_config.showProgress) {
-        height += 8 + 4; // Progress bar height + spacing
+        height += 8 + 4;  // Progress bar height + spacing
     }
-    
+
     // Actions height
     if (!m_actions.isEmpty()) {
-        height += 32 + 8; // Button height + spacing
+        height += 32 + 8;  // Button height + spacing
     }
-    
-    height += 16; // Bottom padding
-    
+
+    height += 16;  // Bottom padding
+
     // Constrain to max width
     if (m_config.maxWidth > 0) {
         width = qMin(width, m_config.maxWidth);
     }
-    
+
     return QSize(width, height);
 }
 
 // Static factory methods
-FluentToast* FluentToast::createInfo(const QString& title, const QString& message, QWidget* parent) {
+FluentToast* FluentToast::createInfo(const QString& title,
+                                     const QString& message, QWidget* parent) {
     return new FluentToast(FluentToastType::Info, title, message, parent);
 }
 
-FluentToast* FluentToast::createSuccess(const QString& title, const QString& message, QWidget* parent) {
+FluentToast* FluentToast::createSuccess(const QString& title,
+                                        const QString& message,
+                                        QWidget* parent) {
     return new FluentToast(FluentToastType::Success, title, message, parent);
 }
 
-FluentToast* FluentToast::createWarning(const QString& title, const QString& message, QWidget* parent) {
+FluentToast* FluentToast::createWarning(const QString& title,
+                                        const QString& message,
+                                        QWidget* parent) {
     return new FluentToast(FluentToastType::Warning, title, message, parent);
 }
 
-FluentToast* FluentToast::createError(const QString& title, const QString& message, QWidget* parent) {
+FluentToast* FluentToast::createError(const QString& title,
+                                      const QString& message, QWidget* parent) {
     return new FluentToast(FluentToastType::Error, title, message, parent);
 }
 
-FluentToast* FluentToast::createCustom(const QIcon& icon, const QString& title, const QString& message, QWidget* parent) {
-    auto* toast = new FluentToast(FluentToastType::Custom, title, message, parent);
+FluentToast* FluentToast::createCustom(const QIcon& icon, const QString& title,
+                                       const QString& message,
+                                       QWidget* parent) {
+    auto* toast =
+        new FluentToast(FluentToastType::Custom, title, message, parent);
     toast->setIcon(icon);
     return toast;
 }
 
 // Public slots
 void FluentToast::show() {
-    if (m_showing || isVisible()) return;
-    
+    if (m_showing || isVisible())
+        return;
+
     QWidget::show();
     emit shown();
 }
 
 void FluentToast::hide() {
-    if (m_hiding || !isVisible()) return;
-    
+    if (m_hiding || !isVisible())
+        return;
+
     QWidget::hide();
     emit hidden();
 }
 
 void FluentToast::showAnimated() {
-    if (m_showing || isVisible()) return;
-    
+    if (m_showing || isVisible())
+        return;
+
     emit aboutToShow();
     m_showing = true;
     m_hiding = false;
-    
+
     startShowAnimation();
 }
 
 void FluentToast::hideAnimated() {
-    if (m_hiding || !isVisible()) return;
-    
+    if (m_hiding || !isVisible())
+        return;
+
     emit aboutToHide();
     m_hiding = true;
     m_showing = false;
-    
+
     pauseTimer();
     startHideAnimation();
 }
@@ -520,13 +538,12 @@ void FluentToast::performStateTransition(FluentState from, FluentState to) {
 }
 
 // Private slots
-void FluentToast::onAutoHideTimer() {
-    hideAnimated();
-}
+void FluentToast::onAutoHideTimer() { hideAnimated(); }
 
 void FluentToast::onProgressTimer() {
     if (m_progressBar && m_autoHideTimer) {
-        const int elapsed = m_config.duration - m_autoHideTimer->remainingTime();
+        const int elapsed =
+            m_config.duration - m_autoHideTimer->remainingTime();
         const int progress = (elapsed * 100) / m_config.duration;
         m_progressBar->setValue(progress);
     }
@@ -543,13 +560,12 @@ void FluentToast::onHideAnimationFinished() {
     emit hidden();
 }
 
-void FluentToast::onCloseButtonClicked() {
-    dismiss();
-}
+void FluentToast::onCloseButtonClicked() { dismiss(); }
 
 void FluentToast::onActionButtonClicked() {
     auto* button = qobject_cast<FluentButton*>(sender());
-    if (!button) return;
+    if (!button)
+        return;
 
     // Find the action
     for (int i = 0; i < m_actionButtons.size(); ++i) {
@@ -613,7 +629,8 @@ void FluentToast::setupUI() {
     m_closeButton->setIcon(QIcon(":/icons/close"));
     m_closeButton->setFixedSize(24, 24);
     m_closeButton->setVisible(m_config.closable);
-    connect(m_closeButton, &FluentButton::clicked, this, &FluentToast::onCloseButtonClicked);
+    connect(m_closeButton, &FluentButton::clicked, this,
+            &FluentToast::onCloseButtonClicked);
     m_contentLayout->addWidget(m_closeButton);
 
     m_mainLayout->addLayout(m_contentLayout);
@@ -646,38 +663,43 @@ void FluentToast::setupAnimations() {
     m_shadowEffect->setColor(QColor(0, 0, 0, 60));
 
     // Show animation
-    m_showAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
+    m_showAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
     m_showAnimation->setDuration(m_config.animationDuration);
     m_showAnimation->setEasingCurve(m_config.easingCurve);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
-    connect(m_showAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentToast::onShowAnimationFinished);
+    connect(m_showAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentToast::onShowAnimationFinished);
 
     // Hide animation
-    m_hideAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
+    m_hideAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
     m_hideAnimation->setDuration(m_config.animationDuration);
     m_hideAnimation->setEasingCurve(m_config.easingCurve);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
-    connect(m_hideAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentToast::onHideAnimationFinished);
+    connect(m_hideAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentToast::onHideAnimationFinished);
 }
 
 void FluentToast::setupTimer() {
     // Auto-hide timer
     m_autoHideTimer = new QTimer(this);
     m_autoHideTimer->setSingleShot(true);
-    connect(m_autoHideTimer, &QTimer::timeout, this, &FluentToast::onAutoHideTimer);
+    connect(m_autoHideTimer, &QTimer::timeout, this,
+            &FluentToast::onAutoHideTimer);
 
     // Progress timer (for progress bar animation)
     m_progressTimer = new QTimer(this);
-    m_progressTimer->setInterval(50); // Update every 50ms
-    connect(m_progressTimer, &QTimer::timeout, this, &FluentToast::onProgressTimer);
+    m_progressTimer->setInterval(50);  // Update every 50ms
+    connect(m_progressTimer, &QTimer::timeout, this,
+            &FluentToast::onProgressTimer);
 }
 
 void FluentToast::updateLayout() {
-    if (!m_titleLabel || !m_messageLabel) return;
+    if (!m_titleLabel || !m_messageLabel)
+        return;
 
     // Update title
     m_titleLabel->setText(m_title);
@@ -758,23 +780,27 @@ void FluentToast::updateColors() {
 
     // Apply colors to UI elements
     if (m_titleLabel) {
-        m_titleLabel->setStyleSheet(QString("color: %1; font-weight: bold;").arg(m_textColor.name()));
+        m_titleLabel->setStyleSheet(
+            QString("color: %1; font-weight: bold;").arg(m_textColor.name()));
     }
     if (m_messageLabel) {
-        m_messageLabel->setStyleSheet(QString("color: %1;").arg(m_textColor.name()));
+        m_messageLabel->setStyleSheet(
+            QString("color: %1;").arg(m_textColor.name()));
     }
     if (m_progressBar) {
-        m_progressBar->setStyleSheet(QString(
-            "QProgressBar { background-color: %1; border: 1px solid %2; border-radius: 2px; }"
-            "QProgressBar::chunk { background-color: %3; }"
-        ).arg(m_backgroundColor.lighter(120).name())
-         .arg(m_borderColor.name())
-         .arg(m_textColor.name()));
+        m_progressBar->setStyleSheet(
+            QString("QProgressBar { background-color: %1; border: 1px solid "
+                    "%2; border-radius: 2px; }"
+                    "QProgressBar::chunk { background-color: %3; }")
+                .arg(m_backgroundColor.lighter(120).name())
+                .arg(m_borderColor.name())
+                .arg(m_textColor.name()));
     }
 }
 
 void FluentToast::updateIcon() {
-    if (!m_iconLabel) return;
+    if (!m_iconLabel)
+        return;
 
     QIcon displayIcon = m_icon;
 
@@ -792,7 +818,8 @@ void FluentToast::updateIcon() {
 }
 
 void FluentToast::updateProgress() {
-    if (!m_progressBar) return;
+    if (!m_progressBar)
+        return;
 
     if (m_config.showProgress) {
         m_progressBar->setVisible(true);
@@ -846,21 +873,13 @@ void FluentToast::paintShadow(QPainter& painter, const QRect& rect) {
     // Shadow is handled by QGraphicsDropShadowEffect
 }
 
-QColor FluentToast::getBackgroundColor() const {
-    return m_backgroundColor;
-}
+QColor FluentToast::getBackgroundColor() const { return m_backgroundColor; }
 
-QColor FluentToast::getTextColor() const {
-    return m_textColor;
-}
+QColor FluentToast::getTextColor() const { return m_textColor; }
 
-QColor FluentToast::getBorderColor() const {
-    return m_borderColor;
-}
+QColor FluentToast::getBorderColor() const { return m_borderColor; }
 
-QColor FluentToast::getProgressColor() const {
-    return m_textColor;
-}
+QColor FluentToast::getProgressColor() const { return m_textColor; }
 
 QIcon FluentToast::getTypeIcon() const {
     switch (m_config.type) {
@@ -900,7 +919,8 @@ void FluentToast::createActionButtons() {
             button->setButtonStyle(FluentButtonStyle::Default);
         }
 
-        connect(button, &FluentButton::clicked, this, &FluentToast::onActionButtonClicked);
+        connect(button, &FluentButton::clicked, this,
+                &FluentToast::onActionButtonClicked);
 
         m_actionButtons.append(button);
         m_actionsLayout->addWidget(button);
@@ -960,7 +980,7 @@ QRect FluentToast::getTextRect() const {
     int right = contentRect.right();
 
     if (m_config.closable) {
-        right -= 32; // Close button space
+        right -= 32;  // Close button space
     }
 
     return QRect(left, contentRect.top(), right - left, contentRect.height());
@@ -968,7 +988,8 @@ QRect FluentToast::getTextRect() const {
 
 QRect FluentToast::getActionsRect() const {
     const QRect contentRect = getContentRect();
-    return QRect(contentRect.left(), contentRect.bottom() - 32, contentRect.width(), 32);
+    return QRect(contentRect.left(), contentRect.bottom() - 32,
+                 contentRect.width(), 32);
 }
 
 QRect FluentToast::getCloseButtonRect() const {
@@ -978,5 +999,6 @@ QRect FluentToast::getCloseButtonRect() const {
 
 QRect FluentToast::getProgressRect() const {
     const QRect contentRect = getContentRect();
-    return QRect(contentRect.left(), contentRect.bottom() - 8, contentRect.width(), 8);
+    return QRect(contentRect.left(), contentRect.bottom() - 8,
+                 contentRect.width(), 8);
 }

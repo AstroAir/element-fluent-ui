@@ -1,9 +1,9 @@
 // tests/Components/FluentRadioButtonTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMouseEvent>
-#include <QKeyEvent>
 #include <QButtonGroup>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentRadioButton.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -100,7 +100,7 @@ void FluentRadioButtonTest::cleanup() {
 void FluentRadioButtonTest::testDefaultConstructor() {
     // Test default constructor
     FluentRadioButton* radioButton = new FluentRadioButton();
-    
+
     // Verify default properties
     QVERIFY(!radioButton->isChecked());
     QVERIFY(radioButton->text().isEmpty());
@@ -108,11 +108,12 @@ void FluentRadioButtonTest::testDefaultConstructor() {
     QVERIFY(radioButton->icon().isNull());
     QVERIFY(!radioButton->showIcon());
     QCOMPARE(radioButton->size(), FluentRadioButtonSize::Medium);
-    QCOMPARE(radioButton->labelPosition(), FluentRadioButtonLabelPosition::Right);
+    QCOMPARE(radioButton->labelPosition(),
+             FluentRadioButtonLabelPosition::Right);
     QVERIFY(radioButton->autoExclusive());
     QVERIFY(radioButton->isAnimated());
     QVERIFY(radioButton->isEnabled());
-    
+
     delete radioButton;
 }
 
@@ -120,10 +121,10 @@ void FluentRadioButtonTest::testTextConstructor() {
     // Test constructor with text
     const QString radioText = "Test Radio Button";
     FluentRadioButton* radioButton = new FluentRadioButton(radioText);
-    
+
     QCOMPARE(radioButton->text(), radioText);
     QVERIFY(!radioButton->isChecked());
-    
+
     delete radioButton;
 }
 
@@ -131,12 +132,13 @@ void FluentRadioButtonTest::testTextValueConstructor() {
     // Test constructor with text and value
     const QString radioText = "Option A";
     const QString radioValue = "option_a";
-    FluentRadioButton* radioButton = new FluentRadioButton(radioText, radioValue);
-    
+    FluentRadioButton* radioButton =
+        new FluentRadioButton(radioText, radioValue);
+
     QCOMPARE(radioButton->text(), radioText);
     QCOMPARE(radioButton->value(), radioValue);
     QVERIFY(!radioButton->isChecked());
-    
+
     delete radioButton;
 }
 
@@ -144,43 +146,45 @@ void FluentRadioButtonTest::testFactoryMethods() {
     // Test button group factory method
     QStringList options = {"Option 1", "Option 2", "Option 3"};
     QButtonGroup* buttonGroup = FluentRadioButton::createButtonGroup(options);
-    
+
     QVERIFY(buttonGroup != nullptr);
     QCOMPARE(buttonGroup->buttons().size(), 3);
-    
+
     delete buttonGroup;
-    
+
     // Test radio group factory method
-    QList<FluentRadioButton*> radioGroup = FluentRadioButton::createRadioGroup(options);
-    
+    QList<FluentRadioButton*> radioGroup =
+        FluentRadioButton::createRadioGroup(options);
+
     QCOMPARE(radioGroup.size(), 3);
     QCOMPARE(radioGroup[0]->text(), QString("Option 1"));
     QCOMPARE(radioGroup[1]->text(), QString("Option 2"));
     QCOMPARE(radioGroup[2]->text(), QString("Option 3"));
-    
+
     qDeleteAll(radioGroup);
 }
 
 void FluentRadioButtonTest::testCheckedState() {
     // Test setting and getting checked state
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
     QSignalSpy toggledSpy(m_radioButton, &FluentRadioButton::toggled);
-    
-    QVERIFY(!m_radioButton->isChecked()); // Default should be false
-    
+
+    QVERIFY(!m_radioButton->isChecked());  // Default should be false
+
     m_radioButton->setChecked(true);
     QVERIFY(m_radioButton->isChecked());
     QCOMPARE(checkedChangedSpy.count(), 1);
     QCOMPARE(checkedChangedSpy.first().first().toBool(), true);
     QCOMPARE(toggledSpy.count(), 1);
     QCOMPARE(toggledSpy.first().first().toBool(), true);
-    
+
     // Radio buttons typically can't be unchecked directly
     m_radioButton->setChecked(false);
     QVERIFY(!m_radioButton->isChecked());
     QCOMPARE(checkedChangedSpy.count(), 2);
     QCOMPARE(checkedChangedSpy.last().first().toBool(), false);
-    
+
     // Setting the same checked state should not emit the signal
     m_radioButton->setChecked(false);
     QCOMPARE(checkedChangedSpy.count(), 2);
@@ -190,19 +194,19 @@ void FluentRadioButtonTest::testText() {
     // Test setting and getting text
     const QString text1 = "Radio Button Text";
     const QString text2 = "New Text";
-    
+
     QSignalSpy textChangedSpy(m_radioButton, &FluentRadioButton::textChanged);
-    
+
     m_radioButton->setText(text1);
     QCOMPARE(m_radioButton->text(), text1);
     QCOMPARE(textChangedSpy.count(), 1);
     QCOMPARE(textChangedSpy.first().first().toString(), text1);
-    
+
     m_radioButton->setText(text2);
     QCOMPARE(m_radioButton->text(), text2);
     QCOMPARE(textChangedSpy.count(), 2);
     QCOMPARE(textChangedSpy.last().first().toString(), text2);
-    
+
     // Setting the same text should not emit the signal
     m_radioButton->setText(text2);
     QCOMPARE(textChangedSpy.count(), 2);
@@ -212,19 +216,19 @@ void FluentRadioButtonTest::testValue() {
     // Test setting and getting value
     const QString value1 = "option_1";
     const QString value2 = "option_2";
-    
+
     QSignalSpy valueChangedSpy(m_radioButton, &FluentRadioButton::valueChanged);
-    
+
     m_radioButton->setValue(value1);
     QCOMPARE(m_radioButton->value(), value1);
     QCOMPARE(valueChangedSpy.count(), 1);
     QCOMPARE(valueChangedSpy.first().first().toString(), value1);
-    
+
     m_radioButton->setValue(value2);
     QCOMPARE(m_radioButton->value(), value2);
     QCOMPARE(valueChangedSpy.count(), 2);
     QCOMPARE(valueChangedSpy.last().first().toString(), value2);
-    
+
     // Setting the same value should not emit the signal
     m_radioButton->setValue(value2);
     QCOMPARE(valueChangedSpy.count(), 2);
@@ -233,21 +237,21 @@ void FluentRadioButtonTest::testValue() {
 void FluentRadioButtonTest::testIcon() {
     // Test setting and getting icon
     QSignalSpy iconChangedSpy(m_radioButton, &FluentRadioButton::iconChanged);
-    
+
     QIcon icon1;
     QPixmap pixmap1(16, 16);
     pixmap1.fill(Qt::red);
     icon1 = QIcon(pixmap1);
-    
+
     m_radioButton->setIcon(icon1);
     QVERIFY(!m_radioButton->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 1);
-    
+
     QIcon icon2;
     QPixmap pixmap2(16, 16);
     pixmap2.fill(Qt::green);
     icon2 = QIcon(pixmap2);
-    
+
     m_radioButton->setIcon(icon2);
     QVERIFY(!m_radioButton->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 2);
@@ -255,20 +259,21 @@ void FluentRadioButtonTest::testIcon() {
 
 void FluentRadioButtonTest::testShowIcon() {
     // Test show icon property
-    QSignalSpy showIconChangedSpy(m_radioButton, &FluentRadioButton::showIconChanged);
-    
-    QVERIFY(!m_radioButton->showIcon()); // Default should be false
-    
+    QSignalSpy showIconChangedSpy(m_radioButton,
+                                  &FluentRadioButton::showIconChanged);
+
+    QVERIFY(!m_radioButton->showIcon());  // Default should be false
+
     m_radioButton->setShowIcon(true);
     QVERIFY(m_radioButton->showIcon());
     QCOMPARE(showIconChangedSpy.count(), 1);
     QCOMPARE(showIconChangedSpy.first().first().toBool(), true);
-    
+
     m_radioButton->setShowIcon(false);
     QVERIFY(!m_radioButton->showIcon());
     QCOMPARE(showIconChangedSpy.count(), 2);
     QCOMPARE(showIconChangedSpy.last().first().toBool(), false);
-    
+
     // Setting the same show icon state should not emit the signal
     m_radioButton->setShowIcon(false);
     QCOMPARE(showIconChangedSpy.count(), 2);
@@ -284,7 +289,8 @@ void FluentRadioButtonTest::testSize() {
     m_radioButton->setSize(FluentRadioButtonSize::Small);
     QCOMPARE(m_radioButton->size(), FluentRadioButtonSize::Small);
     QCOMPARE(sizeChangedSpy.count(), 1);
-    QCOMPARE(sizeChangedSpy.first().first().value<FluentRadioButtonSize>(), FluentRadioButtonSize::Small);
+    QCOMPARE(sizeChangedSpy.first().first().value<FluentRadioButtonSize>(),
+             FluentRadioButtonSize::Small);
 
     m_radioButton->setSize(FluentRadioButtonSize::Large);
     QCOMPARE(m_radioButton->size(), FluentRadioButtonSize::Large);
@@ -297,22 +303,30 @@ void FluentRadioButtonTest::testSize() {
 
 void FluentRadioButtonTest::testLabelPosition() {
     // Test setting and getting label position
-    QSignalSpy labelPositionChangedSpy(m_radioButton, &FluentRadioButton::labelPositionChanged);
+    QSignalSpy labelPositionChangedSpy(
+        m_radioButton, &FluentRadioButton::labelPositionChanged);
 
     // Default position should be Right
-    QCOMPARE(m_radioButton->labelPosition(), FluentRadioButtonLabelPosition::Right);
+    QCOMPARE(m_radioButton->labelPosition(),
+             FluentRadioButtonLabelPosition::Right);
 
     m_radioButton->setLabelPosition(FluentRadioButtonLabelPosition::Left);
-    QCOMPARE(m_radioButton->labelPosition(), FluentRadioButtonLabelPosition::Left);
+    QCOMPARE(m_radioButton->labelPosition(),
+             FluentRadioButtonLabelPosition::Left);
     QCOMPARE(labelPositionChangedSpy.count(), 1);
-    QCOMPARE(labelPositionChangedSpy.first().first().value<FluentRadioButtonLabelPosition>(), FluentRadioButtonLabelPosition::Left);
+    QCOMPARE(labelPositionChangedSpy.first()
+                 .first()
+                 .value<FluentRadioButtonLabelPosition>(),
+             FluentRadioButtonLabelPosition::Left);
 
     m_radioButton->setLabelPosition(FluentRadioButtonLabelPosition::Above);
-    QCOMPARE(m_radioButton->labelPosition(), FluentRadioButtonLabelPosition::Above);
+    QCOMPARE(m_radioButton->labelPosition(),
+             FluentRadioButtonLabelPosition::Above);
     QCOMPARE(labelPositionChangedSpy.count(), 2);
 
     m_radioButton->setLabelPosition(FluentRadioButtonLabelPosition::Below);
-    QCOMPARE(m_radioButton->labelPosition(), FluentRadioButtonLabelPosition::Below);
+    QCOMPARE(m_radioButton->labelPosition(),
+             FluentRadioButtonLabelPosition::Below);
     QCOMPARE(labelPositionChangedSpy.count(), 3);
 
     // Setting the same position should not emit the signal
@@ -322,9 +336,10 @@ void FluentRadioButtonTest::testLabelPosition() {
 
 void FluentRadioButtonTest::testAutoExclusive() {
     // Test auto exclusive property
-    QSignalSpy autoExclusiveChangedSpy(m_radioButton, &FluentRadioButton::autoExclusiveChanged);
+    QSignalSpy autoExclusiveChangedSpy(
+        m_radioButton, &FluentRadioButton::autoExclusiveChanged);
 
-    QVERIFY(m_radioButton->autoExclusive()); // Default should be true
+    QVERIFY(m_radioButton->autoExclusive());  // Default should be true
 
     m_radioButton->setAutoExclusive(false);
     QVERIFY(!m_radioButton->autoExclusive());
@@ -343,9 +358,10 @@ void FluentRadioButtonTest::testAutoExclusive() {
 
 void FluentRadioButtonTest::testAnimated() {
     // Test animated property
-    QSignalSpy animatedChangedSpy(m_radioButton, &FluentRadioButton::animatedChanged);
+    QSignalSpy animatedChangedSpy(m_radioButton,
+                                  &FluentRadioButton::animatedChanged);
 
-    QVERIFY(m_radioButton->isAnimated()); // Default should be true
+    QVERIFY(m_radioButton->isAnimated());  // Default should be true
 
     m_radioButton->setAnimated(false);
     QVERIFY(!m_radioButton->isAnimated());
@@ -364,7 +380,8 @@ void FluentRadioButtonTest::testAnimated() {
 
 void FluentRadioButtonTest::testAnimationDuration() {
     // Test animation duration property
-    QSignalSpy animationDurationChangedSpy(m_radioButton, &FluentRadioButton::animationDurationChanged);
+    QSignalSpy animationDurationChangedSpy(
+        m_radioButton, &FluentRadioButton::animationDurationChanged);
 
     // Default duration should be 200ms
     QCOMPARE(m_radioButton->animationDuration(), 200);
@@ -391,8 +408,8 @@ void FluentRadioButtonTest::testAnimateCheck() {
     // This should trigger the check animation
     m_radioButton->animateCheck();
 
-    // The animation should be running (hard to test without access to internal state)
-    // For now, just verify the method doesn't crash
+    // The animation should be running (hard to test without access to internal
+    // state) For now, just verify the method doesn't crash
     QVERIFY(true);
 }
 
@@ -446,13 +463,14 @@ void FluentRadioButtonTest::testExclusiveSelection() {
     // radio1 should be unchecked now (if auto-exclusive is working)
     QVERIFY(radio2->isChecked());
 
-    delete parent; // This will delete radio1 and radio2 as well
+    delete parent;  // This will delete radio1 and radio2 as well
 }
 
 void FluentRadioButtonTest::testRadioGroup() {
     // Test radio group factory method
     QStringList options = {"Option A", "Option B", "Option C"};
-    QList<FluentRadioButton*> radioGroup = FluentRadioButton::createRadioGroup(options);
+    QList<FluentRadioButton*> radioGroup =
+        FluentRadioButton::createRadioGroup(options);
 
     QCOMPARE(radioGroup.size(), 3);
 
@@ -475,18 +493,21 @@ void FluentRadioButtonTest::testMouseInteraction() {
     QSignalSpy pressedSpy(m_radioButton, &FluentRadioButton::pressed);
     QSignalSpy releasedSpy(m_radioButton, &FluentRadioButton::released);
     QSignalSpy clickedSpy(m_radioButton, &FluentRadioButton::clicked);
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
 
     QPoint center = m_radioButton->rect().center();
 
     // Test mouse press
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_radioButton, &pressEvent);
 
     QCOMPARE(pressedSpy.count(), 1);
 
     // Test mouse release
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_radioButton, &releaseEvent);
 
     QCOMPARE(releasedSpy.count(), 1);
@@ -503,17 +524,20 @@ void FluentRadioButtonTest::testMouseInteraction() {
     pressedSpy.clear();
 
     QPoint outside = m_radioButton->rect().bottomRight() + QPoint(10, 10);
-    QMouseEvent releaseOutsideEvent(QEvent::MouseButtonRelease, outside, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseOutsideEvent(QEvent::MouseButtonRelease, outside,
+                                    Qt::LeftButton, Qt::LeftButton,
+                                    Qt::NoModifier);
     QApplication::sendEvent(m_radioButton, &releaseOutsideEvent);
 
-    QCOMPARE(clickedSpy.count(), 0); // Should not click
-    QCOMPARE(checkedChangedSpy.count(), 0); // Should not change state
+    QCOMPARE(clickedSpy.count(), 0);         // Should not click
+    QCOMPARE(checkedChangedSpy.count(), 0);  // Should not change state
 }
 
 void FluentRadioButtonTest::testKeyboardInteraction() {
     // Test keyboard interaction
     QSignalSpy clickedSpy(m_radioButton, &FluentRadioButton::clicked);
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
 
     m_radioButton->setFocus();
     QVERIFY(m_radioButton->hasFocus());
@@ -544,7 +568,8 @@ void FluentRadioButtonTest::testClick() {
     QSignalSpy clickedSpy(m_radioButton, &FluentRadioButton::clicked);
     QSignalSpy pressedSpy(m_radioButton, &FluentRadioButton::pressed);
     QSignalSpy releasedSpy(m_radioButton, &FluentRadioButton::released);
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
 
     m_radioButton->click();
 
@@ -557,7 +582,8 @@ void FluentRadioButtonTest::testClick() {
 
 void FluentRadioButtonTest::testToggle() {
     // Test toggle functionality
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
     QSignalSpy toggledSpy(m_radioButton, &FluentRadioButton::toggled);
 
     QVERIFY(!m_radioButton->isChecked());
@@ -571,12 +597,13 @@ void FluentRadioButtonTest::testToggle() {
     // Toggling again should not change state (radio buttons don't toggle off)
     m_radioButton->toggle();
     QVERIFY(m_radioButton->isChecked());
-    QCOMPARE(checkedChangedSpy.count(), 1); // Should still be 1
+    QCOMPARE(checkedChangedSpy.count(), 1);  // Should still be 1
 }
 
 void FluentRadioButtonTest::testCheckedChangedSignal() {
     // Test checked changed signal
-    QSignalSpy checkedChangedSpy(m_radioButton, &FluentRadioButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_radioButton,
+                                 &FluentRadioButton::checkedChanged);
 
     m_radioButton->setChecked(true);
     QCOMPARE(checkedChangedSpy.count(), 1);
@@ -609,8 +636,10 @@ void FluentRadioButtonTest::testClickedSignal() {
 
     // Mouse click should also emit clicked signal
     QPoint center = m_radioButton->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     QApplication::sendEvent(m_radioButton, &pressEvent);
     QApplication::sendEvent(m_radioButton, &releaseEvent);
@@ -634,12 +663,17 @@ void FluentRadioButtonTest::testContentChangeSignals() {
     QSignalSpy textChangedSpy(m_radioButton, &FluentRadioButton::textChanged);
     QSignalSpy valueChangedSpy(m_radioButton, &FluentRadioButton::valueChanged);
     QSignalSpy iconChangedSpy(m_radioButton, &FluentRadioButton::iconChanged);
-    QSignalSpy showIconChangedSpy(m_radioButton, &FluentRadioButton::showIconChanged);
+    QSignalSpy showIconChangedSpy(m_radioButton,
+                                  &FluentRadioButton::showIconChanged);
     QSignalSpy sizeChangedSpy(m_radioButton, &FluentRadioButton::sizeChanged);
-    QSignalSpy labelPositionChangedSpy(m_radioButton, &FluentRadioButton::labelPositionChanged);
-    QSignalSpy autoExclusiveChangedSpy(m_radioButton, &FluentRadioButton::autoExclusiveChanged);
-    QSignalSpy animatedChangedSpy(m_radioButton, &FluentRadioButton::animatedChanged);
-    QSignalSpy animationDurationChangedSpy(m_radioButton, &FluentRadioButton::animationDurationChanged);
+    QSignalSpy labelPositionChangedSpy(
+        m_radioButton, &FluentRadioButton::labelPositionChanged);
+    QSignalSpy autoExclusiveChangedSpy(
+        m_radioButton, &FluentRadioButton::autoExclusiveChanged);
+    QSignalSpy animatedChangedSpy(m_radioButton,
+                                  &FluentRadioButton::animatedChanged);
+    QSignalSpy animationDurationChangedSpy(
+        m_radioButton, &FluentRadioButton::animationDurationChanged);
 
     // Change text
     m_radioButton->setText("New Text");
@@ -682,7 +716,7 @@ void FluentRadioButtonTest::testContentChangeSignals() {
 
 void FluentRadioButtonTest::testEnabledState() {
     // Test enabled state
-    QVERIFY(m_radioButton->isEnabled()); // Default should be enabled
+    QVERIFY(m_radioButton->isEnabled());  // Default should be enabled
 
     m_radioButton->setEnabled(false);
     QVERIFY(!m_radioButton->isEnabled());
@@ -722,7 +756,7 @@ void FluentRadioButtonTest::testHoverState() {
     QApplication::sendEvent(m_radioButton, &enterEvent);
     QApplication::sendEvent(m_radioButton, &leaveEvent);
 
-    QVERIFY(true); // If we get here, the events were handled without crashing
+    QVERIFY(true);  // If we get here, the events were handled without crashing
 }
 
 void FluentRadioButtonTest::testAccessibility() {
@@ -753,8 +787,9 @@ void FluentRadioButtonTest::testThemeIntegration() {
     // Change theme mode
     theme.setDarkMode(!originalDarkMode);
 
-    // Radio button should update its appearance (this would require checking internal styling)
-    // For now, just verify the radio button still functions correctly
+    // Radio button should update its appearance (this would require checking
+    // internal styling) For now, just verify the radio button still functions
+    // correctly
     QVERIFY(m_radioButton->isEnabled());
 
     // Restore original theme

@@ -15,8 +15,8 @@
 #pragma once
 
 // Core Accessibility System
-#include "FluentQt/Accessibility/FluentAccessible.h"
 #include "FluentQt/Accessibility/FluentAccessibilityManager.h"
+#include "FluentQt/Accessibility/FluentAccessible.h"
 
 // Screen Reader Support
 #include "FluentQt/Accessibility/FluentScreenReaderManager.h"
@@ -78,15 +78,18 @@
  *
  * @code
  * // Basic accessibility setup
- * auto& accessibility = FluentQt::Accessibility::FluentAccessibilityManager::instance();
+ * auto& accessibility =
+ * FluentQt::Accessibility::FluentAccessibilityManager::instance();
  * accessibility.initialize();
  *
  * // Make a widget accessible
  * auto* button = new FluentButton("Save");
- * FluentQt::Accessibility::makeAccessible(button, "Save document", "Saves the current document to disk");
+ * FluentQt::Accessibility::makeAccessible(button, "Save document", "Saves the
+ * current document to disk");
  *
  * // Check color contrast
- * bool isAccessible = FluentQt::Accessibility::validateContrast(textColor, backgroundColor);
+ * bool isAccessible = FluentQt::Accessibility::validateContrast(textColor,
+ * backgroundColor);
  *
  * // Enable high contrast mode
  * FluentQt::Accessibility::setHighContrastMode(true);
@@ -167,9 +170,9 @@ enum class AccessibilityState {
  * @brief WCAG compliance levels
  */
 enum class WcagLevel {
-    A,      ///< WCAG Level A (minimum)
-    AA,     ///< WCAG Level AA (standard)
-    AAA     ///< WCAG Level AAA (enhanced)
+    A,   ///< WCAG Level A (minimum)
+    AA,  ///< WCAG Level AA (standard)
+    AAA  ///< WCAG Level AAA (enhanced)
 };
 
 /**
@@ -177,16 +180,17 @@ enum class WcagLevel {
  * @brief Accessibility information for a UI element
  */
 struct AccessibilityInfo {
-    QString name;                           ///< Accessible name
-    QString description;                    ///< Detailed description
-    AccessibilityRole role;                 ///< Element role
-    AccessibilityState state;               ///< Current state
-    QString value;                          ///< Current value (for inputs)
-    QString help;                           ///< Help text
-    QStringList labels;                     ///< Associated labels
-    QString shortcut;                       ///< Keyboard shortcut
-    bool isLiveRegion = false;              ///< Whether content changes dynamically
-    QString liveRegionType = "polite";      ///< Live region politeness (polite/assertive)
+    QString name;               ///< Accessible name
+    QString description;        ///< Detailed description
+    AccessibilityRole role;     ///< Element role
+    AccessibilityState state;   ///< Current state
+    QString value;              ///< Current value (for inputs)
+    QString help;               ///< Help text
+    QStringList labels;         ///< Associated labels
+    QString shortcut;           ///< Keyboard shortcut
+    bool isLiveRegion = false;  ///< Whether content changes dynamically
+    QString liveRegionType =
+        "polite";  ///< Live region politeness (polite/assertive)
 };
 
 /**
@@ -206,7 +210,8 @@ bool initializeAccessibility();
  * automatically detects the platform and skips problematic operations
  * in headless/offscreen environments.
  *
- * @param forceFullInit If true, forces full initialization even in offscreen mode
+ * @param forceFullInit If true, forces full initialization even in offscreen
+ * mode
  * @return true if initialization was successful
  */
 bool initializeAccessibilitySafe(bool forceFullInit = false);
@@ -219,10 +224,9 @@ bool initializeAccessibilitySafe(bool forceFullInit = false);
  * @param description Detailed description
  * @param role Accessibility role
  */
-void makeAccessible(QWidget* widget,
-                   const QString& name,
-                   const QString& description = QString(),
-                   AccessibilityRole role = AccessibilityRole::Button);
+void makeAccessible(QWidget* widget, const QString& name,
+                    const QString& description = QString(),
+                    AccessibilityRole role = AccessibilityRole::Button);
 
 /**
  * @brief Set accessibility information for a widget
@@ -272,9 +276,8 @@ bool isReducedMotionEnabled();
  * @param level WCAG compliance level to check
  * @return true if contrast meets the specified level
  */
-bool validateContrast(const QColor& foreground,
-                     const QColor& background,
-                     WcagLevel level = WcagLevel::AA);
+bool validateContrast(const QColor& foreground, const QColor& background,
+                      WcagLevel level = WcagLevel::AA);
 
 /**
  * @brief Calculate color contrast ratio
@@ -302,9 +305,8 @@ double getMinimumContrastRatio(WcagLevel level, bool isLargeText = false);
  * @param targetRatio Target contrast ratio
  * @return Adjusted color with improved contrast
  */
-QColor adjustColorContrast(const QColor& color,
-                          const QColor& background,
-                          double targetRatio = 4.5);
+QColor adjustColorContrast(const QColor& color, const QColor& background,
+                           double targetRatio = 4.5);
 
 /**
  * @brief Announce text to screen readers
@@ -312,7 +314,8 @@ QColor adjustColorContrast(const QColor& color,
  * @param text Text to announce
  * @param priority Announcement priority (polite/assertive)
  */
-void announceToScreenReader(const QString& text, const QString& priority = "polite");
+void announceToScreenReader(const QString& text,
+                            const QString& priority = "polite");
 
 /**
  * @brief Set focus to a widget with proper announcement
@@ -345,7 +348,8 @@ void updateLiveRegion(QWidget* widget, const QString& content);
  * @param level WCAG compliance level to check
  * @return List of accessibility issues found
  */
-QStringList validateWidgetAccessibility(QWidget* widget, WcagLevel level = WcagLevel::AA);
+QStringList validateWidgetAccessibility(QWidget* widget,
+                                        WcagLevel level = WcagLevel::AA);
 
 /**
  * @brief Generate accessibility report for an application
@@ -354,6 +358,7 @@ QStringList validateWidgetAccessibility(QWidget* widget, WcagLevel level = WcagL
  * @param level WCAG compliance level to check
  * @return Detailed accessibility report
  */
-QString generateAccessibilityReport(QWidget* rootWidget, WcagLevel level = WcagLevel::AA);
+QString generateAccessibilityReport(QWidget* rootWidget,
+                                    WcagLevel level = WcagLevel::AA);
 
-} // namespace FluentQt::Accessibility
+}  // namespace FluentQt::Accessibility

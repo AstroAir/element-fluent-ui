@@ -1,62 +1,61 @@
 // src/Components/FluentCard.cpp
 #include "FluentQt/Components/FluentCard.h"
-#include "FluentQt/Styling/FluentTheme.h"
+#include "FluentQt/Accessibility/FluentAccessible.h"
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentPerformance.h"
-#include "FluentQt/Accessibility/FluentAccessible.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QPainterPath>
-#include <QMouseEvent>
-#include <QResizeEvent>
-#include <QVBoxLayout>
+#include <QAccessible>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QToolButton>
-#include <QScrollArea>
-#include <QGraphicsDropShadowEffect>
-#include <QPropertyAnimation>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
 #include <QParallelAnimationGroup>
-#include <QAccessible>
+#include <QPropertyAnimation>
+#include <QResizeEvent>
+#include <QScrollArea>
+#include <QToolButton>
+#include <QVBoxLayout>
 #include <algorithm>
 
 namespace FluentQt::Components {
 
 // FluentCard Implementation
 FluentCard::FluentCard(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_header(std::make_unique<FluentCardHeader>(this))
-    , m_content(std::make_unique<FluentCardContent>(this))
-    , m_footer(std::make_unique<FluentCardFooter>(this))
-{
+    : Core::FluentComponent(parent),
+      m_header(std::make_unique<FluentCardHeader>(this)),
+      m_content(std::make_unique<FluentCardContent>(this)),
+      m_footer(std::make_unique<FluentCardFooter>(this)) {
     setupLayout();
     setupAnimations();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentCard::onThemeChanged);
-    
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentCard::onThemeChanged);
+
     // Connect header signals
-    connect(m_header.get(), &FluentCardHeader::clicked,
-            this, &FluentCard::headerClicked);
-    
+    connect(m_header.get(), &FluentCardHeader::clicked, this,
+            &FluentCard::headerClicked);
+
     updateShadowEffect();
     setCornerRadius(static_cast<int>(Core::FluentCornerRadius::Medium));
-    
+
     // Set initial accessibility
     Accessibility::setAccessibleName(this, "Card");
     Accessibility::setAccessibleRole(this, QAccessible::Grouping);
 }
 
 FluentCard::FluentCard(const QString& title, QWidget* parent)
-    : FluentCard(parent)
-{
+    : FluentCard(parent) {
     setTitle(title);
 }
 
-FluentCard::FluentCard(const QString& title, const QString& subtitle, QWidget* parent)
-    : FluentCard(parent)
-{
+FluentCard::FluentCard(const QString& title, const QString& subtitle,
+                       QWidget* parent)
+    : FluentCard(parent) {
     setTitle(title);
     setSubtitle(subtitle);
 }
@@ -66,18 +65,16 @@ FluentCard::~FluentCard() = default;
 void FluentCard::setTitle(const QString& title) {
     if (m_header->title() != title) {
         m_header->setTitle(title);
-        
+
         // Update accessibility
         QString accessibleName = title.isEmpty() ? "Card" : title;
         Accessibility::setAccessibleName(this, accessibleName);
-        
+
         emit titleChanged(title);
     }
 }
 
-QString FluentCard::title() const {
-    return m_header->title();
-}
+QString FluentCard::title() const { return m_header->title(); }
 
 void FluentCard::setSubtitle(const QString& subtitle) {
     if (m_header->subtitle() != subtitle) {
@@ -86,9 +83,7 @@ void FluentCard::setSubtitle(const QString& subtitle) {
     }
 }
 
-QString FluentCard::subtitle() const {
-    return m_header->subtitle();
-}
+QString FluentCard::subtitle() const { return m_header->subtitle(); }
 
 void FluentCard::setHeaderIcon(const QIcon& icon) {
     if (m_header->icon().cacheKey() != icon.cacheKey()) {
@@ -97,9 +92,7 @@ void FluentCard::setHeaderIcon(const QIcon& icon) {
     }
 }
 
-QIcon FluentCard::headerIcon() const {
-    return m_header->icon();
-}
+QIcon FluentCard::headerIcon() const { return m_header->icon(); }
 
 void FluentCard::setHeaderVisible(bool visible) {
     if (m_headerVisible != visible) {
@@ -112,13 +105,13 @@ void FluentCard::setElevation(FluentCardElevation elevation) {
     if (m_elevation != elevation) {
         FluentCardElevation oldElevation = m_elevation;
         m_elevation = elevation;
-        
+
         if (isAnimated()) {
             animateElevation(oldElevation, elevation);
         } else {
             updateShadowEffect();
         }
-        
+
         emit elevationChanged(elevation);
     }
 }
@@ -144,8 +137,10 @@ void FluentCard::setExpansionProgress(qreal progress) {
 
         // Update height based on expansion progress
         if (m_expandedHeight > 0 && m_collapsedHeight > 0) {
-            const int targetHeight = m_collapsedHeight +
-                static_cast<int>((m_expandedHeight - m_collapsedHeight) * m_expansionProgress);
+            const int targetHeight =
+                m_collapsedHeight +
+                static_cast<int>((m_expandedHeight - m_collapsedHeight) *
+                                 m_expansionProgress);
             setFixedHeight(targetHeight);
         }
 
@@ -156,14 +151,14 @@ void FluentCard::setExpansionProgress(qreal progress) {
 void FluentCard::setSelectable(bool selectable) {
     if (m_selectable != selectable) {
         m_selectable = selectable;
-        
+
         if (selectable) {
             setCursor(Qt::PointingHandCursor);
         } else {
             setCursor(Qt::ArrowCursor);
             setSelected(false);
         }
-        
+
         updateStateStyle();
     }
 }
@@ -172,14 +167,14 @@ void FluentCard::setSelected(bool selected) {
     if (m_selectable && m_selected != selected) {
         m_selected = selected;
         updateStateStyle();
-        
+
         // Update accessibility
         QString description = title();
         if (selected) {
             description += " (selected)";
         }
         Accessibility::setAccessibleDescription(this, description);
-        
+
         emit selectedChanged(selected);
     }
 }
@@ -187,11 +182,11 @@ void FluentCard::setSelected(bool selected) {
 void FluentCard::setExpandable(bool expandable) {
     if (m_expandable != expandable) {
         m_expandable = expandable;
-        
+
         if (!expandable) {
             setExpanded(true);
         }
-        
+
         updateStateStyle();
     }
 }
@@ -236,9 +231,7 @@ void FluentCard::removeHeaderAction(QAction* action) {
     m_header->removeAction(action);
 }
 
-void FluentCard::clearHeaderActions() {
-    m_header->clearActions();
-}
+void FluentCard::clearHeaderActions() { m_header->clearActions(); }
 
 void FluentCard::addFooterWidget(QWidget* widget) {
     m_footer->addWidget(widget);
@@ -251,73 +244,65 @@ void FluentCard::removeFooterWidget(QWidget* widget) {
     m_footer->removeWidget(widget);
 }
 
-void FluentCard::clearFooterWidgets() {
-    m_footer->clearWidgets();
-}
+void FluentCard::clearFooterWidgets() { m_footer->clearWidgets(); }
 
 QLayout* FluentCard::contentLayout() const {
     return m_content->widget() ? m_content->widget()->layout() : nullptr;
 }
 
-QLayout* FluentCard::headerLayout() const {
-    return m_header->layout();
-}
+QLayout* FluentCard::headerLayout() const { return m_header->layout(); }
 
-QLayout* FluentCard::footerLayout() const {
-    return m_footer->layout();
-}
+QLayout* FluentCard::footerLayout() const { return m_footer->layout(); }
 
 QSize FluentCard::sizeHint() const {
     FLUENT_PROFILE("FluentCard::sizeHint");
-    
-    int width = 300; // Default card width
+
+    int width = 300;  // Default card width
     int height = 0;
-    
+
     // Header height
     if (m_headerVisible) {
         height += m_header->sizeHint().height();
     }
-    
+
     // Content height
     if (m_expanded) {
         height += m_content->sizeHint().height();
     } else {
         height += m_collapsedHeight;
     }
-    
+
     // Footer height
     if (m_footerVisible) {
         height += m_footer->sizeHint().height();
     }
-    
+
     // Add margins
     const int margin = 16;
     height += margin;
-    
+
     return QSize(width, height);
 }
 
-QSize FluentCard::minimumSizeHint() const {
-    return QSize(200, 100);
-}
+QSize FluentCard::minimumSizeHint() const { return QSize(200, 100); }
 
 void FluentCard::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
     FLUENT_PROFILE("FluentCard::paintEvent");
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect rect = this->rect();
-    
+
     // Paint background
     paintBackground(painter, rect);
-    
+
     // Paint border
     if (m_cardStyle == FluentCardStyle::Outlined || m_selected) {
         paintBorder(painter, rect);
     }
-    
+
     // Paint selection highlight
     if (m_selected) {
         paintSelection(painter, rect);
@@ -326,14 +311,14 @@ void FluentCard::paintEvent(QPaintEvent* event) {
 
 void FluentCard::paintBackground(QPainter& painter, const QRect& rect) {
     const QColor backgroundColor = getBackgroundColor();
-    
+
     if (backgroundColor.alpha() == 0) {
         return;
     }
-    
+
     QPainterPath path;
     path.addRoundedRect(rect, cornerRadius(), cornerRadius());
-    
+
     // Add subtle gradient for depth
     if (m_cardStyle == FluentCardStyle::Elevated) {
         QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
@@ -347,15 +332,16 @@ void FluentCard::paintBackground(QPainter& painter, const QRect& rect) {
 
 void FluentCard::paintBorder(QPainter& painter, const QRect& rect) {
     painter.save();
-    
+
     const QPen borderPen = getBorderPen();
     painter.setPen(borderPen);
-    
+
     const qreal adjustment = borderPen.widthF() / 2.0;
-    const QRectF borderRect = rect.adjusted(adjustment, adjustment, -adjustment, -adjustment);
-    
+    const QRectF borderRect =
+        rect.adjusted(adjustment, adjustment, -adjustment, -adjustment);
+
     painter.drawRoundedRect(borderRect, cornerRadius(), cornerRadius());
-    
+
     painter.restore();
 }
 
@@ -363,16 +349,16 @@ void FluentCard::paintSelection(QPainter& painter, const QRect& rect) {
     if (!m_selected) {
         return;
     }
-    
+
     painter.save();
-    
+
     const QColor selectionColor = getSelectionColor();
     QPen selectionPen(selectionColor, 2);
     painter.setPen(selectionPen);
-    
+
     const QRectF selectionRect = rect.adjusted(1, 1, -1, -1);
     painter.drawRoundedRect(selectionRect, cornerRadius(), cornerRadius());
-    
+
     painter.restore();
 }
 
@@ -380,45 +366,45 @@ void FluentCard::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         m_pressed = true;
         m_pressPosition = event->position().toPoint();
-        
+
         if (m_selectable) {
             setState(Core::FluentState::Pressed);
         }
     }
-    
+
     Core::FluentComponent::mousePressEvent(event);
 }
 
 void FluentCard::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && m_pressed) {
         m_pressed = false;
-        
+
         const bool wasInside = rect().contains(event->position().toPoint());
-        
+
         if (wasInside) {
             if (m_selectable) {
                 setSelected(!m_selected);
             }
-            
+
             emit cardClicked();
         }
-        
-        setState(wasInside && m_selectable ? 
-                 Core::FluentState::Hovered : Core::FluentState::Normal);
+
+        setState(wasInside && m_selectable ? Core::FluentState::Hovered
+                                           : Core::FluentState::Normal);
     }
-    
+
     Core::FluentComponent::mouseReleaseEvent(event);
 }
 
 void FluentCard::mouseDoubleClickEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         emit cardDoubleClicked();
-        
+
         if (m_expandable) {
             toggleExpanded();
         }
     }
-    
+
     Core::FluentComponent::mouseDoubleClickEvent(event);
 }
 
@@ -427,14 +413,11 @@ void FluentCard::updateStateStyle() {
         Animation::FluentAnimationConfig colorConfig;
         colorConfig.duration = 150ms;
         auto colorAnimation = Animation::FluentAnimator::colorTransition(
-            this, "backgroundColor",
-            palette().window().color(),
-            getBackgroundColor(),
-            colorConfig
-        );
+            this, "backgroundColor", palette().window().color(),
+            getBackgroundColor(), colorConfig);
 
-        connect(colorAnimation.get(), &QPropertyAnimation::valueChanged,
-                this, QOverload<>::of(&QWidget::update));
+        connect(colorAnimation.get(), &QPropertyAnimation::valueChanged, this,
+                QOverload<>::of(&QWidget::update));
         colorAnimation->start();
     } else {
         update();
@@ -451,7 +434,8 @@ void FluentCard::enterEvent(QEnterEvent* event) {
 
 void FluentCard::leaveEvent(QEvent* event) {
     if (isEnabled()) {
-        setState(hasFocus() ? Core::FluentState::Focused : Core::FluentState::Normal);
+        setState(hasFocus() ? Core::FluentState::Focused
+                            : Core::FluentState::Normal);
     }
     update();
     Core::FluentComponent::leaveEvent(event);
@@ -473,10 +457,12 @@ void FluentCard::changeEvent(QEvent* event) {
     Core::FluentComponent::changeEvent(event);
 }
 
-void FluentCard::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentCard::performStateTransition(Core::FluentState from,
+                                        Core::FluentState to) {
     if (isAnimated()) {
         // Animate elevation changes based on state
-        if (to == Core::FluentState::Hovered && from != Core::FluentState::Pressed) {
+        if (to == Core::FluentState::Hovered &&
+            from != Core::FluentState::Pressed) {
             animateElevation(m_elevation, FluentCardElevation::Medium);
         } else if (to == Core::FluentState::Normal) {
             animateElevation(FluentCardElevation::Medium, m_elevation);
@@ -491,34 +477,36 @@ void FluentCard::setupLayout() {
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-    
+
     // Add components
     m_mainLayout->addWidget(m_header.get());
     m_mainLayout->addWidget(m_content.get(), 1);
     m_mainLayout->addWidget(m_footer.get());
-    
+
     updateHeaderVisibility();
     updateFooterVisibility();
 }
 
 void FluentCard::setupAnimations() {
     // Expansion animation
-    m_expansionAnimation = std::make_unique<QPropertyAnimation>(this, "expansionProgress");
+    m_expansionAnimation =
+        std::make_unique<QPropertyAnimation>(this, "expansionProgress");
     m_expansionAnimation->setDuration(300);
     m_expansionAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_expansionAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentCard::onExpansionAnimationValueChanged);
-    connect(m_expansionAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentCard::onExpansionAnimationFinished);
-    
+
+    connect(m_expansionAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentCard::onExpansionAnimationValueChanged);
+    connect(m_expansionAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentCard::onExpansionAnimationFinished);
+
     // Elevation animation
-    m_elevationAnimation = std::make_unique<QPropertyAnimation>(this, "shadowOpacity");
+    m_elevationAnimation =
+        std::make_unique<QPropertyAnimation>(this, "shadowOpacity");
     m_elevationAnimation->setDuration(200);
     m_elevationAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_elevationAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentCard::onElevationAnimationFinished);
+
+    connect(m_elevationAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentCard::onElevationAnimationFinished);
 }
 
 void FluentCard::updateShadowEffect() {
@@ -527,27 +515,28 @@ void FluentCard::updateShadowEffect() {
         m_shadowEffect.reset();
         return;
     }
-    
+
     if (!m_shadowEffect) {
         m_shadowEffect = std::make_unique<QGraphicsDropShadowEffect>(this);
         m_shadowEffect->setColor(QColor(0, 0, 0, 30));
         setGraphicsEffect(m_shadowEffect.get());
     }
-    
+
     const int elevation = static_cast<int>(m_elevation);
     m_shadowEffect->setBlurRadius(elevation * 2);
     m_shadowEffect->setOffset(0, elevation / 2);
-    
+
     // Apply opacity
     QColor shadowColor = m_shadowEffect->color();
     shadowColor.setAlphaF(shadowColor.alphaF() * m_shadowOpacity);
     m_shadowEffect->setColor(shadowColor);
 }
 
-void FluentCard::animateElevation(FluentCardElevation from, FluentCardElevation to) {
+void FluentCard::animateElevation(FluentCardElevation from,
+                                  FluentCardElevation to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
-    
+
     m_elevationAnimation->stop();
     m_elevationAnimation->setStartValue(m_shadowOpacity);
     m_elevationAnimation->setEndValue(1.0);
@@ -556,12 +545,8 @@ void FluentCard::animateElevation(FluentCardElevation from, FluentCardElevation 
 
 void FluentCard::updateHeaderVisibility() {
     m_header->setVisible(m_headerVisible);
-    m_mainLayout->setContentsMargins(
-        0, 
-        m_headerVisible ? 0 : 12, 
-        0, 
-        m_footerVisible ? 0 : 12
-    );
+    m_mainLayout->setContentsMargins(0, m_headerVisible ? 0 : 12, 0,
+                                     m_footerVisible ? 0 : 12);
 }
 
 void FluentCard::updateFooterVisibility() {
@@ -574,59 +559,58 @@ void FluentCard::updateExpansionState() {
         setFixedHeight(QWIDGETSIZE_MAX);
     } else {
         m_content->hide();
-        setFixedHeight(getHeaderHeight() + (m_footerVisible ? getFooterHeight() : 0) + 24);
+        setFixedHeight(getHeaderHeight() +
+                       (m_footerVisible ? getFooterHeight() : 0) + 24);
     }
-    
+
     updateGeometry();
 }
 
-void FluentCard::toggleExpanded() {
-    setExpanded(!m_expanded);
-}
+void FluentCard::toggleExpanded() { setExpanded(!m_expanded); }
 
 void FluentCard::expandWithAnimation() {
-    if (m_expanded) return;
-    
+    if (m_expanded)
+        return;
+
     m_expandedHeight = sizeHint().height();
     m_collapsedHeight = height();
-    
+
     m_expansionAnimation->stop();
     m_expansionAnimation->setStartValue(0.0);
     m_expansionAnimation->setEndValue(1.0);
     m_expansionAnimation->start();
-    
+
     m_expanded = true;
 }
 
 void FluentCard::collapseWithAnimation() {
-    if (!m_expanded) return;
-    
+    if (!m_expanded)
+        return;
+
     m_expandedHeight = height();
-    m_collapsedHeight = getHeaderHeight() + (m_footerVisible ? getFooterHeight() : 0) + 24;
-    
+    m_collapsedHeight =
+        getHeaderHeight() + (m_footerVisible ? getFooterHeight() : 0) + 24;
+
     m_expansionAnimation->stop();
     m_expansionAnimation->setStartValue(1.0);
     m_expansionAnimation->setEndValue(0.0);
     m_expansionAnimation->start();
-    
+
     m_expanded = false;
 }
 
 void FluentCard::animateIn() {
     hide();
-    
+
     Animation::FluentAnimationConfig slideConfig;
     slideConfig.duration = 400ms;
-    auto slideAnimation = Animation::FluentAnimator::slideIn(
-        this, QPoint(0, 20), slideConfig
-    );
+    auto slideAnimation =
+        Animation::FluentAnimator::slideIn(this, QPoint(0, 20), slideConfig);
 
     Animation::FluentAnimationConfig fadeConfig;
     fadeConfig.duration = 300ms;
-    auto fadeAnimation = Animation::FluentAnimator::fadeIn(
-        this, fadeConfig
-    );
-    
+    auto fadeAnimation = Animation::FluentAnimator::fadeIn(this, fadeConfig);
+
     show();
     slideAnimation->start();
     fadeAnimation->start();
@@ -635,19 +619,16 @@ void FluentCard::animateIn() {
 void FluentCard::animateOut() {
     Animation::FluentAnimationConfig slideConfig;
     slideConfig.duration = 300ms;
-    auto slideAnimation = Animation::FluentAnimator::slideIn(
-        this, QPoint(0, -20), slideConfig
-    );
+    auto slideAnimation =
+        Animation::FluentAnimator::slideIn(this, QPoint(0, -20), slideConfig);
 
     Animation::FluentAnimationConfig fadeConfig;
     fadeConfig.duration = 200ms;
-    auto fadeAnimation = Animation::FluentAnimator::fadeOut(
-        this, fadeConfig
-    );
-    
-    connect(fadeAnimation.get(), &QPropertyAnimation::finished, 
-            this, &QWidget::hide);
-    
+    auto fadeAnimation = Animation::FluentAnimator::fadeOut(this, fadeConfig);
+
+    connect(fadeAnimation.get(), &QPropertyAnimation::finished, this,
+            &QWidget::hide);
+
     slideAnimation->start();
     fadeAnimation->start();
 }
@@ -656,7 +637,7 @@ void FluentCard::animateOut() {
 QColor FluentCard::getBackgroundColor() const {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     switch (m_cardStyle) {
         case FluentCardStyle::Filled:
             switch (state()) {
@@ -669,17 +650,17 @@ QColor FluentCard::getBackgroundColor() const {
                 default:
                     return palette.neutralLighter;
             }
-            
+
         case FluentCardStyle::Outlined:
             return Qt::transparent;
-            
-        default: // Default and Elevated
+
+        default:  // Default and Elevated
             switch (state()) {
                 case Core::FluentState::Normal:
-                    return QColor(255, 255, 255); // Card background
+                    return QColor(255, 255, 255);  // Card background
                 case Core::FluentState::Hovered:
-                    return m_selectable ? 
-                        QColor(250, 250, 250) : QColor(255, 255, 255);
+                    return m_selectable ? QColor(250, 250, 250)
+                                        : QColor(255, 255, 255);
                 case Core::FluentState::Pressed:
                     return QColor(245, 245, 245);
                 default:
@@ -691,11 +672,11 @@ QColor FluentCard::getBackgroundColor() const {
 QColor FluentCard::getBorderColor() const {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     if (m_selected) {
         return palette.accent;
     }
-    
+
     return palette.neutralQuaternaryAlt;
 }
 
@@ -708,9 +689,7 @@ QPen FluentCard::getBorderPen() const {
     return QPen(getBorderColor(), getBorderWidth());
 }
 
-int FluentCard::getBorderWidth() const {
-    return m_selected ? 2 : 1;
-}
+int FluentCard::getBorderWidth() const { return m_selected ? 2 : 1; }
 
 int FluentCard::getHeaderHeight() const {
     return m_headerVisible ? m_header->sizeHint().height() : 0;
@@ -723,10 +702,12 @@ int FluentCard::getFooterHeight() const {
 // Animation slots
 void FluentCard::onExpansionAnimationValueChanged(const QVariant& value) {
     m_expansionProgress = value.toReal();
-    
-    const int targetHeight = m_collapsedHeight + 
-        static_cast<int>((m_expandedHeight - m_collapsedHeight) * m_expansionProgress);
-    
+
+    const int targetHeight =
+        m_collapsedHeight +
+        static_cast<int>((m_expandedHeight - m_collapsedHeight) *
+                         m_expansionProgress);
+
     setFixedHeight(targetHeight);
 }
 
@@ -736,9 +717,7 @@ void FluentCard::onExpansionAnimationFinished() {
     emit expandedChanged(m_expanded);
 }
 
-void FluentCard::onElevationAnimationFinished() {
-    updateShadowEffect();
-}
+void FluentCard::onElevationAnimationFinished() { updateShadowEffect(); }
 
 void FluentCard::onThemeChanged() {
     updateStateStyle();
@@ -746,9 +725,7 @@ void FluentCard::onThemeChanged() {
 }
 
 // FluentCardHeader Implementation
-FluentCardHeader::FluentCardHeader(QWidget* parent)
-    : QWidget(parent)
-{
+FluentCardHeader::FluentCardHeader(QWidget* parent) : QWidget(parent) {
     setupLayout();
     setFixedHeight(48);
 }
@@ -757,33 +734,33 @@ void FluentCardHeader::setupLayout() {
     m_layout = new QHBoxLayout(this);
     m_layout->setContentsMargins(16, 8, 16, 8);
     m_layout->setSpacing(12);
-    
+
     // Icon label
     m_iconLabel = new QLabel(this);
     m_iconLabel->setFixedSize(24, 24);
     m_iconLabel->setScaledContents(true);
     m_iconLabel->hide();
-    
+
     // Title and subtitle
     auto* textLayout = new QVBoxLayout();
     textLayout->setSpacing(2);
     textLayout->setContentsMargins(0, 0, 0, 0);
-    
+
     m_titleLabel = new QLabel(this);
     m_titleLabel->setStyleSheet("font-weight: 600; font-size: 14px;");
-    
+
     m_subtitleLabel = new QLabel(this);
     m_subtitleLabel->setStyleSheet("color: #666; font-size: 12px;");
     m_subtitleLabel->hide();
-    
+
     textLayout->addWidget(m_titleLabel);
     textLayout->addWidget(m_subtitleLabel);
-    
+
     // Actions layout
     m_actionsLayout = new QHBoxLayout();
     m_actionsLayout->setSpacing(4);
     m_actionsLayout->setContentsMargins(0, 0, 0, 0);
-    
+
     // Add to main layout
     m_layout->addWidget(m_iconLabel);
     m_layout->addLayout(textLayout, 1);
@@ -795,18 +772,14 @@ void FluentCardHeader::setTitle(const QString& title) {
     m_titleLabel->setVisible(!title.isEmpty());
 }
 
-QString FluentCardHeader::title() const {
-    return m_titleLabel->text();
-}
+QString FluentCardHeader::title() const { return m_titleLabel->text(); }
 
 void FluentCardHeader::setSubtitle(const QString& subtitle) {
     m_subtitleLabel->setText(subtitle);
     m_subtitleLabel->setVisible(!subtitle.isEmpty());
 }
 
-QString FluentCardHeader::subtitle() const {
-    return m_subtitleLabel->text();
-}
+QString FluentCardHeader::subtitle() const { return m_subtitleLabel->text(); }
 
 void FluentCardHeader::setIcon(const QIcon& icon) {
     if (!icon.isNull()) {
@@ -827,17 +800,17 @@ void FluentCardHeader::addAction(QAction* action) {
     button->setDefaultAction(action);
     button->setToolButtonStyle(Qt::ToolButtonIconOnly);
     button->setAutoRaise(true);
-    
+
     m_actionButtons.push_back(button);
     m_actionsLayout->addWidget(button);
 }
 
 void FluentCardHeader::removeAction(QAction* action) {
     auto it = std::find_if(m_actionButtons.begin(), m_actionButtons.end(),
-        [action](QToolButton* button) {
-            return button->defaultAction() == action;
-        });
-    
+                           [action](QToolButton* button) {
+                               return button->defaultAction() == action;
+                           });
+
     if (it != m_actionButtons.end()) {
         (*it)->deleteLater();
         m_actionButtons.erase(it);
@@ -851,9 +824,7 @@ void FluentCardHeader::clearActions() {
     m_actionButtons.clear();
 }
 
-QSize FluentCardHeader::sizeHint() const {
-    return QSize(300, 48);
-}
+QSize FluentCardHeader::sizeHint() const { return QSize(300, 48); }
 
 void FluentCardHeader::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
@@ -878,9 +849,7 @@ void FluentCardHeader::paintEvent(QPaintEvent* event) {
 }
 
 // FluentCardContent Implementation
-FluentCardContent::FluentCardContent(QWidget* parent)
-    : QScrollArea(parent)
-{
+FluentCardContent::FluentCardContent(QWidget* parent) : QScrollArea(parent) {
     setFrameShape(QFrame::NoFrame);
     setWidgetResizable(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -908,16 +877,14 @@ QSize FluentCardContent::minimumSizeHint() const {
 
 void FluentCardContent::resizeEvent(QResizeEvent* event) {
     QScrollArea::resizeEvent(event);
-    
+
     if (m_contentWidget) {
         m_contentWidget->resize(event->size());
     }
 }
 
 // FluentCardFooter Implementation
-FluentCardFooter::FluentCardFooter(QWidget* parent)
-    : QWidget(parent)
-{
+FluentCardFooter::FluentCardFooter(QWidget* parent) : QWidget(parent) {
     setupLayout();
     setFixedHeight(40);
 }
@@ -946,17 +913,15 @@ void FluentCardFooter::clearWidgets() {
     }
 }
 
-QSize FluentCardFooter::sizeHint() const {
-    return QSize(300, 40);
-}
+QSize FluentCardFooter::sizeHint() const { return QSize(300, 40); }
 
 void FluentCardFooter::paintEvent(QPaintEvent* event) {
     // Optional: Add separator line at top
     QPainter painter(this);
     painter.setPen(QColor(0, 0, 0, 20));
     painter.drawLine(16, 0, width() - 16, 0);
-    
+
     QWidget::paintEvent(event);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

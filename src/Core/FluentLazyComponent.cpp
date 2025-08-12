@@ -19,64 +19,70 @@ FluentLazyComponentManager::FluentLazyComponentManager() {
     m_memoryTimer = new QTimer(this);
     m_statsTimer = new QTimer(this);
     m_cleanupTimer = new QTimer(this);
-    
+
     // Connect signals
-    connect(m_loadTimer, &QTimer::timeout, this, &FluentLazyComponentManager::processLoadQueue);
-    connect(m_memoryTimer, &QTimer::timeout, this, &FluentLazyComponentManager::checkMemoryUsage);
-    connect(m_statsTimer, &QTimer::timeout, this, &FluentLazyComponentManager::updateStatistics);
-    connect(m_cleanupTimer, &QTimer::timeout, this, &FluentLazyComponentManager::cleanupUnusedComponents);
-    
+    connect(m_loadTimer, &QTimer::timeout, this,
+            &FluentLazyComponentManager::processLoadQueue);
+    connect(m_memoryTimer, &QTimer::timeout, this,
+            &FluentLazyComponentManager::checkMemoryUsage);
+    connect(m_statsTimer, &QTimer::timeout, this,
+            &FluentLazyComponentManager::updateStatistics);
+    connect(m_cleanupTimer, &QTimer::timeout, this,
+            &FluentLazyComponentManager::cleanupUnusedComponents);
+
     // Start timers
-    m_loadTimer->start(100);    // Process load queue every 100ms
-    m_memoryTimer->start(5000); // Check memory every 5 seconds
-    m_statsTimer->start(1000);  // Update stats every second
-    m_cleanupTimer->start(30000); // Cleanup every 30 seconds
+    m_loadTimer->start(100);       // Process load queue every 100ms
+    m_memoryTimer->start(5000);    // Check memory every 5 seconds
+    m_statsTimer->start(1000);     // Update stats every second
+    m_cleanupTimer->start(30000);  // Cleanup every 30 seconds
 }
 
-void FluentLazyComponentManager::registerLazyComponent(const QString& componentId,
-                                                      std::function<QWidget*()> factory,
-                                                      const FluentLazyLoadConfig& config) {
+void FluentLazyComponentManager::registerLazyComponent(
+    const QString& componentId, std::function<QWidget*()> factory,
+    const FluentLazyLoadConfig& config) {
     FluentLazyComponentMetadata metadata;
     metadata.componentId = componentId;
     metadata.componentType = "Custom";
     metadata.config = config;
     metadata.creationTime = std::chrono::steady_clock::now();
     metadata.factory = factory;
-    
+
     QMutexLocker locker(&m_mutex);
     m_components[componentId] = metadata;
-    
+
     qDebug() << "Registered lazy component:" << componentId;
 }
 
-void FluentLazyComponentManager::unregisterLazyComponent(const QString& componentId) {
+void FluentLazyComponentManager::unregisterLazyComponent(
+    const QString& componentId) {
     QMutexLocker locker(&m_mutex);
-    
+
     // Unload component if loaded
     auto it = m_components.find(componentId);
-    if (it != m_components.end() && it->second.state == FluentLazyComponentState::Loaded) {
+    if (it != m_components.end() &&
+        it->second.state == FluentLazyComponentState::Loaded) {
         if (auto widget = it->second.widget) {
             widget->deleteLater();
         }
     }
-    
+
     m_components.erase(componentId);
     m_loadQueue.removeAll(componentId);
-    
+
     qDebug() << "Unregistered lazy component:" << componentId;
 }
 
 QWidget* FluentLazyComponentManager::loadComponent(const QString& componentId) {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it == m_components.end()) {
         qWarning() << "Component not registered:" << componentId;
         return nullptr;
     }
-    
+
     auto& metadata = it->second;
-    
+
     // If already loaded, return existing widget
     if (metadata.state == FluentLazyComponentState::Loaded) {
         if (auto widget = metadata.widget) {
@@ -88,43 +94,48 @@ QWidget* FluentLazyComponentManager::loadComponent(const QString& componentId) {
             metadata.state = FluentLazyComponentState::NotLoaded;
         }
     }
-    
+
     // Check if we should load the component
     if (!shouldLoadComponent(componentId)) {
         return nullptr;
     }
-    
+
     // Load the component
     metadata.state = FluentLazyComponentState::Loading;
     emit componentLoadStarted(componentId);
-    
+
     auto startTime = std::chrono::steady_clock::now();
-    
+
     try {
         QWidget* widget = metadata.factory();
         if (widget) {
             auto endTime = std::chrono::steady_clock::now();
             metadata.loadTime = endTime;
-            metadata.loadDuration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+            metadata.loadDuration =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    endTime - startTime);
             metadata.state = FluentLazyComponentState::Loaded;
             metadata.widget = widget;
             metadata.accessCount++;
             metadata.lastAccessTime = endTime;
-            
+
             updateComponentMetadata(componentId, widget);
-            
+
             emit componentLoaded(componentId, widget);
-            qDebug() << "Loaded component" << componentId << "in" << metadata.loadDuration.count() << "ms";
-            
+            qDebug() << "Loaded component" << componentId << "in"
+                     << metadata.loadDuration.count() << "ms";
+
             return widget;
         } else {
             metadata.state = FluentLazyComponentState::Failed;
-            emit componentLoadFailed(componentId, "Factory returned null widget");
+            emit componentLoadFailed(componentId,
+                                     "Factory returned null widget");
             return nullptr;
         }
     } catch (const std::exception& e) {
         metadata.state = FluentLazyComponentState::Failed;
-        QString error = QString("Exception during component loading: %1").arg(e.what());
+        QString error =
+            QString("Exception during component loading: %1").arg(e.what());
         emit componentLoadFailed(componentId, error);
         qWarning() << "Failed to load component" << componentId << ":" << error;
         return nullptr;
@@ -133,12 +144,12 @@ QWidget* FluentLazyComponentManager::loadComponent(const QString& componentId) {
 
 void FluentLazyComponentManager::unloadComponent(const QString& componentId) {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it == m_components.end()) {
         return;
     }
-    
+
     auto& metadata = it->second;
     if (metadata.state == FluentLazyComponentState::Loaded) {
         if (auto widget = metadata.widget) {
@@ -146,54 +157,59 @@ void FluentLazyComponentManager::unloadComponent(const QString& componentId) {
         }
         metadata.state = FluentLazyComponentState::Unloaded;
         metadata.widget.clear();
-        
+
         emit componentUnloaded(componentId);
         qDebug() << "Unloaded component:" << componentId;
     }
 }
 
-bool FluentLazyComponentManager::isComponentLoaded(const QString& componentId) const {
+bool FluentLazyComponentManager::isComponentLoaded(
+    const QString& componentId) const {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it == m_components.end()) {
         return false;
     }
-    
-    return it->second.state == FluentLazyComponentState::Loaded && 
+
+    return it->second.state == FluentLazyComponentState::Loaded &&
            !it->second.widget.isNull();
 }
 
-FluentLazyComponentState FluentLazyComponentManager::getComponentState(const QString& componentId) const {
+FluentLazyComponentState FluentLazyComponentManager::getComponentState(
+    const QString& componentId) const {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it == m_components.end()) {
         return FluentLazyComponentState::NotLoaded;
     }
-    
+
     return it->second.state;
 }
 
-void FluentLazyComponentManager::loadComponentAsync(const QString& componentId) {
+void FluentLazyComponentManager::loadComponentAsync(
+    const QString& componentId) {
     QMutexLocker locker(&m_mutex);
-    
+
     if (!m_loadQueue.contains(componentId)) {
         m_loadQueue.append(componentId);
     }
 }
 
-void FluentLazyComponentManager::preloadComponents(const QStringList& componentIds) {
+void FluentLazyComponentManager::preloadComponents(
+    const QStringList& componentIds) {
     for (const QString& id : componentIds) {
         loadComponentAsync(id);
     }
 }
 
-void FluentLazyComponentManager::loadComponentsInBackground(const QStringList& componentIds) {
+void FluentLazyComponentManager::loadComponentsInBackground(
+    const QStringList& componentIds) {
     if (!m_backgroundLoadingEnabled) {
         return;
     }
-    
+
     // Add to load queue with background priority
     QMutexLocker locker(&m_mutex);
     for (const QString& id : componentIds) {
@@ -203,35 +219,40 @@ void FluentLazyComponentManager::loadComponentsInBackground(const QStringList& c
     }
 }
 
-void FluentLazyComponentManager::setComponentVisible(const QString& componentId, bool visible) {
+void FluentLazyComponentManager::setComponentVisible(const QString& componentId,
+                                                     bool visible) {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it != m_components.end()) {
         it->second.isVisible = visible;
-        
+
         // Auto-load if visible and strategy is OnVisible
-        if (visible && it->second.config.strategy == FluentLazyLoadStrategy::OnVisible) {
+        if (visible &&
+            it->second.config.strategy == FluentLazyLoadStrategy::OnVisible) {
             m_loadQueue.append(componentId);
         }
     }
 }
 
-void FluentLazyComponentManager::setComponentInViewport(const QString& componentId, bool inViewport) {
+void FluentLazyComponentManager::setComponentInViewport(
+    const QString& componentId, bool inViewport) {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it != m_components.end()) {
         it->second.isInViewport = inViewport;
-        
+
         // Auto-load if in viewport and strategy is Proximity
-        if (inViewport && it->second.config.strategy == FluentLazyLoadStrategy::Proximity) {
+        if (inViewport &&
+            it->second.config.strategy == FluentLazyLoadStrategy::Proximity) {
             m_loadQueue.append(componentId);
         }
     }
 }
 
-void FluentLazyComponentManager::updateViewportComponents(const QRect& viewport) {
+void FluentLazyComponentManager::updateViewportComponents(
+    const QRect& viewport) {
     Q_UNUSED(viewport)
     // This would update which components are in the viewport
     // Implementation depends on how components report their positions
@@ -239,23 +260,22 @@ void FluentLazyComponentManager::updateViewportComponents(const QRect& viewport)
 
 void FluentLazyComponentManager::unloadUnusedComponents() {
     QMutexLocker locker(&m_mutex);
-    
+
     auto now = std::chrono::steady_clock::now();
     QStringList toUnload;
-    
+
     for (auto& [id, metadata] : m_components) {
-        if (metadata.state == FluentLazyComponentState::Loaded && 
+        if (metadata.state == FluentLazyComponentState::Loaded &&
             metadata.config.enableUnloading) {
-            
             auto timeSinceAccess = now - metadata.lastAccessTime;
             if (timeSinceAccess > metadata.config.unloadDelay) {
                 toUnload.append(id);
             }
         }
     }
-    
+
     locker.unlock();
-    
+
     for (const QString& id : toUnload) {
         unloadComponent(id);
     }
@@ -263,29 +283,32 @@ void FluentLazyComponentManager::unloadUnusedComponents() {
 
 size_t FluentLazyComponentManager::getCurrentMemoryUsage() const {
     QMutexLocker locker(&m_mutex);
-    
+
     size_t total = 0;
     for (const auto& [id, metadata] : m_components) {
         total += metadata.memoryUsage;
     }
-    
+
     return total;
 }
 
-void FluentLazyComponentManager::setGlobalConfig(const FluentLazyLoadConfig& config) {
+void FluentLazyComponentManager::setGlobalConfig(
+    const FluentLazyLoadConfig& config) {
     m_globalConfig = config;
 }
 
-void FluentLazyComponentManager::setComponentConfig(const QString& componentId, const FluentLazyLoadConfig& config) {
+void FluentLazyComponentManager::setComponentConfig(
+    const QString& componentId, const FluentLazyLoadConfig& config) {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it != m_components.end()) {
         it->second.config = config;
     }
 }
 
-FluentLazyComponentManager::LazyLoadingStats FluentLazyComponentManager::getStatistics() const {
+FluentLazyComponentManager::LazyLoadingStats
+FluentLazyComponentManager::getStatistics() const {
     QMutexLocker locker(&m_mutex);
     return m_stats;
 }
@@ -295,52 +318,53 @@ void FluentLazyComponentManager::resetStatistics() {
     m_stats = LazyLoadingStats{};
 }
 
-FluentLazyComponentMetadata FluentLazyComponentManager::getComponentMetadata(const QString& componentId) const {
+FluentLazyComponentMetadata FluentLazyComponentManager::getComponentMetadata(
+    const QString& componentId) const {
     QMutexLocker locker(&m_mutex);
-    
+
     auto it = m_components.find(componentId);
     if (it != m_components.end()) {
         return it->second;
     }
-    
+
     return FluentLazyComponentMetadata{};
 }
 
 QStringList FluentLazyComponentManager::getRegisteredComponents() const {
     QMutexLocker locker(&m_mutex);
-    
+
     QStringList result;
     for (const auto& [id, metadata] : m_components) {
         result.append(id);
     }
-    
+
     return result;
 }
 
 QStringList FluentLazyComponentManager::getLoadedComponents() const {
     QMutexLocker locker(&m_mutex);
-    
+
     QStringList result;
     for (const auto& [id, metadata] : m_components) {
         if (metadata.state == FluentLazyComponentState::Loaded) {
             result.append(id);
         }
     }
-    
+
     return result;
 }
 
 QStringList FluentLazyComponentManager::getUnloadedComponents() const {
     QMutexLocker locker(&m_mutex);
-    
+
     QStringList result;
     for (const auto& [id, metadata] : m_components) {
-        if (metadata.state == FluentLazyComponentState::NotLoaded || 
+        if (metadata.state == FluentLazyComponentState::NotLoaded ||
             metadata.state == FluentLazyComponentState::Unloaded) {
             result.append(id);
         }
     }
-    
+
     return result;
 }
 
@@ -356,7 +380,8 @@ void FluentLazyComponentManager::processLoadQueue() {
         QString componentId = m_loadQueue.takeFirst();
 
         auto it = m_components.find(componentId);
-        if (it == m_components.end() || it->second.state == FluentLazyComponentState::Loaded) {
+        if (it == m_components.end() ||
+            it->second.state == FluentLazyComponentState::Loaded) {
             continue;
         }
 
@@ -387,7 +412,8 @@ void FluentLazyComponentManager::checkMemoryUsage() {
         // Unload least recently used components
         QMutexLocker locker(&m_mutex);
 
-        QList<std::pair<QString, std::chrono::steady_clock::time_point>> candidates;
+        QList<std::pair<QString, std::chrono::steady_clock::time_point>>
+            candidates;
         for (const auto& [id, metadata] : m_components) {
             if (metadata.state == FluentLazyComponentState::Loaded &&
                 metadata.config.enableUnloading) {
@@ -396,10 +422,9 @@ void FluentLazyComponentManager::checkMemoryUsage() {
         }
 
         // Sort by last access time (oldest first)
-        std::sort(candidates.begin(), candidates.end(),
-                 [](const auto& a, const auto& b) {
-                     return a.second < b.second;
-                 });
+        std::sort(
+            candidates.begin(), candidates.end(),
+            [](const auto& a, const auto& b) { return a.second < b.second; });
 
         locker.unlock();
 
@@ -457,7 +482,8 @@ void FluentLazyComponentManager::updateStatistics() {
 
     // Calculate cache hit rate (simplified)
     if (m_stats.totalComponents > 0) {
-        m_stats.cacheHitRate = static_cast<double>(m_stats.loadedComponents) / m_stats.totalComponents * 100.0;
+        m_stats.cacheHitRate = static_cast<double>(m_stats.loadedComponents) /
+                               m_stats.totalComponents * 100.0;
     }
 
     emit statisticsUpdated(m_stats);
@@ -482,12 +508,14 @@ void FluentLazyComponentManager::cleanupUnusedComponents() {
     }
 }
 
-void FluentLazyComponentManager::loadComponentInternal(const QString& componentId) {
+void FluentLazyComponentManager::loadComponentInternal(
+    const QString& componentId) {
     // This is called from processLoadQueue for async loading
     loadComponent(componentId);
 }
 
-bool FluentLazyComponentManager::shouldLoadComponent(const QString& componentId) const {
+bool FluentLazyComponentManager::shouldLoadComponent(
+    const QString& componentId) const {
     auto it = m_components.find(componentId);
     if (it == m_components.end()) {
         return false;
@@ -511,18 +539,19 @@ bool FluentLazyComponentManager::shouldLoadComponent(const QString& componentId)
         case FluentLazyLoadStrategy::Proximity:
             return metadata.isInViewport;
         case FluentLazyLoadStrategy::OnDemand:
-            return false; // Only load when explicitly requested
+            return false;  // Only load when explicitly requested
         default:
             return true;
     }
 }
 
-void FluentLazyComponentManager::updateComponentMetadata(const QString& componentId, QWidget* widget) {
+void FluentLazyComponentManager::updateComponentMetadata(
+    const QString& componentId, QWidget* widget) {
     // Estimate memory usage (simplified)
     auto it = m_components.find(componentId);
     if (it != m_components.end()) {
         // Basic memory estimation - would need more sophisticated calculation
-        it->second.memoryUsage = sizeof(*widget) + 1024; // Base estimate
+        it->second.memoryUsage = sizeof(*widget) + 1024;  // Base estimate
 
         // Call load complete callback if specified
         if (it->second.config.onLoadComplete) {
@@ -531,4 +560,4 @@ void FluentLazyComponentManager::updateComponentMetadata(const QString& componen
     }
 }
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

@@ -1,41 +1,48 @@
 // src/Components/FluentLoadingIndicator.cpp
 #include "FluentQt/Components/FluentLoadingIndicator.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QFontMetrics>
+#include <QHideEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
 #include <QShowEvent>
-#include <QHideEvent>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
 FluentLoadingIndicator::FluentLoadingIndicator(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentLoadingIndicator");
     setupAnimations();
     updateColors();
-    
-    // Initialize dot phases for dots animation
-    m_dotPhases = {0.0, 0.2, 0.4, 0.6, 0.8};
-    
-    // Initialize bar heights for bars animation
-    m_barHeights = {0.3, 0.6, 1.0, 0.6, 0.3};
+
+    // Initialize dot phases for dots animation (ElaWidgetTools-inspired timing)
+    m_dotPhases = {0.0, 0.15, 0.3, 0.45, 0.6};
+
+    // Initialize bar heights for bars animation with smoother progression
+    m_barHeights = {0.2, 0.5, 0.8, 1.0, 0.8, 0.5, 0.2};
+
+    // Apply ElaWidgetTools-style optimizations
+    setAttribute(Qt::WA_OpaquePaintEvent, false);
+    setAttribute(Qt::WA_NoSystemBackground, true);
+
+    // Enable smooth animations
+    setProperty("smoothAnimations", true);
 }
 
-FluentLoadingIndicator::FluentLoadingIndicator(FluentLoadingType type, QWidget* parent)
-    : FluentLoadingIndicator(parent)
-{
+FluentLoadingIndicator::FluentLoadingIndicator(FluentLoadingType type,
+                                               QWidget* parent)
+    : FluentLoadingIndicator(parent) {
     setLoadingType(type);
 }
 
-FluentLoadingIndicator::FluentLoadingIndicator(FluentLoadingType type, FluentLoadingSize size, QWidget* parent)
-    : FluentLoadingIndicator(type, parent)
-{
+FluentLoadingIndicator::FluentLoadingIndicator(FluentLoadingType type,
+                                               FluentLoadingSize size,
+                                               QWidget* parent)
+    : FluentLoadingIndicator(type, parent) {
     setLoadingSize(size);
 }
 
@@ -43,31 +50,42 @@ FluentLoadingIndicator::~FluentLoadingIndicator() = default;
 
 void FluentLoadingIndicator::setupAnimations() {
     FLUENT_PROFILE("FluentLoadingIndicator::setupAnimations");
-    
-    // Main animation timer
+
+    // Main animation timer with ElaWidgetTools-inspired smooth timing
     m_animationTimer = new QTimer(this);
-    m_animationTimer->setInterval(16); // ~60 FPS
-    connect(m_animationTimer, &QTimer::timeout, this, &FluentLoadingIndicator::onAnimationStep);
-    
-    // Rotation animation for spinner
+    m_animationTimer->setInterval(16);  // ~60 FPS for smooth animations
+    m_animationTimer->setTimerType(Qt::PreciseTimer);  // Ensure precise timing
+    connect(m_animationTimer, &QTimer::timeout, this,
+            &FluentLoadingIndicator::onAnimationStep);
+
+    // Rotation animation for spinner with optimized duration
     m_rotationAnimation = new QPropertyAnimation(this, "rotationAngle", this);
-    m_rotationAnimation->setDuration(getAnimationDuration());
+    m_rotationAnimation->setDuration(
+        1200);  // Slightly slower for smoother feel
     m_rotationAnimation->setStartValue(0.0);
     m_rotationAnimation->setEndValue(360.0);
-    m_rotationAnimation->setLoopCount(-1); // Infinite
+    m_rotationAnimation->setLoopCount(-1);  // Infinite
     m_rotationAnimation->setEasingCurve(QEasingCurve::Linear);
-    
-    // Pulse animation
+
+    // Apply ElaWidgetTools-style smooth animation properties
+    m_rotationAnimation->setProperty("smoothAnimation", true);
+
+    // Pulse animation with enhanced easing
     m_pulseAnimation = new QPropertyAnimation(this, "animationProgress", this);
-    m_pulseAnimation->setDuration(getAnimationDuration());
+    m_pulseAnimation->setDuration(
+        1500);  // Longer duration for more natural pulse
     m_pulseAnimation->setStartValue(0.0);
     m_pulseAnimation->setEndValue(1.0);
-    m_pulseAnimation->setLoopCount(-1); // Infinite
+    m_pulseAnimation->setLoopCount(-1);  // Infinite
     m_pulseAnimation->setEasingCurve(QEasingCurve::InOutSine);
-    
+
+    // Apply smooth animation properties
+    m_pulseAnimation->setProperty("smoothAnimation", true);
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentLoadingIndicator::updateColors);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentLoadingIndicator::updateColors);
 }
 
 FluentLoadingType FluentLoadingIndicator::loadingType() const {
@@ -80,14 +98,14 @@ void FluentLoadingIndicator::setLoadingType(FluentLoadingType type) {
         if (wasRunning) {
             stop();
         }
-        
+
         m_loadingType = type;
         updateGeometry();
-        
+
         if (wasRunning) {
             start();
         }
-        
+
         emit loadingTypeChanged(type);
     }
 }
@@ -105,9 +123,7 @@ void FluentLoadingIndicator::setLoadingSize(FluentLoadingSize size) {
     }
 }
 
-QColor FluentLoadingIndicator::color() const {
-    return m_color;
-}
+QColor FluentLoadingIndicator::color() const { return m_color; }
 
 void FluentLoadingIndicator::setColor(const QColor& color) {
     if (m_color != color) {
@@ -117,46 +133,40 @@ void FluentLoadingIndicator::setColor(const QColor& color) {
     }
 }
 
-bool FluentLoadingIndicator::isRunning() const {
-    return m_running;
-}
+bool FluentLoadingIndicator::isRunning() const { return m_running; }
 
 void FluentLoadingIndicator::setRunning(bool running) {
     if (m_running != running) {
         m_running = running;
-        
+
         if (running) {
             start();
         } else {
             stop();
         }
-        
+
         emit runningChanged(running);
     }
 }
 
-int FluentLoadingIndicator::speed() const {
-    return m_speed;
-}
+int FluentLoadingIndicator::speed() const { return m_speed; }
 
 void FluentLoadingIndicator::setSpeed(int speed) {
     const int clampedSpeed = qBound(1, speed, 10);
     if (m_speed != clampedSpeed) {
         m_speed = clampedSpeed;
-        
+
         // Update animation durations
         const int duration = getAnimationDuration();
         m_rotationAnimation->setDuration(duration);
         m_pulseAnimation->setDuration(duration);
-        m_animationTimer->setInterval(16 / m_speed); // Adjust frame rate
-        
+        m_animationTimer->setInterval(16 / m_speed);  // Adjust frame rate
+
         emit speedChanged(clampedSpeed);
     }
 }
 
-QString FluentLoadingIndicator::text() const {
-    return m_text;
-}
+QString FluentLoadingIndicator::text() const { return m_text; }
 
 void FluentLoadingIndicator::setText(const QString& text) {
     if (m_text != text) {
@@ -167,9 +177,7 @@ void FluentLoadingIndicator::setText(const QString& text) {
     }
 }
 
-bool FluentLoadingIndicator::isTextVisible() const {
-    return m_textVisible;
-}
+bool FluentLoadingIndicator::isTextVisible() const { return m_textVisible; }
 
 void FluentLoadingIndicator::setTextVisible(bool visible) {
     if (m_textVisible != visible) {
@@ -184,17 +192,17 @@ QSize FluentLoadingIndicator::sizeHint() const {
     const int indicatorSize = getIndicatorSize();
     int width = indicatorSize;
     int height = indicatorSize;
-    
+
     // Add space for text if visible
     if (m_textVisible && !m_text.isEmpty()) {
         const QFontMetrics fm(font());
         const int textWidth = fm.horizontalAdvance(m_text);
         const int textHeight = fm.height();
-        
+
         width = qMax(width, textWidth);
-        height += textHeight + 8; // 8px spacing
+        height += textHeight + 8;  // 8px spacing
     }
-    
+
     return QSize(width, height);
 }
 
@@ -206,7 +214,14 @@ QSize FluentLoadingIndicator::minimumSizeHint() const {
 void FluentLoadingIndicator::start() {
     if (!m_running) {
         m_running = true;
-        
+
+        // Start loading timeout if error boundary is set
+        if (m_errorBoundary) {
+            m_errorBoundary->clearError();
+            m_errorBoundary->setLoadingTimeout(m_loadingTimeoutMs);
+            m_errorBoundary->startLoadingTimeout();
+        }
+
         switch (m_loadingType) {
             case FluentLoadingType::Spinner:
             case FluentLoadingType::Ring:
@@ -221,7 +236,7 @@ void FluentLoadingIndicator::start() {
                 m_animationTimer->start();
                 break;
         }
-        
+
         emit started();
     }
 }
@@ -229,15 +244,20 @@ void FluentLoadingIndicator::start() {
 void FluentLoadingIndicator::stop() {
     if (m_running) {
         m_running = false;
-        
+
+        // Stop loading timeout if error boundary is set
+        if (m_errorBoundary) {
+            m_errorBoundary->stopLoadingTimeout();
+        }
+
         m_rotationAnimation->stop();
         m_pulseAnimation->stop();
         m_animationTimer->stop();
-        
+
         // Reset animation state
         m_animationProgress = 0.0;
         m_rotationAngle = 0.0;
-        
+
         update();
         emit stopped();
     }
@@ -245,12 +265,12 @@ void FluentLoadingIndicator::stop() {
 
 void FluentLoadingIndicator::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect indicatorRect = this->indicatorRect();
-    
+
     // Draw loading indicator
     switch (m_loadingType) {
         case FluentLoadingType::Spinner:
@@ -272,7 +292,7 @@ void FluentLoadingIndicator::paintEvent(QPaintEvent* event) {
             drawWave(painter, indicatorRect);
             break;
     }
-    
+
     // Draw text if visible
     if (m_textVisible && !m_text.isEmpty()) {
         drawText(painter, textRect());
@@ -298,30 +318,28 @@ void FluentLoadingIndicator::hideEvent(QHideEvent* event) {
 
 void FluentLoadingIndicator::changeEvent(QEvent* event) {
     FluentComponent::changeEvent(event);
-    
+
     if (event->type() == QEvent::FontChange) {
         updateGeometry();
     }
 }
 
-void FluentLoadingIndicator::updateAnimation() {
-    update();
-}
+void FluentLoadingIndicator::updateAnimation() { update(); }
 
 void FluentLoadingIndicator::onAnimationStep() {
     // Update animation progress
-    m_animationProgress += 0.05 * m_speed; // Adjust speed
+    m_animationProgress += 0.05 * m_speed;  // Adjust speed
     if (m_animationProgress > 1.0) {
         m_animationProgress = 0.0;
     }
-    
+
     // Update dot phases for dots animation
     if (m_loadingType == FluentLoadingType::Dots) {
         for (int i = 0; i < m_dotPhases.size(); ++i) {
             m_dotPhases[i] = fmod(m_animationProgress + i * 0.2, 1.0);
         }
     }
-    
+
     // Update bar heights for bars animation
     if (m_loadingType == FluentLoadingType::Bars) {
         for (int i = 0; i < m_barHeights.size(); ++i) {
@@ -329,7 +347,7 @@ void FluentLoadingIndicator::onAnimationStep() {
             m_barHeights[i] = 0.3 + 0.7 * qAbs(qSin(phase * M_PI));
         }
     }
-    
+
     update();
 }
 
@@ -352,15 +370,16 @@ void FluentLoadingIndicator::drawSpinner(QPainter& painter, const QRect& rect) {
     const int radius = rect.width() / 2 - 2;
     const int strokeWidth = qMax(1, radius / 8);
 
-    painter.setPen(QPen(getIndicatorColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
+    painter.setPen(
+        QPen(getIndicatorColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
 
     // Draw partial circle that rotates
-    const int spanAngle = 270 * 16; // 270 degrees in 16ths
+    const int spanAngle = 270 * 16;  // 270 degrees in 16ths
     const int startAngle = static_cast<int>(m_rotationAngle * 16);
 
-    painter.drawArc(QRect(center.x() - radius, center.y() - radius,
-                         radius * 2, radius * 2),
-                   startAngle, spanAngle);
+    painter.drawArc(
+        QRect(center.x() - radius, center.y() - radius, radius * 2, radius * 2),
+        startAngle, spanAngle);
 }
 
 void FluentLoadingIndicator::drawDots(QPainter& painter, const QRect& rect) {
@@ -383,7 +402,8 @@ void FluentLoadingIndicator::drawDots(QPainter& painter, const QRect& rect) {
         const qreal scale = 0.5 + 0.5 * qAbs(qSin(phase * 2 * M_PI));
         const int currentSize = static_cast<int>(dotSize * scale);
 
-        painter.drawEllipse(x - currentSize/2, y - currentSize/2, currentSize, currentSize);
+        painter.drawEllipse(x - currentSize / 2, y - currentSize / 2,
+                            currentSize, currentSize);
     }
 }
 
@@ -413,7 +433,8 @@ void FluentLoadingIndicator::drawBars(QPainter& painter, const QRect& rect) {
     const int spacing = barWidth;
     const int maxHeight = rect.height() - 4;
 
-    const int startX = rect.center().x() - (barCount * barWidth + (barCount - 1) * spacing) / 2;
+    const int startX = rect.center().x() -
+                       (barCount * barWidth + (barCount - 1) * spacing) / 2;
     const int baseY = rect.bottom() - 2;
 
     painter.setBrush(getIndicatorColor());
@@ -440,13 +461,14 @@ void FluentLoadingIndicator::drawRing(QPainter& painter, const QRect& rect) {
     painter.drawEllipse(center, outerRadius, outerRadius);
 
     // Draw rotating segment
-    painter.setPen(QPen(getIndicatorColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
-    const int spanAngle = 90 * 16; // 90 degrees
+    painter.setPen(
+        QPen(getIndicatorColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
+    const int spanAngle = 90 * 16;  // 90 degrees
     const int startAngle = static_cast<int>(m_rotationAngle * 16);
 
     painter.drawArc(QRect(center.x() - outerRadius, center.y() - outerRadius,
-                         outerRadius * 2, outerRadius * 2),
-                   startAngle, spanAngle);
+                          outerRadius * 2, outerRadius * 2),
+                    startAngle, spanAngle);
 }
 
 void FluentLoadingIndicator::drawWave(QPainter& painter, const QRect& rect) {
@@ -513,10 +535,14 @@ QRect FluentLoadingIndicator::textRect() const {
 
 int FluentLoadingIndicator::getIndicatorSize() const {
     switch (m_loadingSize) {
-        case FluentLoadingSize::Small: return 16;
-        case FluentLoadingSize::Medium: return 24;
-        case FluentLoadingSize::Large: return 32;
-        case FluentLoadingSize::ExtraLarge: return 48;
+        case FluentLoadingSize::Small:
+            return 16;
+        case FluentLoadingSize::Medium:
+            return 24;
+        case FluentLoadingSize::Large:
+            return 32;
+        case FluentLoadingSize::ExtraLarge:
+            return 48;
     }
     return 24;
 }
@@ -534,4 +560,23 @@ int FluentLoadingIndicator::getAnimationDuration() const {
     return baseDuration / m_speed;
 }
 
-} // namespace FluentQt::Components
+// Error boundary integration methods
+void FluentLoadingIndicator::setErrorBoundary(
+    Core::FluentErrorBoundary* boundary) {
+    m_errorBoundary = boundary;
+
+    if (m_errorBoundary) {
+        // Set up retry callback to restart loading
+        m_errorBoundary->setRetryCallback([this]() { start(); });
+    }
+}
+
+void FluentLoadingIndicator::setLoadingTimeout(int timeoutMs) {
+    m_loadingTimeoutMs = timeoutMs;
+
+    if (m_errorBoundary) {
+        m_errorBoundary->setLoadingTimeout(timeoutMs);
+    }
+}
+
+}  // namespace FluentQt::Components

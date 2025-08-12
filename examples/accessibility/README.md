@@ -231,18 +231,18 @@ public:
 private:
     void setupAccessibleForm() {
         auto* layout = new QVBoxLayout(this);
-        
+
         // Accessible text input
         auto* nameInput = new FluentTextInput();
         nameInput->setLabelText("Full Name");
         nameInput->setAccessibleName("Full Name Input");
         nameInput->setAccessibleDescription("Enter your complete name");
         nameInput->setRequired(true);
-        
+
         // Associate label with input
         auto* nameLabel = new QLabel("Full Name *");
         nameLabel->setBuddy(nameInput);
-        
+
         // Add validation feedback
         connect(nameInput, &FluentTextInput::textChanged, [=](const QString& text) {
             if (text.isEmpty()) {
@@ -255,7 +255,7 @@ private:
                 nameInput->setHelperText("Valid name entered");
             }
         });
-        
+
         layout->addWidget(nameLabel);
         layout->addWidget(nameInput);
     }
@@ -284,23 +284,23 @@ protected:
 private:
     void setupResponsiveLayout() {
         m_layout = new FluentResponsiveLayout(this);
-        
+
         // Create panels that adapt to screen size
         m_sidebarPanel = new FluentPanel("Navigation");
         m_contentPanel = new FluentPanel("Content");
         m_detailsPanel = new FluentPanel("Details");
-        
+
         // Set responsive behavior
         m_layout->addWidget(m_sidebarPanel, 0, 0, 1, 1);
         m_layout->addWidget(m_contentPanel, 0, 1, 1, 2);
         m_layout->addWidget(m_detailsPanel, 0, 3, 1, 1);
-        
+
         // Configure breakpoints
         m_layout->setBreakpoint(FluentBreakpoint::Mobile, 768);
         m_layout->setBreakpoint(FluentBreakpoint::Tablet, 1024);
         m_layout->setBreakpoint(FluentBreakpoint::Desktop, 1440);
     }
-    
+
     void updateLayoutForSize(const QSize& size) {
         if (size.width() < 768) {
             // Mobile layout: stack vertically
@@ -319,7 +319,7 @@ private:
             m_detailsPanel->setVisible(true);
         }
     }
-    
+
     FluentResponsiveLayout* m_layout;
     FluentPanel* m_sidebarPanel;
     FluentPanel* m_contentPanel;

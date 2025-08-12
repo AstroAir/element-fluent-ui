@@ -1,18 +1,18 @@
 // src/Components/FluentScrollArea.cpp
 #include "FluentQt/Components/FluentScrollArea.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QWheelEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
+#include <QAccessible>
 #include <QApplication>
+#include <QDebug>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QScrollBar>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QAccessible>
-#include <QDebug>
+#include <QWheelEvent>
 #include <QtMath>
 
 namespace FluentQt::Components {
@@ -22,7 +22,8 @@ class FluentScrollBar : public QScrollBar {
     Q_OBJECT
 
 public:
-    explicit FluentScrollBar(Qt::Orientation orientation, QWidget* parent = nullptr)
+    explicit FluentScrollBar(Qt::Orientation orientation,
+                             QWidget* parent = nullptr)
         : QScrollBar(orientation, parent) {
         setStyleSheet(getFluentScrollBarStyle());
         setAttribute(Qt::WA_Hover, true);
@@ -55,10 +56,10 @@ protected:
         if (underMouse()) {
             handleColor = QColor(0, 120, 215);
         }
-        
+
         painter.setBrush(handleColor);
         painter.setPen(Qt::NoPen);
-        
+
         const int radius = qMin(handleRect.width(), handleRect.height()) / 2;
         painter.drawRoundedRect(handleRect, radius, radius);
     }
@@ -92,13 +93,16 @@ private:
 
     QRect getHandleRect() const {
         const QRect rect = this->rect();
-        const int handleSize = qRound(static_cast<qreal>(maximum() - minimum() + pageStep()) / 
-                                     qMax(1, maximum() - minimum() + pageStep()) * 
-                                     (orientation() == Qt::Horizontal ? rect.width() : rect.height()));
-        
-        const int handlePos = qRound(static_cast<qreal>(value() - minimum()) / 
-                                    qMax(1, maximum() - minimum()) * 
-                                    ((orientation() == Qt::Horizontal ? rect.width() : rect.height()) - handleSize));
+        const int handleSize = qRound(
+            static_cast<qreal>(maximum() - minimum() + pageStep()) /
+            qMax(1, maximum() - minimum() + pageStep()) *
+            (orientation() == Qt::Horizontal ? rect.width() : rect.height()));
+
+        const int handlePos = qRound(
+            static_cast<qreal>(value() - minimum()) /
+            qMax(1, maximum() - minimum()) *
+            ((orientation() == Qt::Horizontal ? rect.width() : rect.height()) -
+             handleSize));
 
         if (orientation() == Qt::Horizontal) {
             return QRect(handlePos, 2, handleSize, rect.height() - 4);
@@ -114,7 +118,8 @@ private:
 // Scroll position indicator
 class FluentScrollIndicator : public QWidget {
 public:
-    explicit FluentScrollIndicator(QWidget* parent = nullptr) : QWidget(parent) {
+    explicit FluentScrollIndicator(QWidget* parent = nullptr)
+        : QWidget(parent) {
         setAttribute(Qt::WA_TransparentForMouseEvents);
         setAttribute(Qt::WA_NoSystemBackground);
         setVisible(false);
@@ -124,13 +129,13 @@ public:
         m_text = text;
         move(position);
         setVisible(true);
-        
+
         if (!m_hideTimer) {
             m_hideTimer = new QTimer(this);
             m_hideTimer->setSingleShot(true);
             connect(m_hideTimer, &QTimer::timeout, this, &QWidget::hide);
         }
-        
+
         m_hideTimer->start(1000);
         update();
     }
@@ -138,7 +143,7 @@ public:
 protected:
     void paintEvent(QPaintEvent* event) override {
         Q_UNUSED(event)
-        
+
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
@@ -165,39 +170,45 @@ private:
 };
 
 FluentScrollArea::FluentScrollArea(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_horizontalScrollBar(std::make_unique<FluentScrollBar>(Qt::Horizontal, this))
-    , m_verticalScrollBar(std::make_unique<FluentScrollBar>(Qt::Vertical, this))
-    , m_scrollIndicator(std::make_unique<FluentScrollIndicator>(this))
-    , m_scrollAnimation(std::make_unique<QPropertyAnimation>(this, "scrollPosition"))
-    , m_autoHideTimer(std::make_unique<QTimer>(this))
-{
+    : Core::FluentComponent(parent),
+      m_horizontalScrollBar(
+          std::make_unique<FluentScrollBar>(Qt::Horizontal, this)),
+      m_verticalScrollBar(
+          std::make_unique<FluentScrollBar>(Qt::Vertical, this)),
+      m_scrollIndicator(std::make_unique<FluentScrollIndicator>(this)),
+      m_scrollAnimation(
+          std::make_unique<QPropertyAnimation>(this, "scrollPosition")),
+      m_autoHideTimer(std::make_unique<QTimer>(this)) {
     setupScrollArea();
     setupScrollBars();
     setupAnimations();
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&FluentQt::Styling::FluentTheme::instance(), &FluentQt::Styling::FluentTheme::themeChanged,
-            this, &FluentScrollArea::onThemeChanged);
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentScrollArea::onThemeChanged);
 }
 
 FluentScrollArea::FluentScrollArea(QWidget* widget, QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_horizontalScrollBar(std::make_unique<FluentScrollBar>(Qt::Horizontal, this))
-    , m_verticalScrollBar(std::make_unique<FluentScrollBar>(Qt::Vertical, this))
-    , m_scrollIndicator(std::make_unique<FluentScrollIndicator>(this))
-    , m_scrollAnimation(std::make_unique<QPropertyAnimation>(this, "scrollPosition"))
-    , m_autoHideTimer(std::make_unique<QTimer>(this))
-{
+    : Core::FluentComponent(parent),
+      m_horizontalScrollBar(
+          std::make_unique<FluentScrollBar>(Qt::Horizontal, this)),
+      m_verticalScrollBar(
+          std::make_unique<FluentScrollBar>(Qt::Vertical, this)),
+      m_scrollIndicator(std::make_unique<FluentScrollIndicator>(this)),
+      m_scrollAnimation(
+          std::make_unique<QPropertyAnimation>(this, "scrollPosition")),
+      m_autoHideTimer(std::make_unique<QTimer>(this)) {
     setupScrollArea();
     setupScrollBars();
     setupAnimations();
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&FluentQt::Styling::FluentTheme::instance(), &FluentQt::Styling::FluentTheme::themeChanged,
-            this, &FluentScrollArea::onThemeChanged);
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentScrollArea::onThemeChanged);
 
     setWidget(widget);
 }
@@ -224,9 +235,7 @@ void FluentScrollArea::setWidget(QWidget* widget) {
     updateGeometry();
 }
 
-QWidget* FluentScrollArea::widget() const {
-    return m_contentWidget;
-}
+QWidget* FluentScrollArea::widget() const { return m_contentWidget; }
 
 void FluentScrollArea::setWidgetResizable(bool resizable) {
     if (m_widgetResizable != resizable) {
@@ -235,11 +244,10 @@ void FluentScrollArea::setWidgetResizable(bool resizable) {
     }
 }
 
-bool FluentScrollArea::widgetResizable() const {
-    return m_widgetResizable;
-}
+bool FluentScrollArea::widgetResizable() const { return m_widgetResizable; }
 
-void FluentScrollArea::setHorizontalScrollBarPolicy(FluentScrollBarPolicy policy) {
+void FluentScrollArea::setHorizontalScrollBarPolicy(
+    FluentScrollBarPolicy policy) {
     if (m_horizontalPolicy != policy) {
         m_horizontalPolicy = policy;
         updateScrollBarVisibility();
@@ -247,7 +255,8 @@ void FluentScrollArea::setHorizontalScrollBarPolicy(FluentScrollBarPolicy policy
     }
 }
 
-void FluentScrollArea::setVerticalScrollBarPolicy(FluentScrollBarPolicy policy) {
+void FluentScrollArea::setVerticalScrollBarPolicy(
+    FluentScrollBarPolicy policy) {
     if (m_verticalPolicy != policy) {
         m_verticalPolicy = policy;
         updateScrollBarVisibility();
@@ -304,9 +313,10 @@ QPoint FluentScrollArea::scrollPosition() const {
     return QPoint(m_horizontalScrollBar->value(), m_verticalScrollBar->value());
 }
 
-void FluentScrollArea::setScrollPosition(const QPoint& position, bool animated) {
+void FluentScrollArea::setScrollPosition(const QPoint& position,
+                                         bool animated) {
     const QPoint constrainedPos = constrainScrollPosition(position);
-    
+
     if (animated && m_smoothScrolling) {
         animateScrollTo(constrainedPos);
     } else {
@@ -332,8 +342,9 @@ void FluentScrollArea::setVerticalScrollValue(int value, bool animated) {
 }
 
 QSize FluentScrollArea::scrollRange() const {
-    return QSize(m_horizontalScrollBar->maximum() - m_horizontalScrollBar->minimum(),
-                 m_verticalScrollBar->maximum() - m_verticalScrollBar->minimum());
+    return QSize(
+        m_horizontalScrollBar->maximum() - m_horizontalScrollBar->minimum(),
+        m_verticalScrollBar->maximum() - m_verticalScrollBar->minimum());
 }
 
 QRect FluentScrollArea::visibleRect() const {
@@ -414,16 +425,18 @@ void FluentScrollArea::scrollToRight(bool animated) {
 
 void FluentScrollArea::scrollToCenter(bool animated) {
     const QPoint centerPos(
-        (m_horizontalScrollBar->minimum() + m_horizontalScrollBar->maximum()) / 2,
-        (m_verticalScrollBar->minimum() + m_verticalScrollBar->maximum()) / 2
-    );
+        (m_horizontalScrollBar->minimum() + m_horizontalScrollBar->maximum()) /
+            2,
+        (m_verticalScrollBar->minimum() + m_verticalScrollBar->maximum()) / 2);
     scrollTo(centerPos, animated);
 }
 
 QSize FluentScrollArea::sizeHint() const {
     if (!m_sizeHintValid) {
         if (m_contentWidget) {
-            m_cachedSizeHint = m_contentWidget->sizeHint() + QSize(m_scrollBarWidth * 2, m_scrollBarWidth * 2);
+            m_cachedSizeHint =
+                m_contentWidget->sizeHint() +
+                QSize(m_scrollBarWidth * 2, m_scrollBarWidth * 2);
         } else {
             m_cachedSizeHint = QSize(300, 200);
         }
@@ -432,31 +445,29 @@ QSize FluentScrollArea::sizeHint() const {
     return m_cachedSizeHint;
 }
 
-QSize FluentScrollArea::minimumSizeHint() const {
-    return QSize(100, 100);
-}
+QSize FluentScrollArea::minimumSizeHint() const { return QSize(100, 100); }
 
 void FluentScrollArea::ensureVisible(int x, int y, int xmargin, int ymargin) {
     const QRect targetRect(x - xmargin, y - ymargin, 2 * xmargin, 2 * ymargin);
     scrollToRect(targetRect, true);
 }
 
-void FluentScrollArea::ensureWidgetVisible(QWidget* childWidget, int xmargin, int ymargin) {
+void FluentScrollArea::ensureWidgetVisible(QWidget* childWidget, int xmargin,
+                                           int ymargin) {
     if (!childWidget || !m_contentWidget) {
         return;
     }
 
     const QRect widgetRect = childWidget->geometry();
-    const QRect targetRect = widgetRect.adjusted(-xmargin, -ymargin, xmargin, ymargin);
+    const QRect targetRect =
+        widgetRect.adjusted(-xmargin, -ymargin, xmargin, ymargin);
     scrollToRect(targetRect, true);
 }
 
 void FluentScrollArea::centerOn(const QPoint& position) {
     const QSize viewportSize = size();
-    const QPoint targetPos(
-        position.x() - viewportSize.width() / 2,
-        position.y() - viewportSize.height() / 2
-    );
+    const QPoint targetPos(position.x() - viewportSize.width() / 2,
+                           position.y() - viewportSize.height() / 2);
     scrollTo(targetPos, true);
 }
 
@@ -479,18 +490,20 @@ void FluentScrollArea::setupScrollBars() {
     // Configure horizontal scroll bar
     m_horizontalScrollBar->setOrientation(Qt::Horizontal);
     m_horizontalScrollBar->setParent(this);
-    connect(m_horizontalScrollBar.get(), QOverload<int>::of(&QScrollBar::valueChanged),
-            this, &FluentScrollArea::onScrollBarValueChanged);
-    connect(m_horizontalScrollBar.get(), &QScrollBar::rangeChanged,
-            this, &FluentScrollArea::onScrollBarRangeChanged);
+    connect(m_horizontalScrollBar.get(),
+            QOverload<int>::of(&QScrollBar::valueChanged), this,
+            &FluentScrollArea::onScrollBarValueChanged);
+    connect(m_horizontalScrollBar.get(), &QScrollBar::rangeChanged, this,
+            &FluentScrollArea::onScrollBarRangeChanged);
 
     // Configure vertical scroll bar
     m_verticalScrollBar->setOrientation(Qt::Vertical);
     m_verticalScrollBar->setParent(this);
-    connect(m_verticalScrollBar.get(), QOverload<int>::of(&QScrollBar::valueChanged),
-            this, &FluentScrollArea::onScrollBarValueChanged);
-    connect(m_verticalScrollBar.get(), &QScrollBar::rangeChanged,
-            this, &FluentScrollArea::onScrollBarRangeChanged);
+    connect(m_verticalScrollBar.get(),
+            QOverload<int>::of(&QScrollBar::valueChanged), this,
+            &FluentScrollArea::onScrollBarValueChanged);
+    connect(m_verticalScrollBar.get(), &QScrollBar::rangeChanged, this,
+            &FluentScrollArea::onScrollBarRangeChanged);
 
     updateScrollBarGeometry();
     updateScrollBarVisibility();
@@ -500,21 +513,23 @@ void FluentScrollArea::setupAnimations() {
     m_scrollAnimation->setDuration(300);
     m_scrollAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-    connect(m_scrollAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentScrollArea::onScrollAnimationValueChanged);
-    connect(m_scrollAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentScrollArea::onScrollAnimationFinished);
+    connect(m_scrollAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentScrollArea::onScrollAnimationValueChanged);
+    connect(m_scrollAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentScrollArea::onScrollAnimationFinished);
 
     // Setup auto-hide timer
     m_autoHideTimer->setSingleShot(true);
     m_autoHideTimer->setInterval(2000);
-    connect(m_autoHideTimer.get(), &QTimer::timeout,
-            this, &FluentScrollArea::onAutoHideTimer);
+    connect(m_autoHideTimer.get(), &QTimer::timeout, this,
+            &FluentScrollArea::onAutoHideTimer);
 }
 
 void FluentScrollArea::setupAccessibility() {
     setAccessibleName("Scroll Area");
-    setAccessibleDescription("A scrollable area that can contain content larger than the visible area");
+    setAccessibleDescription(
+        "A scrollable area that can contain content larger than the visible "
+        "area");
 }
 
 // Event handling
@@ -530,7 +545,8 @@ void FluentScrollArea::paintEvent(QPaintEvent* event) {
     paintBackground(painter, rect);
 
     // Paint scroll indicators if enabled
-    if (m_showIndicators && (m_horizontalScrollBar->isVisible() || m_verticalScrollBar->isVisible())) {
+    if (m_showIndicators && (m_horizontalScrollBar->isVisible() ||
+                             m_verticalScrollBar->isVisible())) {
         paintScrollIndicators(painter);
     }
 }
@@ -623,39 +639,40 @@ void FluentScrollArea::keyPressEvent(QKeyEvent* event) {
         return;
     }
 
-    const int step = event->modifiers() & Qt::ShiftModifier ? m_scrollSpeed * 5 : m_scrollSpeed;
+    const int step = event->modifiers() & Qt::ShiftModifier ? m_scrollSpeed * 5
+                                                            : m_scrollSpeed;
     QPoint delta;
 
     switch (event->key()) {
-    case Qt::Key_Left:
-        delta = QPoint(-step, 0);
-        break;
-    case Qt::Key_Right:
-        delta = QPoint(step, 0);
-        break;
-    case Qt::Key_Up:
-        delta = QPoint(0, -step);
-        break;
-    case Qt::Key_Down:
-        delta = QPoint(0, step);
-        break;
-    case Qt::Key_PageUp:
-        delta = QPoint(0, -m_verticalScrollBar->pageStep());
-        break;
-    case Qt::Key_PageDown:
-        delta = QPoint(0, m_verticalScrollBar->pageStep());
-        break;
-    case Qt::Key_Home:
-        scrollToTop(true);
-        event->accept();
-        return;
-    case Qt::Key_End:
-        scrollToBottom(true);
-        event->accept();
-        return;
-    default:
-        Core::FluentComponent::keyPressEvent(event);
-        return;
+        case Qt::Key_Left:
+            delta = QPoint(-step, 0);
+            break;
+        case Qt::Key_Right:
+            delta = QPoint(step, 0);
+            break;
+        case Qt::Key_Up:
+            delta = QPoint(0, -step);
+            break;
+        case Qt::Key_Down:
+            delta = QPoint(0, step);
+            break;
+        case Qt::Key_PageUp:
+            delta = QPoint(0, -m_verticalScrollBar->pageStep());
+            break;
+        case Qt::Key_PageDown:
+            delta = QPoint(0, m_verticalScrollBar->pageStep());
+            break;
+        case Qt::Key_Home:
+            scrollToTop(true);
+            event->accept();
+            return;
+        case Qt::Key_End:
+            scrollToBottom(true);
+            event->accept();
+            return;
+        default:
+            Core::FluentComponent::keyPressEvent(event);
+            return;
     }
 
     if (!delta.isNull()) {
@@ -669,7 +686,8 @@ void FluentScrollArea::updateStateStyle() {
     update();
 }
 
-void FluentScrollArea::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentScrollArea::performStateTransition(Core::FluentState from,
+                                              Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     updateStateStyle();
@@ -683,9 +701,7 @@ void FluentScrollArea::onScrollAnimationValueChanged(const QVariant& value) {
     emit scrollPositionChanged(pos);
 }
 
-void FluentScrollArea::onScrollAnimationFinished() {
-    emit scrollFinished();
-}
+void FluentScrollArea::onScrollAnimationFinished() { emit scrollFinished(); }
 
 void FluentScrollArea::onScrollBarValueChanged(int value) {
     Q_UNUSED(value)
@@ -720,29 +736,29 @@ void FluentScrollArea::updateScrollBarVisibility() {
     bool vVisible = false;
 
     switch (m_horizontalPolicy) {
-    case FluentScrollBarPolicy::AlwaysOff:
-        hVisible = false;
-        break;
-    case FluentScrollBarPolicy::AlwaysOn:
-        hVisible = true;
-        break;
-    case FluentScrollBarPolicy::AsNeeded:
-    case FluentScrollBarPolicy::AutoHide:
-        hVisible = hNeedsScrollBar;
-        break;
+        case FluentScrollBarPolicy::AlwaysOff:
+            hVisible = false;
+            break;
+        case FluentScrollBarPolicy::AlwaysOn:
+            hVisible = true;
+            break;
+        case FluentScrollBarPolicy::AsNeeded:
+        case FluentScrollBarPolicy::AutoHide:
+            hVisible = hNeedsScrollBar;
+            break;
     }
 
     switch (m_verticalPolicy) {
-    case FluentScrollBarPolicy::AlwaysOff:
-        vVisible = false;
-        break;
-    case FluentScrollBarPolicy::AlwaysOn:
-        vVisible = true;
-        break;
-    case FluentScrollBarPolicy::AsNeeded:
-    case FluentScrollBarPolicy::AutoHide:
-        vVisible = vNeedsScrollBar;
-        break;
+        case FluentScrollBarPolicy::AlwaysOff:
+            vVisible = false;
+            break;
+        case FluentScrollBarPolicy::AlwaysOn:
+            vVisible = true;
+            break;
+        case FluentScrollBarPolicy::AsNeeded:
+        case FluentScrollBarPolicy::AutoHide:
+            vVisible = vNeedsScrollBar;
+            break;
     }
 
     if (m_autoHideScrollBars && !m_scrollBarsVisible) {
@@ -762,15 +778,17 @@ void FluentScrollArea::updateScrollBarGeometry() {
     const int scrollBarWidth = m_scrollBarWidth;
 
     // Position horizontal scroll bar
-    const QRect hScrollRect(0, rect.height() - scrollBarWidth,
-                           rect.width() - (m_verticalScrollBar->isVisible() ? scrollBarWidth : 0),
-                           scrollBarWidth);
+    const QRect hScrollRect(
+        0, rect.height() - scrollBarWidth,
+        rect.width() - (m_verticalScrollBar->isVisible() ? scrollBarWidth : 0),
+        scrollBarWidth);
     m_horizontalScrollBar->setGeometry(hScrollRect);
 
     // Position vertical scroll bar
-    const QRect vScrollRect(rect.width() - scrollBarWidth, 0,
-                           scrollBarWidth,
-                           rect.height() - (m_horizontalScrollBar->isVisible() ? scrollBarWidth : 0));
+    const QRect vScrollRect(
+        rect.width() - scrollBarWidth, 0, scrollBarWidth,
+        rect.height() -
+            (m_horizontalScrollBar->isVisible() ? scrollBarWidth : 0));
     m_verticalScrollBar->setGeometry(vScrollRect);
 }
 
@@ -820,8 +838,10 @@ bool FluentScrollArea::isScrollAnimationRunning() const {
 }
 
 QPoint FluentScrollArea::constrainScrollPosition(const QPoint& position) const {
-    const int x = qBound(m_horizontalScrollBar->minimum(), position.x(), m_horizontalScrollBar->maximum());
-    const int y = qBound(m_verticalScrollBar->minimum(), position.y(), m_verticalScrollBar->maximum());
+    const int x = qBound(m_horizontalScrollBar->minimum(), position.x(),
+                         m_horizontalScrollBar->maximum());
+    const int y = qBound(m_verticalScrollBar->minimum(), position.y(),
+                         m_verticalScrollBar->maximum());
     return QPoint(x, y);
 }
 
@@ -846,11 +866,11 @@ void FluentScrollArea::applyKineticScrolling(const QPoint& velocity) {
             }
 
             scrollBy(m_lastScrollVelocity, false);
-            m_lastScrollVelocity *= 0.95; // Friction
+            m_lastScrollVelocity *= 0.95;  // Friction
         });
     }
 
-    m_kineticTimer->start(16); // ~60 FPS
+    m_kineticTimer->start(16);  // ~60 FPS
 }
 
 void FluentScrollArea::paintBackground(QPainter& painter, const QRect& rect) {
@@ -875,10 +895,13 @@ void FluentScrollArea::updateContentGeometry() {
     }
 
     const QRect rect = this->rect();
-    const int hScrollBarHeight = m_horizontalScrollBar->isVisible() ? m_scrollBarWidth : 0;
-    const int vScrollBarWidth = m_verticalScrollBar->isVisible() ? m_scrollBarWidth : 0;
+    const int hScrollBarHeight =
+        m_horizontalScrollBar->isVisible() ? m_scrollBarWidth : 0;
+    const int vScrollBarWidth =
+        m_verticalScrollBar->isVisible() ? m_scrollBarWidth : 0;
 
-    QRect contentRect = rect.adjusted(0, 0, -vScrollBarWidth, -hScrollBarHeight);
+    QRect contentRect =
+        rect.adjusted(0, 0, -vScrollBarWidth, -hScrollBarHeight);
 
     if (m_widgetResizable) {
         m_contentWidget->resize(contentRect.size());
@@ -895,18 +918,23 @@ void FluentScrollArea::updateScrollRanges() {
 
     const QSize contentSize = m_contentWidget->size();
     const QSize viewportSize = size();
-    const int hScrollBarHeight = m_horizontalScrollBar->isVisible() ? m_scrollBarWidth : 0;
-    const int vScrollBarWidth = m_verticalScrollBar->isVisible() ? m_scrollBarWidth : 0;
+    const int hScrollBarHeight =
+        m_horizontalScrollBar->isVisible() ? m_scrollBarWidth : 0;
+    const int vScrollBarWidth =
+        m_verticalScrollBar->isVisible() ? m_scrollBarWidth : 0;
 
-    const QSize effectiveViewportSize = viewportSize - QSize(vScrollBarWidth, hScrollBarHeight);
+    const QSize effectiveViewportSize =
+        viewportSize - QSize(vScrollBarWidth, hScrollBarHeight);
 
     // Update horizontal scroll bar
-    const int hMax = qMax(0, contentSize.width() - effectiveViewportSize.width());
+    const int hMax =
+        qMax(0, contentSize.width() - effectiveViewportSize.width());
     m_horizontalScrollBar->setRange(0, hMax);
     m_horizontalScrollBar->setPageStep(effectiveViewportSize.width());
 
     // Update vertical scroll bar
-    const int vMax = qMax(0, contentSize.height() - effectiveViewportSize.height());
+    const int vMax =
+        qMax(0, contentSize.height() - effectiveViewportSize.height());
     m_verticalScrollBar->setRange(0, vMax);
     m_verticalScrollBar->setPageStep(effectiveViewportSize.height());
 }
@@ -933,6 +961,6 @@ bool FluentScrollArea::needsVerticalScrollBar() const {
     return contentSize.height() > viewportSize.height();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components
 
 #include "FluentScrollArea.moc"

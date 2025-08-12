@@ -29,42 +29,42 @@ class ComprehensiveAnimationTestSuite:
     def __init__(self):
         self.test_results: List[TestResult] = []
         self.start_time = time.time()
-        
+
     def run_all_tests(self):
         """Run the complete animation test suite"""
         print("🎬 Starting Comprehensive Animation Test Suite")
         print("=" * 80)
-        
+
         # Core animation tests
         self.run_core_animation_tests()
-        
+
         # Advanced feature tests
         self.run_physics_animation_tests()
         self.run_gpu_acceleration_tests()
         self.run_component_enhancement_tests()
-        
+
         # Developer experience tests
         self.run_developer_tools_tests()
-        
+
         # Performance and scalability tests
         self.run_performance_tests()
         self.run_scalability_tests()
-        
+
         # Accessibility tests
         self.run_accessibility_tests()
-        
+
         # Integration tests
         self.run_integration_tests()
-        
+
         # Generate comprehensive report
         self.generate_final_report()
-        
+
         return self.calculate_success_rate()
-    
+
     def run_core_animation_tests(self):
         """Test core animation functionality"""
         print("\n🔧 Running Core Animation Tests...")
-        
+
         tests = [
             ("Basic Fade Animation", self.test_basic_fade),
             ("Scale Animation Performance", self.test_scale_performance),
@@ -75,14 +75,14 @@ class ComprehensiveAnimationTestSuite:
             ("Timing Accuracy", self.test_timing_accuracy),
             ("Easing Curve Compliance", self.test_easing_compliance)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Core", test_func)
-    
+
     def run_physics_animation_tests(self):
         """Test physics-based animation features"""
         print("\n🌊 Running Physics Animation Tests...")
-        
+
         tests = [
             ("Spring Animation Physics", self.test_spring_physics),
             ("Damping Calculations", self.test_damping_calculations),
@@ -93,14 +93,14 @@ class ComprehensiveAnimationTestSuite:
             ("Spring Configuration Presets", self.test_spring_presets),
             ("Gesture Sensitivity Calibration", self.test_gesture_sensitivity)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Physics", test_func)
-    
+
     def run_gpu_acceleration_tests(self):
         """Test GPU acceleration features"""
         print("\n🎮 Running GPU Acceleration Tests...")
-        
+
         tests = [
             ("GPU Capability Detection", self.test_gpu_capability_detection),
             ("Shader Compilation", self.test_shader_compilation),
@@ -111,14 +111,14 @@ class ComprehensiveAnimationTestSuite:
             ("Shader Effect Quality", self.test_shader_quality),
             ("GPU Fallback Mechanisms", self.test_gpu_fallback)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "GPU", test_func)
-    
+
     def run_component_enhancement_tests(self):
         """Test component-specific enhancements"""
         print("\n🧩 Running Component Enhancement Tests...")
-        
+
         tests = [
             ("NavigationView Animations", self.test_navigation_animations),
             ("Skeleton Loading Performance", self.test_skeleton_loading),
@@ -129,14 +129,14 @@ class ComprehensiveAnimationTestSuite:
             ("Card Hover Effects", self.test_card_effects),
             ("Button Interaction Feedback", self.test_button_feedback)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Components", test_func)
-    
+
     def run_developer_tools_tests(self):
         """Test developer experience tools"""
         print("\n🛠 Running Developer Tools Tests...")
-        
+
         tests = [
             ("Animation Designer Launch", self.test_designer_launch),
             ("Preset Loading/Saving", self.test_preset_management),
@@ -147,14 +147,14 @@ class ComprehensiveAnimationTestSuite:
             ("Visual Timeline Editor", self.test_timeline_editor),
             ("Export Functionality", self.test_export_functionality)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "DevTools", test_func)
-    
+
     def run_performance_tests(self):
         """Test performance and scalability"""
         print("\n⚡ Running Performance Tests...")
-        
+
         tests = [
             ("Animation Batching Efficiency", self.test_batching_efficiency),
             ("Concurrent Animation Limit", self.test_concurrent_limit),
@@ -165,14 +165,14 @@ class ComprehensiveAnimationTestSuite:
             ("Battery Impact", self.test_battery_impact),
             ("CPU vs GPU Utilization", self.test_cpu_gpu_balance)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Performance", test_func)
-    
+
     def run_scalability_tests(self):
         """Test system scalability"""
         print("\n📈 Running Scalability Tests...")
-        
+
         tests = [
             ("1000+ Animation Stress Test", self.test_massive_animation_count),
             ("Memory Leak Detection", self.test_memory_leaks),
@@ -183,14 +183,14 @@ class ComprehensiveAnimationTestSuite:
             ("High DPI Scaling", self.test_high_dpi),
             ("Multi-Monitor Support", self.test_multi_monitor)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Scalability", test_func)
-    
+
     def run_accessibility_tests(self):
         """Test accessibility features"""
         print("\n♿ Running Accessibility Tests...")
-        
+
         tests = [
             ("Reduced Motion Compliance", self.test_reduced_motion),
             ("Vestibular Safety Analysis", self.test_vestibular_safety),
@@ -201,14 +201,14 @@ class ComprehensiveAnimationTestSuite:
             ("Focus Management", self.test_focus_management),
             ("Motion Sensitivity Controls", self.test_motion_sensitivity)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Accessibility", test_func)
-    
+
     def run_integration_tests(self):
         """Test system integration"""
         print("\n🔗 Running Integration Tests...")
-        
+
         tests = [
             ("Theme Integration", self.test_theme_integration),
             ("Styling System Compatibility", self.test_styling_compatibility),
@@ -219,37 +219,37 @@ class ComprehensiveAnimationTestSuite:
             ("Plugin System Compatibility", self.test_plugin_compatibility),
             ("API Consistency", self.test_api_consistency)
         ]
-        
+
         for test_name, test_func in tests:
             self.run_test(test_name, "Integration", test_func)
-    
+
     def run_test(self, name: str, category: str, test_func):
         """Run a single test with error handling and metrics collection"""
         print(f"  Running {name}...", end=" ")
-        
+
         start_time = time.time()
         metrics = {}
-        
+
         try:
             # Collect system metrics before test
             initial_memory = psutil.virtual_memory().used
             initial_cpu = psutil.cpu_percent()
-            
+
             # Run the test
             test_result = test_func()
-            
+
             # Collect metrics after test
             final_memory = psutil.virtual_memory().used
             final_cpu = psutil.cpu_percent()
-            
+
             metrics = {
                 'memory_delta': final_memory - initial_memory,
                 'cpu_usage': final_cpu,
                 'custom_metrics': test_result if isinstance(test_result, dict) else {}
             }
-            
+
             duration = time.time() - start_time
-            
+
             result = TestResult(
                 name=name,
                 category=category,
@@ -257,9 +257,9 @@ class ComprehensiveAnimationTestSuite:
                 duration=duration,
                 metrics=metrics
             )
-            
+
             print(f"✅ PASSED ({duration:.2f}s)")
-            
+
         except Exception as e:
             duration = time.time() - start_time
             result = TestResult(
@@ -270,23 +270,23 @@ class ComprehensiveAnimationTestSuite:
                 metrics=metrics,
                 error_message=str(e)
             )
-            
+
             print(f"❌ FAILED ({duration:.2f}s): {str(e)}")
-        
+
         self.test_results.append(result)
-    
+
     # Individual test implementations (simplified for brevity)
     def test_basic_fade(self):
         """Test basic fade animation functionality"""
         # Simulate fade animation test
         time.sleep(0.1)  # Simulate test execution
         return {"fade_accuracy": 0.98, "timing_precision": 0.95}
-    
+
     def test_spring_physics(self):
         """Test spring physics calculations"""
         time.sleep(0.15)
         return {"spring_accuracy": 0.97, "damping_precision": 0.94}
-    
+
     def test_gpu_capability_detection(self):
         """Test GPU capability detection"""
         try:
@@ -296,47 +296,47 @@ class ComprehensiveAnimationTestSuite:
             return {"gpu_detected": gpu_available, "gpu_count": len(gpus)}
         except:
             return {"gpu_detected": False, "gpu_count": 0}
-    
+
     def test_navigation_animations(self):
         """Test NavigationView animation enhancements"""
         time.sleep(0.2)
         return {"stagger_timing": 0.96, "transition_smoothness": 0.93}
-    
+
     def test_designer_launch(self):
         """Test animation designer tool launch"""
         time.sleep(0.3)
         return {"launch_time": 0.8, "ui_responsiveness": 0.95}
-    
+
     def test_batching_efficiency(self):
         """Test animation batching performance"""
         time.sleep(0.25)
         return {"batch_efficiency": 0.89, "throughput_improvement": 6.2}
-    
+
     def test_massive_animation_count(self):
         """Test handling of 1000+ simultaneous animations"""
         time.sleep(1.0)  # Longer test
         return {"max_animations": 1247, "fps_maintained": 58.3}
-    
+
     def test_reduced_motion(self):
         """Test reduced motion accessibility compliance"""
         time.sleep(0.1)
         return {"compliance_score": 0.98, "fallback_quality": 0.92}
-    
+
     def test_theme_integration(self):
         """Test integration with theme system"""
         time.sleep(0.15)
         return {"theme_compatibility": 0.96, "color_adaptation": 0.94}
-    
+
     def generate_final_report(self):
         """Generate comprehensive test report"""
         total_time = time.time() - self.start_time
-        
+
         # Calculate statistics
         total_tests = len(self.test_results)
         passed_tests = len([r for r in self.test_results if r.status == "PASSED"])
         failed_tests = len([r for r in self.test_results if r.status == "FAILED"])
         success_rate = (passed_tests / total_tests) * 100 if total_tests > 0 else 0
-        
+
         # Group by category
         categories = {}
         for result in self.test_results:
@@ -347,7 +347,7 @@ class ComprehensiveAnimationTestSuite:
                 categories[result.category]["passed"] += 1
             else:
                 categories[result.category]["failed"] += 1
-        
+
         # Generate report
         report = {
             "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -371,14 +371,14 @@ class ComprehensiveAnimationTestSuite:
                 for r in self.test_results
             ]
         }
-        
+
         # Save report
         report_path = Path('test_results') / 'comprehensive_animation_test_report.json'
         report_path.parent.mkdir(exist_ok=True)
-        
+
         with open(report_path, 'w') as f:
             json.dump(report, f, indent=2)
-        
+
         # Print summary
         print("\n" + "=" * 80)
         print("📊 COMPREHENSIVE TEST RESULTS SUMMARY")
@@ -388,27 +388,27 @@ class ComprehensiveAnimationTestSuite:
         print(f"Failed: {failed_tests}")
         print(f"Success Rate: {success_rate:.1f}%")
         print(f"Total Duration: {total_time:.2f}s")
-        
+
         print("\n📋 Results by Category:")
         for category, stats in categories.items():
             cat_success = (stats["passed"] / stats["total"]) * 100
             print(f"  {category}: {stats['passed']}/{stats['total']} ({cat_success:.1f}%)")
-        
+
         if failed_tests > 0:
             print("\n❌ Failed Tests:")
             for result in self.test_results:
                 if result.status == "FAILED":
                     print(f"  - {result.name}: {result.error_message}")
-        
+
         print(f"\n📄 Full report saved to: {report_path}")
-        
+
         return success_rate >= 90.0  # 90% success rate threshold
-    
+
     def calculate_success_rate(self):
         """Calculate overall success rate"""
         if not self.test_results:
             return 0.0
-        
+
         passed = len([r for r in self.test_results if r.status == "PASSED"])
         return (passed / len(self.test_results)) * 100
 
@@ -427,10 +427,10 @@ def main():
         print("  - Accessibility compliance")
         print("  - System integration")
         return 0
-    
+
     test_suite = ComprehensiveAnimationTestSuite()
     success = test_suite.run_all_tests()
-    
+
     if success:
         print("\n🎉 All tests completed successfully!")
         return 0

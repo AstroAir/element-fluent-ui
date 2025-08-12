@@ -1,23 +1,23 @@
 // examples/advanced_demo.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QSplitter>
-#include <QTimer>
+#include <QMainWindow>
 #include <QRandomGenerator>
+#include <QSplitter>
 #include <QStandardItemModel>
+#include <QTimer>
+#include <QVBoxLayout>
 
 #include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCalendar.h"
 #include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentChartView.h"
+#include "FluentQt/Components/FluentContextMenu.h"
 #include "FluentQt/Components/FluentNavigationView.h"
+#include "FluentQt/Components/FluentRichTextEditor.h"
+#include "FluentQt/Components/FluentSplitter.h"
 #include "FluentQt/Components/FluentTabView.h"
 #include "FluentQt/Components/FluentTreeView.h"
-#include "FluentQt/Components/FluentCalendar.h"
-#include "FluentQt/Components/FluentContextMenu.h"
-#include "FluentQt/Components/FluentRichTextEditor.h"
-#include "FluentQt/Components/FluentChartView.h"
-#include "FluentQt/Components/FluentSplitter.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt;
@@ -32,7 +32,7 @@ public:
         setupDemoPages();
         setupMenus();
         setupStatusBar();
-        
+
         setWindowTitle("FluentQt Advanced Demo - Complete Component Suite");
         setMinimumSize(1400, 900);
         resize(1600, 1000);
@@ -41,16 +41,15 @@ public:
 private slots:
     void toggleTheme() {
         auto& theme = Styling::FluentTheme::instance();
-        auto newMode = (theme.mode() == Styling::FluentThemeMode::Light) 
-            ? Styling::FluentThemeMode::Dark 
-            : Styling::FluentThemeMode::Light;
+        auto newMode = (theme.mode() == Styling::FluentThemeMode::Light)
+                           ? Styling::FluentThemeMode::Dark
+                           : Styling::FluentThemeMode::Light;
         theme.setMode(newMode);
     }
 
     void showAbout() {
         auto result = Components::FluentContentDialog::showMessageDialog(
-            this,
-            "About FluentQt",
+            this, "About FluentQt",
             "A comprehensive Fluent Design component library for Qt 6.x\n\n"
             "Features:\n"
             "• 30+ production-ready components\n"
@@ -59,11 +58,8 @@ private slots:
             "• Dynamic theming system\n"
             "• Cross-platform compatibility\n"
             "• Modern C++20 architecture",
-            "OK",
-            "Documentation",
-            "GitHub"
-        );
-        
+            "OK", "Documentation", "GitHub");
+
         if (result == Components::FluentDialogResult::Secondary) {
             // Open documentation
             statusBar()->showMessage("Opening documentation...", 2000);
@@ -145,12 +141,16 @@ private:
 
         // View menu
         auto* viewMenu = menuBar()->addMenu("&View");
-        viewMenu->addAction("Toggle &Theme", this, &AdvancedFluentDemo::toggleTheme, QKeySequence("Ctrl+T"));
-        viewMenu->addAction("&Full Screen", this, []() {}, QKeySequence::FullScreen);
+        viewMenu->addAction("Toggle &Theme", this,
+                            &AdvancedFluentDemo::toggleTheme,
+                            QKeySequence("Ctrl+T"));
+        viewMenu->addAction(
+            "&Full Screen", this, []() {}, QKeySequence::FullScreen);
         viewMenu->addSeparator();
         viewMenu->addAction("&Zoom In", this, []() {}, QKeySequence::ZoomIn);
         viewMenu->addAction("Zoom &Out", this, []() {}, QKeySequence::ZoomOut);
-        viewMenu->addAction("&Reset Zoom", this, []() {}, QKeySequence("Ctrl+0"));
+        viewMenu->addAction(
+            "&Reset Zoom", this, []() {}, QKeySequence("Ctrl+0"));
 
         // Help menu
         auto* helpMenu = menuBar()->addMenu("&Help");
@@ -160,18 +160,25 @@ private:
 
     void setupStatusBar() {
         statusBar()->showMessage("Ready", 2000);
-        
+
         // Add theme indicator
         auto* themeLabel = new QLabel("Theme: System");
         statusBar()->addPermanentWidget(themeLabel);
-        
-        connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::modeChanged,
+
+        connect(&Styling::FluentTheme::instance(),
+                &Styling::FluentTheme::modeChanged,
                 [themeLabel](Styling::FluentThemeMode mode) {
                     QString modeText;
                     switch (mode) {
-                        case Styling::FluentThemeMode::Light: modeText = "Light"; break;
-                        case Styling::FluentThemeMode::Dark: modeText = "Dark"; break;
-                        case Styling::FluentThemeMode::System: modeText = "System"; break;
+                        case Styling::FluentThemeMode::Light:
+                            modeText = "Light";
+                            break;
+                        case Styling::FluentThemeMode::Dark:
+                            modeText = "Dark";
+                            break;
+                        case Styling::FluentThemeMode::System:
+                            modeText = "System";
+                            break;
                     }
                     themeLabel->setText(QString("Theme: %1").arg(modeText));
                 });
@@ -182,25 +189,34 @@ private:
         auto* layout = new QVBoxLayout(page);
 
         // Welcome section
-        auto* welcomeCard = new Components::FluentCard("Welcome to FluentQt Advanced Demo", page);
-        welcomeCard->setSubtitle("Explore the complete component suite with advanced features");
+        auto* welcomeCard = new Components::FluentCard(
+            "Welcome to FluentQt Advanced Demo", page);
+        welcomeCard->setSubtitle(
+            "Explore the complete component suite with advanced features");
         welcomeCard->setElevation(Components::FluentCardElevation::Medium);
 
         // Feature grid
         auto* featuresLayout = new QGridLayout();
-        
-        auto* performanceCard = new Components::FluentCard("High Performance", page);
-        performanceCard->setSubtitle("60+ FPS animations with optimized rendering pipeline");
-        
-        auto* componentsCard = new Components::FluentCard("30+ Components", page);
-        componentsCard->setSubtitle("Complete suite of production-ready UI components");
-        
-        auto* accessibilityCard = new Components::FluentCard("Accessibility", page);
-        accessibilityCard->setSubtitle("Full screen reader and keyboard navigation support");
-        
+
+        auto* performanceCard =
+            new Components::FluentCard("High Performance", page);
+        performanceCard->setSubtitle(
+            "60+ FPS animations with optimized rendering pipeline");
+
+        auto* componentsCard =
+            new Components::FluentCard("30+ Components", page);
+        componentsCard->setSubtitle(
+            "Complete suite of production-ready UI components");
+
+        auto* accessibilityCard =
+            new Components::FluentCard("Accessibility", page);
+        accessibilityCard->setSubtitle(
+            "Full screen reader and keyboard navigation support");
+
         auto* themingCard = new Components::FluentCard("Dynamic Theming", page);
-        themingCard->setSubtitle("Light/dark themes with customizable accent colors");
-        
+        themingCard->setSubtitle(
+            "Light/dark themes with customizable accent colors");
+
         featuresLayout->addWidget(performanceCard, 0, 0);
         featuresLayout->addWidget(componentsCard, 0, 1);
         featuresLayout->addWidget(accessibilityCard, 1, 0);
@@ -208,20 +224,21 @@ private:
 
         // Action buttons
         auto* actionLayout = new QHBoxLayout();
-        
+
         auto* docsButton = new Components::FluentButton("Documentation", page);
         docsButton->setButtonStyle(Components::FluentButtonStyle::Primary);
         docsButton->setIcon(QIcon(":/icons/book.png"));
-        
+
         auto* githubButton = new Components::FluentButton("GitHub", page);
         githubButton->setButtonStyle(Components::FluentButtonStyle::Outline);
         githubButton->setIcon(QIcon(":/icons/github.png"));
-        
+
         auto* themeButton = new Components::FluentButton("Toggle Theme", page);
         themeButton->setButtonStyle(Components::FluentButtonStyle::Subtle);
         themeButton->setIcon(QIcon(":/icons/theme.png"));
-        connect(themeButton, &Components::FluentButton::clicked, this, &AdvancedFluentDemo::toggleTheme);
-        
+        connect(themeButton, &Components::FluentButton::clicked, this,
+                &AdvancedFluentDemo::toggleTheme);
+
         actionLayout->addWidget(docsButton);
         actionLayout->addWidget(githubButton);
         actionLayout->addWidget(themeButton);
@@ -250,23 +267,26 @@ private:
         auto* treeView = new Components::FluentTreeView(tabView);
         treeView->setFilteringEnabled(true);
         treeView->setDragDropEnabled(true);
-        
+
         // Add sample tree data
         auto* rootItem = treeView->addTopLevelItem("Root Node");
         rootItem->setIcon(QIcon(":/icons/folder.png"));
-        
+
         for (int i = 0; i < 5; ++i) {
-            auto* childItem = treeView->addChildItem(rootItem, QString("Child %1").arg(i + 1));
+            auto* childItem = treeView->addChildItem(
+                rootItem, QString("Child %1").arg(i + 1));
             childItem->setIcon(QIcon(":/icons/file.png"));
-            
+
             for (int j = 0; j < 3; ++j) {
-                auto* grandChild = treeView->addChildItem(childItem, QString("Grandchild %1.%2").arg(i + 1).arg(j + 1));
+                auto* grandChild = treeView->addChildItem(
+                    childItem,
+                    QString("Grandchild %1.%2").arg(i + 1).arg(j + 1));
                 grandChild->setIcon(QIcon(":/icons/item.png"));
             }
         }
 
         treeView->expandAll();
-        
+
         Components::FluentTabData treeTabData;
         treeTabData.text = "Tree View";
         treeTabData.icon = QIcon(":/icons/tree.png");
@@ -276,17 +296,18 @@ private:
         // List view tab
         auto* listWidget = new QWidget();
         auto* listLayout = new QVBoxLayout(listWidget);
-        
+
         auto* listView = new Components::FluentListView(listWidget);
         listView->setAlternatingRowColors(true);
         listView->setMultiSelection(true);
-        
+
         for (int i = 0; i < 20; ++i) {
-            listView->addItem(QIcon(":/icons/item.png"), QString("List Item %1").arg(i + 1));
+            listView->addItem(QIcon(":/icons/item.png"),
+                              QString("List Item %1").arg(i + 1));
         }
-        
+
         listLayout->addWidget(listView);
-        
+
         Components::FluentTabData listTabData;
         listTabData.text = "List View";
         listTabData.icon = QIcon(":/icons/list.png");
@@ -296,24 +317,27 @@ private:
         // Settings tab
         auto* settingsWidget = new QWidget();
         auto* settingsLayout = new QVBoxLayout(settingsWidget);
-        
-        auto* settingsCard = new Components::FluentCard("Tab Settings", settingsWidget);
+
+        auto* settingsCard =
+            new Components::FluentCard("Tab Settings", settingsWidget);
         auto* settingsContent = new QWidget();
         auto* settingsContentLayout = new QVBoxLayout(settingsContent);
-        
+
         auto* styleCombo = new Components::FluentComboBox(settingsContent);
         styleCombo->addItems({"Standard", "Pill", "Underline", "Compact"});
-        styleCombo->setCurrentIndex(2); // Underline
-        
+        styleCombo->setCurrentIndex(2);  // Underline
+
         auto* positionCombo = new Components::FluentComboBox(settingsContent);
         positionCombo->addItems({"Top", "Bottom", "Left", "Right"});
-        
-        auto* closableCheck = new Components::FluentCheckBox("Tabs closable", settingsContent);
+
+        auto* closableCheck =
+            new Components::FluentCheckBox("Tabs closable", settingsContent);
         closableCheck->setChecked(true);
-        
-        auto* movableCheck = new Components::FluentCheckBox("Tabs movable", settingsContent);
+
+        auto* movableCheck =
+            new Components::FluentCheckBox("Tabs movable", settingsContent);
         movableCheck->setChecked(true);
-        
+
         settingsContentLayout->addWidget(new QLabel("Tab Style:"));
         settingsContentLayout->addWidget(styleCombo);
         settingsContentLayout->addWidget(new QLabel("Tab Position:"));
@@ -321,12 +345,12 @@ private:
         settingsContentLayout->addWidget(closableCheck);
         settingsContentLayout->addWidget(movableCheck);
         settingsContentLayout->addStretch();
-        
+
         settingsContent->setLayout(settingsContentLayout);
         settingsCard->setContentWidget(settingsContent);
         settingsLayout->addWidget(settingsCard);
         settingsLayout->addStretch();
-        
+
         Components::FluentTabData settingsTabData;
         settingsTabData.text = "Settings";
         settingsTabData.icon = QIcon(":/icons/settings.png");
@@ -343,35 +367,42 @@ private:
 
         // Calendar widget
         auto* calendar = new Components::FluentCalendar(page);
-        calendar->setSelectionMode(Components::FluentCalendarSelectionMode::RangeSelection);
+        calendar->setSelectionMode(
+            Components::FluentCalendarSelectionMode::RangeSelection);
         calendar->setShowWeekNumbers(true);
-        
+
         // Add some holidays
-        calendar->addHoliday(QDate::currentDate().addDays(7), "Important Meeting");
-        calendar->addHoliday(QDate::currentDate().addDays(14), "Project Deadline");
+        calendar->addHoliday(QDate::currentDate().addDays(7),
+                             "Important Meeting");
+        calendar->addHoliday(QDate::currentDate().addDays(14),
+                             "Project Deadline");
         calendar->addHoliday(QDate::currentDate().addDays(21), "Team Event");
 
         // Calendar controls
-        auto* controlsCard = new Components::FluentCard("Calendar Controls", page);
+        auto* controlsCard =
+            new Components::FluentCard("Calendar Controls", page);
         auto* controlsWidget = new QWidget();
         auto* controlsLayout = new QVBoxLayout(controlsWidget);
-        
-        auto* selectionModeCombo = new Components::FluentComboBox(controlsWidget);
-        selectionModeCombo->addItems({"Single", "Multiple", "Range", "Week", "Month"});
-        selectionModeCombo->setCurrentIndex(2); // Range
-        
-        auto* weekNumbersCheck = new Components::FluentCheckBox("Show week numbers", controlsWidget);
+
+        auto* selectionModeCombo =
+            new Components::FluentComboBox(controlsWidget);
+        selectionModeCombo->addItems(
+            {"Single", "Multiple", "Range", "Week", "Month"});
+        selectionModeCombo->setCurrentIndex(2);  // Range
+
+        auto* weekNumbersCheck =
+            new Components::FluentCheckBox("Show week numbers", controlsWidget);
         weekNumbersCheck->setChecked(true);
-        
-        auto* todayButton = new Components::FluentButton("Go to Today", controlsWidget);
+
+        auto* todayButton =
+            new Components::FluentButton("Go to Today", controlsWidget);
         todayButton->setButtonStyle(Components::FluentButtonStyle::Primary);
-        connect(todayButton, &Components::FluentButton::clicked, [calendar]() {
-            calendar->showToday();
-        });
-        
+        connect(todayButton, &Components::FluentButton::clicked,
+                [calendar]() { calendar->showToday(); });
+
         auto* datePicker = new Components::FluentDatePicker(controlsWidget);
         datePicker->setDate(QDate::currentDate());
-        
+
         controlsLayout->addWidget(new QLabel("Selection Mode:"));
         controlsLayout->addWidget(selectionModeCombo);
         controlsLayout->addWidget(weekNumbersCheck);
@@ -379,14 +410,14 @@ private:
         controlsLayout->addWidget(new QLabel("Date Picker:"));
         controlsLayout->addWidget(datePicker);
         controlsLayout->addStretch();
-        
+
         controlsWidget->setLayout(controlsLayout);
         controlsCard->setContentWidget(controlsWidget);
         controlsCard->setFixedWidth(300);
 
         layout->addWidget(calendar);
         layout->addWidget(controlsCard);
-        
+
         return page;
     }
 
@@ -422,62 +453,70 @@ private:
         auto* layout = new QVBoxLayout(page);
 
         auto* splitter = new Components::FluentSplitter(Qt::Horizontal, page);
-        
+
         // Chart view
         auto* chartView = new Components::FluentChartView(splitter);
         chartView->setTitle("Sample Data Visualization");
         chartView->setAnimationEnabled(true);
         chartView->setZoomEnabled(true);
         chartView->setPanEnabled(true);
-        
+
         // Add sample data
         Components::FluentChartSeries lineSeries;
         lineSeries.name = "Sales";
         lineSeries.type = Components::FluentChartType::Line;
         lineSeries.color = QColor(65, 105, 225);
-        
+
         for (int i = 0; i < 12; ++i) {
-            double value = 100 + 50 * qSin(i * M_PI / 6) + QRandomGenerator::global()->bounded(20);
+            double value = 100 + 50 * qSin(i * M_PI / 6) +
+                           QRandomGenerator::global()->bounded(20);
             lineSeries.data.append(QPointF(i, value));
         }
-        
+
         chartView->addSeries(lineSeries);
-        
+
         Components::FluentChartSeries barSeries;
         barSeries.name = "Revenue";
         barSeries.type = Components::FluentChartType::Bar;
         barSeries.color = QColor(255, 140, 0);
-        
+
         for (int i = 0; i < 12; ++i) {
-            double value = 80 + 30 * qCos(i * M_PI / 4) + QRandomGenerator::global()->bounded(15);
+            double value = 80 + 30 * qCos(i * M_PI / 4) +
+                           QRandomGenerator::global()->bounded(15);
             barSeries.data.append(QPointF(i, value));
         }
-        
+
         chartView->addSeries(barSeries);
-        
+
         // Chart controls
-        auto* controlsCard = new Components::FluentCard("Chart Controls", splitter);
+        auto* controlsCard =
+            new Components::FluentCard("Chart Controls", splitter);
         auto* controlsWidget = new QWidget();
         auto* controlsLayout = new QVBoxLayout(controlsWidget);
-        
+
         auto* chartTypeCombo = new Components::FluentComboBox(controlsWidget);
         chartTypeCombo->addItems({"Line", "Bar", "Area", "Pie", "Scatter"});
-        
-        auto* animationCheck = new Components::FluentCheckBox("Animation enabled", controlsWidget);
+
+        auto* animationCheck =
+            new Components::FluentCheckBox("Animation enabled", controlsWidget);
         animationCheck->setChecked(true);
-        
-        auto* zoomCheck = new Components::FluentCheckBox("Zoom enabled", controlsWidget);
+
+        auto* zoomCheck =
+            new Components::FluentCheckBox("Zoom enabled", controlsWidget);
         zoomCheck->setChecked(true);
-        
-        auto* panCheck = new Components::FluentCheckBox("Pan enabled", controlsWidget);
+
+        auto* panCheck =
+            new Components::FluentCheckBox("Pan enabled", controlsWidget);
         panCheck->setChecked(true);
-        
-        auto* refreshButton = new Components::FluentButton("Refresh Data", controlsWidget);
+
+        auto* refreshButton =
+            new Components::FluentButton("Refresh Data", controlsWidget);
         refreshButton->setButtonStyle(Components::FluentButtonStyle::Primary);
-        
-        auto* exportButton = new Components::FluentButton("Export Chart", controlsWidget);
+
+        auto* exportButton =
+            new Components::FluentButton("Export Chart", controlsWidget);
         exportButton->setButtonStyle(Components::FluentButtonStyle::Outline);
-        
+
         controlsLayout->addWidget(new QLabel("Chart Type:"));
         controlsLayout->addWidget(chartTypeCombo);
         controlsLayout->addWidget(animationCheck);
@@ -486,14 +525,14 @@ private:
         controlsLayout->addWidget(refreshButton);
         controlsLayout->addWidget(exportButton);
         controlsLayout->addStretch();
-        
+
         controlsWidget->setLayout(controlsLayout);
         controlsCard->setContentWidget(controlsWidget);
-        
+
         splitter->addWidget(chartView);
         splitter->addWidget(controlsCard);
         splitter->setProportionalSizes({0.75, 0.25});
-        
+
         layout->addWidget(splitter);
         return page;
     }
@@ -503,55 +542,65 @@ private:
         auto* layout = new QVBoxLayout(page);
 
         // Multi-level splitter demo
-        auto* mainSplitter = new Components::FluentSplitter(Qt::Horizontal, page);
+        auto* mainSplitter =
+            new Components::FluentSplitter(Qt::Horizontal, page);
         mainSplitter->setAnimatedResize(true);
         mainSplitter->setCollapsible(true);
-        
+
         // Left panel
-        auto* leftPanel = new Components::FluentCard("Left Panel", mainSplitter);
+        auto* leftPanel =
+            new Components::FluentCard("Left Panel", mainSplitter);
         leftPanel->setSubtitle("Collapsible side panel");
         leftPanel->setMinimumWidth(200);
-        
+
         // Center area with vertical splitter
-        auto* centerSplitter = new Components::FluentSplitter(Qt::Vertical, mainSplitter);
-        
-        auto* topCenter = new Components::FluentCard("Top Center", centerSplitter);
+        auto* centerSplitter =
+            new Components::FluentSplitter(Qt::Vertical, mainSplitter);
+
+        auto* topCenter =
+            new Components::FluentCard("Top Center", centerSplitter);
         topCenter->setSubtitle("Main content area");
-        
-        auto* bottomCenter = new Components::FluentCard("Bottom Center", centerSplitter);
+
+        auto* bottomCenter =
+            new Components::FluentCard("Bottom Center", centerSplitter);
         bottomCenter->setSubtitle("Secondary content area");
-        
+
         centerSplitter->addWidget(topCenter);
         centerSplitter->addWidget(bottomCenter);
         centerSplitter->setProportionalSizes({0.7, 0.3});
-        
+
         // Right panel
-        auto* rightPanel = new Components::FluentCard("Right Panel", mainSplitter);
+        auto* rightPanel =
+            new Components::FluentCard("Right Panel", mainSplitter);
         rightPanel->setSubtitle("Properties panel");
         rightPanel->setMinimumWidth(250);
-        
+
         // Add splitter controls
         auto* controlsWidget = new QWidget();
         auto* controlsLayout = new QVBoxLayout(controlsWidget);
-        
+
         auto* orientationCombo = new Components::FluentComboBox(controlsWidget);
         orientationCombo->addItems({"Horizontal", "Vertical"});
-        
-        auto* animatedCheck = new Components::FluentCheckBox("Animated resize", controlsWidget);
+
+        auto* animatedCheck =
+            new Components::FluentCheckBox("Animated resize", controlsWidget);
         animatedCheck->setChecked(true);
-        
-        auto* collapsibleCheck = new Components::FluentCheckBox("Collapsible", controlsWidget);
+
+        auto* collapsibleCheck =
+            new Components::FluentCheckBox("Collapsible", controlsWidget);
         collapsibleCheck->setChecked(true);
-        
-        auto* resetButton = new Components::FluentButton("Reset Layout", controlsWidget);
+
+        auto* resetButton =
+            new Components::FluentButton("Reset Layout", controlsWidget);
         resetButton->setButtonStyle(Components::FluentButtonStyle::Primary);
-        connect(resetButton, &Components::FluentButton::clicked, [mainSplitter]() {
-            mainSplitter->distributeEvenly(true);
-        });
-        
-        auto* saveButton = new Components::FluentButton("Save State", controlsWidget);
-        auto* restoreButton = new Components::FluentButton("Restore State", controlsWidget);
-        
+        connect(resetButton, &Components::FluentButton::clicked,
+                [mainSplitter]() { mainSplitter->distributeEvenly(true); });
+
+        auto* saveButton =
+            new Components::FluentButton("Save State", controlsWidget);
+        auto* restoreButton =
+            new Components::FluentButton("Restore State", controlsWidget);
+
         controlsLayout->addWidget(new QLabel("Orientation:"));
         controlsLayout->addWidget(orientationCombo);
         controlsLayout->addWidget(animatedCheck);
@@ -560,15 +609,15 @@ private:
         controlsLayout->addWidget(saveButton);
         controlsLayout->addWidget(restoreButton);
         controlsLayout->addStretch();
-        
+
         controlsWidget->setLayout(controlsLayout);
         rightPanel->setContentWidget(controlsWidget);
-        
+
         mainSplitter->addWidget(leftPanel);
         mainSplitter->addWidget(centerSplitter);
         mainSplitter->addWidget(rightPanel);
         mainSplitter->setProportionalSizes({0.2, 0.6, 0.2});
-        
+
         layout->addWidget(mainSplitter);
         return page;
     }
@@ -577,13 +626,13 @@ private:
     Components::FluentNavigationView* m_navigationView{nullptr};
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    
+
     // Set high DPI attributes
     app.setAttribute(Qt::AA_EnableHighDpiScaling);
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
-    
+
     // Set application properties
     app.setApplicationName("FluentQt Advanced Demo");
     app.setApplicationVersion("2.0.0");

@@ -1,23 +1,20 @@
 #include "FluentQt/Animation/FluentAnimation.h"
-#include "FluentQt/Animation/FluentTransformEffect.h"
-#include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include "FluentQt/Animation/FluentTransformEffect.h"
 
 namespace FluentQt::Animation {
 
 FluentAnimation::FluentAnimation(QWidget* target, QObject* parent)
-    : QObject(parent), m_target(target)
-{
+    : QObject(parent), m_target(target) {
     m_root = new QSequentialAnimationGroup(this);
 }
 
-FluentAnimation::~FluentAnimation()
-{
-}
+FluentAnimation::~FluentAnimation() {}
 
-FluentAnimation& FluentAnimation::fadeIn(int duration, FluentEasing easing)
-{
-    auto* opacityEffect = qobject_cast<QGraphicsOpacityEffect*>(m_target->graphicsEffect());
+FluentAnimation& FluentAnimation::fadeIn(int duration, FluentEasing easing) {
+    auto* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(m_target->graphicsEffect());
     if (!opacityEffect) {
         opacityEffect = new QGraphicsOpacityEffect(m_target);
         m_target->setGraphicsEffect(opacityEffect);
@@ -35,9 +32,9 @@ FluentAnimation& FluentAnimation::fadeIn(int duration, FluentEasing easing)
     return *this;
 }
 
-FluentAnimation& FluentAnimation::fadeOut(int duration, FluentEasing easing)
-{
-    auto* opacityEffect = qobject_cast<QGraphicsOpacityEffect*>(m_target->graphicsEffect());
+FluentAnimation& FluentAnimation::fadeOut(int duration, FluentEasing easing) {
+    auto* opacityEffect =
+        qobject_cast<QGraphicsOpacityEffect*>(m_target->graphicsEffect());
     if (!opacityEffect) {
         opacityEffect = new QGraphicsOpacityEffect(m_target);
         m_target->setGraphicsEffect(opacityEffect);
@@ -49,17 +46,17 @@ FluentAnimation& FluentAnimation::fadeOut(int duration, FluentEasing easing)
     animation->setDuration(duration);
     animation->setEasingCurve(FluentAnimator::toQtEasing(easing));
 
-    connect(animation, &QPropertyAnimation::finished, [=]() {
-        m_target->hide();
-    });
+    connect(animation, &QPropertyAnimation::finished,
+            [=]() { m_target->hide(); });
 
     addAnimation(animation);
     return *this;
 }
 
-FluentAnimation& FluentAnimation::scaleTo(qreal scale, int duration, FluentEasing easing)
-{
-    auto* effect = qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
+FluentAnimation& FluentAnimation::scaleTo(qreal scale, int duration,
+                                          FluentEasing easing) {
+    auto* effect =
+        qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
     if (!effect) {
         effect = new FluentTransformEffect(m_target);
         m_target->setGraphicsEffect(effect);
@@ -75,9 +72,10 @@ FluentAnimation& FluentAnimation::scaleTo(qreal scale, int duration, FluentEasin
     return *this;
 }
 
-FluentAnimation& FluentAnimation::slideTo(const QPointF& pos, int duration, FluentEasing easing)
-{
-    auto* effect = qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
+FluentAnimation& FluentAnimation::slideTo(const QPointF& pos, int duration,
+                                          FluentEasing easing) {
+    auto* effect =
+        qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
     if (!effect) {
         effect = new FluentTransformEffect(m_target);
         m_target->setGraphicsEffect(effect);
@@ -93,9 +91,10 @@ FluentAnimation& FluentAnimation::slideTo(const QPointF& pos, int duration, Flue
     return *this;
 }
 
-FluentAnimation& FluentAnimation::rotateTo(qreal angle, int duration, FluentEasing easing)
-{
-    auto* effect = qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
+FluentAnimation& FluentAnimation::rotateTo(qreal angle, int duration,
+                                           FluentEasing easing) {
+    auto* effect =
+        qobject_cast<FluentTransformEffect*>(m_target->graphicsEffect());
     if (!effect) {
         effect = new FluentTransformEffect(m_target);
         m_target->setGraphicsEffect(effect);
@@ -111,32 +110,30 @@ FluentAnimation& FluentAnimation::rotateTo(qreal angle, int duration, FluentEasi
     return *this;
 }
 
-FluentAnimation& FluentAnimation::pause(int duration)
-{
+FluentAnimation& FluentAnimation::pause(int duration) {
     m_root->addPause(duration);
     return *this;
 }
 
-FluentAnimation& FluentAnimation::with()
-{
+FluentAnimation& FluentAnimation::with() {
     m_parallel = true;
     return *this;
 }
 
-void FluentAnimation::start()
-{
+void FluentAnimation::start() {
     if (m_autoDelete) {
-        connect(m_root, &QSequentialAnimationGroup::finished, this, &FluentAnimation::deleteLater);
+        connect(m_root, &QSequentialAnimationGroup::finished, this,
+                &FluentAnimation::deleteLater);
     }
     m_root->start();
 }
 
-void FluentAnimation::addAnimation(QAbstractAnimation* animation)
-{
+void FluentAnimation::addAnimation(QAbstractAnimation* animation) {
     if (m_parallel && m_lastAnimation) {
         m_parallel = false;
 
-        if (auto* lastParallelGroup = qobject_cast<QParallelAnimationGroup*>(m_lastAnimation)) {
+        if (auto* lastParallelGroup =
+                qobject_cast<QParallelAnimationGroup*>(m_lastAnimation)) {
             lastParallelGroup->addAnimation(animation);
         } else {
             int index = m_root->animationCount() - 1;
@@ -155,4 +152,4 @@ void FluentAnimation::addAnimation(QAbstractAnimation* animation)
     }
 }
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

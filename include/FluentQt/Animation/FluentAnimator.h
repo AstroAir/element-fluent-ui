@@ -1,19 +1,19 @@
 // include/FluentQt/Animation/FluentAnimator.h
 #pragma once
 
-#include <QObject>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
+#include <QColor>
 #include <QEasingCurve>
 #include <QGraphicsEffect>
+#include <QObject>
+#include <QParallelAnimationGroup>
+#include <QPoint>
+#include <QPropertyAnimation>
+#include <QSequentialAnimationGroup>
 #include <QTimer>
 #include <QWidget>
-#include <QPoint>
-#include <QColor>
-#include <memory>
-#include <functional>
 #include <chrono>
+#include <functional>
+#include <memory>
 
 using namespace std::chrono_literals;
 
@@ -122,7 +122,6 @@ struct FluentAnimationConfig {
     qreal startValue{0.0};
     qreal endValue{1.0};
 
-
     // Micro-interaction settings
     bool enableHoverEffects{true};
     bool enableFocusEffects{true};
@@ -143,204 +142,146 @@ public:
     explicit FluentAnimator(QObject* parent = nullptr);
     ~FluentAnimator() = default;
 
-    // Static convenience methods
+    // Static convenience methods with ElaWidgetTools-inspired smooth animations
     static std::unique_ptr<QPropertyAnimation> fadeIn(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> fadeOut(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     // Overloads expected by tests: direct duration + easing
-    static std::unique_ptr<QPropertyAnimation> fadeIn(
-        QWidget* target,
-        int durationMs,
-        FluentEasing easing
-    );
+    static std::unique_ptr<QPropertyAnimation> fadeIn(QWidget* target,
+                                                      int durationMs,
+                                                      FluentEasing easing);
 
-    static std::unique_ptr<QPropertyAnimation> fadeOut(
-        QWidget* target,
-        int durationMs,
-        FluentEasing easing
-    );
+    static std::unique_ptr<QPropertyAnimation> fadeOut(QWidget* target,
+                                                       int durationMs,
+                                                       FluentEasing easing);
+
+    // ElaWidgetTools-inspired smooth scroll animations
+    static std::unique_ptr<QPropertyAnimation> smoothScroll(
+        QWidget* target, int fromValue, int toValue, int durationMs = 300,
+        FluentEasing easing = FluentEasing::EaseOutSine);
+
+    // Enhanced expand/collapse animations with proper timing
+    static std::unique_ptr<QPropertyAnimation> expandAnimation(
+        QWidget* target, bool expand = true, int durationMs = 350,
+        FluentEasing easing = FluentEasing::EaseOutCubic);
 
     static std::unique_ptr<QPropertyAnimation> scaleIn(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> scaleOut(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> slideIn(
-        QWidget* target,
-        const QPoint& from,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& from,
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> slideOut(
-        QWidget* target,
-        const QPoint& to,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& to,
+        const FluentAnimationConfig& config = {});
 
     // Rotation animations
     static std::unique_ptr<QPropertyAnimation> rotateIn(
-        QWidget* target,
-        qreal fromAngle = -180.0,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, qreal fromAngle = -180.0,
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> rotateOut(
-        QWidget* target,
-        qreal toAngle = 180.0,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, qreal toAngle = 180.0,
+        const FluentAnimationConfig& config = {});
 
     // Flip animations
     static std::unique_ptr<QSequentialAnimationGroup> flipX(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QSequentialAnimationGroup> flipY(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     // Zoom animations
     static std::unique_ptr<QPropertyAnimation> zoomIn(
-        QWidget* target,
-        const QPoint& center = {},
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& center = {},
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> zoomOut(
-        QWidget* target,
-        const QPoint& center = {},
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& center = {},
+        const FluentAnimationConfig& config = {});
 
     // Directional slide animations
     static std::unique_ptr<QPropertyAnimation> slideUp(
-        QWidget* target,
-        int distance = 50,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, int distance = 50,
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> slideDown(
-        QWidget* target,
-        int distance = 50,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, int distance = 50,
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> slideLeft(
-        QWidget* target,
-        int distance = 50,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, int distance = 50,
+        const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> slideRight(
-        QWidget* target,
-        int distance = 50,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, int distance = 50,
+        const FluentAnimationConfig& config = {});
 
     // Color transition animation
     static std::unique_ptr<QPropertyAnimation> colorTransition(
-        QObject* target,
-        const QByteArray& property,
-        const QColor& from,
-        const QColor& to,
-        const FluentAnimationConfig& config = {}
-    );
+        QObject* target, const QByteArray& property, const QColor& from,
+        const QColor& to, const FluentAnimationConfig& config = {});
 
     // Morph animation (geometry + opacity)
     static std::unique_ptr<QParallelAnimationGroup> morphAnimation(
-        QWidget* target,
-        const QRect& fromGeometry,
-        const QRect& toGeometry,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QRect& fromGeometry, const QRect& toGeometry,
+        const FluentAnimationConfig& config = {});
 
     // Reveal animation (Fluent Design signature)
     static std::unique_ptr<QSequentialAnimationGroup> revealAnimation(
-        QWidget* target,
-        const QPoint& center = {},
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& center = {},
+        const FluentAnimationConfig& config = {});
 
     // Connected animations (for navigations)
     static std::unique_ptr<QParallelAnimationGroup> connectedAnimation(
-        QWidget* from,
-        QWidget* to,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* from, QWidget* to, const FluentAnimationConfig& config = {});
 
     // Stagger animations for lists
-    template<typename Container>
+    template <typename Container>
     static std::unique_ptr<QSequentialAnimationGroup> staggerAnimation(
-        const Container& widgets,
-        FluentAnimationType type,
+        const Container& widgets, FluentAnimationType type,
         std::chrono::milliseconds staggerDelay = 50ms,
-        const FluentAnimationConfig& config = {}
-    );
+        const FluentAnimationConfig& config = {});
 
     // Micro-interaction animations
     static std::unique_ptr<QPropertyAnimation> hoverEffect(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> pressEffect(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> focusEffect(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> pulseEffect(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QPropertyAnimation> shakeEffect(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     // Ripple effect for buttons and interactive elements
     static std::unique_ptr<QSequentialAnimationGroup> rippleEffect(
-        QWidget* target,
-        const QPoint& center = {},
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& center = {},
+        const FluentAnimationConfig& config = {});
 
     // Parallax animation
     static std::unique_ptr<QPropertyAnimation> parallaxEffect(
-        QWidget* target,
-        const QPoint& offset,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const QPoint& offset,
+        const FluentAnimationConfig& config = {});
 
     // Loading animations
     static std::unique_ptr<QPropertyAnimation> spinnerAnimation(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static std::unique_ptr<QSequentialAnimationGroup> breathingAnimation(
-        QWidget* target,
-        const FluentAnimationConfig& config = {}
-    );
+        QWidget* target, const FluentAnimationConfig& config = {});
 
     static QEasingCurve::Type toQtEasing(FluentEasing easing);
 
@@ -349,25 +290,19 @@ signals:
     void animationFinished();
 
 private:
-    static void setupAnimation(
-        QPropertyAnimation* animation,
-        const FluentAnimationConfig& config
-    );
+    static void setupAnimation(QPropertyAnimation* animation,
+                               const FluentAnimationConfig& config);
     static void applyMicroInteractionSettings(
-        QPropertyAnimation* animation,
-        const FluentAnimationConfig& config
-    );
+        QPropertyAnimation* animation, const FluentAnimationConfig& config);
     static bool shouldRespectReducedMotion();
 };
 
 // Implementation of stagger animation template
-template<typename Container>
+template <typename Container>
 std::unique_ptr<QSequentialAnimationGroup> FluentAnimator::staggerAnimation(
-    const Container& widgets,
-    FluentAnimationType type,
+    const Container& widgets, FluentAnimationType type,
     std::chrono::milliseconds staggerDelay,
-    const FluentAnimationConfig& config
-) {
+    const FluentAnimationConfig& config) {
     auto group = std::make_unique<QSequentialAnimationGroup>();
 
     for (auto* widget : widgets) {
@@ -416,4 +351,4 @@ private:
     QSet<QAbstractAnimation*> m_pausedAnimations;
 };
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

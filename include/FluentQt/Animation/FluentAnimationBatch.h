@@ -2,22 +2,22 @@
 #ifndef FLUENTANIMATIONBATCH_H
 #define FLUENTANIMATIONBATCH_H
 
-#include <QObject>
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
-#include <QSequentialAnimationGroup>
 #include <QAbstractAnimation>
 #include <QAnimationGroup>
-#include <QTimer>
 #include <QElapsedTimer>
-#include <QThread>
-#include <QMutex>
-#include <QQueue>
 #include <QHash>
+#include <QMutex>
+#include <QObject>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QQueue>
+#include <QSequentialAnimationGroup>
+#include <QThread>
+#include <QTimer>
 #include <QVariant>
-#include <memory>
+#include <QWidget>
 #include <atomic>
+#include <memory>
 
 #include "FluentAnimator.h"
 
@@ -25,18 +25,18 @@ namespace FluentQt::Animation {
 
 // Performance levels for adaptive quality
 enum class FluentPerformanceLevel {
-    Ultra,      // Maximum quality, all effects enabled
-    High,       // High quality with some optimizations
-    Medium,     // Balanced quality and performance
-    Low,        // Performance optimized, reduced effects
-    Minimal     // Minimal animations for low-end devices
+    Ultra,   // Maximum quality, all effects enabled
+    High,    // High quality with some optimizations
+    Medium,  // Balanced quality and performance
+    Low,     // Performance optimized, reduced effects
+    Minimal  // Minimal animations for low-end devices
 };
 
 // Animation batch configuration
 struct FluentBatchConfig {
     int maxConcurrentAnimations{16};
     int maxBatchSize{32};
-    int updateInterval{16}; // 60 FPS
+    int updateInterval{16};  // 60 FPS
     bool enableBatching{true};
     bool enablePrioritization{true};
     bool enableAdaptiveQuality{true};
@@ -55,11 +55,11 @@ struct FluentBatchConfig {
 
 // Animation priority levels
 enum class FluentAnimationPriority {
-    Critical,   // UI feedback, user interactions
-    High,       // Important state changes
-    Normal,     // Standard animations
-    Low,        // Background animations
-    Deferred    // Can be skipped if performance is poor
+    Critical,  // UI feedback, user interactions
+    High,      // Important state changes
+    Normal,    // Standard animations
+    Low,       // Background animations
+    Deferred   // Can be skipped if performance is poor
 };
 
 // Batched animation item
@@ -93,26 +93,29 @@ public:
     FluentBatchConfig config() const { return m_config; }
 
     // Batch management
-    int addAnimation(QObject* target, const QByteArray& property,
-                    const QVariant& from, const QVariant& to,
-                    const FluentAnimationConfig& config = {},
-                    FluentAnimationPriority priority = FluentAnimationPriority::Normal);
+    int addAnimation(
+        QObject* target, const QByteArray& property, const QVariant& from,
+        const QVariant& to, const FluentAnimationConfig& config = {},
+        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
 
     void removeAnimation(int batchId);
     void clearBatch();
 
     // Enhanced batch operations
-    int addFadeAnimation(QWidget* target, double from, double to,
-                        const FluentAnimationConfig& config = {},
-                        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
+    int addFadeAnimation(
+        QWidget* target, double from, double to,
+        const FluentAnimationConfig& config = {},
+        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
 
-    int addScaleAnimation(QWidget* target, double from, double to,
-                         const FluentAnimationConfig& config = {},
-                         FluentAnimationPriority priority = FluentAnimationPriority::Normal);
+    int addScaleAnimation(
+        QWidget* target, double from, double to,
+        const FluentAnimationConfig& config = {},
+        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
 
-    int addMoveAnimation(QWidget* target, const QPoint& from, const QPoint& to,
-                        const FluentAnimationConfig& config = {},
-                        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
+    int addMoveAnimation(
+        QWidget* target, const QPoint& from, const QPoint& to,
+        const FluentAnimationConfig& config = {},
+        FluentAnimationPriority priority = FluentAnimationPriority::Normal);
 
     // Batch optimization
     void optimizeBatch();
@@ -126,7 +129,9 @@ public:
     // Adaptive quality control
     void enableAdaptiveQuality(bool enable);
     void setPerformanceLevel(FluentPerformanceLevel level);
-    FluentPerformanceLevel getPerformanceLevel() const { return m_config.performanceLevel; }
+    FluentPerformanceLevel getPerformanceLevel() const {
+        return m_config.performanceLevel;
+    }
 
     // Batch operations
     void startBatch();
@@ -220,7 +225,8 @@ public:
 
     // Quality recommendations
     FluentPerformanceLevel recommendedLevel() const;
-    FluentAnimationConfig optimizeConfig(const FluentAnimationConfig& config) const;
+    FluentAnimationConfig optimizeConfig(
+        const FluentAnimationConfig& config) const;
     bool shouldSkipAnimation(FluentAnimationPriority priority) const;
 
 signals:
@@ -258,17 +264,21 @@ public:
 
     // Mobile-specific animations
     std::unique_ptr<QPropertyAnimation> createMobileOptimizedAnimation(
-        QObject* target, const QByteArray& property,
-        const QVariant& from, const QVariant& to,
-        const FluentAnimationConfig& config = {});
+        QObject* target, const QByteArray& property, const QVariant& from,
+        const QVariant& to, const FluentAnimationConfig& config = {});
 
     // Touch-optimized effects
-    std::unique_ptr<QPropertyAnimation> touchFeedback(QWidget* target, const QPointF& touchPoint);
-    std::unique_ptr<QPropertyAnimation> swipeTransition(QWidget* target, Qt::Orientation direction);
-    std::unique_ptr<QPropertyAnimation> pullToRefresh(QWidget* target, double pullDistance);
+    std::unique_ptr<QPropertyAnimation> touchFeedback(
+        QWidget* target, const QPointF& touchPoint);
+    std::unique_ptr<QPropertyAnimation> swipeTransition(
+        QWidget* target, Qt::Orientation direction);
+    std::unique_ptr<QPropertyAnimation> pullToRefresh(QWidget* target,
+                                                      double pullDistance);
 
     // Battery optimization
-    void enableBatteryOptimization(bool enable) { m_batteryOptimization = enable; }
+    void enableBatteryOptimization(bool enable) {
+        m_batteryOptimization = enable;
+    }
     void setPowerLevel(int percentage);
 
     // Device capability detection
@@ -278,7 +288,8 @@ public:
     static double getScreenRefreshRate();
 
 private:
-    FluentAnimationConfig optimizeForMobile(const FluentAnimationConfig& config) const;
+    FluentAnimationConfig optimizeForMobile(
+        const FluentAnimationConfig& config) const;
     bool shouldReduceQuality() const;
 
     bool m_batteryOptimization{false};
@@ -299,7 +310,8 @@ public:
     void clear();
 
     // Zero-allocation animation creation
-    QPropertyAnimation* getAnimation(QObject* target, const QByteArray& property);
+    QPropertyAnimation* getAnimation(QObject* target,
+                                     const QByteArray& property);
     QParallelAnimationGroup* getParallelGroup();
     QSequentialAnimationGroup* getSequentialGroup();
 
@@ -318,7 +330,8 @@ private:
     // Object pools
     QVector<std::unique_ptr<QPropertyAnimation>> m_allocatedAnimations;
     QVector<std::unique_ptr<QParallelAnimationGroup>> m_allocatedParallelGroups;
-    QVector<std::unique_ptr<QSequentialAnimationGroup>> m_allocatedSequentialGroups;
+    QVector<std::unique_ptr<QSequentialAnimationGroup>>
+        m_allocatedSequentialGroups;
 
     QQueue<QPropertyAnimation*> m_availableAnimations;
     QQueue<QParallelAnimationGroup*> m_availableParallelGroups;
@@ -329,6 +342,6 @@ private:
     int m_maxGroups{16};
 };
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation
 
-#endif // FLUENTANIMATIONBATCH_H
+#endif  // FLUENTANIMATIONBATCH_H

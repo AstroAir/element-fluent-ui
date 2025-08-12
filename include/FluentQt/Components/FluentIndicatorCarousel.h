@@ -1,14 +1,14 @@
 // include/FluentQt/Components/FluentIndicatorCarousel.h
 #pragma once
 
-#include "FluentQt/Components/FluentCarousel.h"
-#include "FluentQt/Components/FluentButton.h"
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QButtonGroup>
 #include <QAbstractButton>
+#include <QButtonGroup>
+#include <QHBoxLayout>
 #include <QPainter>
 #include <QPropertyAnimation>
+#include <QVBoxLayout>
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCarousel.h"
 
 namespace FluentQt::Components {
 
@@ -16,28 +16,28 @@ namespace FluentQt::Components {
  * @brief Indicator dot styles for carousel
  */
 enum class FluentCarouselIndicatorStyle {
-    Dots,           // Simple circular dots
-    Lines,          // Horizontal/vertical lines
-    Numbers,        // Numeric indicators
-    Thumbnails,     // Small thumbnail previews
-    Progress,       // Progress bar style
-    Custom          // Custom indicator style
+    Dots,        // Simple circular dots
+    Lines,       // Horizontal/vertical lines
+    Numbers,     // Numeric indicators
+    Thumbnails,  // Small thumbnail previews
+    Progress,    // Progress bar style
+    Custom       // Custom indicator style
 };
 
 /**
  * @brief Indicator position relative to carousel
  */
 enum class FluentCarouselIndicatorPosition {
-    Bottom,         // Below the carousel
-    Top,            // Above the carousel
-    Left,           // Left side of carousel
-    Right,          // Right side of carousel
-    Overlay         // Overlaid on carousel content
+    Bottom,  // Below the carousel
+    Top,     // Above the carousel
+    Left,    // Left side of carousel
+    Right,   // Right side of carousel
+    Overlay  // Overlaid on carousel content
 };
 
 /**
  * @brief Carousel with indicator dots showing current position
- * 
+ *
  * FluentIndicatorCarousel provides visual position indicators with:
  * - Multiple indicator styles (dots, lines, numbers, thumbnails)
  * - Clickable indicators for direct navigation
@@ -48,25 +48,40 @@ enum class FluentCarouselIndicatorPosition {
  */
 class FluentIndicatorCarousel : public FluentCarousel {
     Q_OBJECT
-    Q_PROPERTY(FluentCarouselIndicatorStyle indicatorStyle READ indicatorStyle WRITE setIndicatorStyle NOTIFY indicatorStyleChanged)
-    Q_PROPERTY(FluentCarouselIndicatorPosition indicatorPosition READ indicatorPosition WRITE setIndicatorPosition NOTIFY indicatorPositionChanged)
-    Q_PROPERTY(bool showIndicators READ showIndicators WRITE setShowIndicators NOTIFY indicatorsVisibilityChanged)
-    Q_PROPERTY(bool clickableIndicators READ clickableIndicators WRITE setClickableIndicators NOTIFY clickableIndicatorsChanged)
-    Q_PROPERTY(int indicatorSize READ indicatorSize WRITE setIndicatorSize NOTIFY indicatorSizeChanged)
-    Q_PROPERTY(int indicatorSpacing READ indicatorSpacing WRITE setIndicatorSpacing NOTIFY indicatorSpacingChanged)
-    Q_PROPERTY(QColor activeIndicatorColor READ activeIndicatorColor WRITE setActiveIndicatorColor NOTIFY activeIndicatorColorChanged)
-    Q_PROPERTY(QColor inactiveIndicatorColor READ inactiveIndicatorColor WRITE setInactiveIndicatorColor NOTIFY inactiveIndicatorColorChanged)
+    Q_PROPERTY(FluentCarouselIndicatorStyle indicatorStyle READ indicatorStyle
+                   WRITE setIndicatorStyle NOTIFY indicatorStyleChanged)
+    Q_PROPERTY(
+        FluentCarouselIndicatorPosition indicatorPosition READ indicatorPosition
+            WRITE setIndicatorPosition NOTIFY indicatorPositionChanged)
+    Q_PROPERTY(bool showIndicators READ showIndicators WRITE setShowIndicators
+                   NOTIFY indicatorsVisibilityChanged)
+    Q_PROPERTY(bool clickableIndicators READ clickableIndicators WRITE
+                   setClickableIndicators NOTIFY clickableIndicatorsChanged)
+    Q_PROPERTY(int indicatorSize READ indicatorSize WRITE setIndicatorSize
+                   NOTIFY indicatorSizeChanged)
+    Q_PROPERTY(int indicatorSpacing READ indicatorSpacing WRITE
+                   setIndicatorSpacing NOTIFY indicatorSpacingChanged)
+    Q_PROPERTY(QColor activeIndicatorColor READ activeIndicatorColor WRITE
+                   setActiveIndicatorColor NOTIFY activeIndicatorColorChanged)
+    Q_PROPERTY(
+        QColor inactiveIndicatorColor READ inactiveIndicatorColor WRITE
+            setInactiveIndicatorColor NOTIFY inactiveIndicatorColorChanged)
 
 public:
     explicit FluentIndicatorCarousel(QWidget* parent = nullptr);
-    explicit FluentIndicatorCarousel(const FluentCarouselConfig& config, QWidget* parent = nullptr);
+    explicit FluentIndicatorCarousel(const FluentCarouselConfig& config,
+                                     QWidget* parent = nullptr);
     ~FluentIndicatorCarousel() override = default;
 
     // Indicator configuration
-    FluentCarouselIndicatorStyle indicatorStyle() const noexcept { return m_indicatorStyle; }
+    FluentCarouselIndicatorStyle indicatorStyle() const noexcept {
+        return m_indicatorStyle;
+    }
     void setIndicatorStyle(FluentCarouselIndicatorStyle style);
 
-    FluentCarouselIndicatorPosition indicatorPosition() const noexcept { return m_indicatorPosition; }
+    FluentCarouselIndicatorPosition indicatorPosition() const noexcept {
+        return m_indicatorPosition;
+    }
     void setIndicatorPosition(FluentCarouselIndicatorPosition position);
 
     bool showIndicators() const noexcept { return m_showIndicators; }
@@ -82,21 +97,29 @@ public:
     int indicatorSpacing() const noexcept { return m_indicatorSpacing; }
     void setIndicatorSpacing(int spacing);
 
-    QColor activeIndicatorColor() const noexcept { return m_activeIndicatorColor; }
+    QColor activeIndicatorColor() const noexcept {
+        return m_activeIndicatorColor;
+    }
     void setActiveIndicatorColor(const QColor& color);
 
-    QColor inactiveIndicatorColor() const noexcept { return m_inactiveIndicatorColor; }
+    QColor inactiveIndicatorColor() const noexcept {
+        return m_inactiveIndicatorColor;
+    }
     void setInactiveIndicatorColor(const QColor& color);
 
     // Indicator access
-    QWidget* indicatorContainer() const noexcept { return m_indicatorContainer; }
+    QWidget* indicatorContainer() const noexcept {
+        return m_indicatorContainer;
+    }
     QList<QAbstractButton*> indicatorButtons() const;
     QAbstractButton* indicatorAt(int index) const;
 
     // Convenience factory methods
     static FluentIndicatorCarousel* createWithDots(QWidget* parent = nullptr);
-    static FluentIndicatorCarousel* createWithNumbers(QWidget* parent = nullptr);
-    static FluentIndicatorCarousel* createWithThumbnails(QWidget* parent = nullptr);
+    static FluentIndicatorCarousel* createWithNumbers(
+        QWidget* parent = nullptr);
+    static FluentIndicatorCarousel* createWithThumbnails(
+        QWidget* parent = nullptr);
     static FluentIndicatorCarousel* createOverlay(QWidget* parent = nullptr);
 
 public slots:
@@ -144,8 +167,10 @@ private:
 
 private:
     // Configuration
-    FluentCarouselIndicatorStyle m_indicatorStyle{FluentCarouselIndicatorStyle::Dots};
-    FluentCarouselIndicatorPosition m_indicatorPosition{FluentCarouselIndicatorPosition::Bottom};
+    FluentCarouselIndicatorStyle m_indicatorStyle{
+        FluentCarouselIndicatorStyle::Dots};
+    FluentCarouselIndicatorPosition m_indicatorPosition{
+        FluentCarouselIndicatorPosition::Bottom};
     bool m_showIndicators{true};
     bool m_clickableIndicators{true};
 
@@ -173,19 +198,23 @@ private:
 class FluentCarouselIndicatorButton : public QAbstractButton {
     Q_OBJECT
     Q_PROPERTY(bool active READ isActive WRITE setActive NOTIFY activeChanged)
-    Q_PROPERTY(FluentCarouselIndicatorStyle indicatorStyle READ indicatorStyle WRITE setIndicatorStyle)
+    Q_PROPERTY(FluentCarouselIndicatorStyle indicatorStyle READ indicatorStyle
+                   WRITE setIndicatorStyle)
     Q_PROPERTY(QColor activeColor READ activeColor WRITE setActiveColor)
     Q_PROPERTY(QColor inactiveColor READ inactiveColor WRITE setInactiveColor)
 
 public:
-    explicit FluentCarouselIndicatorButton(int index, QWidget* parent = nullptr);
+    explicit FluentCarouselIndicatorButton(int index,
+                                           QWidget* parent = nullptr);
     ~FluentCarouselIndicatorButton() override = default;
 
     int index() const noexcept { return m_index; }
     bool isActive() const noexcept { return m_active; }
     void setActive(bool active);
 
-    FluentCarouselIndicatorStyle indicatorStyle() const noexcept { return m_indicatorStyle; }
+    FluentCarouselIndicatorStyle indicatorStyle() const noexcept {
+        return m_indicatorStyle;
+    }
     void setIndicatorStyle(FluentCarouselIndicatorStyle style);
 
     QColor activeColor() const noexcept { return m_activeColor; }
@@ -225,7 +254,8 @@ private:
 private:
     int m_index;
     bool m_active{false};
-    FluentCarouselIndicatorStyle m_indicatorStyle{FluentCarouselIndicatorStyle::Dots};
+    FluentCarouselIndicatorStyle m_indicatorStyle{
+        FluentCarouselIndicatorStyle::Dots};
     QColor m_activeColor;
     QColor m_inactiveColor;
     QPixmap m_thumbnail;
@@ -233,4 +263,4 @@ private:
     bool m_pressed{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

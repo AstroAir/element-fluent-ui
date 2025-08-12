@@ -1,31 +1,31 @@
 // include/FluentQt/Components/FluentSelect.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Components/FluentSelectItem.h"
-#include <QWidget>
 #include <QAbstractItemModel>
-#include <QStandardItemModel>
-#include <QSortFilterProxyModel>
-#include <QListView>
-#include <QLineEdit>
-#include <QLabel>
-#include <QPushButton>
-#include <QScrollArea>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
+#include <QCompleter>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
-#include <QTimer>
-#include <QCompleter>
+#include <QHBoxLayout>
 #include <QIcon>
-#include <QVariant>
-#include <QModelIndex>
 #include <QItemSelectionModel>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListView>
+#include <QModelIndex>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QScrollArea>
+#include <QSequentialAnimationGroup>
+#include <QSortFilterProxyModel>
+#include <QStandardItemModel>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QVariant>
+#include <QWidget>
 #include <memory>
+#include "FluentQt/Components/FluentSelectItem.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -34,85 +34,92 @@ class FluentSelectDropdown;
 class FluentSelectModel;
 
 enum class FluentSelectMode {
-    Single,        // Single selection
-    Multiple,      // Multiple selection with checkboxes
-    MultipleList   // Multiple selection with list display
+    Single,       // Single selection
+    Multiple,     // Multiple selection with checkboxes
+    MultipleList  // Multiple selection with list display
 };
 
 enum class FluentSelectDropDirection {
-    Auto,          // Automatically determine direction
-    Down,          // Always drop down
-    Up             // Always drop up
+    Auto,  // Automatically determine direction
+    Down,  // Always drop down
+    Up     // Always drop up
 };
 
 enum class FluentSelectSearchMode {
-    None,          // No search functionality
-    StartsWith,    // Search items that start with typed text
-    Contains,      // Search items that contain typed text
-    Custom         // Custom search implementation
+    None,        // No search functionality
+    StartsWith,  // Search items that start with typed text
+    Contains,    // Search items that contain typed text
+    Custom       // Custom search implementation
 };
 
-enum class FluentSelectSize {
-    Small,
-    Medium,
-    Large
-};
+enum class FluentSelectSize { Small, Medium, Large };
 
 struct FluentSelectConfig {
     FluentSelectMode mode{FluentSelectMode::Single};
     FluentSelectDropDirection dropDirection{FluentSelectDropDirection::Auto};
     FluentSelectSearchMode searchMode{FluentSelectSearchMode::Contains};
     FluentSelectSize size{FluentSelectSize::Medium};
-    
+
     bool editable{false};
     bool clearable{true};
     bool searchable{true};
     bool groupable{true};
     bool sortable{false};
     bool checkable{false};  // Show checkboxes for items
-    
+
     int maxVisibleItems{10};
     int maxDropdownHeight{300};
     int minDropdownWidth{0};  // 0 = same as select width
     int maxDropdownWidth{0};  // 0 = no limit
-    
+
     QString placeholderText;
     QString emptyText{"No items available"};
     QString searchPlaceholder{"Search..."};
     QString noResultsText{"No results found"};
-    
+
     bool animated{true};
     int animationDuration{200};
     QEasingCurve easingCurve{QEasingCurve::OutCubic};
-    
+
     // Custom styling
     QColor customBackgroundColor;
     QColor customTextColor;
     QColor customBorderColor;
     QIcon customDropdownIcon;
-    
+
     bool autoCalculateColors{true};
 };
 
 class FluentSelect : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentSelectMode selectMode READ selectMode WRITE setSelectMode NOTIFY modeChanged)
-    Q_PROPERTY(FluentSelectSearchMode searchMode READ searchMode WRITE setSearchMode NOTIFY searchModeChanged)
-    Q_PROPERTY(FluentSelectSize selectSize READ selectSize WRITE setSelectSize NOTIFY sizeChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderChanged)
+    Q_PROPERTY(FluentSelectMode selectMode READ selectMode WRITE setSelectMode
+                   NOTIFY modeChanged)
+    Q_PROPERTY(FluentSelectSearchMode searchMode READ searchMode WRITE
+                   setSearchMode NOTIFY searchModeChanged)
+    Q_PROPERTY(FluentSelectSize selectSize READ selectSize WRITE setSelectSize
+                   NOTIFY sizeChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderChanged)
     Q_PROPERTY(QString currentText READ currentText NOTIFY currentTextChanged)
     Q_PROPERTY(QVariant currentData READ currentData NOTIFY currentDataChanged)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
-    Q_PROPERTY(bool editable READ isEditable WRITE setEditable NOTIFY editableChanged)
-    Q_PROPERTY(bool clearable READ isClearable WRITE setClearable NOTIFY clearableChanged)
-    Q_PROPERTY(bool searchable READ isSearchable WRITE setSearchable NOTIFY searchableChanged)
-    Q_PROPERTY(bool dropdownVisible READ isDropdownVisible WRITE setDropdownVisible NOTIFY dropdownVisibilityChanged)
-    Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems NOTIFY maxVisibleItemsChanged)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY
+                   currentIndexChanged)
+    Q_PROPERTY(
+        bool editable READ isEditable WRITE setEditable NOTIFY editableChanged)
+    Q_PROPERTY(bool clearable READ isClearable WRITE setClearable NOTIFY
+                   clearableChanged)
+    Q_PROPERTY(bool searchable READ isSearchable WRITE setSearchable NOTIFY
+                   searchableChanged)
+    Q_PROPERTY(bool dropdownVisible READ isDropdownVisible WRITE
+                   setDropdownVisible NOTIFY dropdownVisibilityChanged)
+    Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems
+                   NOTIFY maxVisibleItemsChanged)
 
 public:
     explicit FluentSelect(QWidget* parent = nullptr);
     explicit FluentSelect(FluentSelectMode mode, QWidget* parent = nullptr);
-    explicit FluentSelect(const FluentSelectConfig& config, QWidget* parent = nullptr);
+    explicit FluentSelect(const FluentSelectConfig& config,
+                          QWidget* parent = nullptr);
     ~FluentSelect() override;
 
     // Configuration properties
@@ -178,14 +185,17 @@ public:
 
     // Item management (convenience methods)
     void addItem(const QString& text, const QVariant& data = QVariant());
-    void addItem(const QIcon& icon, const QString& text, const QVariant& data = QVariant());
+    void addItem(const QIcon& icon, const QString& text,
+                 const QVariant& data = QVariant());
     void addItem(const FluentSelectItem& item);
     void addItems(const QStringList& texts);
     void addSeparator();
     void addGroup(const QString& title);
 
-    void insertItem(int index, const QString& text, const QVariant& data = QVariant());
-    void insertItem(int index, const QIcon& icon, const QString& text, const QVariant& data = QVariant());
+    void insertItem(int index, const QString& text,
+                    const QVariant& data = QVariant());
+    void insertItem(int index, const QIcon& icon, const QString& text,
+                    const QVariant& data = QVariant());
     void insertItem(int index, const FluentSelectItem& item);
 
     void removeItem(int index);
@@ -197,8 +207,10 @@ public:
     FluentSelectItem itemAt(int index) const;
     void setItemAt(int index, const FluentSelectItem& item);
 
-    int findText(const QString& text, Qt::MatchFlags flags = Qt::MatchExactly) const;
-    int findData(const QVariant& data, int role = Qt::UserRole, Qt::MatchFlags flags = Qt::MatchExactly) const;
+    int findText(const QString& text,
+                 Qt::MatchFlags flags = Qt::MatchExactly) const;
+    int findData(const QVariant& data, int role = Qt::UserRole,
+                 Qt::MatchFlags flags = Qt::MatchExactly) const;
 
     // Search functionality
     void setSearchFilter(const QString& filter);
@@ -206,7 +218,9 @@ public:
     void clearSearchFilter();
 
     // Custom search implementation
-    void setCustomSearchFunction(std::function<bool(const FluentSelectItem&, const QString&)> searchFunc);
+    void setCustomSearchFunction(
+        std::function<bool(const FluentSelectItem&, const QString&)>
+            searchFunc);
 
     // Validation
     bool isValid() const;
@@ -229,7 +243,7 @@ public slots:
     void hideDropdown();
     void toggleDropdown();
     void clearSelection();
-    void selectAll();  // For multiple selection mode
+    void selectAll();        // For multiple selection mode
     void invertSelection();  // For multiple selection mode
     void refresh();
 
@@ -246,7 +260,7 @@ signals:
     void searchableChanged(bool searchable);
     void dropdownVisibilityChanged(bool visible);
     void maxVisibleItemsChanged(int max);
-    
+
     void activated(int index);
     void activated(const QString& text);
     void highlighted(int index);
@@ -273,7 +287,8 @@ protected:
     void changeEvent(QEvent* event) override;
 
     virtual void updateStateStyle() override;
-    virtual void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    virtual void performStateTransition(Core::FluentState from,
+                                        Core::FluentState to) override;
 
 private slots:
     void onDropdownItemActivated(const QModelIndex& index);
@@ -283,7 +298,8 @@ private slots:
     void onSearchTextEdited(const QString& text);
     void onClearButtonClicked();
     void onDropdownButtonClicked();
-    void onModelDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight);
+    void onModelDataChanged(const QModelIndex& topLeft,
+                            const QModelIndex& bottomRight);
     void onModelRowsInserted(const QModelIndex& parent, int first, int last);
     void onModelRowsRemoved(const QModelIndex& parent, int first, int last);
     void onModelReset();
@@ -296,7 +312,7 @@ private:
     void setupAnimations();
     void setupModel();
     void setupConnections();
-    
+
     void updateLayout();
     void updateColors();
     void updateFonts();
@@ -305,39 +321,39 @@ private:
     void updateDisplayText();
     void updatePlaceholder();
     void updateAccessibility();
-    
+
     void paintBackground(QPainter& painter, const QRect& rect);
     void paintBorder(QPainter& painter, const QRect& rect);
     void paintDropdownButton(QPainter& painter, const QRect& rect);
     void paintClearButton(QPainter& painter, const QRect& rect);
     void paintFocusRing(QPainter& painter, const QRect& rect);
-    
+
     QColor getBackgroundColor() const;
     QColor getTextColor() const;
     QColor getBorderColor() const;
     QColor getPlaceholderColor() const;
     QFont getFont() const;
-    
+
     QRect getContentRect() const;
     QRect getTextRect() const;
     QRect getDropdownButtonRect() const;
     QRect getClearButtonRect() const;
     QRect getDropdownRect() const;
-    
+
     void showDropdownAnimated();
     void hideDropdownAnimated();
     void updateDropdownVisibility();
-    
+
     bool eventFilter(QObject* object, QEvent* event) override;
     void handleKeyNavigation(QKeyEvent* event);
     void handleTextInput(QKeyEvent* event);
-    
+
     QString formatDisplayText() const;
     QString formatMultipleSelectionText() const;
-    
+
     void applySearchFilter();
     void resetSearchFilter();
-    
+
     int getItemHeight() const;
     int getDropdownHeight() const;
     QSize getDropdownSize() const;
@@ -345,47 +361,48 @@ private:
 
 private:
     FluentSelectConfig m_config;
-    
+
     // UI Components
     QHBoxLayout* m_mainLayout{nullptr};
     QLabel* m_displayLabel{nullptr};
     QLineEdit* m_searchEdit{nullptr};
     QPushButton* m_dropdownButton{nullptr};
     QPushButton* m_clearButton{nullptr};
-    
+
     // Dropdown
     FluentSelectDropdown* m_dropdown{nullptr};
     QListView* m_listView{nullptr};
     QScrollArea* m_scrollArea{nullptr};
-    
+
     // Models
     FluentSelectModel* m_selectModel{nullptr};
     QSortFilterProxyModel* m_proxyModel{nullptr};
     QItemSelectionModel* m_selectionModel{nullptr};
-    
+
     // Animation
     std::unique_ptr<QPropertyAnimation> m_dropdownAnimation;
     std::unique_ptr<QSequentialAnimationGroup> m_showAnimation;
     std::unique_ptr<QSequentialAnimationGroup> m_hideAnimation;
-    
+
     // State
     bool m_dropdownVisible{false};
     bool m_pressed{false};
     bool m_searchActive{false};
     QString m_searchText;
     QString m_lastValidText;
-    
+
     // Custom functions
-    std::function<bool(const FluentSelectItem&, const QString&)> m_customSearchFunction;
+    std::function<bool(const FluentSelectItem&, const QString&)>
+        m_customSearchFunction;
     std::function<bool(const QVariant&)> m_validator;
     QString m_validationErrorMessage;
-    
+
     // Cached values
     QSize m_cachedSizeHint;
     bool m_sizeHintValid{false};
     QRect m_lastRect;
     QString m_cachedDisplayText;
-    
+
     // Colors (cached from theme)
     QColor m_backgroundColor;
     QColor m_textColor;
@@ -394,4 +411,4 @@ private:
     QColor m_focusColor;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

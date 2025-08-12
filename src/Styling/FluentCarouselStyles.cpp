@@ -1,14 +1,14 @@
 // src/Styling/FluentCarouselStyles.cpp
 #include "FluentQt/Styling/FluentCarouselStyles.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QStyleOption>
 #include <QApplication>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
 #include <QLinearGradient>
+#include <QPainter>
 #include <QPixmap>
+#include <QStyleOption>
 #include <algorithm>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Styling {
 
@@ -24,18 +24,16 @@ FluentCarouselStyles& FluentCarouselStyles::instance() {
 
 void FluentCarouselStyles::initializeStyles() {
     auto& theme = FluentTheme::instance();
-    
+
     // Initialize base carousel styles
-    m_baseStyles = {
-        {"background", theme.color("surface")},
-        {"border", theme.color("neutralQuaternary")},
-        {"borderRadius", theme.borderRadius("medium")},
-        {"padding", theme.spacing("m")},
-        {"elevation", theme.elevation("card")},
-        {"focusColor", theme.color("accent")},
-        {"focusWidth", 2}
-    };
-    
+    m_baseStyles = {{"background", theme.color("surface")},
+                    {"border", theme.color("neutralQuaternary")},
+                    {"borderRadius", theme.borderRadius("medium")},
+                    {"padding", theme.spacing("m")},
+                    {"elevation", theme.elevation("card")},
+                    {"focusColor", theme.color("accent")},
+                    {"focusWidth", 2}};
+
     // Initialize navigation button styles
     m_navigationStyles = {
         {"background", theme.color("neutralLighter")},
@@ -50,47 +48,40 @@ void FluentCarouselStyles::initializeStyles() {
         {"size", 32},
         {"iconSize", theme.iconSize("medium")},
         {"elevation", theme.elevation("button")},
-        {"animationDuration", 150}
-    };
-    
+        {"animationDuration", 150}};
+
     // Initialize indicator styles
-    m_indicatorStyles = {
-        {"activeColor", theme.color("accent")},
-        {"inactiveColor", theme.color("neutralTertiary")},
-        {"hoverColor", theme.color("accentLight")},
-        {"pressedColor", theme.color("accentDark")},
-        {"disabledColor", theme.color("neutralQuaternary")},
-        {"dotSize", 8},
-        {"lineWidth", 24},
-        {"lineHeight", 4},
-        {"numberSize", 24},
-        {"thumbnailSize", QSize(48, 32)},
-        {"spacing", theme.spacing("m")},
-        {"borderRadius", theme.borderRadius("small")},
-        {"animationDuration", 200}
-    };
-    
+    m_indicatorStyles = {{"activeColor", theme.color("accent")},
+                         {"inactiveColor", theme.color("neutralTertiary")},
+                         {"hoverColor", theme.color("accentLight")},
+                         {"pressedColor", theme.color("accentDark")},
+                         {"disabledColor", theme.color("neutralQuaternary")},
+                         {"dotSize", 8},
+                         {"lineWidth", 24},
+                         {"lineHeight", 4},
+                         {"numberSize", 24},
+                         {"thumbnailSize", QSize(48, 32)},
+                         {"spacing", theme.spacing("m")},
+                         {"borderRadius", theme.borderRadius("small")},
+                         {"animationDuration", 200}};
+
     // Initialize progress styles
-    m_progressStyles = {
-        {"backgroundColor", theme.color("neutralLighter")},
-        {"foregroundColor", theme.color("accent")},
-        {"height", 4},
-        {"borderRadius", 2},
-        {"animationDuration", 300}
-    };
-    
+    m_progressStyles = {{"backgroundColor", theme.color("neutralLighter")},
+                        {"foregroundColor", theme.color("accent")},
+                        {"height", 4},
+                        {"borderRadius", 2},
+                        {"animationDuration", 300}};
+
     // Initialize touch feedback styles
-    m_touchStyles = {
-        {"rippleColor", theme.color("accent")},
-        {"rippleOpacity", 0.3},
-        {"rippleSize", 40},
-        {"rippleDuration", 300},
-        {"dragIndicatorColor", theme.color("accent")},
-        {"dragIndicatorOpacity", 0.1},
-        {"edgeGlowColor", theme.color("accent")},
-        {"edgeGlowOpacity", 0.5}
-    };
-    
+    m_touchStyles = {{"rippleColor", theme.color("accent")},
+                     {"rippleOpacity", 0.3},
+                     {"rippleSize", 40},
+                     {"rippleDuration", 300},
+                     {"dragIndicatorColor", theme.color("accent")},
+                     {"dragIndicatorOpacity", 0.1},
+                     {"edgeGlowColor", theme.color("accent")},
+                     {"edgeGlowOpacity", 0.5}};
+
     // Initialize transition styles
     m_transitionStyles = {
         {"slideEasing", "cubic-bezier(0.25, 0.46, 0.45, 0.94)"},
@@ -101,14 +92,13 @@ void FluentCarouselStyles::initializeStyles() {
         {"coverflowEasing", "cubic-bezier(0.23, 1, 0.32, 1)"},
         {"defaultDuration", 300},
         {"fastDuration", 150},
-        {"slowDuration", 500}
-    };
+        {"slowDuration", 500}};
 }
 
 void FluentCarouselStyles::connectToTheme() {
     auto& theme = FluentTheme::instance();
-    connect(&theme, &FluentTheme::themeChanged,
-            this, &FluentCarouselStyles::onThemeChanged);
+    connect(&theme, &FluentTheme::themeChanged, this,
+            &FluentCarouselStyles::onThemeChanged);
 }
 
 void FluentCarouselStyles::onThemeChanged() {
@@ -117,45 +107,46 @@ void FluentCarouselStyles::onThemeChanged() {
 }
 
 // Base carousel styling
-void FluentCarouselStyles::paintCarouselBackground(QPainter& painter, const QRect& rect, 
-                                                  Core::FluentState state) const {
+void FluentCarouselStyles::paintCarouselBackground(
+    QPainter& painter, const QRect& rect, Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     // Get colors based on state
     QColor backgroundColor = getBaseStyle("background").value<QColor>();
     QColor borderColor = getBaseStyle("border").value<QColor>();
     int borderRadius = getBaseStyle("borderRadius").toInt();
-    
+
     // Adjust colors for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        backgroundColor = backgroundColor.lighter(105);
-        break;
-    case Core::FluentState::Pressed:
-        backgroundColor = backgroundColor.darker(105);
-        break;
-    case Core::FluentState::Disabled:
-        backgroundColor = backgroundColor.lighter(110);
-        borderColor = borderColor.lighter(120);
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            backgroundColor = backgroundColor.lighter(105);
+            break;
+        case Core::FluentState::Pressed:
+            backgroundColor = backgroundColor.darker(105);
+            break;
+        case Core::FluentState::Disabled:
+            backgroundColor = backgroundColor.lighter(110);
+            borderColor = borderColor.lighter(120);
+            break;
+        default:
+            break;
     }
-    
+
     // Paint background
     painter.setBrush(backgroundColor);
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect, borderRadius, borderRadius);
-    
+
     // Paint border
     if (state == Core::FluentState::Focused) {
         QColor focusColor = getBaseStyle("focusColor").value<QColor>();
         int focusWidth = getBaseStyle("focusWidth").toInt();
-        
+
         QPen focusPen(focusColor, focusWidth);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), borderRadius, borderRadius);
+        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), borderRadius,
+                                borderRadius);
     } else {
         QPen borderPen(borderColor, 1);
         painter.setPen(borderPen);
@@ -164,16 +155,18 @@ void FluentCarouselStyles::paintCarouselBackground(QPainter& painter, const QRec
     }
 }
 
-void FluentCarouselStyles::applyCarouselElevation(QWidget* widget, Core::FluentState state) const {
-    if (!widget) return;
-    
+void FluentCarouselStyles::applyCarouselElevation(
+    QWidget* widget, Core::FluentState state) const {
+    if (!widget)
+        return;
+
     // Remove existing shadow effect
     if (auto* effect = widget->graphicsEffect()) {
         if (qobject_cast<QGraphicsDropShadowEffect*>(effect)) {
             widget->setGraphicsEffect(nullptr);
         }
     }
-    
+
     // Apply elevation based on state
     int elevation = getBaseStyle("elevation").toInt();
     if (state == Core::FluentState::Hovered) {
@@ -183,7 +176,7 @@ void FluentCarouselStyles::applyCarouselElevation(QWidget* widget, Core::FluentS
     } else if (state == Core::FluentState::Disabled) {
         elevation = 0;
     }
-    
+
     if (elevation > 0) {
         auto* shadowEffect = new QGraphicsDropShadowEffect(widget);
         shadowEffect->setBlurRadius(elevation);
@@ -194,105 +187,118 @@ void FluentCarouselStyles::applyCarouselElevation(QWidget* widget, Core::FluentS
 }
 
 // Navigation button styling
-void FluentCarouselStyles::paintNavigationButton(QPainter& painter, const QRect& rect,
-                                                Core::FluentState state, const QIcon& icon) const {
+void FluentCarouselStyles::paintNavigationButton(QPainter& painter,
+                                                 const QRect& rect,
+                                                 Core::FluentState state,
+                                                 const QIcon& icon) const {
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     // Get colors based on state
     QColor backgroundColor, foregroundColor;
-    
+
     switch (state) {
-    case Core::FluentState::Normal:
-        backgroundColor = getNavigationStyle("background").value<QColor>();
-        foregroundColor = getNavigationStyle("foreground").value<QColor>();
-        break;
-    case Core::FluentState::Hovered:
-        backgroundColor = getNavigationStyle("backgroundHover").value<QColor>();
-        foregroundColor = getNavigationStyle("foregroundHover").value<QColor>();
-        break;
-    case Core::FluentState::Pressed:
-        backgroundColor = getNavigationStyle("backgroundPressed").value<QColor>();
-        foregroundColor = getNavigationStyle("foregroundPressed").value<QColor>();
-        break;
-    case Core::FluentState::Disabled:
-        backgroundColor = getNavigationStyle("backgroundDisabled").value<QColor>();
-        foregroundColor = getNavigationStyle("foregroundDisabled").value<QColor>();
-        break;
-    default:
-        backgroundColor = getNavigationStyle("background").value<QColor>();
-        foregroundColor = getNavigationStyle("foreground").value<QColor>();
-        break;
+        case Core::FluentState::Normal:
+            backgroundColor = getNavigationStyle("background").value<QColor>();
+            foregroundColor = getNavigationStyle("foreground").value<QColor>();
+            break;
+        case Core::FluentState::Hovered:
+            backgroundColor =
+                getNavigationStyle("backgroundHover").value<QColor>();
+            foregroundColor =
+                getNavigationStyle("foregroundHover").value<QColor>();
+            break;
+        case Core::FluentState::Pressed:
+            backgroundColor =
+                getNavigationStyle("backgroundPressed").value<QColor>();
+            foregroundColor =
+                getNavigationStyle("foregroundPressed").value<QColor>();
+            break;
+        case Core::FluentState::Disabled:
+            backgroundColor =
+                getNavigationStyle("backgroundDisabled").value<QColor>();
+            foregroundColor =
+                getNavigationStyle("foregroundDisabled").value<QColor>();
+            break;
+        default:
+            backgroundColor = getNavigationStyle("background").value<QColor>();
+            foregroundColor = getNavigationStyle("foreground").value<QColor>();
+            break;
     }
-    
+
     int borderRadius = getNavigationStyle("borderRadius").toInt();
     QSize iconSize = getNavigationStyle("iconSize").value<QSize>();
-    
+
     // Paint background
     painter.setBrush(backgroundColor);
     painter.setPen(Qt::NoPen);
     painter.drawRoundedRect(rect, borderRadius, borderRadius);
-    
+
     // Paint icon
     if (!icon.isNull()) {
         QRect iconRect = QRect(0, 0, iconSize.width(), iconSize.height());
         iconRect.moveCenter(rect.center());
-        
-        QPixmap pixmap = icon.pixmap(iconSize, 
-                                   state == Core::FluentState::Disabled ? QIcon::Disabled : QIcon::Normal);
-        
+
+        QPixmap pixmap = icon.pixmap(
+            iconSize, state == Core::FluentState::Disabled ? QIcon::Disabled
+                                                           : QIcon::Normal);
+
         // Apply color overlay for non-disabled states
         if (state != Core::FluentState::Disabled) {
             QPainter pixmapPainter(&pixmap);
-            pixmapPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            pixmapPainter.setCompositionMode(
+                QPainter::CompositionMode_SourceIn);
             pixmapPainter.fillRect(pixmap.rect(), foregroundColor);
         }
-        
+
         painter.drawPixmap(iconRect, pixmap);
     }
-    
+
     // Paint focus ring
     if (state == Core::FluentState::Focused) {
         auto& theme = FluentTheme::instance();
         QPen focusPen(theme.color("accent"), 2);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2, borderRadius + 2);
+        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2,
+                                borderRadius + 2);
     }
 }
 
 // Indicator styling
-void FluentCarouselStyles::paintDotIndicator(QPainter& painter, const QRect& rect,
-                                           bool active, Core::FluentState state) const {
+void FluentCarouselStyles::paintDotIndicator(QPainter& painter,
+                                             const QRect& rect, bool active,
+                                             Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
-    
-    QColor color = active ? getIndicatorStyle("activeColor").value<QColor>() 
+
+    QColor color = active ? getIndicatorStyle("activeColor").value<QColor>()
                           : getIndicatorStyle("inactiveColor").value<QColor>();
-    
+
     // Adjust color for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        color = active ? getIndicatorStyle("hoverColor").value<QColor>() : color.lighter(120);
-        break;
-    case Core::FluentState::Pressed:
-        color = getIndicatorStyle("pressedColor").value<QColor>();
-        break;
-    case Core::FluentState::Disabled:
-        color = getIndicatorStyle("disabledColor").value<QColor>();
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            color = active ? getIndicatorStyle("hoverColor").value<QColor>()
+                           : color.lighter(120);
+            break;
+        case Core::FluentState::Pressed:
+            color = getIndicatorStyle("pressedColor").value<QColor>();
+            break;
+        case Core::FluentState::Disabled:
+            color = getIndicatorStyle("disabledColor").value<QColor>();
+            break;
+        default:
+            break;
     }
-    
+
     // Paint dot
     painter.setBrush(color);
     painter.setPen(Qt::NoPen);
-    
+
     int dotSize = getIndicatorStyle("dotSize").toInt();
     QRect dotRect = QRect(0, 0, dotSize, dotSize);
     dotRect.moveCenter(rect.center());
-    
+
     painter.drawEllipse(dotRect);
-    
+
     // Paint focus ring
     if (state == Core::FluentState::Focused) {
         auto& theme = FluentTheme::instance();
@@ -303,80 +309,89 @@ void FluentCarouselStyles::paintDotIndicator(QPainter& painter, const QRect& rec
     }
 }
 
-void FluentCarouselStyles::paintLineIndicator(QPainter& painter, const QRect& rect,
-                                            bool active, Core::FluentState state) const {
+void FluentCarouselStyles::paintLineIndicator(QPainter& painter,
+                                              const QRect& rect, bool active,
+                                              Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
-    
-    QColor color = active ? getIndicatorStyle("activeColor").value<QColor>() 
+
+    QColor color = active ? getIndicatorStyle("activeColor").value<QColor>()
                           : getIndicatorStyle("inactiveColor").value<QColor>();
-    
+
     // Adjust color for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        color = active ? getIndicatorStyle("hoverColor").value<QColor>() : color.lighter(120);
-        break;
-    case Core::FluentState::Pressed:
-        color = getIndicatorStyle("pressedColor").value<QColor>();
-        break;
-    case Core::FluentState::Disabled:
-        color = getIndicatorStyle("disabledColor").value<QColor>();
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            color = active ? getIndicatorStyle("hoverColor").value<QColor>()
+                           : color.lighter(120);
+            break;
+        case Core::FluentState::Pressed:
+            color = getIndicatorStyle("pressedColor").value<QColor>();
+            break;
+        case Core::FluentState::Disabled:
+            color = getIndicatorStyle("disabledColor").value<QColor>();
+            break;
+        default:
+            break;
     }
-    
+
     // Paint line
     painter.setBrush(color);
     painter.setPen(Qt::NoPen);
-    
+
     int borderRadius = getIndicatorStyle("borderRadius").toInt();
     painter.drawRoundedRect(rect, borderRadius, borderRadius);
-    
+
     // Paint focus ring
     if (state == Core::FluentState::Focused) {
         auto& theme = FluentTheme::instance();
         QPen focusPen(theme.color("accent"), 1);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), borderRadius, borderRadius);
+        painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), borderRadius,
+                                borderRadius);
     }
 }
 
-void FluentCarouselStyles::paintNumberIndicator(QPainter& painter, const QRect& rect,
-                                              int number, bool active, Core::FluentState state) const {
+void FluentCarouselStyles::paintNumberIndicator(QPainter& painter,
+                                                const QRect& rect, int number,
+                                                bool active,
+                                                Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
-    
-    QColor backgroundColor = active ? getIndicatorStyle("activeColor").value<QColor>() 
-                                   : Qt::transparent;
-    QColor textColor = active ? Qt::white : getIndicatorStyle("inactiveColor").value<QColor>();
+
+    QColor backgroundColor =
+        active ? getIndicatorStyle("activeColor").value<QColor>()
+               : Qt::transparent;
+    QColor textColor =
+        active ? Qt::white : getIndicatorStyle("inactiveColor").value<QColor>();
     QColor borderColor = getIndicatorStyle("inactiveColor").value<QColor>();
-    
+
     // Adjust colors for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        if (active) {
-            backgroundColor = getIndicatorStyle("hoverColor").value<QColor>();
-        } else {
-            borderColor = borderColor.lighter(120);
-            textColor = textColor.lighter(120);
-        }
-        break;
-    case Core::FluentState::Pressed:
-        backgroundColor = getIndicatorStyle("pressedColor").value<QColor>();
-        textColor = Qt::white;
-        break;
-    case Core::FluentState::Disabled:
-        backgroundColor = getIndicatorStyle("disabledColor").value<QColor>();
-        textColor = getIndicatorStyle("disabledColor").value<QColor>();
-        borderColor = getIndicatorStyle("disabledColor").value<QColor>();
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            if (active) {
+                backgroundColor =
+                    getIndicatorStyle("hoverColor").value<QColor>();
+            } else {
+                borderColor = borderColor.lighter(120);
+                textColor = textColor.lighter(120);
+            }
+            break;
+        case Core::FluentState::Pressed:
+            backgroundColor = getIndicatorStyle("pressedColor").value<QColor>();
+            textColor = Qt::white;
+            break;
+        case Core::FluentState::Disabled:
+            backgroundColor =
+                getIndicatorStyle("disabledColor").value<QColor>();
+            textColor = getIndicatorStyle("disabledColor").value<QColor>();
+            borderColor = getIndicatorStyle("disabledColor").value<QColor>();
+            break;
+        default:
+            break;
     }
-    
+
     int borderRadius = getIndicatorStyle("borderRadius").toInt();
-    
+
     // Paint background
     if (active) {
         painter.setBrush(backgroundColor);
@@ -385,16 +400,16 @@ void FluentCarouselStyles::paintNumberIndicator(QPainter& painter, const QRect& 
         painter.setBrush(Qt::NoBrush);
         painter.setPen(QPen(borderColor, 1));
     }
-    
+
     painter.drawRoundedRect(rect, borderRadius, borderRadius);
-    
+
     // Paint number
     painter.setPen(textColor);
     QFont font = QApplication::font();
     font.setPointSize(10);
     font.setBold(active);
     painter.setFont(font);
-    
+
     painter.drawText(rect, Qt::AlignCenter, QString::number(number));
 
     // Paint focus ring
@@ -403,38 +418,44 @@ void FluentCarouselStyles::paintNumberIndicator(QPainter& painter, const QRect& 
         QPen focusPen(theme.color("accent"), 2);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2, borderRadius + 2);
+        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2,
+                                borderRadius + 2);
     }
 }
 
-void FluentCarouselStyles::paintThumbnailIndicator(QPainter& painter, const QRect& rect,
-                                                 const QPixmap& thumbnail, bool active,
-                                                 Core::FluentState state) const {
+void FluentCarouselStyles::paintThumbnailIndicator(
+    QPainter& painter, const QRect& rect, const QPixmap& thumbnail, bool active,
+    Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QColor borderColor = active ? getIndicatorStyle("activeColor").value<QColor>()
-                                : getIndicatorStyle("inactiveColor").value<QColor>();
+    QColor borderColor =
+        active ? getIndicatorStyle("activeColor").value<QColor>()
+               : getIndicatorStyle("inactiveColor").value<QColor>();
 
     // Adjust color for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        borderColor = active ? getIndicatorStyle("hoverColor").value<QColor>() : borderColor.lighter(120);
-        break;
-    case Core::FluentState::Pressed:
-        borderColor = getIndicatorStyle("pressedColor").value<QColor>();
-        break;
-    case Core::FluentState::Disabled:
-        borderColor = getIndicatorStyle("disabledColor").value<QColor>();
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            borderColor = active
+                              ? getIndicatorStyle("hoverColor").value<QColor>()
+                              : borderColor.lighter(120);
+            break;
+        case Core::FluentState::Pressed:
+            borderColor = getIndicatorStyle("pressedColor").value<QColor>();
+            break;
+        case Core::FluentState::Disabled:
+            borderColor = getIndicatorStyle("disabledColor").value<QColor>();
+            break;
+        default:
+            break;
     }
 
     int borderRadius = getIndicatorStyle("borderRadius").toInt();
 
     // Paint thumbnail if available
     if (!thumbnail.isNull()) {
-        QPixmap scaled = thumbnail.scaled(rect.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        QPixmap scaled =
+            thumbnail.scaled(rect.size(), Qt::KeepAspectRatioByExpanding,
+                             Qt::SmoothTransformation);
 
         // Create rounded pixmap
         QPixmap roundedPixmap(rect.size());
@@ -444,7 +465,8 @@ void FluentCarouselStyles::paintThumbnailIndicator(QPainter& painter, const QRec
         pixmapPainter.setRenderHint(QPainter::Antialiasing);
         pixmapPainter.setBrush(QBrush(scaled));
         pixmapPainter.setPen(Qt::NoPen);
-        pixmapPainter.drawRoundedRect(roundedPixmap.rect(), borderRadius, borderRadius);
+        pixmapPainter.drawRoundedRect(roundedPixmap.rect(), borderRadius,
+                                      borderRadius);
 
         painter.drawPixmap(rect, roundedPixmap);
     } else {
@@ -471,32 +493,39 @@ void FluentCarouselStyles::paintThumbnailIndicator(QPainter& painter, const QRec
         QPen focusPen(theme.color("accent"), 2);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2, borderRadius + 2);
+        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2,
+                                borderRadius + 2);
     }
 }
 
-void FluentCarouselStyles::paintProgressIndicator(QPainter& painter, const QRect& rect,
-                                                qreal progress, bool active, Core::FluentState state) const {
+void FluentCarouselStyles::paintProgressIndicator(
+    QPainter& painter, const QRect& rect, qreal progress, bool active,
+    Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QColor backgroundColor = getIndicatorStyle("inactiveColor").value<QColor>().lighter(150);
-    QColor foregroundColor = active ? getIndicatorStyle("activeColor").value<QColor>()
-                                   : getIndicatorStyle("inactiveColor").value<QColor>();
+    QColor backgroundColor =
+        getIndicatorStyle("inactiveColor").value<QColor>().lighter(150);
+    QColor foregroundColor =
+        active ? getIndicatorStyle("activeColor").value<QColor>()
+               : getIndicatorStyle("inactiveColor").value<QColor>();
 
     // Adjust colors for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        foregroundColor = active ? getIndicatorStyle("hoverColor").value<QColor>() : foregroundColor.lighter(120);
-        break;
-    case Core::FluentState::Pressed:
-        foregroundColor = getIndicatorStyle("pressedColor").value<QColor>();
-        break;
-    case Core::FluentState::Disabled:
-        foregroundColor = getIndicatorStyle("disabledColor").value<QColor>();
-        backgroundColor = backgroundColor.lighter(120);
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            foregroundColor =
+                active ? getIndicatorStyle("hoverColor").value<QColor>()
+                       : foregroundColor.lighter(120);
+            break;
+        case Core::FluentState::Pressed:
+            foregroundColor = getIndicatorStyle("pressedColor").value<QColor>();
+            break;
+        case Core::FluentState::Disabled:
+            foregroundColor =
+                getIndicatorStyle("disabledColor").value<QColor>();
+            backgroundColor = backgroundColor.lighter(120);
+            break;
+        default:
+            break;
     }
 
     int borderRadius = getIndicatorStyle("borderRadius").toInt();
@@ -509,7 +538,8 @@ void FluentCarouselStyles::paintProgressIndicator(QPainter& painter, const QRect
     // Paint progress
     if (progress > 0.0) {
         QRect progressRect = rect;
-        progressRect.setWidth(static_cast<int>(rect.width() * std::clamp(progress, 0.0, 1.0)));
+        progressRect.setWidth(
+            static_cast<int>(rect.width() * std::clamp(progress, 0.0, 1.0)));
 
         painter.setBrush(foregroundColor);
         painter.drawRoundedRect(progressRect, borderRadius, borderRadius);
@@ -521,29 +551,33 @@ void FluentCarouselStyles::paintProgressIndicator(QPainter& painter, const QRect
         QPen focusPen(theme.color("accent"), 1);
         painter.setPen(focusPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), borderRadius, borderRadius);
+        painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), borderRadius,
+                                borderRadius);
     }
 }
 
 // Progress bar styling
-void FluentCarouselStyles::paintProgressBar(QPainter& painter, const QRect& rect,
-                                          qreal progress, Core::FluentState state) const {
+void FluentCarouselStyles::paintProgressBar(QPainter& painter,
+                                            const QRect& rect, qreal progress,
+                                            Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QColor backgroundColor = getProgressStyle("backgroundColor").value<QColor>();
-    QColor foregroundColor = getProgressStyle("foregroundColor").value<QColor>();
+    QColor backgroundColor =
+        getProgressStyle("backgroundColor").value<QColor>();
+    QColor foregroundColor =
+        getProgressStyle("foregroundColor").value<QColor>();
 
     // Adjust colors for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        foregroundColor = foregroundColor.lighter(110);
-        break;
-    case Core::FluentState::Disabled:
-        foregroundColor = foregroundColor.lighter(150);
-        backgroundColor = backgroundColor.lighter(120);
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            foregroundColor = foregroundColor.lighter(110);
+            break;
+        case Core::FluentState::Disabled:
+            foregroundColor = foregroundColor.lighter(150);
+            backgroundColor = backgroundColor.lighter(120);
+            break;
+        default:
+            break;
     }
 
     int borderRadius = getProgressStyle("borderRadius").toInt();
@@ -556,35 +590,40 @@ void FluentCarouselStyles::paintProgressBar(QPainter& painter, const QRect& rect
     // Paint progress
     if (progress > 0.0) {
         QRect progressRect = rect;
-        progressRect.setWidth(static_cast<int>(rect.width() * std::clamp(progress, 0.0, 1.0)));
+        progressRect.setWidth(
+            static_cast<int>(rect.width() * std::clamp(progress, 0.0, 1.0)));
 
         painter.setBrush(foregroundColor);
         painter.drawRoundedRect(progressRect, borderRadius, borderRadius);
     }
 }
 
-void FluentCarouselStyles::paintCircularProgress(QPainter& painter, const QRect& rect,
-                                               qreal progress, Core::FluentState state) const {
+void FluentCarouselStyles::paintCircularProgress(
+    QPainter& painter, const QRect& rect, qreal progress,
+    Core::FluentState state) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QColor backgroundColor = getProgressStyle("backgroundColor").value<QColor>();
-    QColor foregroundColor = getProgressStyle("foregroundColor").value<QColor>();
+    QColor backgroundColor =
+        getProgressStyle("backgroundColor").value<QColor>();
+    QColor foregroundColor =
+        getProgressStyle("foregroundColor").value<QColor>();
 
     // Adjust colors for state
     switch (state) {
-    case Core::FluentState::Hovered:
-        foregroundColor = foregroundColor.lighter(110);
-        break;
-    case Core::FluentState::Disabled:
-        foregroundColor = foregroundColor.lighter(150);
-        backgroundColor = backgroundColor.lighter(120);
-        break;
-    default:
-        break;
+        case Core::FluentState::Hovered:
+            foregroundColor = foregroundColor.lighter(110);
+            break;
+        case Core::FluentState::Disabled:
+            foregroundColor = foregroundColor.lighter(150);
+            backgroundColor = backgroundColor.lighter(120);
+            break;
+        default:
+            break;
     }
 
     int penWidth = 4;
-    QRect circleRect = rect.adjusted(penWidth/2, penWidth/2, -penWidth/2, -penWidth/2);
+    QRect circleRect =
+        rect.adjusted(penWidth / 2, penWidth / 2, -penWidth / 2, -penWidth / 2);
 
     // Paint background circle
     painter.setPen(QPen(backgroundColor, penWidth));
@@ -593,18 +632,21 @@ void FluentCarouselStyles::paintCircularProgress(QPainter& painter, const QRect&
 
     // Paint progress arc
     if (progress > 0.0) {
-        painter.setPen(QPen(foregroundColor, penWidth, Qt::SolidLine, Qt::RoundCap));
+        painter.setPen(
+            QPen(foregroundColor, penWidth, Qt::SolidLine, Qt::RoundCap));
 
-        int startAngle = -90 * 16; // Start from top
-        int spanAngle = static_cast<int>(360 * 16 * std::clamp(progress, 0.0, 1.0));
+        int startAngle = -90 * 16;  // Start from top
+        int spanAngle =
+            static_cast<int>(360 * 16 * std::clamp(progress, 0.0, 1.0));
 
         painter.drawArc(circleRect, startAngle, spanAngle);
     }
 }
 
 // Touch feedback styling
-void FluentCarouselStyles::paintRippleEffect(QPainter& painter, const QPoint& center,
-                                           qreal radius, qreal opacity) const {
+void FluentCarouselStyles::paintRippleEffect(QPainter& painter,
+                                             const QPoint& center, qreal radius,
+                                             qreal opacity) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
     QColor rippleColor = getTouchStyle("rippleColor").value<QColor>();
@@ -614,10 +656,13 @@ void FluentCarouselStyles::paintRippleEffect(QPainter& painter, const QPoint& ce
 
     painter.setBrush(rippleColor);
     painter.setPen(Qt::NoPen);
-    painter.drawEllipse(center, static_cast<int>(radius), static_cast<int>(radius));
+    painter.drawEllipse(center, static_cast<int>(radius),
+                        static_cast<int>(radius));
 }
 
-void FluentCarouselStyles::paintDragIndicator(QPainter& painter, const QRect& rect, qreal offset) const {
+void FluentCarouselStyles::paintDragIndicator(QPainter& painter,
+                                              const QRect& rect,
+                                              qreal offset) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
     QColor indicatorColor = getTouchStyle("dragIndicatorColor").value<QColor>();
@@ -632,7 +677,7 @@ void FluentCarouselStyles::paintDragIndicator(QPainter& painter, const QRect& re
 }
 
 void FluentCarouselStyles::paintEdgeGlow(QPainter& painter, const QRect& rect,
-                                       bool leftEdge, bool rightEdge) const {
+                                         bool leftEdge, bool rightEdge) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
     QColor glowColor = getTouchStyle("edgeGlowColor").value<QColor>();
@@ -647,7 +692,8 @@ void FluentCarouselStyles::paintEdgeGlow(QPainter& painter, const QRect& rect,
         gradient.setColorAt(0, glowColor);
         gradient.setColorAt(1, Qt::transparent);
 
-        painter.fillRect(QRect(rect.left(), rect.top(), glowWidth, rect.height()), gradient);
+        painter.fillRect(
+            QRect(rect.left(), rect.top(), glowWidth, rect.height()), gradient);
     }
 
     if (rightEdge) {
@@ -655,13 +701,17 @@ void FluentCarouselStyles::paintEdgeGlow(QPainter& painter, const QRect& rect,
         gradient.setColorAt(0, Qt::transparent);
         gradient.setColorAt(1, glowColor);
 
-        painter.fillRect(QRect(rect.right() - glowWidth, rect.top(), glowWidth, rect.height()), gradient);
+        painter.fillRect(QRect(rect.right() - glowWidth, rect.top(), glowWidth,
+                               rect.height()),
+                         gradient);
     }
 }
 
 // Transition effects
-void FluentCarouselStyles::paintSlideTransition(QPainter& painter, const QRect& rect,
-                                              qreal progress, bool horizontal) const {
+void FluentCarouselStyles::paintSlideTransition(QPainter& painter,
+                                                const QRect& rect,
+                                                qreal progress,
+                                                bool horizontal) const {
     Q_UNUSED(painter)
     Q_UNUSED(rect)
     Q_UNUSED(progress)
@@ -670,13 +720,17 @@ void FluentCarouselStyles::paintSlideTransition(QPainter& painter, const QRect& 
     // This method could be used for custom slide effects or overlays
 }
 
-void FluentCarouselStyles::paintFadeTransition(QPainter& painter, const QRect& rect, qreal opacity) const {
+void FluentCarouselStyles::paintFadeTransition(QPainter& painter,
+                                               const QRect& rect,
+                                               qreal opacity) const {
     Q_UNUSED(rect)
     // Set painter opacity for fade effect
     painter.setOpacity(std::clamp(opacity, 0.0, 1.0));
 }
 
-void FluentCarouselStyles::paintScaleTransition(QPainter& painter, const QRect& rect, qreal scale) const {
+void FluentCarouselStyles::paintScaleTransition(QPainter& painter,
+                                                const QRect& rect,
+                                                qreal scale) const {
     Q_UNUSED(rect)
     // Apply scale transformation
     qreal clampedScale = std::clamp(scale, 0.1, 2.0);
@@ -684,7 +738,8 @@ void FluentCarouselStyles::paintScaleTransition(QPainter& painter, const QRect& 
 }
 
 // Accessibility styling
-void FluentCarouselStyles::paintFocusRing(QPainter& painter, const QRect& rect, int borderRadius) const {
+void FluentCarouselStyles::paintFocusRing(QPainter& painter, const QRect& rect,
+                                          int borderRadius) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
     auto& theme = FluentTheme::instance();
@@ -693,10 +748,13 @@ void FluentCarouselStyles::paintFocusRing(QPainter& painter, const QRect& rect, 
     QPen focusPen(focusColor, 2);
     painter.setPen(focusPen);
     painter.setBrush(Qt::NoBrush);
-    painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2, borderRadius + 2);
+    painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2,
+                            borderRadius + 2);
 }
 
-void FluentCarouselStyles::paintHighContrastBorder(QPainter& painter, const QRect& rect, int borderRadius) const {
+void FluentCarouselStyles::paintHighContrastBorder(QPainter& painter,
+                                                   const QRect& rect,
+                                                   int borderRadius) const {
     painter.setRenderHint(QPainter::Antialiasing);
 
     // Use high contrast colors
@@ -709,8 +767,10 @@ void FluentCarouselStyles::paintHighContrastBorder(QPainter& painter, const QRec
 }
 
 // Navigation button elevation
-void FluentCarouselStyles::applyNavigationButtonElevation(QWidget* button, Core::FluentState state) const {
-    if (!button) return;
+void FluentCarouselStyles::applyNavigationButtonElevation(
+    QWidget* button, Core::FluentState state) const {
+    if (!button)
+        return;
 
     // Remove existing shadow effect
     if (auto* effect = button->graphicsEffect()) {
@@ -739,29 +799,34 @@ void FluentCarouselStyles::applyNavigationButtonElevation(QWidget* button, Core:
 }
 
 // Animation curves and timing
-QString FluentCarouselStyles::getEasingCurve(const std::string& transitionType) const {
+QString FluentCarouselStyles::getEasingCurve(
+    const std::string& transitionType) const {
     auto it = m_transitionStyles.find(transitionType + "Easing");
-    return (it != m_transitionStyles.end()) ? it->second.toString() : "cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+    return (it != m_transitionStyles.end())
+               ? it->second.toString()
+               : "cubic-bezier(0.25, 0.46, 0.45, 0.94)";
 }
 
-int FluentCarouselStyles::getAnimationDuration(const std::string& durationType) const {
+int FluentCarouselStyles::getAnimationDuration(
+    const std::string& durationType) const {
     auto it = m_transitionStyles.find(durationType + "Duration");
     return (it != m_transitionStyles.end()) ? it->second.toInt() : 300;
 }
 
 // Responsive design helpers
-int FluentCarouselStyles::getResponsiveSize(const std::string& sizeKey, int screenWidth) const {
+int FluentCarouselStyles::getResponsiveSize(const std::string& sizeKey,
+                                            int screenWidth) const {
     Q_UNUSED(sizeKey)
 
     // Scale based on screen width
     if (screenWidth <= m_breakpoints.mobile) {
-        return 0.8; // 80% of base size
+        return 0.8;  // 80% of base size
     } else if (screenWidth <= m_breakpoints.tablet) {
-        return 0.9; // 90% of base size
+        return 0.9;  // 90% of base size
     } else if (screenWidth <= m_breakpoints.desktop) {
-        return 1.0; // 100% of base size
+        return 1.0;  // 100% of base size
     } else {
-        return 1.1; // 110% of base size
+        return 1.1;  // 110% of base size
     }
 }
 
@@ -790,9 +855,7 @@ int FluentCarouselStyles::getResponsiveSpacing(int screenWidth) const {
 }
 
 // Theme integration
-void FluentCarouselStyles::updateFromTheme() {
-    initializeStyles();
-}
+void FluentCarouselStyles::updateFromTheme() { initializeStyles(); }
 
 bool FluentCarouselStyles::isDarkMode() const {
     auto& theme = FluentTheme::instance();
@@ -811,4 +874,4 @@ bool FluentCarouselStyles::isReducedMotion() const {
     return false;
 }
 
-} // namespace FluentQt::Styling
+}  // namespace FluentQt::Styling

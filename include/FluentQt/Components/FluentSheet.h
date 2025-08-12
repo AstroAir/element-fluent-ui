@@ -1,30 +1,25 @@
 // include/FluentQt/Components/FluentSheet.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
-#include <QGraphicsOpacityEffect>
-#include <QTimer>
 #include <QEasingCurve>
+#include <QGraphicsOpacityEffect>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QTimer>
+#include <QWidget>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentSheetDirection {
-    Top,
-    Bottom,
-    Left,
-    Right
-};
+enum class FluentSheetDirection { Top, Bottom, Left, Right };
 
 enum class FluentSheetSize {
-    Small,      // 25% of screen
-    Medium,     // 50% of screen
-    Large,      // 75% of screen
-    Full,       // 100% of screen
-    Custom      // User-defined size
+    Small,   // 25% of screen
+    Medium,  // 50% of screen
+    Large,   // 75% of screen
+    Full,    // 100% of screen
+    Custom   // User-defined size
 };
 
 enum class FluentSheetBehavior {
@@ -38,15 +33,22 @@ class FluentSheetContent;
 
 class FluentSheet : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentSheetDirection direction READ direction WRITE setDirection NOTIFY directionChanged)
-    Q_PROPERTY(FluentSheetSize sheetSize READ sheetSize WRITE setSheetSize NOTIFY sheetSizeChanged)
-    Q_PROPERTY(FluentSheetBehavior behavior READ behavior WRITE setBehavior NOTIFY behaviorChanged)
-    Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+    Q_PROPERTY(FluentSheetDirection direction READ direction WRITE setDirection
+                   NOTIFY directionChanged)
+    Q_PROPERTY(FluentSheetSize sheetSize READ sheetSize WRITE setSheetSize
+                   NOTIFY sheetSizeChanged)
+    Q_PROPERTY(FluentSheetBehavior behavior READ behavior WRITE setBehavior
+                   NOTIFY behaviorChanged)
+    Q_PROPERTY(
+        bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
     Q_PROPERTY(bool overlayVisible READ overlayVisible WRITE setOverlayVisible)
     Q_PROPERTY(qreal overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
-    Q_PROPERTY(int animationDuration READ animationDuration WRITE setAnimationDuration)
-    Q_PROPERTY(QEasingCurve::Type easingCurve READ easingCurve WRITE setEasingCurve)
-    Q_PROPERTY(bool closeOnOverlayClick READ closeOnOverlayClick WRITE setCloseOnOverlayClick)
+    Q_PROPERTY(
+        int animationDuration READ animationDuration WRITE setAnimationDuration)
+    Q_PROPERTY(
+        QEasingCurve::Type easingCurve READ easingCurve WRITE setEasingCurve)
+    Q_PROPERTY(bool closeOnOverlayClick READ closeOnOverlayClick WRITE
+                   setCloseOnOverlayClick)
     Q_PROPERTY(bool closeOnEscape READ closeOnEscape WRITE setCloseOnEscape)
     Q_PROPERTY(bool dragToClose READ dragToClose WRITE setDragToClose)
     Q_PROPERTY(QSize customSize READ customSize WRITE setCustomSize)
@@ -54,8 +56,10 @@ class FluentSheet : public Core::FluentComponent {
 
 public:
     explicit FluentSheet(QWidget* parent = nullptr);
-    explicit FluentSheet(FluentSheetDirection direction, QWidget* parent = nullptr);
-    explicit FluentSheet(FluentSheetDirection direction, FluentSheetSize size, QWidget* parent = nullptr);
+    explicit FluentSheet(FluentSheetDirection direction,
+                         QWidget* parent = nullptr);
+    explicit FluentSheet(FluentSheetDirection direction, FluentSheetSize size,
+                         QWidget* parent = nullptr);
     ~FluentSheet() override;
 
     // Direction and size
@@ -161,7 +165,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onOpenAnimationValueChanged(const QVariant& value);
@@ -272,4 +277,4 @@ private:
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

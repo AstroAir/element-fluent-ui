@@ -10,9 +10,7 @@ using namespace std::chrono_literals;
 namespace FluentQt::Animation {
 
 QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
-    CurveType type,
-    const OptimizationConfig& config
-) {
+    CurveType type, const OptimizationConfig& config) {
     QEasingCurve curve;
 
     switch (type) {
@@ -21,7 +19,8 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
             break;
 
         case CurveType::PerceptualEaseIn:
-            curve.setCustomType([](qreal t) { return 1.0 - perceptualEasing(1.0 - t); });
+            curve.setCustomType(
+                [](qreal t) { return 1.0 - perceptualEasing(1.0 - t); });
             break;
 
         case CurveType::PerceptualEaseInOut:
@@ -61,7 +60,8 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
             break;
 
         case CurveType::MaterialStandard:
-            curve.setCustomType([](qreal t) { return materialStandardEasing(t); });
+            curve.setCustomType(
+                [](qreal t) { return materialStandardEasing(t); });
             break;
 
         case CurveType::MaterialDecelerate:
@@ -73,7 +73,8 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
             break;
 
         case CurveType::FluentStandard:
-            curve.setCustomType([](qreal t) { return fluentStandardEasing(t); });
+            curve.setCustomType(
+                [](qreal t) { return fluentStandardEasing(t); });
             break;
 
         case CurveType::FluentEmphasized:
@@ -85,11 +86,13 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
             break;
 
         case CurveType::SpringBounce:
-            curve.setCustomType([](qreal t) { return springEasing(t, 300.0, 30.0); });
+            curve.setCustomType(
+                [](qreal t) { return springEasing(t, 300.0, 30.0); });
             break;
 
         case CurveType::DampedSpring:
-            curve.setCustomType([](qreal t) { return springEasing(t, 200.0, 40.0); });
+            curve.setCustomType(
+                [](qreal t) { return springEasing(t, 200.0, 40.0); });
             break;
 
         case CurveType::ElasticBounce:
@@ -101,11 +104,12 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
             break;
 
         case CurveType::HighPerformance:
-            curve.setType(QEasingCurve::Linear); // Fastest to compute
+            curve.setType(QEasingCurve::Linear);  // Fastest to compute
             break;
 
         case CurveType::BatteryOptimized:
-            curve.setCustomType([](qreal t) { return batteryOptimizedEasing(t); });
+            curve.setCustomType(
+                [](qreal t) { return batteryOptimizedEasing(t); });
             break;
 
         default:
@@ -128,7 +132,8 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
 
     if (config.respectReducedMotion) {
         QSettings settings;
-        bool reducedMotion = settings.value("accessibility/reducedMotion", false).toBool();
+        bool reducedMotion =
+            settings.value("accessibility/reducedMotion", false).toBool();
         if (reducedMotion) {
             curve = applyAccessibilityOptimization(curve);
         }
@@ -138,8 +143,7 @@ QEasingCurve FluentOptimizedEasing::createOptimizedCurve(
 }
 
 QEasingCurve FluentOptimizedEasing::createPerceptuallyLinear(
-    const OptimizationConfig& config
-) {
+    const OptimizationConfig& config) {
     Q_UNUSED(config)
 
     // Create a curve that appears linear to human perception
@@ -154,8 +158,7 @@ QEasingCurve FluentOptimizedEasing::createPerceptuallyLinear(
 }
 
 QEasingCurve FluentOptimizedEasing::createAntiJankCurve(
-    const OptimizationConfig& config
-) {
+    const OptimizationConfig& config) {
     Q_UNUSED(config)
 
     QEasingCurve curve;
@@ -164,8 +167,7 @@ QEasingCurve FluentOptimizedEasing::createAntiJankCurve(
 }
 
 QEasingCurve FluentOptimizedEasing::createBatteryOptimizedCurve(
-    const OptimizationConfig& config
-) {
+    const OptimizationConfig& config) {
     Q_UNUSED(config)
 
     QEasingCurve curve;
@@ -174,12 +176,9 @@ QEasingCurve FluentOptimizedEasing::createBatteryOptimizedCurve(
 }
 
 std::chrono::milliseconds FluentOptimizedEasing::calculateOptimalDuration(
-    double distance,
-    CurveType curveType,
-    const OptimizationConfig& config
-) {
+    double distance, CurveType curveType, const OptimizationConfig& config) {
     // Base duration calculation based on distance
-    double baseDuration = qSqrt(distance) * 10.0; // Square root scaling
+    double baseDuration = qSqrt(distance) * 10.0;  // Square root scaling
 
     // Adjust based on curve type
     switch (curveType) {
@@ -187,19 +186,19 @@ std::chrono::milliseconds FluentOptimizedEasing::calculateOptimalDuration(
         case CurveType::FastEaseIn:
         case CurveType::FastEaseInOut:
         case CurveType::HighPerformance:
-            baseDuration *= 0.8; // Faster animations
+            baseDuration *= 0.8;  // Faster animations
             break;
 
         case CurveType::AccessibleEaseOut:
         case CurveType::AccessibleEaseIn:
         case CurveType::AccessibleEaseInOut:
-            baseDuration *= 1.5; // Slower for accessibility
+            baseDuration *= 1.5;  // Slower for accessibility
             break;
 
         case CurveType::SpringBounce:
         case CurveType::DampedSpring:
         case CurveType::ElasticBounce:
-            baseDuration *= 1.2; // Longer for physics-based animations
+            baseDuration *= 1.2;  // Longer for physics-based animations
             break;
 
         default:
@@ -212,7 +211,8 @@ std::chrono::milliseconds FluentOptimizedEasing::calculateOptimalDuration(
     }
 
     // Clamp to reasonable bounds
-    baseDuration = qBound(50.0, baseDuration, static_cast<double>(config.maxDuration.count()));
+    baseDuration = qBound(50.0, baseDuration,
+                          static_cast<double>(config.maxDuration.count()));
 
     return std::chrono::milliseconds(static_cast<int>(baseDuration));
 }
@@ -231,8 +231,10 @@ double FluentOptimizedEasing::perceptualEasing(double t) {
 double FluentOptimizedEasing::antiJankEasing(double t) {
     // Anti-jank easing designed to minimize frame drops
     // Uses a smooth curve with minimal computational complexity
-    if (t <= 0.0) return 0.0;
-    if (t >= 1.0) return 1.0;
+    if (t <= 0.0)
+        return 0.0;
+    if (t >= 1.0)
+        return 1.0;
 
     // Simple quadratic that's fast to compute
     return t * t * (3.0 - 2.0 * t);
@@ -241,8 +243,10 @@ double FluentOptimizedEasing::antiJankEasing(double t) {
 double FluentOptimizedEasing::batteryOptimizedEasing(double t) {
     // Battery-optimized easing with minimal CPU usage
     // Uses linear interpolation with slight smoothing
-    if (t <= 0.0) return 0.0;
-    if (t >= 1.0) return 1.0;
+    if (t <= 0.0)
+        return 0.0;
+    if (t >= 1.0)
+        return 1.0;
 
     // Minimal computation while maintaining smoothness
     return t * t;
@@ -251,8 +255,10 @@ double FluentOptimizedEasing::batteryOptimizedEasing(double t) {
 double FluentOptimizedEasing::materialStandardEasing(double t) {
     // Material Design standard easing curve
     // Cubic bezier approximation: cubic-bezier(0.4, 0.0, 0.2, 1.0)
-    if (t <= 0.0) return 0.0;
-    if (t >= 1.0) return 1.0;
+    if (t <= 0.0)
+        return 0.0;
+    if (t >= 1.0)
+        return 1.0;
 
     const double c1 = 0.4;
     const double c2 = 0.0;
@@ -267,17 +273,22 @@ double FluentOptimizedEasing::materialStandardEasing(double t) {
 double FluentOptimizedEasing::fluentStandardEasing(double t) {
     // Fluent Design standard easing curve
     // Optimized for Fluent Design motion principles
-    if (t <= 0.0) return 0.0;
-    if (t >= 1.0) return 1.0;
+    if (t <= 0.0)
+        return 0.0;
+    if (t >= 1.0)
+        return 1.0;
 
     // Fluent-specific curve with subtle acceleration
     return 1.0 - qPow(1.0 - t, 3.0);
 }
 
-double FluentOptimizedEasing::springEasing(double t, double stiffness, double damping) {
+double FluentOptimizedEasing::springEasing(double t, double stiffness,
+                                           double damping) {
     // Physics-based spring easing
-    if (t <= 0.0) return 0.0;
-    if (t >= 1.0) return 1.0;
+    if (t <= 0.0)
+        return 0.0;
+    if (t >= 1.0)
+        return 1.0;
 
     double omega = qSqrt(stiffness);
     double zeta = damping / (2.0 * qSqrt(stiffness));
@@ -292,7 +303,8 @@ double FluentOptimizedEasing::springEasing(double t, double stiffness, double da
     }
 }
 
-QEasingCurve FluentOptimizedEasing::applyAntiJankOptimization(const QEasingCurve& curve) {
+QEasingCurve FluentOptimizedEasing::applyAntiJankOptimization(
+    const QEasingCurve& curve) {
     // Apply anti-jank optimizations to existing curve
     QEasingCurve optimized = curve;
 
@@ -305,7 +317,8 @@ QEasingCurve FluentOptimizedEasing::applyAntiJankOptimization(const QEasingCurve
     return optimized;
 }
 
-QEasingCurve FluentOptimizedEasing::applyPerceptualOptimization(const QEasingCurve& curve) {
+QEasingCurve FluentOptimizedEasing::applyPerceptualOptimization(
+    const QEasingCurve& curve) {
     // Apply perceptual optimizations
     Q_UNUSED(curve)
 
@@ -315,26 +328,29 @@ QEasingCurve FluentOptimizedEasing::applyPerceptualOptimization(const QEasingCur
     return curve;
 }
 
-QEasingCurve FluentOptimizedEasing::applyBatteryOptimization(const QEasingCurve& curve) {
+QEasingCurve FluentOptimizedEasing::applyBatteryOptimization(
+    const QEasingCurve& curve) {
     // Apply battery optimizations
     Q_UNUSED(curve)
 
     // Simplify to reduce CPU usage
     QEasingCurve optimized;
-    optimized.setType(QEasingCurve::OutQuad); // Simple and efficient
+    optimized.setType(QEasingCurve::OutQuad);  // Simple and efficient
     return optimized;
 }
 
-QEasingCurve FluentOptimizedEasing::applyAccessibilityOptimization(const QEasingCurve& curve) {
+QEasingCurve FluentOptimizedEasing::applyAccessibilityOptimization(
+    const QEasingCurve& curve) {
     // Apply accessibility optimizations for reduced motion
     Q_UNUSED(curve)
 
     QEasingCurve accessible;
-    accessible.setType(QEasingCurve::Linear); // Simplest motion
+    accessible.setType(QEasingCurve::Linear);  // Simplest motion
     return accessible;
 }
 
-double FluentOptimizedEasing::calculateCurveComplexity(const QEasingCurve& curve) {
+double FluentOptimizedEasing::calculateCurveComplexity(
+    const QEasingCurve& curve) {
     // Estimate computational complexity of the curve
     switch (curve.type()) {
         case QEasingCurve::Linear:
@@ -352,41 +368,41 @@ double FluentOptimizedEasing::calculateCurveComplexity(const QEasingCurve& curve
         case QEasingCurve::InOutElastic:
             return 0.9;
         case QEasingCurve::Custom:
-            return 0.8; // Assume high complexity for custom curves
+            return 0.8;  // Assume high complexity for custom curves
         default:
             return 0.6;
     }
 }
 
-bool FluentOptimizedEasing::willCauseFrmeDrops(const QEasingCurve& curve, double targetFPS) {
+bool FluentOptimizedEasing::willCauseFrmeDrops(const QEasingCurve& curve,
+                                               double targetFPS) {
     // Estimate if curve will cause frame drops
     double complexity = calculateCurveComplexity(curve);
     double cpuUsage = estimateCPUUsage(curve);
 
-    // Simple heuristic: high complexity + high CPU usage + high target FPS = potential frame drops
+    // Simple heuristic: high complexity + high CPU usage + high target FPS =
+    // potential frame drops
     return (complexity > 0.7 && cpuUsage > 0.6 && targetFPS > 30.0);
 }
 
 double FluentOptimizedEasing::estimateCPUUsage(const QEasingCurve& curve) {
     // Estimate CPU usage for the curve
-    return calculateCurveComplexity(curve) * 0.8; // Simplified estimation
+    return calculateCurveComplexity(curve) * 0.8;  // Simplified estimation
 }
 
 // FluentTimingOptimizer implementation
 std::chrono::milliseconds FluentTimingOptimizer::optimizeDuration(
-    std::chrono::milliseconds originalDuration,
-    const QString& animationType,
-    const FluentOptimizedEasing::OptimizationConfig& config
-) {
+    std::chrono::milliseconds originalDuration, const QString& animationType,
+    const FluentOptimizedEasing::OptimizationConfig& config) {
     double duration = originalDuration.count();
 
     // Adjust based on animation type
     if (animationType == "fade") {
-        duration *= 0.8; // Fades can be faster
+        duration *= 0.8;  // Fades can be faster
     } else if (animationType == "slide") {
-        duration *= 1.1; // Slides need more time
+        duration *= 1.1;  // Slides need more time
     } else if (animationType == "scale") {
-        duration *= 0.9; // Scales can be slightly faster
+        duration *= 0.9;  // Scales can be slightly faster
     }
 
     // Adjust for target FPS
@@ -396,17 +412,13 @@ std::chrono::milliseconds FluentTimingOptimizer::optimizeDuration(
 
     // Make frame-perfect
     int durationMs = static_cast<int>(duration);
-    return calculateFramePerfectDuration(
-        std::chrono::milliseconds(durationMs),
-        config.targetFPS
-    );
+    return calculateFramePerfectDuration(std::chrono::milliseconds(durationMs),
+                                         config.targetFPS);
 }
 
 std::chrono::milliseconds FluentTimingOptimizer::calculateFramePerfectDuration(
-    std::chrono::milliseconds desiredDuration,
-    double targetFPS
-) {
-    double frameTime = 1000.0 / targetFPS; // Frame time in milliseconds
+    std::chrono::milliseconds desiredDuration, double targetFPS) {
+    double frameTime = 1000.0 / targetFPS;  // Frame time in milliseconds
     double frames = desiredDuration.count() / frameTime;
 
     // Round to nearest frame
@@ -417,16 +429,15 @@ std::chrono::milliseconds FluentTimingOptimizer::calculateFramePerfectDuration(
 }
 
 std::chrono::milliseconds FluentTimingOptimizer::getOptimalUpdateInterval(
-    const FluentOptimizedEasing::OptimizationConfig& config
-) {
+    const FluentOptimizedEasing::OptimizationConfig& config) {
     if (config.enableBatteryOptimization) {
-        return 33ms; // 30 FPS for battery saving
+        return 33ms;  // 30 FPS for battery saving
     } else if (config.targetFPS >= 60.0) {
-        return 16ms; // 60 FPS
+        return 16ms;  // 60 FPS
     } else {
         int interval = static_cast<int>(1000.0 / config.targetFPS);
         return std::chrono::milliseconds(interval);
     }
 }
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

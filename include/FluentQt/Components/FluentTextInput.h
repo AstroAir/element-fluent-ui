@@ -1,15 +1,16 @@
 // include/FluentQt/Components/FluentTextInput.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QLineEdit>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPropertyAnimation>
 #include <QTimer>
+#include <QVBoxLayout>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
+
 class QPushButton;
 
 namespace FluentQt::Components {
@@ -24,67 +25,74 @@ enum class FluentTextInputType {
     Tel
 };
 
-enum class FluentTextInputState {
-    Normal,
-    Focused,
-    Error,
-    Success,
-    Disabled
-};
+enum class FluentTextInputState { Normal, Focused, Error, Success, Disabled };
 
 class FluentTextInput : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderTextChanged)
-    Q_PROPERTY(QString labelText READ labelText WRITE setLabelText NOTIFY labelTextChanged)
-    Q_PROPERTY(QString helperText READ helperText WRITE setHelperText NOTIFY helperTextChanged)
-    Q_PROPERTY(QString errorText READ errorText WRITE setErrorText NOTIFY errorTextChanged)
-    Q_PROPERTY(FluentTextInputType inputType READ inputType WRITE setInputType NOTIFY inputTypeChanged)
-    Q_PROPERTY(FluentTextInputState inputState READ inputState WRITE setInputState NOTIFY inputStateChanged)
-    Q_PROPERTY(bool required READ isRequired WRITE setRequired NOTIFY requiredChanged)
-    Q_PROPERTY(bool clearButtonVisible READ isClearButtonVisible WRITE setClearButtonVisible NOTIFY clearButtonVisibleChanged)
-    Q_PROPERTY(int maxLength READ maxLength WRITE setMaxLength NOTIFY maxLengthChanged)
-    Q_PROPERTY(bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(QString labelText READ labelText WRITE setLabelText NOTIFY
+                   labelTextChanged)
+    Q_PROPERTY(QString helperText READ helperText WRITE setHelperText NOTIFY
+                   helperTextChanged)
+    Q_PROPERTY(QString errorText READ errorText WRITE setErrorText NOTIFY
+                   errorTextChanged)
+    Q_PROPERTY(FluentTextInputType inputType READ inputType WRITE setInputType
+                   NOTIFY inputTypeChanged)
+    Q_PROPERTY(FluentTextInputState inputState READ inputState WRITE
+                   setInputState NOTIFY inputStateChanged)
+    Q_PROPERTY(
+        bool required READ isRequired WRITE setRequired NOTIFY requiredChanged)
+    Q_PROPERTY(bool clearButtonVisible READ isClearButtonVisible WRITE
+                   setClearButtonVisible NOTIFY clearButtonVisibleChanged)
+    Q_PROPERTY(
+        int maxLength READ maxLength WRITE setMaxLength NOTIFY maxLengthChanged)
+    Q_PROPERTY(
+        bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
 
 public:
     explicit FluentTextInput(QWidget* parent = nullptr);
-    explicit FluentTextInput(const QString& placeholder, QWidget* parent = nullptr)
-        : FluentTextInput(parent) { setPlaceholderText(placeholder); }
+    explicit FluentTextInput(const QString& placeholder,
+                             QWidget* parent = nullptr)
+        : FluentTextInput(parent) {
+        setPlaceholderText(placeholder);
+    }
     ~FluentTextInput() override;
 
     // Text properties
     QString text() const;
     void setText(const QString& text);
-    
+
     QString placeholderText() const;
     void setPlaceholderText(const QString& text);
-    
+
     QString labelText() const;
     void setLabelText(const QString& text);
-    
+
     QString helperText() const;
     void setHelperText(const QString& text);
-    
+
     QString errorText() const;
     void setErrorText(const QString& text);
 
     // Input type and state
     FluentTextInputType inputType() const;
     void setInputType(FluentTextInputType type);
-    
+
     FluentTextInputState inputState() const;
     void setInputState(FluentTextInputState state);
 
     // Properties
     bool isRequired() const;
     void setRequired(bool required);
-    
+
     bool isClearButtonVisible() const;
     void setClearButtonVisible(bool visible);
-    
+
     int maxLength() const;
     void setMaxLength(int length);
-    
+
     bool isReadOnly() const;
     void setReadOnly(bool readOnly);
 
@@ -93,17 +101,32 @@ public:
     bool isValid() const;
     void validate();
     void clearValidation();
-    void setValidationType(FluentTextInputValidation type) { m_validationType = type; }
-    void setCustomValidator(std::function<bool(const QString&)> fn) { m_customValidator = std::move(fn); }
+    void setValidationType(FluentTextInputValidation type) {
+        m_validationType = type;
+    }
+    void setCustomValidator(std::function<bool(const QString&)> fn) {
+        m_customValidator = std::move(fn);
+    }
 
     // Focus management
     void setFocus();
     void clearFocus();
-    void setPasswordMode(bool on) { setInputType(on ? FluentTextInputType::Password : FluentTextInputType::Text); }
-    bool isPasswordMode() const { return m_inputType == FluentTextInputType::Password; }
-    void setPasswordVisible(bool on) { m_lineEdit->setEchoMode(on ? QLineEdit::Normal : QLineEdit::Password); }
-    bool isPasswordVisible() const { return m_lineEdit->echoMode() == QLineEdit::Normal; }
-    void setMultiline(bool on) { Q_UNUSED(on) /* stub: single-line only for now */; }
+    void setPasswordMode(bool on) {
+        setInputType(on ? FluentTextInputType::Password
+                        : FluentTextInputType::Text);
+    }
+    bool isPasswordMode() const {
+        return m_inputType == FluentTextInputType::Password;
+    }
+    void setPasswordVisible(bool on) {
+        m_lineEdit->setEchoMode(on ? QLineEdit::Normal : QLineEdit::Password);
+    }
+    bool isPasswordVisible() const {
+        return m_lineEdit->echoMode() == QLineEdit::Normal;
+    }
+    void setMultiline(bool on) {
+        Q_UNUSED(on) /* stub: single-line only for now */;
+    }
     bool isMultiline() const { return false; }
     void setClearButtonEnabled(bool enabled) { setClearButtonVisible(enabled); }
     bool isClearButtonEnabled() const { return isClearButtonVisible(); }
@@ -168,7 +191,7 @@ private:
     void animateStateChange();
     void animateFocusChange(bool focused);
     void animateValidationChange();
-    
+
     // Validation helpers
     bool validateEmail(const QString& text) const;
     bool validateUrl(const QString& text) const;
@@ -186,7 +209,8 @@ private:
     QLabel* m_errorLabel{nullptr};
 
     // Validation configuration
-    FluentTextInputValidation m_validationType{FluentTextInputValidation::Email};
+    FluentTextInputValidation m_validationType{
+        FluentTextInputValidation::Email};
     std::function<bool(const QString&)> m_customValidator{};
 
     // Properties
@@ -195,7 +219,7 @@ private:
     bool m_required{false};
     bool m_clearButtonVisible{true};
     bool m_isValid{true};
-    
+
     // Animation
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_focusAnimation{nullptr};
@@ -203,9 +227,9 @@ private:
     QPropertyAnimation* m_validationAnimation{nullptr};
     QGraphicsOpacityEffect* m_helperOpacityEffect{nullptr};
     QGraphicsOpacityEffect* m_errorOpacityEffect{nullptr};
-    
+
     // Timing
     QTimer* m_validationTimer{nullptr};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

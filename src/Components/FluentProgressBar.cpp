@@ -1,33 +1,32 @@
 // src/Components/FluentProgressBar.cpp
 #include "FluentQt/Components/FluentProgressBar.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
+#include <QFontMetrics>
 #include <QPainter>
 #include <QPainterPath>
-#include <QFontMetrics>
 #include <QResizeEvent>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
 FluentProgressBar::FluentProgressBar(QWidget* parent)
-    : FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setObjectName("FluentProgressBar");
     setupAnimations();
     setupTimer();
     updateColors();
-    
+
     // Set default accent color from theme
     const auto& theme = Styling::FluentTheme::instance();
     m_accentColor = theme.color("accent");
 }
 
-FluentProgressBar::FluentProgressBar(FluentProgressBarType type, QWidget* parent)
-    : FluentProgressBar(parent)
-{
+FluentProgressBar::FluentProgressBar(FluentProgressBarType type,
+                                     QWidget* parent)
+    : FluentProgressBar(parent) {
     setProgressType(type);
 }
 
@@ -35,39 +34,40 @@ FluentProgressBar::~FluentProgressBar() = default;
 
 void FluentProgressBar::setupAnimations() {
     FLUENT_PROFILE("FluentProgressBar::setupAnimations");
-    
+
     // Value animation for smooth progress changes
     m_valueAnimation = new QPropertyAnimation(this, "value", this);
     m_valueAnimation->setDuration(300);
     m_valueAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Indeterminate animation
-    m_indeterminateAnimation = new QPropertyAnimation(this, "animationProgress", this);
+    m_indeterminateAnimation =
+        new QPropertyAnimation(this, "animationProgress", this);
     m_indeterminateAnimation->setDuration(2000);
     m_indeterminateAnimation->setEasingCurve(QEasingCurve::InOutSine);
-    m_indeterminateAnimation->setLoopCount(-1); // Infinite loop
-    
+    m_indeterminateAnimation->setLoopCount(-1);  // Infinite loop
+
     // Connect theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentProgressBar::updateColors);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentProgressBar::updateColors);
 }
 
 void FluentProgressBar::setupTimer() {
     m_animationTimer = new QTimer(this);
-    m_animationTimer->setInterval(16); // ~60 FPS
-    connect(m_animationTimer, &QTimer::timeout, this, &FluentProgressBar::onAnimationStep);
+    m_animationTimer->setInterval(16);  // ~60 FPS
+    connect(m_animationTimer, &QTimer::timeout, this,
+            &FluentProgressBar::onAnimationStep);
 }
 
-int FluentProgressBar::value() const {
-    return m_value;
-}
+int FluentProgressBar::value() const { return m_value; }
 
 void FluentProgressBar::setValue(int value) {
     const int clampedValue = qBound(m_minimum, value, m_maximum);
     if (m_value != clampedValue) {
         const int oldValue = m_value;
         m_value = clampedValue;
-        
+
         // Animate value change if enabled
         if (m_animated && isVisible()) {
             m_valueAnimation->stop();
@@ -75,20 +75,18 @@ void FluentProgressBar::setValue(int value) {
             m_valueAnimation->setEndValue(clampedValue);
             m_valueAnimation->start();
         }
-        
+
         updateTextContent();
         update();
         emit valueChanged(clampedValue);
-        
+
         if (isComplete()) {
             emit finished();
         }
     }
 }
 
-int FluentProgressBar::minimum() const {
-    return m_minimum;
-}
+int FluentProgressBar::minimum() const { return m_minimum; }
 
 void FluentProgressBar::setMinimum(int minimum) {
     if (m_minimum != minimum) {
@@ -100,9 +98,7 @@ void FluentProgressBar::setMinimum(int minimum) {
     }
 }
 
-int FluentProgressBar::maximum() const {
-    return m_maximum;
-}
+int FluentProgressBar::maximum() const { return m_maximum; }
 
 void FluentProgressBar::setMaximum(int maximum) {
     if (m_maximum != maximum) {
@@ -119,9 +115,7 @@ void FluentProgressBar::setRange(int minimum, int maximum) {
     setMaximum(maximum);
 }
 
-QString FluentProgressBar::text() const {
-    return m_text;
-}
+QString FluentProgressBar::text() const { return m_text; }
 
 void FluentProgressBar::setText(const QString& text) {
     if (m_text != text) {
@@ -132,9 +126,7 @@ void FluentProgressBar::setText(const QString& text) {
     }
 }
 
-bool FluentProgressBar::isTextVisible() const {
-    return m_textVisible;
-}
+bool FluentProgressBar::isTextVisible() const { return m_textVisible; }
 
 void FluentProgressBar::setTextVisible(bool visible) {
     if (m_textVisible != visible) {
@@ -151,17 +143,17 @@ FluentProgressBarType FluentProgressBar::progressType() const {
 void FluentProgressBar::setProgressType(FluentProgressBarType type) {
     if (m_progressType != type) {
         m_progressType = type;
-        
+
         // Stop current animations
         stop();
-        
+
         // Start appropriate animation for new type
-        if (type == FluentProgressBarType::Indeterminate || 
-            type == FluentProgressBarType::Ring || 
+        if (type == FluentProgressBarType::Indeterminate ||
+            type == FluentProgressBarType::Ring ||
             type == FluentProgressBarType::Dots) {
             start();
         }
-        
+
         updateGeometry();
         update();
         emit progressTypeChanged(type);
@@ -181,9 +173,7 @@ void FluentProgressBar::setProgressSize(FluentProgressBarSize size) {
     }
 }
 
-bool FluentProgressBar::isAnimated() const {
-    return m_animated;
-}
+bool FluentProgressBar::isAnimated() const { return m_animated; }
 
 void FluentProgressBar::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -192,9 +182,7 @@ void FluentProgressBar::setAnimated(bool animated) {
     }
 }
 
-QColor FluentProgressBar::accentColor() const {
-    return m_accentColor;
-}
+QColor FluentProgressBar::accentColor() const { return m_accentColor; }
 
 void FluentProgressBar::setAccentColor(const QColor& color) {
     if (m_accentColor != color) {
@@ -211,9 +199,7 @@ qreal FluentProgressBar::percentage() const {
     return static_cast<qreal>(m_value - m_minimum) / (m_maximum - m_minimum);
 }
 
-bool FluentProgressBar::isComplete() const {
-    return m_value >= m_maximum;
-}
+bool FluentProgressBar::isComplete() const { return m_value >= m_maximum; }
 
 void FluentProgressBar::reset() {
     setValue(m_minimum);
@@ -222,32 +208,32 @@ void FluentProgressBar::reset() {
 
 QSize FluentProgressBar::sizeHint() const {
     const int height = getBarHeight();
-    int width = 200; // Default width
-    
+    int width = 200;  // Default width
+
     if (m_progressType == FluentProgressBarType::Ring) {
         const int ringSize = getRingSize();
         width = ringSize;
         return QSize(ringSize, ringSize);
     }
-    
+
     // Add space for text if visible
     if (m_textVisible && !m_cachedText.isEmpty()) {
         const QFontMetrics fm(font());
         width = qMax(width, fm.horizontalAdvance(m_cachedText) + 20);
     }
-    
+
     return QSize(width, height);
 }
 
 QSize FluentProgressBar::minimumSizeHint() const {
     const int height = getBarHeight();
-    int width = 100; // Minimum width
-    
+    int width = 100;  // Minimum width
+
     if (m_progressType == FluentProgressBarType::Ring) {
         const int ringSize = getRingSize();
         return QSize(ringSize, ringSize);
     }
-    
+
     return QSize(width, height);
 }
 
@@ -255,17 +241,16 @@ void FluentProgressBar::start() {
     if (!m_isRunning) {
         m_isRunning = true;
         m_isPaused = false;
-        
+
         if (m_progressType == FluentProgressBarType::Indeterminate ||
             m_progressType == FluentProgressBarType::Ring ||
             m_progressType == FluentProgressBarType::Dots) {
-            
             m_animationTimer->start();
             if (m_animated) {
                 m_indeterminateAnimation->start();
             }
         }
-        
+
         emit started();
     }
 }
@@ -301,12 +286,12 @@ void FluentProgressBar::resume() {
 
 void FluentProgressBar::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
-    
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect rect = this->rect();
-    
+
     switch (m_progressType) {
         case FluentProgressBarType::Determinate:
             drawDeterminateBar(painter, rect);
@@ -321,7 +306,7 @@ void FluentProgressBar::paintEvent(QPaintEvent* event) {
             drawDotsProgress(painter, rect);
             break;
     }
-    
+
     // Draw text if visible
     if (m_textVisible && !m_cachedText.isEmpty()) {
         drawProgressText(painter, rect);
@@ -335,22 +320,20 @@ void FluentProgressBar::resizeEvent(QResizeEvent* event) {
 
 void FluentProgressBar::changeEvent(QEvent* event) {
     FluentComponent::changeEvent(event);
-    
+
     if (event->type() == QEvent::FontChange) {
         updateTextContent();
         updateGeometry();
     }
 }
 
-void FluentProgressBar::updateAnimation() {
-    update();
-}
+void FluentProgressBar::updateAnimation() { update(); }
 
 void FluentProgressBar::onAnimationStep() {
     // Update animation progress for custom animations
-    const qreal step = 0.02; // 2% per step
+    const qreal step = 0.02;  // 2% per step
     m_animationProgress += step * m_animationDirection;
-    
+
     if (m_animationProgress >= 1.0) {
         m_animationProgress = 1.0;
         m_animationDirection = -1;
@@ -358,7 +341,7 @@ void FluentProgressBar::onAnimationStep() {
         m_animationProgress = 0.0;
         m_animationDirection = 1;
     }
-    
+
     update();
 }
 
@@ -385,7 +368,8 @@ void FluentProgressBar::updateTextContent() {
 }
 
 // Drawing methods
-void FluentProgressBar::drawDeterminateBar(QPainter& painter, const QRect& rect) {
+void FluentProgressBar::drawDeterminateBar(QPainter& painter,
+                                           const QRect& rect) {
     Q_UNUSED(rect)
     const auto& theme = Styling::FluentTheme::instance();
     const QRect progressRect = this->progressRect();
@@ -396,8 +380,10 @@ void FluentProgressBar::drawDeterminateBar(QPainter& painter, const QRect& rect)
 
     // Draw progress fill
     if (percentage() > 0.0) {
-        const int fillWidth = static_cast<int>(progressRect.width() * percentage());
-        const QRect fillRect(progressRect.x(), progressRect.y(), fillWidth, progressRect.height());
+        const int fillWidth =
+            static_cast<int>(progressRect.width() * percentage());
+        const QRect fillRect(progressRect.x(), progressRect.y(), fillWidth,
+                             progressRect.height());
 
         QPainterPath fillPath;
         fillPath.addRoundedRect(fillRect, radius, radius);
@@ -411,7 +397,8 @@ void FluentProgressBar::drawDeterminateBar(QPainter& painter, const QRect& rect)
     painter.drawPath(borderPath);
 }
 
-void FluentProgressBar::drawIndeterminateBar(QPainter& painter, const QRect& rect) {
+void FluentProgressBar::drawIndeterminateBar(QPainter& painter,
+                                             const QRect& rect) {
     Q_UNUSED(rect)
     const auto& theme = Styling::FluentTheme::instance();
     const QRect progressRect = this->progressRect();
@@ -427,7 +414,7 @@ void FluentProgressBar::drawIndeterminateBar(QPainter& painter, const QRect& rec
         const int currentX = static_cast<int>(maxX * m_animationProgress);
 
         const QRect indicatorRect(progressRect.x() + currentX, progressRect.y(),
-                                indicatorWidth, progressRect.height());
+                                  indicatorWidth, progressRect.height());
 
         QPainterPath indicatorPath;
         indicatorPath.addRoundedRect(indicatorRect, radius, radius);
@@ -453,21 +440,24 @@ void FluentProgressBar::drawRingProgress(QPainter& painter, const QRect& rect) {
 
     // Draw progress arc
     if (m_progressType == FluentProgressBarType::Ring && percentage() > 0.0) {
-        const int spanAngle = static_cast<int>(360 * 16 * percentage()); // Qt uses 16ths of degrees
+        const int spanAngle = static_cast<int>(
+            360 * 16 * percentage());  // Qt uses 16ths of degrees
 
-        painter.setPen(QPen(getProgressColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
+        painter.setPen(
+            QPen(getProgressColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
         painter.drawArc(QRect(center.x() - radius, center.y() - radius,
-                            radius * 2, radius * 2),
-                       90 * 16, -spanAngle); // Start from top, go clockwise
+                              radius * 2, radius * 2),
+                        90 * 16, -spanAngle);  // Start from top, go clockwise
     } else if (m_isRunning && !m_isPaused) {
         // Indeterminate ring animation
-        const int spanAngle = 90 * 16; // 90 degrees
+        const int spanAngle = 90 * 16;  // 90 degrees
         const int startAngle = static_cast<int>(360 * 16 * m_animationProgress);
 
-        painter.setPen(QPen(getProgressColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
+        painter.setPen(
+            QPen(getProgressColor(), strokeWidth, Qt::SolidLine, Qt::RoundCap));
         painter.drawArc(QRect(center.x() - radius, center.y() - radius,
-                            radius * 2, radius * 2),
-                       startAngle, spanAngle);
+                              radius * 2, radius * 2),
+                        startAngle, spanAngle);
     }
 }
 
@@ -494,7 +484,7 @@ void FluentProgressBar::drawDotsProgress(QPainter& painter, const QRect& rect) {
         }
 
         painter.setOpacity(opacity);
-        painter.drawEllipse(x, y - dotSize/2, dotSize, dotSize);
+        painter.drawEllipse(x, y - dotSize / 2, dotSize, dotSize);
     }
 
     painter.setOpacity(1.0);
@@ -535,25 +525,32 @@ QRect FluentProgressBar::textRect() const {
 
 int FluentProgressBar::getBarHeight() const {
     switch (m_progressSize) {
-        case FluentProgressBarSize::Small: return 4;
-        case FluentProgressBarSize::Medium: return 8;
-        case FluentProgressBarSize::Large: return 12;
+        case FluentProgressBarSize::Small:
+            return 4;
+        case FluentProgressBarSize::Medium:
+            return 8;
+        case FluentProgressBarSize::Large:
+            return 12;
     }
     return 8;
 }
 
 int FluentProgressBar::getRingSize() const {
     switch (m_progressSize) {
-        case FluentProgressBarSize::Small: return 24;
-        case FluentProgressBarSize::Medium: return 32;
-        case FluentProgressBarSize::Large: return 48;
+        case FluentProgressBarSize::Small:
+            return 24;
+        case FluentProgressBarSize::Medium:
+            return 32;
+        case FluentProgressBarSize::Large:
+            return 48;
     }
     return 32;
 }
 
 QColor FluentProgressBar::getProgressColor() const {
-    return m_accentColor.isValid() ? m_accentColor :
-           Styling::FluentTheme::instance().color("accent");
+    return m_accentColor.isValid()
+               ? m_accentColor
+               : Styling::FluentTheme::instance().color("accent");
 }
 
 QColor FluentProgressBar::getBackgroundColor() const {
@@ -561,4 +558,4 @@ QColor FluentProgressBar::getBackgroundColor() const {
     return theme.color("controlFillSecondary");
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

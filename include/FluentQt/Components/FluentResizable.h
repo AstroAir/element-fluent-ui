@@ -1,14 +1,14 @@
 // include/FluentQt/Components/FluentResizable.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QWidget>
-#include <QMouseEvent>
-#include <QTouchEvent>
-#include <QPropertyAnimation>
 #include <QGraphicsDropShadowEffect>
+#include <QMouseEvent>
+#include <QPropertyAnimation>
 #include <QTimer>
+#include <QTouchEvent>
+#include <QWidget>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -35,9 +35,9 @@ Q_DECLARE_FLAGS(FluentResizeHandles, FluentResizeHandle)
 Q_DECLARE_OPERATORS_FOR_FLAGS(FluentResizeHandles)
 
 enum class FluentResizeMode {
-    Immediate,      // Resize immediately during drag
-    Preview,        // Show preview during drag, apply on release
-    Smooth          // Smooth animated resize
+    Immediate,  // Resize immediately during drag
+    Preview,    // Show preview during drag, apply on release
+    Smooth      // Smooth animated resize
 };
 
 class FluentResizeHandleWidget;
@@ -45,19 +45,27 @@ class FluentResizePreview;
 
 class FluentResizable : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentResizeDirection resizeDirection READ resizeDirection WRITE setResizeDirection NOTIFY resizeDirectionChanged)
-    Q_PROPERTY(FluentResizeHandles enabledHandles READ enabledHandles WRITE setEnabledHandles NOTIFY enabledHandlesChanged)
-    Q_PROPERTY(FluentResizeMode resizeMode READ resizeMode WRITE setResizeMode NOTIFY resizeModeChanged)
-    Q_PROPERTY(QSize minimumSize READ minimumSize WRITE setMinimumSize NOTIFY minimumSizeChanged)
-    Q_PROPERTY(QSize maximumSize READ maximumSize WRITE setMaximumSize NOTIFY maximumSizeChanged)
-    Q_PROPERTY(int handleSize READ handleSize WRITE setHandleSize NOTIFY handleSizeChanged)
-    Q_PROPERTY(bool showHandles READ showHandles WRITE setShowHandles NOTIFY showHandlesChanged)
+    Q_PROPERTY(FluentResizeDirection resizeDirection READ resizeDirection WRITE
+                   setResizeDirection NOTIFY resizeDirectionChanged)
+    Q_PROPERTY(FluentResizeHandles enabledHandles READ enabledHandles WRITE
+                   setEnabledHandles NOTIFY enabledHandlesChanged)
+    Q_PROPERTY(FluentResizeMode resizeMode READ resizeMode WRITE setResizeMode
+                   NOTIFY resizeModeChanged)
+    Q_PROPERTY(QSize minimumSize READ minimumSize WRITE setMinimumSize NOTIFY
+                   minimumSizeChanged)
+    Q_PROPERTY(QSize maximumSize READ maximumSize WRITE setMaximumSize NOTIFY
+                   maximumSizeChanged)
+    Q_PROPERTY(int handleSize READ handleSize WRITE setHandleSize NOTIFY
+                   handleSizeChanged)
+    Q_PROPERTY(bool showHandles READ showHandles WRITE setShowHandles NOTIFY
+                   showHandlesChanged)
     Q_PROPERTY(bool smoothResize READ smoothResize WRITE setSmoothResize)
     Q_PROPERTY(bool touchEnabled READ isTouchEnabled WRITE setTouchEnabled)
     Q_PROPERTY(bool snapToGrid READ snapToGrid WRITE setSnapToGrid)
     Q_PROPERTY(int gridSize READ gridSize WRITE setGridSize)
     Q_PROPERTY(qreal aspectRatio READ aspectRatio WRITE setAspectRatio)
-    Q_PROPERTY(bool maintainAspectRatio READ maintainAspectRatio WRITE setMaintainAspectRatio)
+    Q_PROPERTY(bool maintainAspectRatio READ maintainAspectRatio WRITE
+                   setMaintainAspectRatio)
 
 public:
     explicit FluentResizable(QWidget* parent = nullptr);
@@ -69,11 +77,15 @@ public:
     QWidget* contentWidget() const { return m_contentWidget; }
 
     // Resize direction
-    FluentResizeDirection resizeDirection() const noexcept { return m_resizeDirection; }
+    FluentResizeDirection resizeDirection() const noexcept {
+        return m_resizeDirection;
+    }
     void setResizeDirection(FluentResizeDirection direction);
 
     // Handle configuration
-    FluentResizeHandles enabledHandles() const noexcept { return m_enabledHandles; }
+    FluentResizeHandles enabledHandles() const noexcept {
+        return m_enabledHandles;
+    }
     void setEnabledHandles(FluentResizeHandles handles);
 
     FluentResizeMode resizeMode() const noexcept { return m_resizeMode; }
@@ -151,7 +163,7 @@ protected:
     void leaveEvent(QEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void changeEvent(QEvent* event) override;
-    
+
     // Touch events
     bool event(QEvent* event) override;
     void touchEvent(QTouchEvent* event);
@@ -162,7 +174,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onResizeAnimationValueChanged(const QVariant& value);
@@ -190,10 +203,12 @@ private:
     void updateResize(const QPoint& currentPos);
     void finishResize();
     void cancelResize();
-    QSize calculateNewSize(FluentResizeHandle handle, const QPoint& delta) const;
+    QSize calculateNewSize(FluentResizeHandle handle,
+                           const QPoint& delta) const;
     QSize constrainSize(const QSize& size) const;
     QSize snapSizeToGrid(const QSize& size) const;
-    QSize maintainAspectRatioSize(const QSize& size, FluentResizeHandle handle) const;
+    QSize maintainAspectRatioSize(const QSize& size,
+                                  FluentResizeHandle handle) const;
 
     // Animation methods
     void animateToSize(const QSize& targetSize);
@@ -203,7 +218,8 @@ private:
     void paintBackground(QPainter& painter, const QRect& rect);
     void paintBorder(QPainter& painter, const QRect& rect);
     void paintHandles(QPainter& painter);
-    void paintHandle(QPainter& painter, FluentResizeHandle handle, const QRect& rect);
+    void paintHandle(QPainter& painter, FluentResizeHandle handle,
+                     const QRect& rect);
     void paintResizePreview(QPainter& painter);
     void paintGridLines(QPainter& painter);
 
@@ -229,7 +245,8 @@ private:
 
     // Configuration
     FluentResizeDirection m_resizeDirection{FluentResizeDirection::Both};
-    FluentResizeHandles m_enabledHandles{static_cast<FluentResizeHandles>(FluentResizeHandle::BottomRight)};
+    FluentResizeHandles m_enabledHandles{
+        static_cast<FluentResizeHandles>(FluentResizeHandle::BottomRight)};
     FluentResizeMode m_resizeMode{FluentResizeMode::Immediate};
     int m_handleSize{8};
     bool m_showHandles{true};
@@ -243,7 +260,7 @@ private:
     // Grid and aspect ratio
     bool m_snapToGrid{false};
     int m_gridSize{10};
-    qreal m_aspectRatio{0.0}; // 0.0 means no fixed aspect ratio
+    qreal m_aspectRatio{0.0};  // 0.0 means no fixed aspect ratio
     bool m_maintainAspectRatio{false};
 
     // Resize state
@@ -270,4 +287,4 @@ private:
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

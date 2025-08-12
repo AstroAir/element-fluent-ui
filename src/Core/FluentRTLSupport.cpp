@@ -1,15 +1,15 @@
 // src/Core/FluentRTLSupport.cpp
 #include "FluentQt/Core/FluentRTLSupport.h"
 #include <QApplication>
-#include <QDebug>
-#include <QMutexLocker>
-#include <QLayoutItem>
 #include <QBoxLayout>
-#include <QGridLayout>
+#include <QDebug>
 #include <QFormLayout>
+#include <QGridLayout>
 #include <QLabel>
-#include <QPushButton>
+#include <QLayoutItem>
 #include <QLineEdit>
+#include <QMutexLocker>
+#include <QPushButton>
 #include <algorithm>
 
 namespace FluentQt::Core {
@@ -23,25 +23,29 @@ FluentRTLSupportManager::FluentRTLSupportManager() {
     // Initialize RTL character categories
     m_rtlCategories.insert(QChar::Letter_Other);
     m_rtlCategories.insert(QChar::Mark_NonSpacing);
-    
+
     m_ltrCategories.insert(QChar::Letter_Lowercase);
     m_ltrCategories.insert(QChar::Letter_Uppercase);
     m_ltrCategories.insert(QChar::Letter_Titlecase);
     m_ltrCategories.insert(QChar::Letter_Other);
-    
+
     m_neutralCategories.insert(QChar::Number_DecimalDigit);
     m_neutralCategories.insert(QChar::Number_Letter);
     m_neutralCategories.insert(QChar::Number_Other);
     m_neutralCategories.insert(QChar::Punctuation_Dash);
     m_neutralCategories.insert(QChar::Punctuation_Open);
     m_neutralCategories.insert(QChar::Punctuation_Close);
-    
+
     // Initialize locale-specific RTL features
-    m_localeRTLFeatures[QLocale(QLocale::Arabic)] = {"contextual-forms", "ligatures", "diacritics"};
-    m_localeRTLFeatures[QLocale(QLocale::Hebrew)] = {"contextual-forms", "diacritics"};
-    m_localeRTLFeatures[QLocale(QLocale::Persian)] = {"contextual-forms", "ligatures"};
-    m_localeRTLFeatures[QLocale(QLocale::Urdu)] = {"contextual-forms", "ligatures"};
-    
+    m_localeRTLFeatures[QLocale(QLocale::Arabic)] = {"contextual-forms",
+                                                     "ligatures", "diacritics"};
+    m_localeRTLFeatures[QLocale(QLocale::Hebrew)] = {"contextual-forms",
+                                                     "diacritics"};
+    m_localeRTLFeatures[QLocale(QLocale::Persian)] = {"contextual-forms",
+                                                      "ligatures"};
+    m_localeRTLFeatures[QLocale(QLocale::Urdu)] = {"contextual-forms",
+                                                   "ligatures"};
+
     qDebug() << "FluentRTLSupportManager initialized";
 }
 
@@ -66,19 +70,20 @@ bool FluentRTLSupportManager::isRTLLocale(const QLocale& locale) const {
            locale.language() == QLocale::Sindhi;
 }
 
-FluentTextDirection FluentRTLSupportManager::detectTextDirection(const QString& text) const {
+FluentTextDirection FluentRTLSupportManager::detectTextDirection(
+    const QString& text) const {
     if (text.isEmpty()) {
         return FluentTextDirection::Auto;
     }
-    
+
     // Check cache first
     auto it = m_textDirectionCache.find(text);
     if (it != m_textDirectionCache.end()) {
         return it.value();
     }
-    
+
     FluentTextDirection direction = detectTextDirectionInternal(text);
-    
+
     // Cache the result
     if (m_cachingEnabled && m_textDirectionCache.size() < 1000) {
         m_textDirectionCache[text] = direction;
@@ -88,26 +93,27 @@ FluentTextDirection FluentRTLSupportManager::detectTextDirection(const QString& 
     return direction;
 }
 
-FluentBidiTextType FluentRTLSupportManager::analyzeBidiText(const QString& text) const {
+FluentBidiTextType FluentRTLSupportManager::analyzeBidiText(
+    const QString& text) const {
     if (text.isEmpty()) {
         return FluentBidiTextType::Neutral;
     }
-    
+
     bool hasRTL = false;
     bool hasLTR = false;
-    
+
     for (const QChar& ch : text) {
         if (isRTLCharacter(ch)) {
             hasRTL = true;
         } else if (isLTRCharacter(ch)) {
             hasLTR = true;
         }
-        
+
         if (hasRTL && hasLTR) {
             return FluentBidiTextType::Mixed;
         }
     }
-    
+
     if (hasRTL) {
         return FluentBidiTextType::RTL;
     } else if (hasLTR) {
@@ -135,21 +141,22 @@ bool FluentRTLSupportManager::containsLTRCharacters(const QString& text) const {
     return false;
 }
 
-FluentRTLAdaptationResult FluentRTLSupportManager::adaptWidget(QWidget* widget, bool recursive) {
+FluentRTLAdaptationResult FluentRTLSupportManager::adaptWidget(QWidget* widget,
+                                                               bool recursive) {
     if (!widget) {
         return FluentRTLAdaptationResult{};
     }
-    
+
     FluentRTLAdaptationResult result;
     result.isAdapted = true;
-    
+
     QMutexLocker locker(&m_configMutex);
-    
+
     if (m_config.mode == FluentRTLMode::Disabled) {
         result.isAdapted = false;
         return result;
     }
-    
+
     // Detect or force RTL mode
     bool shouldApplyRTL = false;
     if (m_config.mode == FluentRTLMode::Forced) {
@@ -165,27 +172,29 @@ FluentRTLAdaptationResult FluentRTLSupportManager::adaptWidget(QWidget* widget, 
                 widgetText = button->text();
             }
         }
-        
+
         if (!widgetText.isEmpty()) {
             result.detectedDirection = detectTextDirection(widgetText);
-            shouldApplyRTL = (result.detectedDirection == FluentTextDirection::RightToLeft);
+            shouldApplyRTL =
+                (result.detectedDirection == FluentTextDirection::RightToLeft);
         }
     }
-    
+
     if (shouldApplyRTL) {
         // Apply RTL adaptations
         adaptWidgetGeometry(widget);
         adaptWidgetAlignment(widget);
         adaptWidgetMargins(widget);
         adaptWidgetText(widget);
-        
-        result.appliedAdaptations << "geometry" << "alignment" << "margins" << "text";
-        
+
+        result.appliedAdaptations << "geometry" << "alignment" << "margins"
+                                  << "text";
+
         // Set layout direction
         widget->setLayoutDirection(Qt::RightToLeft);
         result.appliedAdaptations << "layout-direction";
     }
-    
+
     // Recursively adapt child widgets
     if (recursive) {
         for (QWidget* child : widget->findChildren<QWidget*>()) {
@@ -193,65 +202,72 @@ FluentRTLAdaptationResult FluentRTLSupportManager::adaptWidget(QWidget* widget, 
             result.appliedAdaptations.append(childResult.appliedAdaptations);
         }
     }
-    
+
     emit rtlAdaptationApplied(widget);
     return result;
 }
 
-FluentRTLAdaptationResult FluentRTLSupportManager::adaptLayout(QLayout* layout, bool recursive) {
+FluentRTLAdaptationResult FluentRTLSupportManager::adaptLayout(QLayout* layout,
+                                                               bool recursive) {
     if (!layout) {
         return FluentRTLAdaptationResult{};
     }
-    
+
     FluentRTLAdaptationResult result;
     result.isAdapted = true;
-    
+
     QMutexLocker locker(&m_configMutex);
-    
+
     if (m_config.mode == FluentRTLMode::Disabled) {
         result.isAdapted = false;
         return result;
     }
-    
+
     // Adapt layout direction
     adaptLayoutDirection(layout);
     adaptLayoutSpacing(layout);
     adaptLayoutAlignment(layout);
     adaptLayoutItems(layout);
-    
-    result.appliedAdaptations << "direction" << "spacing" << "alignment" << "items";
-    
+
+    result.appliedAdaptations << "direction" << "spacing" << "alignment"
+                              << "items";
+
     // Recursively adapt child layouts
     if (recursive) {
         for (int i = 0; i < layout->count(); ++i) {
             QLayoutItem* item = layout->itemAt(i);
             if (item && item->layout()) {
                 auto childResult = adaptLayout(item->layout(), true);
-                result.appliedAdaptations.append(childResult.appliedAdaptations);
+                result.appliedAdaptations.append(
+                    childResult.appliedAdaptations);
             }
         }
     }
-    
+
     return result;
 }
 
-QRect FluentRTLSupportManager::mirrorRect(const QRect& rect, const QRect& container) const {
+QRect FluentRTLSupportManager::mirrorRect(const QRect& rect,
+                                          const QRect& container) const {
     int newX = container.width() - rect.x() - rect.width();
     return QRect(newX, rect.y(), rect.width(), rect.height());
 }
 
-QPoint FluentRTLSupportManager::mirrorPoint(const QPoint& point, const QRect& container) const {
+QPoint FluentRTLSupportManager::mirrorPoint(const QPoint& point,
+                                            const QRect& container) const {
     int newX = container.width() - point.x();
     return QPoint(newX, point.y());
 }
 
 QMargins FluentRTLSupportManager::mirrorMargins(const QMargins& margins) const {
-    return QMargins(margins.right(), margins.top(), margins.left(), margins.bottom());
+    return QMargins(margins.right(), margins.top(), margins.left(),
+                    margins.bottom());
 }
 
-Qt::Alignment FluentRTLSupportManager::mirrorAlignment(Qt::Alignment alignment) const {
+Qt::Alignment FluentRTLSupportManager::mirrorAlignment(
+    Qt::Alignment alignment) const {
     Qt::Alignment result = alignment;
-    
+
     // Mirror horizontal alignment
     if (alignment & Qt::AlignLeft) {
         result &= ~Qt::AlignLeft;
@@ -260,17 +276,18 @@ Qt::Alignment FluentRTLSupportManager::mirrorAlignment(Qt::Alignment alignment) 
         result &= ~Qt::AlignRight;
         result |= Qt::AlignLeft;
     }
-    
+
     return result;
 }
 
-QString FluentRTLSupportManager::processRTLText(const QString& text, FluentRTLTextAlignment alignment) const {
+QString FluentRTLSupportManager::processRTLText(
+    const QString& text, FluentRTLTextAlignment alignment) const {
     if (text.isEmpty()) {
         return text;
     }
-    
+
     QString processedText = text;
-    
+
     // Add bidi markers if needed
     if (m_config.enableBidiSupport) {
         FluentTextDirection direction = detectTextDirection(text);
@@ -278,48 +295,62 @@ QString FluentRTLSupportManager::processRTLText(const QString& text, FluentRTLTe
             processedText = wrapWithBidiIsolation(processedText, direction);
         }
     }
-    
+
+    // Apply alignment-specific processing
+    if (alignment == FluentRTLTextAlignment::Auto) {
+        FluentTextDirection direction = detectTextDirection(text);
+        if (direction == FluentTextDirection::RightToLeft) {
+            processedText = QString("\u202E") + processedText +
+                            QString("\u202C");  // RLO + text + PDF
+        }
+    }
+
     return processedText;
 }
 
-QString FluentRTLSupportManager::wrapWithBidiIsolation(const QString& text, FluentTextDirection direction) const {
+QString FluentRTLSupportManager::wrapWithBidiIsolation(
+    const QString& text, FluentTextDirection direction) const {
     if (direction == FluentTextDirection::RightToLeft) {
-        return QString("\u2067") + text + QString("\u2069"); // RLI + text + PDI
+        return QString("\u2067") + text +
+               QString("\u2069");  // RLI + text + PDI
     } else if (direction == FluentTextDirection::LeftToRight) {
-        return QString("\u2066") + text + QString("\u2069"); // LRI + text + PDI
+        return QString("\u2066") + text +
+               QString("\u2069");  // LRI + text + PDI
     }
     return text;
 }
 
 QString FluentRTLSupportManager::insertBidiMarkers(const QString& text) const {
     QString result = text;
-    
+
     // Insert RLM (Right-to-Left Mark) after RTL text
     for (int i = 0; i < result.length(); ++i) {
         if (isRTLCharacter(result[i])) {
             // Find end of RTL run
             int j = i;
-            while (j < result.length() && (isRTLCharacter(result[j]) || isNeutralCharacter(result[j]))) {
+            while (j < result.length() && (isRTLCharacter(result[j]) ||
+                                           isNeutralCharacter(result[j]))) {
                 ++j;
             }
-            
+
             // Insert RLM after RTL run
             if (j < result.length()) {
-                result.insert(j, QChar(0x200F)); // RLM
+                result.insert(j, QChar(0x200F));  // RLM
             }
-            
+
             i = j;
         }
     }
-    
+
     return result;
 }
 
 // Private helper methods
-FluentTextDirection FluentRTLSupportManager::detectTextDirectionInternal(const QString& text) const {
+FluentTextDirection FluentRTLSupportManager::detectTextDirectionInternal(
+    const QString& text) const {
     int rtlCount = 0;
     int ltrCount = 0;
-    
+
     for (const QChar& ch : text) {
         if (isRTLCharacter(ch)) {
             rtlCount++;
@@ -327,7 +358,7 @@ FluentTextDirection FluentRTLSupportManager::detectTextDirectionInternal(const Q
             ltrCount++;
         }
     }
-    
+
     if (rtlCount > ltrCount) {
         return FluentTextDirection::RightToLeft;
     } else if (ltrCount > rtlCount) {
@@ -430,14 +461,16 @@ void FluentRTLSupportManager::onLocaleChanged(const QLocale& locale) {
         if (isRTL != (m_config.mode == FluentRTLMode::Forced)) {
             // Update locale-specific RTL features
             auto features = m_localeRTLFeatures.value(locale, QStringList());
-            qDebug() << "Locale changed to:" << locale.name() << "RTL features:" << features;
+            qDebug() << "Locale changed to:" << locale.name()
+                     << "RTL features:" << features;
         }
     }
 
     emit rtlModeChanged(m_config.mode);
 }
 
-void FluentRTLSupportManager::onLayoutDirectionChanged(Qt::LayoutDirection direction) {
+void FluentRTLSupportManager::onLayoutDirectionChanged(
+    Qt::LayoutDirection direction) {
     // Respond to layout direction changes
     QMutexLocker locker(&m_configMutex);
 
@@ -454,15 +487,18 @@ void FluentRTLSupportManager::onLayoutDirectionChanged(Qt::LayoutDirection direc
 namespace FluentRTLUtilities {
 
 bool isRTLText(const QString& text) {
-    return FluentRTLSupportManager::instance().detectTextDirection(text) == FluentTextDirection::RightToLeft;
+    return FluentRTLSupportManager::instance().detectTextDirection(text) ==
+           FluentTextDirection::RightToLeft;
 }
 
 bool isLTRText(const QString& text) {
-    return FluentRTLSupportManager::instance().detectTextDirection(text) == FluentTextDirection::LeftToRight;
+    return FluentRTLSupportManager::instance().detectTextDirection(text) ==
+           FluentTextDirection::LeftToRight;
 }
 
 bool isMixedDirectionText(const QString& text) {
-    return FluentRTLSupportManager::instance().analyzeBidiText(text) == FluentBidiTextType::Mixed;
+    return FluentRTLSupportManager::instance().analyzeBidiText(text) ==
+           FluentBidiTextType::Mixed;
 }
 
 QRect mirrorRectInContainer(const QRect& rect, const QRect& container) {
@@ -486,21 +522,21 @@ bool isLTRCharacter(QChar character) {
 }
 
 QString addRTLMark(const QString& text) {
-    return text + QChar(0x200F); // RLM
+    return text + QChar(0x200F);  // RLM
 }
 
 QString addLTRMark(const QString& text) {
-    return text + QChar(0x200E); // LRM
+    return text + QChar(0x200E);  // LRM
 }
 
 QString isolateRTLText(const QString& text) {
-    return QString("\u2067") + text + QString("\u2069"); // RLI + text + PDI
+    return QString("\u2067") + text + QString("\u2069");  // RLI + text + PDI
 }
 
 QString isolateLTRText(const QString& text) {
-    return QString("\u2066") + text + QString("\u2069"); // LRI + text + PDI
+    return QString("\u2066") + text + QString("\u2069");  // LRI + text + PDI
 }
 
-} // namespace FluentRTLUtilities
+}  // namespace FluentRTLUtilities
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

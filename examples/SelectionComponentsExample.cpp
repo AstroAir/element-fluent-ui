@@ -1,39 +1,40 @@
 // examples/SelectionComponentsExample.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QCheckBox>
 #include <QGridLayout>
 #include <QGroupBox>
-#include <QLabel>
-#include <QSpinBox>
-#include <QSlider>
-#include <QCheckBox>
-#include <QLineEdit>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QTimer>
-#include <QStandardItemModel>
-#include <QStringListModel>
+#include <QHBoxLayout>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
+#include <QLabel>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QPushButton>
 #include <QRandomGenerator>
+#include <QSlider>
+#include <QSpinBox>
+#include <QStandardItemModel>
+#include <QStringListModel>
+#include <QTextEdit>
+#include <QTimer>
+#include <QVBoxLayout>
 
-#include "FluentQt/Components/FluentComboBox.h"
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentCheckBox.h"
+#include "FluentQt/Components/FluentComboBox.h"
 #include "FluentQt/Components/FluentPanel.h"
 #include "FluentQt/Components/FluentTextInput.h"
-#include "FluentQt/Components/FluentCheckBox.h"
 #include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 
 using namespace FluentQt;
 
 /**
- * @brief Comprehensive example demonstrating FluentComboBox and selection components
- * 
+ * @brief Comprehensive example demonstrating FluentComboBox and selection
+ * components
+ *
  * This example showcases:
  * - Different FluentComboBox styles (Standard, Editable, MultiSelect)
  * - Data binding with custom models
@@ -48,7 +49,8 @@ class SelectionComponentsExample : public QMainWindow {
     Q_OBJECT
 
 public:
-    SelectionComponentsExample(QWidget* parent = nullptr) : QMainWindow(parent) {
+    SelectionComponentsExample(QWidget* parent = nullptr)
+        : QMainWindow(parent) {
         setupUI();
         setupData();
         setupConnections();
@@ -90,28 +92,28 @@ private:
     // UI Components
     QWidget* m_centralWidget{nullptr};
     QVBoxLayout* m_mainLayout{nullptr};
-    
+
     // Basic Examples Group
     QGroupBox* m_basicGroup{nullptr};
     Components::FluentComboBox* m_standardCombo{nullptr};
     Components::FluentComboBox* m_editableCombo{nullptr};
     Components::FluentComboBox* m_multiSelectCombo{nullptr};
     QLabel* m_basicStatusLabel{nullptr};
-    
+
     // Advanced Examples Group
     QGroupBox* m_advancedGroup{nullptr};
     Components::FluentComboBox* m_iconCombo{nullptr};
     Components::FluentComboBox* m_searchCombo{nullptr};
     Components::FluentComboBox* m_customCombo{nullptr};
     QLabel* m_advancedStatusLabel{nullptr};
-    
+
     // Data Binding Example
     QGroupBox* m_dataBindingGroup{nullptr};
     Components::FluentComboBox* m_countryCombo{nullptr};
     Components::FluentComboBox* m_cityCombo{nullptr};
     Components::FluentComboBox* m_categoryCombo{nullptr};
     QLabel* m_locationLabel{nullptr};
-    
+
     // Customization Controls
     QGroupBox* m_customizationGroup{nullptr};
     QSpinBox* m_maxVisibleSpin{nullptr};
@@ -119,13 +121,13 @@ private:
     Components::FluentCheckBox* m_searchEnabledCheck{nullptr};
     Components::FluentCheckBox* m_caseSensitiveCheck{nullptr};
     QSlider* m_dropdownWidthSlider{nullptr};
-    
+
     // Custom Item Management
     QGroupBox* m_itemManagementGroup{nullptr};
     Components::FluentTextInput* m_newItemEdit{nullptr};
     Components::FluentTextInput* m_newItemDataEdit{nullptr};
     QTextEdit* m_selectionDisplay{nullptr};
-    
+
     // Action Buttons
     QHBoxLayout* m_actionLayout{nullptr};
     Components::FluentButton* m_addButton{nullptr};
@@ -136,15 +138,15 @@ private:
     Components::FluentButton* m_themeButton{nullptr};
     Components::FluentButton* m_resetButton{nullptr};
     Components::FluentButton* m_summaryButton{nullptr};
-    
+
     // Data Models
     QStandardItemModel* m_countriesModel{nullptr};
     QStandardItemModel* m_citiesModel{nullptr};
     QStandardItemModel* m_categoriesModel{nullptr};
-    
+
     // Animation
     Animation::FluentAnimator* m_animator{nullptr};
-    
+
     // Data Storage
     QMap<QString, QStringList> m_countryToCities;
     QStringList m_sampleCategories;
@@ -154,24 +156,24 @@ private:
 void SelectionComponentsExample::setupUI() {
     setWindowTitle("FluentQt Selection Components Example");
     setMinimumSize(1000, 800);
-    
+
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-    
+
     m_mainLayout = new QVBoxLayout(m_centralWidget);
     m_mainLayout->setSpacing(16);
     m_mainLayout->setContentsMargins(16, 16, 16, 16);
-    
+
     // Create all UI sections
     createBasicExamples();
     createAdvancedExamples();
     createDataBindingExample();
     createCustomizationControls();
     createActionButtons();
-    
+
     // Add stretch to push everything to the top
     m_mainLayout->addStretch();
-    
+
     // Initialize animator
     m_animator = new Animation::FluentAnimator(this);
 }
@@ -179,93 +181,99 @@ void SelectionComponentsExample::setupUI() {
 void SelectionComponentsExample::createBasicExamples() {
     m_basicGroup = new QGroupBox("Basic ComboBox Examples", this);
     auto* layout = new QGridLayout(m_basicGroup);
-    
+
     // Standard ComboBox
     layout->addWidget(new QLabel("Standard ComboBox:"), 0, 0);
-    m_standardCombo = new Components::FluentComboBox(Components::FluentComboBoxStyle::Standard, this);
+    m_standardCombo = new Components::FluentComboBox(
+        Components::FluentComboBoxStyle::Standard, this);
     m_standardCombo->setPlaceholderText("Select an option...");
     layout->addWidget(m_standardCombo, 0, 1);
-    
+
     // Editable ComboBox
     layout->addWidget(new QLabel("Editable ComboBox:"), 1, 0);
-    m_editableCombo = new Components::FluentComboBox(Components::FluentComboBoxStyle::Editable, this);
+    m_editableCombo = new Components::FluentComboBox(
+        Components::FluentComboBoxStyle::Editable, this);
     m_editableCombo->setPlaceholderText("Type or select...");
     m_editableCombo->setSearchEnabled(true);
     layout->addWidget(m_editableCombo, 1, 1);
-    
+
     // Multi-Select ComboBox
     layout->addWidget(new QLabel("Multi-Select ComboBox:"), 2, 0);
-    m_multiSelectCombo = new Components::FluentComboBox(Components::FluentComboBoxStyle::MultiSelect, this);
+    m_multiSelectCombo = new Components::FluentComboBox(
+        Components::FluentComboBoxStyle::MultiSelect, this);
     m_multiSelectCombo->setPlaceholderText("Select multiple items...");
     m_multiSelectCombo->setMultiSelectEnabled(true);
     layout->addWidget(m_multiSelectCombo, 2, 1);
-    
+
     // Status label
     m_basicStatusLabel = new QLabel("Select items to see status updates", this);
     m_basicStatusLabel->setStyleSheet("color: #666; font-style: italic;");
     layout->addWidget(m_basicStatusLabel, 3, 0, 1, 2);
-    
+
     m_mainLayout->addWidget(m_basicGroup);
 }
 
 void SelectionComponentsExample::createAdvancedExamples() {
     m_advancedGroup = new QGroupBox("Advanced Features", this);
     auto* layout = new QGridLayout(m_advancedGroup);
-    
+
     // ComboBox with icons
     layout->addWidget(new QLabel("With Icons:"), 0, 0);
     m_iconCombo = new Components::FluentComboBox(this);
     layout->addWidget(m_iconCombo, 0, 1);
-    
+
     // ComboBox with search
     layout->addWidget(new QLabel("With Search:"), 1, 0);
-    m_searchCombo = new Components::FluentComboBox(Components::FluentComboBoxStyle::Editable, this);
+    m_searchCombo = new Components::FluentComboBox(
+        Components::FluentComboBoxStyle::Editable, this);
     m_searchCombo->setSearchEnabled(true);
     m_searchCombo->setPlaceholderText("Search items...");
     layout->addWidget(m_searchCombo, 1, 1);
-    
+
     // Custom styled ComboBox
     layout->addWidget(new QLabel("Custom Items:"), 2, 0);
     m_customCombo = new Components::FluentComboBox(this);
     layout->addWidget(m_customCombo, 2, 1);
-    
+
     // Status label
     m_advancedStatusLabel = new QLabel("Advanced features demonstration", this);
     m_advancedStatusLabel->setStyleSheet("color: #666; font-style: italic;");
     layout->addWidget(m_advancedStatusLabel, 3, 0, 1, 2);
-    
+
     m_mainLayout->addWidget(m_advancedGroup);
 }
 
 void SelectionComponentsExample::createDataBindingExample() {
-    m_dataBindingGroup = new QGroupBox("Data Binding & Cascading Selection", this);
+    m_dataBindingGroup =
+        new QGroupBox("Data Binding & Cascading Selection", this);
     auto* layout = new QGridLayout(m_dataBindingGroup);
-    
+
     // Country selection
     layout->addWidget(new QLabel("Country:"), 0, 0);
     m_countryCombo = new Components::FluentComboBox(this);
     m_countryCombo->setPlaceholderText("Select a country...");
     layout->addWidget(m_countryCombo, 0, 1);
-    
+
     // City selection (depends on country)
     layout->addWidget(new QLabel("City:"), 1, 0);
     m_cityCombo = new Components::FluentComboBox(this);
     m_cityCombo->setPlaceholderText("Select a city...");
     m_cityCombo->setEnabled(false);
     layout->addWidget(m_cityCombo, 1, 1);
-    
+
     // Category selection
     layout->addWidget(new QLabel("Category:"), 2, 0);
-    m_categoryCombo = new Components::FluentComboBox(Components::FluentComboBoxStyle::MultiSelect, this);
+    m_categoryCombo = new Components::FluentComboBox(
+        Components::FluentComboBoxStyle::MultiSelect, this);
     m_categoryCombo->setPlaceholderText("Select categories...");
     m_categoryCombo->setMultiSelectEnabled(true);
     layout->addWidget(m_categoryCombo, 2, 1);
-    
+
     // Location display
     m_locationLabel = new QLabel("No location selected", this);
     m_locationLabel->setStyleSheet("font-weight: bold; color: #0078d4;");
     layout->addWidget(m_locationLabel, 3, 0, 1, 2);
-    
+
     m_mainLayout->addWidget(m_dataBindingGroup);
 }
 
@@ -288,13 +296,15 @@ void SelectionComponentsExample::createCustomizationControls() {
 
     // Search enabled
     layout->addWidget(new QLabel("Enable Search:"), 2, 0);
-    m_searchEnabledCheck = new Components::FluentCheckBox("Enable search filtering", this);
+    m_searchEnabledCheck =
+        new Components::FluentCheckBox("Enable search filtering", this);
     m_searchEnabledCheck->setChecked(true);
     layout->addWidget(m_searchEnabledCheck, 2, 1);
 
     // Case sensitive search
     layout->addWidget(new QLabel("Case Sensitive:"), 3, 0);
-    m_caseSensitiveCheck = new Components::FluentCheckBox("Case sensitive search", this);
+    m_caseSensitiveCheck =
+        new Components::FluentCheckBox("Case sensitive search", this);
     m_caseSensitiveCheck->setChecked(false);
     layout->addWidget(m_caseSensitiveCheck, 3, 1);
 
@@ -319,7 +329,8 @@ void SelectionComponentsExample::createCustomizationControls() {
     m_selectionDisplay = new QTextEdit(this);
     m_selectionDisplay->setMaximumHeight(100);
     m_selectionDisplay->setReadOnly(true);
-    m_selectionDisplay->setPlaceholderText("Selection details will appear here...");
+    m_selectionDisplay->setPlaceholderText(
+        "Selection details will appear here...");
     itemLayout->addWidget(m_selectionDisplay);
 
     layout->addWidget(m_itemManagementGroup, 4, 0, 1, 2);
@@ -378,36 +389,45 @@ void SelectionComponentsExample::setupData() {
     m_categoriesModel = new QStandardItemModel(this);
 
     // Sample country-city data
-    m_countryToCities["United States"] = {"New York", "Los Angeles", "Chicago", "Houston", "Phoenix", "Philadelphia"};
-    m_countryToCities["United Kingdom"] = {"London", "Manchester", "Birmingham", "Liverpool", "Leeds", "Sheffield"};
-    m_countryToCities["Germany"] = {"Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Stuttgart"};
-    m_countryToCities["France"] = {"Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes"};
-    m_countryToCities["Japan"] = {"Tokyo", "Osaka", "Yokohama", "Nagoya", "Sapporo", "Kobe"};
-    m_countryToCities["Canada"] = {"Toronto", "Montreal", "Vancouver", "Calgary", "Edmonton", "Ottawa"};
+    m_countryToCities["United States"] = {"New York", "Los Angeles",
+                                          "Chicago",  "Houston",
+                                          "Phoenix",  "Philadelphia"};
+    m_countryToCities["United Kingdom"] = {"London",     "Manchester",
+                                           "Birmingham", "Liverpool",
+                                           "Leeds",      "Sheffield"};
+    m_countryToCities["Germany"] = {"Berlin",  "Hamburg",   "Munich",
+                                    "Cologne", "Frankfurt", "Stuttgart"};
+    m_countryToCities["France"] = {"Paris",    "Marseille", "Lyon",
+                                   "Toulouse", "Nice",      "Nantes"};
+    m_countryToCities["Japan"] = {"Tokyo",  "Osaka",   "Yokohama",
+                                  "Nagoya", "Sapporo", "Kobe"};
+    m_countryToCities["Canada"] = {"Toronto", "Montreal", "Vancouver",
+                                   "Calgary", "Edmonton", "Ottawa"};
 
     // Sample categories
-    m_sampleCategories = {
-        "Technology", "Business", "Science", "Arts", "Sports", "Travel",
-        "Food", "Health", "Education", "Entertainment", "Finance", "Environment"
-    };
+    m_sampleCategories = {"Technology",    "Business", "Science",
+                          "Arts",          "Sports",   "Travel",
+                          "Food",          "Health",   "Education",
+                          "Entertainment", "Finance",  "Environment"};
 
     // Sample items for various combos
-    m_sampleItems = {
-        "Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape",
-        "Honeydew", "Kiwi", "Lemon", "Mango", "Orange", "Papaya", "Quince"
-    };
+    m_sampleItems = {"Apple", "Banana", "Cherry",   "Date",  "Elderberry",
+                     "Fig",   "Grape",  "Honeydew", "Kiwi",  "Lemon",
+                     "Mango", "Orange", "Papaya",   "Quince"};
 }
 
 void SelectionComponentsExample::populateExampleData() {
     // Populate basic combos
-    m_standardCombo->addItems({"Option 1", "Option 2", "Option 3", "Option 4", "Option 5"});
+    m_standardCombo->addItems(
+        {"Option 1", "Option 2", "Option 3", "Option 4", "Option 5"});
     m_editableCombo->addItems(m_sampleItems);
-    m_multiSelectCombo->addItems({"Item A", "Item B", "Item C", "Item D", "Item E", "Item F"});
+    m_multiSelectCombo->addItems(
+        {"Item A", "Item B", "Item C", "Item D", "Item E", "Item F"});
 
     // Populate advanced combos with icons and custom data
     for (int i = 0; i < 8; ++i) {
         QString text = QString("Priority %1").arg(i + 1);
-        QIcon icon; // In a real app, you'd load actual icons
+        QIcon icon;  // In a real app, you'd load actual icons
         QVariant data = i + 1;
         m_iconCombo->addItem(text, icon, data);
     }
@@ -428,7 +448,8 @@ void SelectionComponentsExample::populateExampleData() {
     m_customCombo->addItem("Another Enabled Item");
 
     // Populate country combo
-    for (auto it = m_countryToCities.begin(); it != m_countryToCities.end(); ++it) {
+    for (auto it = m_countryToCities.begin(); it != m_countryToCities.end();
+         ++it) {
         m_countryCombo->addItem(it.key());
     }
 
@@ -438,8 +459,10 @@ void SelectionComponentsExample::populateExampleData() {
 
 void SelectionComponentsExample::setupConnections() {
     // Basic combo connections
-    connect(m_standardCombo, QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
-            this, &SelectionComponentsExample::onBasicComboChanged);
+    connect(
+        m_standardCombo,
+        QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
+        this, &SelectionComponentsExample::onBasicComboChanged);
 
     connect(m_editableCombo, &Components::FluentComboBox::currentTextChanged,
             this, &SelectionComponentsExample::onEditableComboChanged);
@@ -448,52 +471,70 @@ void SelectionComponentsExample::setupConnections() {
             this, &SelectionComponentsExample::onMultiSelectChanged);
 
     // Data binding connections
-    connect(m_countryCombo, QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
-            this, &SelectionComponentsExample::onCountryChanged);
+    connect(
+        m_countryCombo,
+        QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
+        this, &SelectionComponentsExample::onCountryChanged);
 
-    connect(m_cityCombo, QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
-            this, &SelectionComponentsExample::onCityChanged);
+    connect(
+        m_cityCombo,
+        QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
+        this, &SelectionComponentsExample::onCityChanged);
 
     // Customization controls
-    connect(m_maxVisibleSpin, QOverload<int>::of(&QSpinBox::valueChanged), [this](int value) {
-        m_standardCombo->setMaxVisibleItems(value);
-        m_editableCombo->setMaxVisibleItems(value);
-        m_multiSelectCombo->setMaxVisibleItems(value);
-        updateStatusInfo();
-    });
+    connect(m_maxVisibleSpin, QOverload<int>::of(&QSpinBox::valueChanged),
+            [this](int value) {
+                m_standardCombo->setMaxVisibleItems(value);
+                m_editableCombo->setMaxVisibleItems(value);
+                m_multiSelectCombo->setMaxVisibleItems(value);
+                updateStatusInfo();
+            });
 
-    connect(m_animatedCheck, &Components::FluentCheckBox::toggled, [this](bool enabled) {
-        m_standardCombo->setAnimated(enabled);
-        m_editableCombo->setAnimated(enabled);
-        m_multiSelectCombo->setAnimated(enabled);
-        updateStatusInfo();
-    });
+    connect(m_animatedCheck, &Components::FluentCheckBox::toggled,
+            [this](bool enabled) {
+                m_standardCombo->setAnimated(enabled);
+                m_editableCombo->setAnimated(enabled);
+                m_multiSelectCombo->setAnimated(enabled);
+                updateStatusInfo();
+            });
 
-    connect(m_searchEnabledCheck, &Components::FluentCheckBox::toggled, [this](bool enabled) {
-        m_editableCombo->setSearchEnabled(enabled);
-        m_searchCombo->setSearchEnabled(enabled);
-        updateStatusInfo();
-    });
+    connect(m_searchEnabledCheck, &Components::FluentCheckBox::toggled,
+            [this](bool enabled) {
+                m_editableCombo->setSearchEnabled(enabled);
+                m_searchCombo->setSearchEnabled(enabled);
+                updateStatusInfo();
+            });
 
-    connect(m_caseSensitiveCheck, &Components::FluentCheckBox::toggled, [this](bool enabled) {
-        m_editableCombo->setCaseSensitiveSearch(enabled);
-        m_searchCombo->setCaseSensitiveSearch(enabled);
-        updateStatusInfo();
-    });
+    connect(m_caseSensitiveCheck, &Components::FluentCheckBox::toggled,
+            [this](bool enabled) {
+                m_editableCombo->setCaseSensitiveSearch(enabled);
+                m_searchCombo->setCaseSensitiveSearch(enabled);
+                updateStatusInfo();
+            });
 
     // Action button connections
-    connect(m_addButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::addCustomItem);
-    connect(m_removeButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::removeSelectedItem);
-    connect(m_clearButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::clearAllItems);
-    connect(m_exportButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::exportSelection);
-    connect(m_importButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::importData);
-    connect(m_themeButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::toggleTheme);
-    connect(m_resetButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::resetToDefaults);
-    connect(m_summaryButton, &Components::FluentButton::clicked, this, &SelectionComponentsExample::showSelectionSummary);
+    connect(m_addButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::addCustomItem);
+    connect(m_removeButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::removeSelectedItem);
+    connect(m_clearButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::clearAllItems);
+    connect(m_exportButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::exportSelection);
+    connect(m_importButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::importData);
+    connect(m_themeButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::toggleTheme);
+    connect(m_resetButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::resetToDefaults);
+    connect(m_summaryButton, &Components::FluentButton::clicked, this,
+            &SelectionComponentsExample::showSelectionSummary);
 
     // Update displays when selections change
-    connect(m_standardCombo, QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
-            this, &SelectionComponentsExample::updateSelectionDisplay);
+    connect(
+        m_standardCombo,
+        QOverload<int>::of(&Components::FluentComboBox::currentIndexChanged),
+        this, &SelectionComponentsExample::updateSelectionDisplay);
     connect(m_multiSelectCombo, &Components::FluentComboBox::selectionChanged,
             this, &SelectionComponentsExample::updateSelectionDisplay);
     connect(m_categoryCombo, &Components::FluentComboBox::selectionChanged,
@@ -503,7 +544,7 @@ void SelectionComponentsExample::setupConnections() {
 void SelectionComponentsExample::setupTheme() {
     auto& theme = Styling::FluentTheme::instance();
     theme.setMode(Styling::FluentThemeMode::System);
-    theme.setAccentColor(Styling::FluentAccentColor::Blue); // Windows blue
+    theme.setAccentColor(Styling::FluentAccentColor::Blue);  // Windows blue
 }
 
 // Slot implementations
@@ -511,8 +552,11 @@ void SelectionComponentsExample::onBasicComboChanged(int index) {
     if (index >= 0) {
         QString text = m_standardCombo->itemText(index);
         QVariant data = m_standardCombo->itemData(index);
-        m_basicStatusLabel->setText(QString("Selected: %1 (Index: %2, Data: %3)")
-                                   .arg(text).arg(index).arg(data.toString()));
+        m_basicStatusLabel->setText(
+            QString("Selected: %1 (Index: %2, Data: %3)")
+                .arg(text)
+                .arg(index)
+                .arg(data.toString()));
 
         // Animate the status label
         m_animator->pulseEffect(m_basicStatusLabel);
@@ -528,12 +572,14 @@ void SelectionComponentsExample::onEditableComboChanged(const QString& text) {
     if (m_editableCombo->isSearchEnabled() && !text.isEmpty()) {
         int matchCount = 0;
         for (int i = 0; i < m_editableCombo->count(); ++i) {
-            if (m_editableCombo->itemText(i).contains(text, Qt::CaseInsensitive)) {
+            if (m_editableCombo->itemText(i).contains(text,
+                                                      Qt::CaseInsensitive)) {
                 matchCount++;
             }
         }
-        m_basicStatusLabel->setText(m_basicStatusLabel->text() +
-                                   QString(" (%1 matches found)").arg(matchCount));
+        m_basicStatusLabel->setText(
+            m_basicStatusLabel->text() +
+            QString(" (%1 matches found)").arg(matchCount));
     }
 }
 
@@ -545,8 +591,8 @@ void SelectionComponentsExample::onMultiSelectChanged() {
         m_basicStatusLabel->setText("No items selected");
     } else {
         m_basicStatusLabel->setText(QString("Selected %1 items: %2")
-                                   .arg(selectedTexts.count())
-                                   .arg(selectedTexts.join(", ")));
+                                        .arg(selectedTexts.count())
+                                        .arg(selectedTexts.join(", ")));
     }
 
     // Animate selection change
@@ -560,7 +606,7 @@ void SelectionComponentsExample::onCountryChanged(int index) {
         QString country = m_countryCombo->itemText(index);
         updateCitiesForCountry(country);
         m_cityCombo->setEnabled(true);
-        m_cityCombo->setCurrentIndex(-1); // Clear city selection
+        m_cityCombo->setCurrentIndex(-1);  // Clear city selection
         m_locationLabel->setText(QString("Country: %1").arg(country));
 
         // Animate the country selection
@@ -576,14 +622,16 @@ void SelectionComponentsExample::onCityChanged(int index) {
     if (index >= 0) {
         QString city = m_cityCombo->itemText(index);
         QString country = m_countryCombo->currentText();
-        m_locationLabel->setText(QString("Location: %1, %2").arg(city, country));
+        m_locationLabel->setText(
+            QString("Location: %1, %2").arg(city, country));
 
         // Animate the location update
         m_animator->fadeIn(m_locationLabel);
     }
 }
 
-void SelectionComponentsExample::updateCitiesForCountry(const QString& country) {
+void SelectionComponentsExample::updateCitiesForCountry(
+    const QString& country) {
     m_cityCombo->clear();
 
     if (m_countryToCities.contains(country)) {
@@ -627,7 +675,8 @@ void SelectionComponentsExample::addCustomItem() {
     // Reset status after 3 seconds
     QTimer::singleShot(3000, [this]() {
         m_advancedStatusLabel->setText("Advanced features demonstration");
-        m_advancedStatusLabel->setStyleSheet("color: #666; font-style: italic;");
+        m_advancedStatusLabel->setStyleSheet(
+            "color: #666; font-style: italic;");
     });
 }
 
@@ -637,7 +686,8 @@ void SelectionComponentsExample::removeSelectedItem() {
 
     if (m_standardCombo->hasFocus() && m_standardCombo->currentIndex() >= 0) {
         targetCombo = m_standardCombo;
-    } else if (m_customCombo->hasFocus() && m_customCombo->currentIndex() >= 0) {
+    } else if (m_customCombo->hasFocus() &&
+               m_customCombo->currentIndex() >= 0) {
         targetCombo = m_customCombo;
     } else if (m_multiSelectCombo->selectedIndexes().count() > 0) {
         targetCombo = m_multiSelectCombo;
@@ -647,13 +697,15 @@ void SelectionComponentsExample::removeSelectedItem() {
         if (targetCombo == m_multiSelectCombo) {
             // Remove all selected items from multi-select
             QList<int> selectedIndexes = targetCombo->selectedIndexes();
-            std::sort(selectedIndexes.rbegin(), selectedIndexes.rend()); // Remove from end to start
+            std::sort(selectedIndexes.rbegin(),
+                      selectedIndexes.rend());  // Remove from end to start
 
             for (int index : selectedIndexes) {
                 targetCombo->removeItem(index);
             }
 
-            m_basicStatusLabel->setText(QString("Removed %1 items").arg(selectedIndexes.count()));
+            m_basicStatusLabel->setText(
+                QString("Removed %1 items").arg(selectedIndexes.count()));
         } else {
             // Remove current item from single-select combo
             int currentIndex = targetCombo->currentIndex();
@@ -661,9 +713,11 @@ void SelectionComponentsExample::removeSelectedItem() {
             targetCombo->removeItem(currentIndex);
 
             if (targetCombo == m_standardCombo) {
-                m_basicStatusLabel->setText(QString("Removed: %1").arg(itemText));
+                m_basicStatusLabel->setText(
+                    QString("Removed: %1").arg(itemText));
             } else {
-                m_advancedStatusLabel->setText(QString("Removed: %1").arg(itemText));
+                m_advancedStatusLabel->setText(
+                    QString("Removed: %1").arg(itemText));
             }
         }
 
@@ -677,7 +731,8 @@ void SelectionComponentsExample::removeSelectedItem() {
         m_basicStatusLabel->setStyleSheet("color: orange;");
 
         QTimer::singleShot(2000, [this]() {
-            m_basicStatusLabel->setStyleSheet("color: #666; font-style: italic;");
+            m_basicStatusLabel->setStyleSheet(
+                "color: #666; font-style: italic;");
         });
     }
 }
@@ -722,15 +777,13 @@ void SelectionComponentsExample::exportSelection() {
     QJsonObject exportData;
 
     // Export current selections
-    exportData["standardCombo"] = QJsonObject{
-        {"currentIndex", m_standardCombo->currentIndex()},
-        {"currentText", m_standardCombo->currentText()},
-        {"currentData", m_standardCombo->currentData().toString()}
-    };
+    exportData["standardCombo"] =
+        QJsonObject{{"currentIndex", m_standardCombo->currentIndex()},
+                    {"currentText", m_standardCombo->currentText()},
+                    {"currentData", m_standardCombo->currentData().toString()}};
 
-    exportData["editableCombo"] = QJsonObject{
-        {"currentText", m_editableCombo->currentText()}
-    };
+    exportData["editableCombo"] =
+        QJsonObject{{"currentText", m_editableCombo->currentText()}};
 
     QJsonArray multiSelectArray;
     for (const QString& text : m_multiSelectCombo->selectedTexts()) {
@@ -738,10 +791,9 @@ void SelectionComponentsExample::exportSelection() {
     }
     exportData["multiSelectCombo"] = multiSelectArray;
 
-    exportData["location"] = QJsonObject{
-        {"country", m_countryCombo->currentText()},
-        {"city", m_cityCombo->currentText()}
-    };
+    exportData["location"] =
+        QJsonObject{{"country", m_countryCombo->currentText()},
+                    {"city", m_cityCombo->currentText()}};
 
     QJsonArray categoriesArray;
     for (const QString& category : m_categoryCombo->selectedTexts()) {
@@ -771,11 +823,11 @@ void SelectionComponentsExample::exportSelection() {
 void SelectionComponentsExample::importData() {
     // Sample import data - in a real app, this would come from a file or API
     QJsonObject sampleData{
-        {"fruits", QJsonArray{"Apple", "Banana", "Cherry", "Date", "Elderberry"}},
+        {"fruits",
+         QJsonArray{"Apple", "Banana", "Cherry", "Date", "Elderberry"}},
         {"colors", QJsonArray{"Red", "Green", "Blue", "Yellow", "Purple"}},
         {"countries", QJsonArray{"USA", "UK", "Germany", "France", "Japan"}},
-        {"categories", QJsonArray{"Technology", "Science", "Arts", "Sports"}}
-    };
+        {"categories", QJsonArray{"Technology", "Science", "Arts", "Sports"}}};
 
     // Clear existing items
     m_editableCombo->clear();
@@ -805,25 +857,26 @@ void SelectionComponentsExample::importData() {
 
     QTimer::singleShot(3000, [this]() {
         m_advancedStatusLabel->setText("Advanced features demonstration");
-        m_advancedStatusLabel->setStyleSheet("color: #666; font-style: italic;");
+        m_advancedStatusLabel->setStyleSheet(
+            "color: #666; font-style: italic;");
     });
 }
 
 void SelectionComponentsExample::toggleTheme() {
     auto& theme = Styling::FluentTheme::instance();
     auto newMode = (theme.mode() == Styling::FluentThemeMode::Light)
-        ? Styling::FluentThemeMode::Dark
-        : Styling::FluentThemeMode::Light;
+                       ? Styling::FluentThemeMode::Dark
+                       : Styling::FluentThemeMode::Light;
     theme.setMode(newMode);
 
     // Update button text
-    m_themeButton->setText(newMode == Styling::FluentThemeMode::Dark ? "Light Theme" : "Dark Theme");
+    m_themeButton->setText(newMode == Styling::FluentThemeMode::Dark
+                               ? "Light Theme"
+                               : "Dark Theme");
 
     // Animate theme change
     m_animator->fadeOut(m_centralWidget);
-    QTimer::singleShot(200, [this]() {
-        m_animator->fadeIn(m_centralWidget);
-    });
+    QTimer::singleShot(200, [this]() { m_animator->fadeIn(m_centralWidget); });
 }
 
 void SelectionComponentsExample::resetToDefaults() {
@@ -862,29 +915,38 @@ void SelectionComponentsExample::showSelectionSummary() {
     // Basic selections
     summary += "BASIC SELECTIONS:\n";
     summary += QString("• Standard: %1 (Index: %2)\n")
-               .arg(m_standardCombo->currentText())
-               .arg(m_standardCombo->currentIndex());
+                   .arg(m_standardCombo->currentText())
+                   .arg(m_standardCombo->currentIndex());
     summary += QString("• Editable: %1\n").arg(m_editableCombo->currentText());
-    summary += QString("• Multi-Select: %1 items selected\n").arg(m_multiSelectCombo->selectedTexts().count());
+    summary += QString("• Multi-Select: %1 items selected\n")
+                   .arg(m_multiSelectCombo->selectedTexts().count());
 
     // Advanced selections
     summary += "\nADVANCED SELECTIONS:\n";
     summary += QString("• Icon Combo: %1\n").arg(m_iconCombo->currentText());
-    summary += QString("• Search Combo: %1\n").arg(m_searchCombo->currentText());
-    summary += QString("• Custom Combo: %1\n").arg(m_customCombo->currentText());
+    summary +=
+        QString("• Search Combo: %1\n").arg(m_searchCombo->currentText());
+    summary +=
+        QString("• Custom Combo: %1\n").arg(m_customCombo->currentText());
 
     // Location data
     summary += "\nLOCATION DATA:\n";
     summary += QString("• Country: %1\n").arg(m_countryCombo->currentText());
     summary += QString("• City: %1\n").arg(m_cityCombo->currentText());
-    summary += QString("• Categories: %1\n").arg(m_categoryCombo->selectedTexts().join(", "));
+    summary += QString("• Categories: %1\n")
+                   .arg(m_categoryCombo->selectedTexts().join(", "));
 
     // Configuration
     summary += "\nCONFIGURATION:\n";
-    summary += QString("• Max Visible Items: %1\n").arg(m_maxVisibleSpin->value());
-    summary += QString("• Animations: %1\n").arg(m_animatedCheck->isChecked() ? "Enabled" : "Disabled");
-    summary += QString("• Search: %1\n").arg(m_searchEnabledCheck->isChecked() ? "Enabled" : "Disabled");
-    summary += QString("• Case Sensitive: %1\n").arg(m_caseSensitiveCheck->isChecked() ? "Yes" : "No");
+    summary +=
+        QString("• Max Visible Items: %1\n").arg(m_maxVisibleSpin->value());
+    summary += QString("• Animations: %1\n")
+                   .arg(m_animatedCheck->isChecked() ? "Enabled" : "Disabled");
+    summary +=
+        QString("• Search: %1\n")
+            .arg(m_searchEnabledCheck->isChecked() ? "Enabled" : "Disabled");
+    summary += QString("• Case Sensitive: %1\n")
+                   .arg(m_caseSensitiveCheck->isChecked() ? "Yes" : "No");
 
     // Display summary
     m_selectionDisplay->setPlainText(summary);
@@ -897,11 +959,13 @@ void SelectionComponentsExample::updateSelectionDisplay() {
     QString display = "CURRENT SELECTIONS:\n\n";
 
     if (m_standardCombo->currentIndex() >= 0) {
-        display += QString("Standard: %1\n").arg(m_standardCombo->currentText());
+        display +=
+            QString("Standard: %1\n").arg(m_standardCombo->currentText());
     }
 
     if (!m_editableCombo->currentText().isEmpty()) {
-        display += QString("Editable: %1\n").arg(m_editableCombo->currentText());
+        display +=
+            QString("Editable: %1\n").arg(m_editableCombo->currentText());
     }
 
     QStringList multiSelected = m_multiSelectCombo->selectedTexts();
@@ -932,8 +996,8 @@ void SelectionComponentsExample::updateSelectionDisplay() {
 void SelectionComponentsExample::updateStatusInfo() {
     // This method can be used to update status information when settings change
     QString info = QString("Settings updated - Max visible: %1, Animations: %2")
-                   .arg(m_maxVisibleSpin->value())
-                   .arg(m_animatedCheck->isChecked() ? "On" : "Off");
+                       .arg(m_maxVisibleSpin->value())
+                       .arg(m_animatedCheck->isChecked() ? "On" : "Off");
 
     m_basicStatusLabel->setText(info);
     m_basicStatusLabel->setStyleSheet("color: blue;");

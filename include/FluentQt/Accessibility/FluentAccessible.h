@@ -44,4 +44,4 @@ void announceToScreenReader(const QString& message);
 bool isHighContrastMode();
 void updateForHighContrast(QWidget* widget);
 
-} // namespace FluentQt::Accessibility
+}  // namespace FluentQt::Accessibility

@@ -1,158 +1,155 @@
 // src/Components/FluentPopover.cpp
 #include "FluentQt/Components/FluentPopover.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QPainterPath>
-#include <QFontMetrics>
+#include <QAccessible>
 #include <QApplication>
+#include <QDesktopWidget>
+#include <QFocusEvent>
+#include <QFontMetrics>
+#include <QHideEvent>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <QFocusEvent>
-#include <QShowEvent>
-#include <QHideEvent>
-#include <QAccessible>
-#include <QDesktopWidget>
+#include <QPainter>
+#include <QPainterPath>
 #include <QScreen>
+#include <QShowEvent>
 #include <QtMath>
 #include <algorithm>
 
 namespace FluentQt::Components {
 
-FluentPopover::FluentPopover(QWidget* parent)
-    : Core::FluentComponent(parent)
-{
+FluentPopover::FluentPopover(QWidget* parent) : Core::FluentComponent(parent) {
     setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFocusPolicy(Qt::StrongFocus);
     setObjectName("FluentPopover");
-    
+
     setupUI();
     setupAnimations();
     updateColors();
     updateFonts();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentPopover::onThemeChanged);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentPopover::onThemeChanged);
 }
 
 FluentPopover::FluentPopover(const QString& content, QWidget* parent)
-    : FluentPopover(parent)
-{
+    : FluentPopover(parent) {
     setContent(content);
 }
 
-FluentPopover::FluentPopover(const QString& title, const QString& content, QWidget* parent)
-    : FluentPopover(parent)
-{
+FluentPopover::FluentPopover(const QString& title, const QString& content,
+                             QWidget* parent)
+    : FluentPopover(parent) {
     setTitle(title);
     setContent(content);
 }
 
-FluentPopover::~FluentPopover() {
-    removeTargetEventFilter();
-}
+FluentPopover::~FluentPopover() { removeTargetEventFilter(); }
 
 void FluentPopover::setupUI() {
     FLUENT_PROFILE("FluentPopover::setupUI");
-    
+
     // Create main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(12, 8, 12, 8);
     m_mainLayout->setSpacing(8);
-    
+
     // Create header layout
     m_headerLayout = new QHBoxLayout();
     m_headerLayout->setContentsMargins(0, 0, 0, 0);
     m_headerLayout->setSpacing(8);
-    
+
     // Create icon label
     m_iconLabel = new QLabel(this);
     m_iconLabel->setObjectName("FluentPopover_Icon");
     m_iconLabel->setFixedSize(16, 16);
-    m_iconLabel->hide(); // Initially hidden
+    m_iconLabel->hide();  // Initially hidden
     m_headerLayout->addWidget(m_iconLabel);
-    
+
     // Create title label
     m_titleLabel = new QLabel(this);
     m_titleLabel->setObjectName("FluentPopover_Title");
     m_titleLabel->setWordWrap(true);
-    m_titleLabel->hide(); // Initially hidden
+    m_titleLabel->hide();  // Initially hidden
     m_headerLayout->addWidget(m_titleLabel, 1);
-    
+
     // Create close button
     m_closeButton = new QPushButton("×", this);
     m_closeButton->setObjectName("FluentPopover_CloseButton");
     m_closeButton->setFixedSize(20, 20);
     m_closeButton->setFlat(true);
-    m_closeButton->hide(); // Initially hidden
+    m_closeButton->hide();  // Initially hidden
     m_headerLayout->addWidget(m_closeButton);
-    
+
     m_mainLayout->addLayout(m_headerLayout);
-    
+
     // Create content label
     m_contentLabel = new QLabel(this);
     m_contentLabel->setObjectName("FluentPopover_Content");
     m_contentLabel->setWordWrap(true);
     m_contentLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     m_mainLayout->addWidget(m_contentLabel);
-    
+
     // Connect signals
-    connect(m_closeButton, &QPushButton::clicked, this, &FluentPopover::onCloseButtonClicked);
-    
+    connect(m_closeButton, &QPushButton::clicked, this,
+            &FluentPopover::onCloseButtonClicked);
+
     // Set maximum width
     setMaximumWidth(m_maxWidth);
-    
+
     // Initially hidden
     QWidget::hide();
 }
 
 void FluentPopover::setupAnimations() {
     FLUENT_PROFILE("FluentPopover::setupAnimations");
-    
+
     // Create opacity effect
     m_opacityEffect = new QGraphicsOpacityEffect(this);
     m_opacityEffect->setOpacity(0.0);
     setGraphicsEffect(m_opacityEffect);
-    
+
     // Create shadow effect
     m_shadowEffect = new QGraphicsDropShadowEffect(this);
     m_shadowEffect->setBlurRadius(20);
     m_shadowEffect->setOffset(0, 4);
     m_shadowEffect->setColor(QColor(0, 0, 0, 60));
-    
+
     // Create show animation
-    m_showAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
+    m_showAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
     m_showAnimation->setDuration(200);
     m_showAnimation->setEasingCurve(QEasingCurve::OutQuad);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
-    
+
     // Create hide animation
-    m_hideAnimation = std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
+    m_hideAnimation =
+        std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
     m_hideAnimation->setDuration(150);
     m_hideAnimation->setEasingCurve(QEasingCurve::InQuad);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
-    
+
     // Create auto-hide timer
     m_autoHideTimer = new QTimer(this);
     m_autoHideTimer->setSingleShot(true);
-    
+
     // Connect animations
-    connect(m_showAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentPopover::onShowAnimationFinished);
-    connect(m_hideAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentPopover::onHideAnimationFinished);
-    connect(m_autoHideTimer, &QTimer::timeout,
-            this, &FluentPopover::onAutoHideTimer);
+    connect(m_showAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentPopover::onShowAnimationFinished);
+    connect(m_hideAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentPopover::onHideAnimationFinished);
+    connect(m_autoHideTimer, &QTimer::timeout, this,
+            &FluentPopover::onAutoHideTimer);
 }
 
-QString FluentPopover::title() const {
-    return m_title;
-}
+QString FluentPopover::title() const { return m_title; }
 
 void FluentPopover::setTitle(const QString& title) {
     if (m_title != title) {
@@ -165,9 +162,7 @@ void FluentPopover::setTitle(const QString& title) {
     }
 }
 
-QString FluentPopover::content() const {
-    return m_content;
-}
+QString FluentPopover::content() const { return m_content; }
 
 void FluentPopover::setContent(const QString& content) {
     if (m_content != content) {
@@ -179,30 +174,26 @@ void FluentPopover::setContent(const QString& content) {
     }
 }
 
-QIcon FluentPopover::icon() const {
-    return m_icon;
-}
+QIcon FluentPopover::icon() const { return m_icon; }
 
 void FluentPopover::setIcon(const QIcon& icon) {
     if (m_icon.cacheKey() != icon.cacheKey()) {
         m_icon = icon;
-        
+
         if (!icon.isNull()) {
             m_iconLabel->setPixmap(icon.pixmap(16, 16));
             m_iconLabel->show();
         } else {
             m_iconLabel->hide();
         }
-        
+
         m_sizeHintValid = false;
         updateGeometry();
         emit iconChanged(icon);
     }
 }
 
-FluentPopoverPlacement FluentPopover::placement() const {
-    return m_placement;
-}
+FluentPopoverPlacement FluentPopover::placement() const { return m_placement; }
 
 void FluentPopover::setPlacement(FluentPopoverPlacement placement) {
     if (m_placement != placement) {
@@ -214,27 +205,23 @@ void FluentPopover::setPlacement(FluentPopoverPlacement placement) {
     }
 }
 
-FluentPopoverTrigger FluentPopover::trigger() const {
-    return m_trigger;
-}
+FluentPopoverTrigger FluentPopover::trigger() const { return m_trigger; }
 
 void FluentPopover::setTrigger(FluentPopoverTrigger trigger) {
     if (m_trigger != trigger) {
         m_trigger = trigger;
-        
+
         // Update event filter based on trigger
         if (m_target) {
             removeTargetEventFilter();
             installTargetEventFilter();
         }
-        
+
         emit triggerChanged(trigger);
     }
 }
 
-bool FluentPopover::showArrow() const {
-    return m_showArrow;
-}
+bool FluentPopover::showArrow() const { return m_showArrow; }
 
 void FluentPopover::setShowArrow(bool show) {
     if (m_showArrow != show) {
@@ -244,9 +231,7 @@ void FluentPopover::setShowArrow(bool show) {
     }
 }
 
-bool FluentPopover::showCloseButton() const {
-    return m_showCloseButton;
-}
+bool FluentPopover::showCloseButton() const { return m_showCloseButton; }
 
 void FluentPopover::setShowCloseButton(bool show) {
     if (m_showCloseButton != show) {
@@ -258,9 +243,7 @@ void FluentPopover::setShowCloseButton(bool show) {
     }
 }
 
-int FluentPopover::autoHideDelay() const {
-    return m_autoHideDelay;
-}
+int FluentPopover::autoHideDelay() const { return m_autoHideDelay; }
 
 void FluentPopover::setAutoHideDelay(int delay) {
     if (m_autoHideDelay != delay) {
@@ -269,9 +252,7 @@ void FluentPopover::setAutoHideDelay(int delay) {
     }
 }
 
-int FluentPopover::maxWidth() const {
-    return m_maxWidth;
-}
+int FluentPopover::maxWidth() const { return m_maxWidth; }
 
 void FluentPopover::setMaxWidth(int width) {
     if (m_maxWidth != width && width > 0) {
@@ -288,7 +269,7 @@ void FluentPopover::setContentWidget(QWidget* widget) {
         m_mainLayout->removeWidget(m_contentWidget);
         m_contentWidget->setParent(nullptr);
     }
-    
+
     m_contentWidget = widget;
     if (widget) {
         m_mainLayout->addWidget(widget);
@@ -300,9 +281,7 @@ void FluentPopover::setContentWidget(QWidget* widget) {
     }
 }
 
-QWidget* FluentPopover::contentWidget() const {
-    return m_contentWidget;
-}
+QWidget* FluentPopover::contentWidget() const { return m_contentWidget; }
 
 void FluentPopover::setTarget(QWidget* target) {
     if (m_target != target) {
@@ -312,51 +291,51 @@ void FluentPopover::setTarget(QWidget* target) {
     }
 }
 
-QWidget* FluentPopover::target() const {
-    return m_target;
-}
+QWidget* FluentPopover::target() const { return m_target; }
 
 QSize FluentPopover::sizeHint() const {
     FLUENT_PROFILE("FluentPopover::sizeHint");
-    
+
     if (m_sizeHintValid) {
         return m_cachedSizeHint;
     }
-    
+
     // Calculate content size
     QSize contentSize;
-    
+
     if (m_contentWidget) {
         contentSize = m_contentWidget->sizeHint();
     } else {
         const QFontMetrics fm(m_contentLabel->font());
-        const int textWidth = std::min(m_maxWidth - 24, fm.horizontalAdvance(m_content)); // 24 for margins
-        contentSize = fm.boundingRect(0, 0, textWidth, 0, Qt::TextWordWrap, m_content).size();
+        const int textWidth =
+            std::min(m_maxWidth - 24,
+                     fm.horizontalAdvance(m_content));  // 24 for margins
+        contentSize =
+            fm.boundingRect(0, 0, textWidth, 0, Qt::TextWordWrap, m_content)
+                .size();
     }
-    
+
     // Add header size if needed
     if (!m_title.isEmpty() || !m_icon.isNull() || m_showCloseButton) {
-        contentSize.setHeight(contentSize.height() + 24); // Header height
+        contentSize.setHeight(contentSize.height() + 24);  // Header height
     }
-    
+
     // Add margins and arrow space
-    contentSize += QSize(24, 16); // Margins
+    contentSize += QSize(24, 16);  // Margins
     if (m_showArrow) {
-        contentSize += QSize(0, 8); // Arrow space
+        contentSize += QSize(0, 8);  // Arrow space
     }
-    
+
     // Limit to maximum width
     contentSize.setWidth(std::min(contentSize.width(), m_maxWidth));
-    
+
     m_cachedSizeHint = contentSize;
     m_sizeHintValid = true;
-    
+
     return contentSize;
 }
 
-QSize FluentPopover::minimumSizeHint() const {
-    return QSize(100, 50);
-}
+QSize FluentPopover::minimumSizeHint() const { return QSize(100, 50); }
 
 void FluentPopover::show() {
     if (!m_isVisible) {
@@ -586,23 +565,18 @@ bool FluentPopover::eventFilter(QObject* object, QEvent* event) {
     return Core::FluentComponent::eventFilter(object, event);
 }
 
-void FluentPopover::updateStateStyle() {
-    update();
-}
+void FluentPopover::updateStateStyle() { update(); }
 
-void FluentPopover::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentPopover::performStateTransition(Core::FluentState from,
+                                           Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     update();
 }
 
-void FluentPopover::onCloseButtonClicked() {
-    hide();
-}
+void FluentPopover::onCloseButtonClicked() { hide(); }
 
-void FluentPopover::onAutoHideTimer() {
-    hide();
-}
+void FluentPopover::onAutoHideTimer() { hide(); }
 
 void FluentPopover::onThemeChanged() {
     updateColors();
@@ -610,9 +584,7 @@ void FluentPopover::onThemeChanged() {
     update();
 }
 
-void FluentPopover::onShowAnimationFinished() {
-    emit shown();
-}
+void FluentPopover::onShowAnimationFinished() { emit shown(); }
 
 void FluentPopover::onHideAnimationFinished() {
     QWidget::hide();
@@ -651,11 +623,13 @@ void FluentPopover::startHideAnimation() {
 }
 
 void FluentPopover::updatePosition() {
-    if (!m_target) return;
+    if (!m_target)
+        return;
 
     // Determine optimal placement
-    m_actualPlacement = (m_placement == FluentPopoverPlacement::Auto) ?
-                       getOptimalPlacement() : m_placement;
+    m_actualPlacement = (m_placement == FluentPopoverPlacement::Auto)
+                            ? getOptimalPlacement()
+                            : m_placement;
 
     // Calculate position
     const QPoint position = calculatePosition(m_actualPlacement);
@@ -666,7 +640,8 @@ void FluentPopover::updatePosition() {
 }
 
 void FluentPopover::updateArrowPosition() {
-    if (!m_target || !m_showArrow) return;
+    if (!m_target || !m_showArrow)
+        return;
 
     const QRect targetRect = m_target->geometry();
     const QPoint targetCenter = m_target->mapToGlobal(targetRect.center());
@@ -683,7 +658,8 @@ void FluentPopover::updateArrowPosition() {
         case FluentPopoverPlacement::Left:
         case FluentPopoverPlacement::Right:
             m_arrowPosition.setY(targetCenter.y() - popoverPos.y());
-            m_arrowPosition.setY(qBound(16, m_arrowPosition.y(), height() - 16));
+            m_arrowPosition.setY(
+                qBound(16, m_arrowPosition.y(), height() - 16));
             break;
 
         default:
@@ -691,8 +667,10 @@ void FluentPopover::updateArrowPosition() {
     }
 }
 
-QPoint FluentPopover::calculatePosition(FluentPopoverPlacement placement) const {
-    if (!m_target) return QPoint();
+QPoint FluentPopover::calculatePosition(
+    FluentPopoverPlacement placement) const {
+    if (!m_target)
+        return QPoint();
 
     const QRect targetRect = m_target->geometry();
     const QPoint targetGlobal = m_target->mapToGlobal(QPoint(0, 0));
@@ -703,31 +681,31 @@ QPoint FluentPopover::calculatePosition(FluentPopoverPlacement placement) const 
 
     switch (placement) {
         case FluentPopoverPlacement::Top:
-            position = QPoint(
-                targetGlobal.x() + (targetRect.width() - popoverSize.width()) / 2,
-                targetGlobal.y() - popoverSize.height() - arrowOffset
-            );
+            position =
+                QPoint(targetGlobal.x() +
+                           (targetRect.width() - popoverSize.width()) / 2,
+                       targetGlobal.y() - popoverSize.height() - arrowOffset);
             break;
 
         case FluentPopoverPlacement::Bottom:
-            position = QPoint(
-                targetGlobal.x() + (targetRect.width() - popoverSize.width()) / 2,
-                targetGlobal.y() + targetRect.height() + arrowOffset
-            );
+            position =
+                QPoint(targetGlobal.x() +
+                           (targetRect.width() - popoverSize.width()) / 2,
+                       targetGlobal.y() + targetRect.height() + arrowOffset);
             break;
 
         case FluentPopoverPlacement::Left:
-            position = QPoint(
-                targetGlobal.x() - popoverSize.width() - arrowOffset,
-                targetGlobal.y() + (targetRect.height() - popoverSize.height()) / 2
-            );
+            position =
+                QPoint(targetGlobal.x() - popoverSize.width() - arrowOffset,
+                       targetGlobal.y() +
+                           (targetRect.height() - popoverSize.height()) / 2);
             break;
 
         case FluentPopoverPlacement::Right:
-            position = QPoint(
-                targetGlobal.x() + targetRect.width() + arrowOffset,
-                targetGlobal.y() + (targetRect.height() - popoverSize.height()) / 2
-            );
+            position =
+                QPoint(targetGlobal.x() + targetRect.width() + arrowOffset,
+                       targetGlobal.y() +
+                           (targetRect.height() - popoverSize.height()) / 2);
             break;
 
         default:
@@ -739,7 +717,8 @@ QPoint FluentPopover::calculatePosition(FluentPopoverPlacement placement) const 
 }
 
 FluentPopoverPlacement FluentPopover::getOptimalPlacement() const {
-    if (!m_target) return FluentPopoverPlacement::Top;
+    if (!m_target)
+        return FluentPopoverPlacement::Top;
 
     const QRect targetRect = m_target->geometry();
     const QPoint targetGlobal = m_target->mapToGlobal(QPoint(0, 0));
@@ -748,9 +727,11 @@ FluentPopoverPlacement FluentPopover::getOptimalPlacement() const {
 
     // Check available space in each direction
     const int spaceTop = targetGlobal.y() - screenRect.top();
-    const int spaceBottom = screenRect.bottom() - (targetGlobal.y() + targetRect.height());
+    const int spaceBottom =
+        screenRect.bottom() - (targetGlobal.y() + targetRect.height());
     const int spaceLeft = targetGlobal.x() - screenRect.left();
-    const int spaceRight = screenRect.right() - (targetGlobal.x() + targetRect.width());
+    const int spaceRight =
+        screenRect.right() - (targetGlobal.x() + targetRect.width());
 
     // Choose placement with most available space
     if (spaceBottom >= popoverSize.height()) {
@@ -762,7 +743,7 @@ FluentPopoverPlacement FluentPopover::getOptimalPlacement() const {
     } else if (spaceLeft >= popoverSize.width()) {
         return FluentPopoverPlacement::Left;
     } else {
-        return FluentPopoverPlacement::Bottom; // Default fallback
+        return FluentPopoverPlacement::Bottom;  // Default fallback
     }
 }
 
@@ -778,4 +759,4 @@ void FluentPopover::removeTargetEventFilter() {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

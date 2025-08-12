@@ -1,16 +1,16 @@
 // include/FluentQt/Core/FluentBundleAnalyzer.h
 #pragma once
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <QJsonObject>
-#include <QJsonDocument>
 #include <QTimer>
-#include <QMutex>
 #include <chrono>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace FluentQt::Core {
 
@@ -66,12 +66,12 @@ struct FluentOptimizationSuggestion {
         CacheModule,
         PreloadModule
     };
-    
+
     Type type;
     QString module;
     QString description;
     size_t potentialSavings{0};
-    int priority{0}; // 1-10, 10 being highest
+    int priority{0};  // 1-10, 10 being highest
     QStringList affectedModules;
     QString implementation;
 };
@@ -82,7 +82,7 @@ class FluentBundleAnalyzer : public QObject {
 
 public:
     static FluentBundleAnalyzer& instance();
-    
+
     // Analysis configuration
     struct AnalysisConfig {
         bool enableDeepAnalysis{true};
@@ -97,31 +97,33 @@ public:
         bool saveJsonReport{true};
         bool saveHtmlReport{true};
     };
-    
+
     void setAnalysisConfig(const AnalysisConfig& config) { m_config = config; }
     AnalysisConfig getAnalysisConfig() const { return m_config; }
-    
+
     // Module registration and tracking
     void registerModule(const QString& name, const QString& path, size_t size);
     void unregisterModule(const QString& name);
     void updateModuleSize(const QString& name, size_t size);
-    void setModuleDependencies(const QString& name, const QStringList& dependencies);
+    void setModuleDependencies(const QString& name,
+                               const QStringList& dependencies);
     void markModuleAsCore(const QString& name, bool isCore = true);
     void markModuleAsLazyLoaded(const QString& name, bool isLazy = true);
     void markModuleAsTreeShaken(const QString& name, bool isShaken = true);
-    
+
     // Analysis methods
     FluentBundleMetrics analyzeBundleSize();
     FluentDependencyGraph analyzeDependencies();
     QList<FluentOptimizationSuggestion> generateOptimizationSuggestions();
-    
+
     // Specific analyses
     QStringList findUnusedModules();
-    QStringList findLargeModules(size_t threshold = 1024 * 1024); // 1MB default
-    QStringList findTinyModules(size_t threshold = 10 * 1024); // 10KB default
+    QStringList findLargeModules(size_t threshold = 1024 *
+                                                    1024);      // 1MB default
+    QStringList findTinyModules(size_t threshold = 10 * 1024);  // 10KB default
     QStringList findCircularDependencies();
     QStringList findDuplicatedCode();
-    
+
     // Compression analysis
     struct CompressionAnalysis {
         QString algorithm;
@@ -131,10 +133,10 @@ public:
         std::chrono::milliseconds compressionTime{0};
         std::chrono::milliseconds decompressionTime{0};
     };
-    
+
     QList<CompressionAnalysis> analyzeCompressionOptions();
     CompressionAnalysis getBestCompressionStrategy();
-    
+
     // Tree shaking analysis
     struct TreeShakingAnalysis {
         QString module;
@@ -145,10 +147,10 @@ public:
         QStringList removedSymbols;
         QStringList keptSymbols;
     };
-    
+
     QList<TreeShakingAnalysis> analyzeTreeShakingOpportunities();
     size_t estimateTreeShakingSavings();
-    
+
     // Lazy loading analysis
     struct LazyLoadingAnalysis {
         QString module;
@@ -159,10 +161,10 @@ public:
         QStringList dependencies;
         double loadFrequency{0.0};
     };
-    
+
     QList<LazyLoadingAnalysis> analyzeLazyLoadingOpportunities();
     QStringList suggestLazyLoadingCandidates();
-    
+
     // Performance impact analysis
     struct PerformanceImpact {
         QString optimization;
@@ -171,32 +173,32 @@ public:
         double performanceScore{0.0};
         QString description;
     };
-    
+
     QList<PerformanceImpact> analyzePerformanceImpact();
-    
+
     // Reporting
     void generateDetailedReport(const QString& filename = "");
     void generateJsonReport(const QString& filename = "");
     void generateHtmlReport(const QString& filename = "");
     QJsonObject exportAnalysisData();
     void importAnalysisData(const QJsonObject& data);
-    
+
     // Real-time monitoring
     void startRealTimeMonitoring();
     void stopRealTimeMonitoring();
     bool isRealTimeMonitoringEnabled() const { return m_realTimeMonitoring; }
-    
+
     // Historical analysis
     void saveAnalysisSnapshot(const QString& label = "");
     QStringList getAnalysisSnapshots() const;
     FluentBundleMetrics getSnapshotMetrics(const QString& snapshot) const;
     void compareSnapshots(const QString& snapshot1, const QString& snapshot2);
-    
+
     // Module information
     FluentModuleInfo getModuleInfo(const QString& name) const;
     QList<FluentModuleInfo> getAllModules() const;
     FluentBundleMetrics getCurrentMetrics() const { return m_currentMetrics; }
-    
+
     // Optimization execution
     void executeOptimization(const FluentOptimizationSuggestion& suggestion);
     void executeAllOptimizations(int minPriority = 5);
@@ -204,13 +206,15 @@ public:
 
 signals:
     void analysisCompleted(const FluentBundleMetrics& metrics);
-    void optimizationSuggestionGenerated(const FluentOptimizationSuggestion& suggestion);
+    void optimizationSuggestionGenerated(
+        const FluentOptimizationSuggestion& suggestion);
     void moduleRegistered(const QString& name);
     void moduleUnregistered(const QString& name);
     void bundleSizeChanged(size_t oldSize, size_t newSize);
     void unusedModuleDetected(const QString& module);
     void circularDependencyDetected(const QStringList& cycle);
-    void optimizationExecuted(const FluentOptimizationSuggestion& suggestion, bool success);
+    void optimizationExecuted(const FluentOptimizationSuggestion& suggestion,
+                              bool success);
     void realTimeMetricsUpdated(const FluentBundleMetrics& metrics);
 
 private slots:
@@ -221,26 +225,27 @@ private:
     FluentBundleAnalyzer();
     void updateMetrics();
     void detectChanges();
-    QString generateReportHtml(const FluentBundleMetrics& metrics,
-                              const QList<FluentOptimizationSuggestion>& suggestions);
-    
+    QString generateReportHtml(
+        const FluentBundleMetrics& metrics,
+        const QList<FluentOptimizationSuggestion>& suggestions);
+
 private:
     AnalysisConfig m_config;
     std::unordered_map<QString, FluentModuleInfo> m_modules;
     FluentBundleMetrics m_currentMetrics;
     FluentBundleMetrics m_previousMetrics;
-    
+
     // Real-time monitoring
     bool m_realTimeMonitoring{false};
     QTimer* m_monitoringTimer;
-    
+
     // Historical data
     std::unordered_map<QString, FluentBundleMetrics> m_snapshots;
     QStringList m_optimizationHistory;
-    
+
     // Thread safety
     mutable QMutex m_mutex;
-    
+
     // Analysis cache
     std::chrono::steady_clock::time_point m_lastAnalysis;
     QList<FluentOptimizationSuggestion> m_cachedSuggestions;
@@ -253,13 +258,13 @@ class FluentBundleOptimizer : public QObject {
 
 public:
     explicit FluentBundleOptimizer(QObject* parent = nullptr);
-    
+
     // Optimization strategies
     void optimizeForSize();
     void optimizeForSpeed();
     void optimizeForMemory();
     void optimizeForBandwidth();
-    
+
     // Specific optimizations
     void removeUnusedModules();
     void enableLazyLoading(const QStringList& modules);
@@ -267,11 +272,12 @@ public:
     void optimizeCompression();
     void splitLargeModules(size_t threshold = 1024 * 1024);
     void mergeTinyModules(size_t threshold = 10 * 1024);
-    
+
     // Batch optimization
-    void executeOptimizationPlan(const QList<FluentOptimizationSuggestion>& suggestions);
+    void executeOptimizationPlan(
+        const QList<FluentOptimizationSuggestion>& suggestions);
     void createOptimizationPlan();
-    
+
     // Results tracking
     struct OptimizationResult {
         QString optimization;
@@ -282,8 +288,10 @@ public:
         std::chrono::milliseconds executionTime{0};
         QString error;
     };
-    
-    QList<OptimizationResult> getOptimizationResults() const { return m_results; }
+
+    QList<OptimizationResult> getOptimizationResults() const {
+        return m_results;
+    }
     void clearResults() { m_results.clear(); }
 
 signals:
@@ -296,4 +304,4 @@ private:
     FluentBundleAnalyzer* m_analyzer;
 };
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

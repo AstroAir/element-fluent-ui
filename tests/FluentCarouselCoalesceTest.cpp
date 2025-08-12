@@ -1,7 +1,7 @@
 // tests/FluentCarouselCoalesceTest.cpp
-#include <QtTest/QtTest>
 #include <QSignalSpy>
 #include <QTimer>
+#include <QtTest/QtTest>
 #include "FluentQt/Components/FluentCarousel.h"
 
 using namespace FluentQt::Components;
@@ -18,6 +18,7 @@ protected:
         ++m_paintCount;
         FluentCarousel::paintEvent(e);
     }
+
 private:
     int m_paintCount{0};
 };
@@ -53,9 +54,9 @@ void FluentCarouselCoalesceTest::coalescesRepaintsDuringTransition() {
 
     const int paints = carousel.paintCount() - initialPaints;
     QVERIFY(paints > 0);
-    QVERIFY2(paints < 40, "Repaint coalescing should cap paintEvents under animation");
+    QVERIFY2(paints < 40,
+             "Repaint coalescing should cap paintEvents under animation");
 }
 
 QTEST_MAIN(FluentCarouselCoalesceTest)
 #include "FluentCarouselCoalesceTest.moc"
-

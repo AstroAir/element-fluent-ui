@@ -1,12 +1,12 @@
 // include/FluentQt/Components/FluentAutoCarousel.h
 #pragma once
 
-#include "FluentQt/Components/FluentCarousel.h"
-#include "FluentQt/Components/FluentButton.h"
-#include <QTimer>
-#include <QProgressBar>
 #include <QLabel>
+#include <QProgressBar>
+#include <QTimer>
 #include <chrono>
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Components/FluentCarousel.h"
 
 namespace FluentQt::Components {
 
@@ -14,15 +14,15 @@ namespace FluentQt::Components {
  * @brief Progress indicator styles for auto carousel
  */
 enum class FluentAutoCarouselProgressStyle {
-    Bar,        // Traditional progress bar
-    Circular,   // Circular progress indicator
-    Dots,       // Dot-based progress
-    Line        // Thin line progress
+    Bar,       // Traditional progress bar
+    Circular,  // Circular progress indicator
+    Dots,      // Dot-based progress
+    Line       // Thin line progress
 };
 
 /**
  * @brief Auto-playing carousel component with configurable timing
- * 
+ *
  * FluentAutoCarousel provides an enhanced carousel with automatic playback:
  * - Configurable auto-play timing and direction
  * - Play/pause controls with visual feedback
@@ -33,28 +33,42 @@ enum class FluentAutoCarouselProgressStyle {
  */
 class FluentAutoCarousel : public FluentCarousel {
     Q_OBJECT
-    Q_PROPERTY(bool autoPlayEnabled READ isAutoPlayEnabled WRITE setAutoPlayEnabled NOTIFY autoPlayEnabledChanged)
-    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
-    Q_PROPERTY(FluentCarouselAutoPlay autoPlayDirection READ autoPlayDirection WRITE setAutoPlayDirection NOTIFY autoPlayDirectionChanged)
-    Q_PROPERTY(bool pauseOnHover READ pauseOnHover WRITE setPauseOnHover NOTIFY pauseOnHoverChanged)
-    Q_PROPERTY(bool pauseOnFocus READ pauseOnFocus WRITE setPauseOnFocus NOTIFY pauseOnFocusChanged)
-    Q_PROPERTY(bool showPlayControls READ showPlayControls WRITE setShowPlayControls NOTIFY playControlsVisibilityChanged)
-    Q_PROPERTY(bool showProgressIndicator READ showProgressIndicator WRITE setShowProgressIndicator NOTIFY progressIndicatorVisibilityChanged)
-    Q_PROPERTY(qreal playbackProgress READ playbackProgress NOTIFY playbackProgressChanged)
+    Q_PROPERTY(bool autoPlayEnabled READ isAutoPlayEnabled WRITE
+                   setAutoPlayEnabled NOTIFY autoPlayEnabledChanged)
+    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE
+                   setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
+    Q_PROPERTY(FluentCarouselAutoPlay autoPlayDirection READ autoPlayDirection
+                   WRITE setAutoPlayDirection NOTIFY autoPlayDirectionChanged)
+    Q_PROPERTY(bool pauseOnHover READ pauseOnHover WRITE setPauseOnHover NOTIFY
+                   pauseOnHoverChanged)
+    Q_PROPERTY(bool pauseOnFocus READ pauseOnFocus WRITE setPauseOnFocus NOTIFY
+                   pauseOnFocusChanged)
+    Q_PROPERTY(bool showPlayControls READ showPlayControls WRITE
+                   setShowPlayControls NOTIFY playControlsVisibilityChanged)
+    Q_PROPERTY(
+        bool showProgressIndicator READ showProgressIndicator WRITE
+            setShowProgressIndicator NOTIFY progressIndicatorVisibilityChanged)
+    Q_PROPERTY(qreal playbackProgress READ playbackProgress NOTIFY
+                   playbackProgressChanged)
 
 public:
     explicit FluentAutoCarousel(QWidget* parent = nullptr);
-    explicit FluentAutoCarousel(const FluentCarouselConfig& config, QWidget* parent = nullptr);
+    explicit FluentAutoCarousel(const FluentCarouselConfig& config,
+                                QWidget* parent = nullptr);
     ~FluentAutoCarousel() override = default;
 
     // Auto-play configuration
     bool isAutoPlayEnabled() const noexcept { return m_autoPlayEnabled; }
     void setAutoPlayEnabled(bool enabled);
 
-    int autoPlayInterval() const noexcept { return static_cast<int>(m_autoPlayInterval.count()); }
+    int autoPlayInterval() const noexcept {
+        return static_cast<int>(m_autoPlayInterval.count());
+    }
     void setAutoPlayInterval(int milliseconds);
 
-    FluentCarouselAutoPlay autoPlayDirection() const noexcept { return m_autoPlayDirection; }
+    FluentCarouselAutoPlay autoPlayDirection() const noexcept {
+        return m_autoPlayDirection;
+    }
     void setAutoPlayDirection(FluentCarouselAutoPlay direction);
 
     // Pause behavior
@@ -68,7 +82,9 @@ public:
     bool showPlayControls() const noexcept { return m_showPlayControls; }
     void setShowPlayControls(bool show);
 
-    bool showProgressIndicator() const noexcept { return m_showProgressIndicator; }
+    bool showProgressIndicator() const noexcept {
+        return m_showProgressIndicator;
+    }
     void setShowProgressIndicator(bool show);
 
     // State information
@@ -79,12 +95,17 @@ public:
     // Control access for customization
     FluentButton* playPauseButton() const noexcept { return m_playPauseButton; }
     FluentButton* stopButton() const noexcept { return m_stopButton; }
-    QProgressBar* progressIndicator() const noexcept { return m_progressIndicator; }
+    QProgressBar* progressIndicator() const noexcept {
+        return m_progressIndicator;
+    }
 
     // Convenience factory methods
-    static FluentAutoCarousel* createWithInterval(int milliseconds, QWidget* parent = nullptr);
-    static FluentAutoCarousel* createPingPong(int milliseconds, QWidget* parent = nullptr);
-    static FluentAutoCarousel* createWithProgress(int milliseconds, QWidget* parent = nullptr);
+    static FluentAutoCarousel* createWithInterval(int milliseconds,
+                                                  QWidget* parent = nullptr);
+    static FluentAutoCarousel* createPingPong(int milliseconds,
+                                              QWidget* parent = nullptr);
+    static FluentAutoCarousel* createWithProgress(int milliseconds,
+                                                  QWidget* parent = nullptr);
 
 public slots:
     void play();
@@ -153,16 +174,17 @@ private:
     bool m_autoPlayEnabled{true};
     std::chrono::milliseconds m_autoPlayInterval{3000};
     FluentCarouselAutoPlay m_autoPlayDirection{FluentCarouselAutoPlay::Forward};
-    
+
     // Pause behavior
     bool m_pauseOnHover{true};
     bool m_pauseOnFocus{true};
-    
+
     // UI configuration
     bool m_showPlayControls{true};
     bool m_showProgressIndicator{true};
-    FluentAutoCarouselProgressStyle m_progressStyle{FluentAutoCarouselProgressStyle::Bar};
-    
+    FluentAutoCarouselProgressStyle m_progressStyle{
+        FluentAutoCarouselProgressStyle::Bar};
+
     // State
     bool m_isPlaying{false};
     bool m_isPaused{false};
@@ -172,13 +194,13 @@ private:
     qreal m_currentProgress{0.0};
     int m_nextIndex{0};
     bool m_pingPongForward{true};
-    
+
     // Timers
     std::unique_ptr<QTimer> m_autoPlayTimer;
     std::unique_ptr<QTimer> m_progressTimer;
     std::chrono::steady_clock::time_point m_intervalStartTime;
     std::chrono::steady_clock::time_point m_progressStartTime;
-    
+
     // UI controls
     FluentButton* m_playPauseButton{nullptr};
     FluentButton* m_stopButton{nullptr};
@@ -188,11 +210,11 @@ private:
     QWidget* m_controlsContainer{nullptr};
     QWidget* m_progressContainer{nullptr};
     QHBoxLayout* m_controlsLayout{nullptr};
-    
+
     // Icons
     QIcon m_playIcon;
     QIcon m_pauseIcon;
     QIcon m_stopIcon;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

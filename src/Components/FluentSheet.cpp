@@ -1,18 +1,18 @@
 // src/Components/FluentSheet.cpp
 #include "FluentQt/Components/FluentSheet.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QApplication>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QAccessible>
+#include <QApplication>
 #include <QDebug>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QScreen>
+#include <QVBoxLayout>
 #include <QWindow>
 
 namespace FluentQt::Components {
@@ -42,7 +42,7 @@ signals:
 protected:
     void paintEvent(QPaintEvent* event) override {
         Q_UNUSED(event)
-        
+
         QPainter painter(this);
         const QColor overlayColor = QColor(0, 0, 0, qRound(m_opacity * 255));
         painter.fillRect(rect(), overlayColor);
@@ -106,14 +106,12 @@ public:
         }
     }
 
-    QWidget* contentWidget() const {
-        return m_contentWidget;
-    }
+    QWidget* contentWidget() const { return m_contentWidget; }
 
 protected:
     void paintEvent(QPaintEvent* event) override {
         Q_UNUSED(event)
-        
+
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
@@ -168,14 +166,14 @@ private:
 };
 
 FluentSheet::FluentSheet(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_overlay(std::make_unique<FluentSheetOverlay>(this))
-    , m_content(std::make_unique<FluentSheetContent>(this))
-    , m_openAnimation(std::make_unique<QPropertyAnimation>(this, "geometry"))
-    , m_closeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry"))
-    , m_overlayAnimation(std::make_unique<QPropertyAnimation>(m_overlay.get(), "overlayOpacity"))
-    , m_animationGroup(std::make_unique<QParallelAnimationGroup>(this))
-{
+    : Core::FluentComponent(parent),
+      m_overlay(std::make_unique<FluentSheetOverlay>(this)),
+      m_content(std::make_unique<FluentSheetContent>(this)),
+      m_openAnimation(std::make_unique<QPropertyAnimation>(this, "geometry")),
+      m_closeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry")),
+      m_overlayAnimation(std::make_unique<QPropertyAnimation>(
+          m_overlay.get(), "overlayOpacity")),
+      m_animationGroup(std::make_unique<QParallelAnimationGroup>(this)) {
     setupSheet();
     setupOverlay();
     setupContent();
@@ -183,19 +181,19 @@ FluentSheet::FluentSheet(QWidget* parent)
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&FluentQt::Styling::FluentTheme::instance(), &FluentQt::Styling::FluentTheme::themeChanged,
-            this, &FluentSheet::onThemeChanged);
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentSheet::onThemeChanged);
 }
 
 FluentSheet::FluentSheet(FluentSheetDirection direction, QWidget* parent)
-    : FluentSheet(parent)
-{
+    : FluentSheet(parent) {
     setDirection(direction);
 }
 
-FluentSheet::FluentSheet(FluentSheetDirection direction, FluentSheetSize size, QWidget* parent)
-    : FluentSheet(direction, parent)
-{
+FluentSheet::FluentSheet(FluentSheetDirection direction, FluentSheetSize size,
+                         QWidget* parent)
+    : FluentSheet(direction, parent) {
     setSheetSize(size);
 }
 
@@ -272,13 +270,9 @@ void FluentSheet::setCloseOnOverlayClick(bool close) {
     m_closeOnOverlayClick = close;
 }
 
-void FluentSheet::setCloseOnEscape(bool close) {
-    m_closeOnEscape = close;
-}
+void FluentSheet::setCloseOnEscape(bool close) { m_closeOnEscape = close; }
 
-void FluentSheet::setDragToClose(bool drag) {
-    m_dragToClose = drag;
-}
+void FluentSheet::setDragToClose(bool drag) { m_dragToClose = drag; }
 
 void FluentSheet::setAutoResize(bool resize) {
     if (m_autoResize != resize) {
@@ -301,21 +295,15 @@ QWidget* FluentSheet::contentWidget() const {
     return m_content->contentWidget();
 }
 
-void FluentSheet::setTitle(const QString& title) {
-    m_content->setTitle(title);
-}
+void FluentSheet::setTitle(const QString& title) { m_content->setTitle(title); }
 
-QString FluentSheet::title() const {
-    return m_content->title();
-}
+QString FluentSheet::title() const { return m_content->title(); }
 
 void FluentSheet::setSubtitle(const QString& subtitle) {
     m_content->setSubtitle(subtitle);
 }
 
-QString FluentSheet::subtitle() const {
-    return m_content->subtitle();
-}
+QString FluentSheet::subtitle() const { return m_content->subtitle(); }
 
 bool FluentSheet::isAnimating() const {
     return m_animationGroup->state() == QAbstractAnimation::Running;
@@ -329,9 +317,7 @@ QSize FluentSheet::sizeHint() const {
     return m_cachedSizeHint;
 }
 
-QSize FluentSheet::minimumSizeHint() const {
-    return QSize(200, 150);
-}
+QSize FluentSheet::minimumSizeHint() const { return QSize(200, 150); }
 
 // Static factory methods
 FluentSheet* FluentSheet::createBottomSheet(QWidget* parent) {
@@ -389,13 +375,9 @@ void FluentSheet::toggle() {
     }
 }
 
-void FluentSheet::openWithAnimation() {
-    open();
-}
+void FluentSheet::openWithAnimation() { open(); }
 
-void FluentSheet::closeWithAnimation() {
-    close();
-}
+void FluentSheet::closeWithAnimation() { close(); }
 
 // Event handling
 void FluentSheet::paintEvent(QPaintEvent* event) {
@@ -484,11 +466,10 @@ void FluentSheet::focusOutEvent(QFocusEvent* event) {
     Core::FluentComponent::focusOutEvent(event);
 }
 
-void FluentSheet::updateStateStyle() {
-    update();
-}
+void FluentSheet::updateStateStyle() { update(); }
 
-void FluentSheet::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentSheet::performStateTransition(Core::FluentState from,
+                                         Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     updateStateStyle();
@@ -500,9 +481,7 @@ void FluentSheet::onOpenAnimationValueChanged(const QVariant& value) {
     // Animation is handled by Qt's property system
 }
 
-void FluentSheet::onOpenAnimationFinished() {
-    emit opened();
-}
+void FluentSheet::onOpenAnimationFinished() { emit opened(); }
 
 void FluentSheet::onCloseAnimationValueChanged(const QVariant& value) {
     Q_UNUSED(value)
@@ -522,9 +501,7 @@ void FluentSheet::onOverlayClicked() {
     emit overlayClicked();
 }
 
-void FluentSheet::onThemeChanged() {
-    updateStateStyle();
-}
+void FluentSheet::onThemeChanged() { updateStateStyle(); }
 
 // Setup methods
 void FluentSheet::setupSheet() {
@@ -540,8 +517,8 @@ void FluentSheet::setupOverlay() {
     m_overlay->setParent(findTopLevelParent());
     m_overlay->setOverlayOpacity(m_overlayOpacity);
 
-    connect(m_overlay.get(), &FluentSheetOverlay::clicked,
-            this, &FluentSheet::onOverlayClicked);
+    connect(m_overlay.get(), &FluentSheetOverlay::clicked, this,
+            &FluentSheet::onOverlayClicked);
 }
 
 void FluentSheet::setupContent() {
@@ -553,18 +530,18 @@ void FluentSheet::setupAnimations() {
     // Setup open animation
     m_openAnimation->setDuration(m_animationDuration);
     m_openAnimation->setEasingCurve(m_easingCurve);
-    connect(m_openAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentSheet::onOpenAnimationValueChanged);
-    connect(m_openAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentSheet::onOpenAnimationFinished);
+    connect(m_openAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentSheet::onOpenAnimationValueChanged);
+    connect(m_openAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentSheet::onOpenAnimationFinished);
 
     // Setup close animation
     m_closeAnimation->setDuration(m_animationDuration);
     m_closeAnimation->setEasingCurve(m_easingCurve);
-    connect(m_closeAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentSheet::onCloseAnimationValueChanged);
-    connect(m_closeAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentSheet::onCloseAnimationFinished);
+    connect(m_closeAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentSheet::onCloseAnimationValueChanged);
+    connect(m_closeAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentSheet::onCloseAnimationFinished);
 
     // Setup overlay animation
     m_overlayAnimation->setDuration(m_animationDuration);
@@ -644,20 +621,24 @@ QRect FluentSheet::calculateOpenGeometry() const {
     QRect openRect;
 
     switch (m_direction) {
-    case FluentSheetDirection::Top:
-        openRect = QRect(parentRect.x(), parentRect.y(), parentRect.width(), sheetSize.height());
-        break;
-    case FluentSheetDirection::Bottom:
-        openRect = QRect(parentRect.x(), parentRect.bottom() - sheetSize.height(),
-                        parentRect.width(), sheetSize.height());
-        break;
-    case FluentSheetDirection::Left:
-        openRect = QRect(parentRect.x(), parentRect.y(), sheetSize.width(), parentRect.height());
-        break;
-    case FluentSheetDirection::Right:
-        openRect = QRect(parentRect.right() - sheetSize.width(), parentRect.y(),
-                        sheetSize.width(), parentRect.height());
-        break;
+        case FluentSheetDirection::Top:
+            openRect = QRect(parentRect.x(), parentRect.y(), parentRect.width(),
+                             sheetSize.height());
+            break;
+        case FluentSheetDirection::Bottom:
+            openRect =
+                QRect(parentRect.x(), parentRect.bottom() - sheetSize.height(),
+                      parentRect.width(), sheetSize.height());
+            break;
+        case FluentSheetDirection::Left:
+            openRect = QRect(parentRect.x(), parentRect.y(), sheetSize.width(),
+                             parentRect.height());
+            break;
+        case FluentSheetDirection::Right:
+            openRect =
+                QRect(parentRect.right() - sheetSize.width(), parentRect.y(),
+                      sheetSize.width(), parentRect.height());
+            break;
     }
 
     return openRect;
@@ -675,22 +656,24 @@ QRect FluentSheet::calculateClosedGeometry() const {
     QRect closedRect;
 
     switch (m_direction) {
-    case FluentSheetDirection::Top:
-        closedRect = QRect(parentRect.x(), parentRect.y() - sheetSize.height(),
-                          parentRect.width(), sheetSize.height());
-        break;
-    case FluentSheetDirection::Bottom:
-        closedRect = QRect(parentRect.x(), parentRect.bottom(),
-                          parentRect.width(), sheetSize.height());
-        break;
-    case FluentSheetDirection::Left:
-        closedRect = QRect(parentRect.x() - sheetSize.width(), parentRect.y(),
-                          sheetSize.width(), parentRect.height());
-        break;
-    case FluentSheetDirection::Right:
-        closedRect = QRect(parentRect.right(), parentRect.y(),
-                          sheetSize.width(), parentRect.height());
-        break;
+        case FluentSheetDirection::Top:
+            closedRect =
+                QRect(parentRect.x(), parentRect.y() - sheetSize.height(),
+                      parentRect.width(), sheetSize.height());
+            break;
+        case FluentSheetDirection::Bottom:
+            closedRect = QRect(parentRect.x(), parentRect.bottom(),
+                               parentRect.width(), sheetSize.height());
+            break;
+        case FluentSheetDirection::Left:
+            closedRect =
+                QRect(parentRect.x() - sheetSize.width(), parentRect.y(),
+                      sheetSize.width(), parentRect.height());
+            break;
+        case FluentSheetDirection::Right:
+            closedRect = QRect(parentRect.right(), parentRect.y(),
+                               sheetSize.width(), parentRect.height());
+            break;
     }
 
     return closedRect;
@@ -705,28 +688,28 @@ QSize FluentSheet::calculateSheetSize() const {
     const QSize parentSize = parentWidget->size();
 
     switch (m_sheetSize) {
-    case FluentSheetSize::Small:
-        if (isVerticalDirection()) {
-            return QSize(parentSize.width(), parentSize.height() / 4);
-        } else {
-            return QSize(parentSize.width() / 4, parentSize.height());
-        }
-    case FluentSheetSize::Medium:
-        if (isVerticalDirection()) {
-            return QSize(parentSize.width(), parentSize.height() / 2);
-        } else {
-            return QSize(parentSize.width() / 2, parentSize.height());
-        }
-    case FluentSheetSize::Large:
-        if (isVerticalDirection()) {
-            return QSize(parentSize.width(), parentSize.height() * 3 / 4);
-        } else {
-            return QSize(parentSize.width() * 3 / 4, parentSize.height());
-        }
-    case FluentSheetSize::Full:
-        return parentSize;
-    case FluentSheetSize::Custom:
-        return m_customSize;
+        case FluentSheetSize::Small:
+            if (isVerticalDirection()) {
+                return QSize(parentSize.width(), parentSize.height() / 4);
+            } else {
+                return QSize(parentSize.width() / 4, parentSize.height());
+            }
+        case FluentSheetSize::Medium:
+            if (isVerticalDirection()) {
+                return QSize(parentSize.width(), parentSize.height() / 2);
+            } else {
+                return QSize(parentSize.width() / 2, parentSize.height());
+            }
+        case FluentSheetSize::Large:
+            if (isVerticalDirection()) {
+                return QSize(parentSize.width(), parentSize.height() * 3 / 4);
+            } else {
+                return QSize(parentSize.width() * 3 / 4, parentSize.height());
+            }
+        case FluentSheetSize::Full:
+            return parentSize;
+        case FluentSheetSize::Custom:
+            return m_customSize;
     }
 
     return m_customSize;
@@ -787,11 +770,13 @@ QWidget* FluentSheet::findTopLevelParent() const {
 }
 
 bool FluentSheet::isVerticalDirection() const {
-    return m_direction == FluentSheetDirection::Top || m_direction == FluentSheetDirection::Bottom;
+    return m_direction == FluentSheetDirection::Top ||
+           m_direction == FluentSheetDirection::Bottom;
 }
 
 bool FluentSheet::isHorizontalDirection() const {
-    return m_direction == FluentSheetDirection::Left || m_direction == FluentSheetDirection::Right;
+    return m_direction == FluentSheetDirection::Left ||
+           m_direction == FluentSheetDirection::Right;
 }
 
 // Focus management
@@ -814,7 +799,8 @@ void FluentSheet::updateFocusChain() {
     // Build focus chain for all focusable widgets in the sheet
     const QList<QWidget*> widgets = findChildren<QWidget*>();
     for (QWidget* widget : widgets) {
-        if (widget->focusPolicy() != Qt::NoFocus && widget->isVisible() && widget->isEnabled()) {
+        if (widget->focusPolicy() != Qt::NoFocus && widget->isVisible() &&
+            widget->isEnabled()) {
             m_focusChain.append(widget);
         }
     }
@@ -840,18 +826,18 @@ void FluentSheet::updateDrag(const QPoint& currentPos) {
     QRect newGeometry = geometry();
 
     switch (m_direction) {
-    case FluentSheetDirection::Top:
-        newGeometry.moveTop(newGeometry.top() + qMin(0, delta.y()));
-        break;
-    case FluentSheetDirection::Bottom:
-        newGeometry.moveTop(newGeometry.top() + qMax(0, delta.y()));
-        break;
-    case FluentSheetDirection::Left:
-        newGeometry.moveLeft(newGeometry.left() + qMin(0, delta.x()));
-        break;
-    case FluentSheetDirection::Right:
-        newGeometry.moveLeft(newGeometry.left() + qMax(0, delta.x()));
-        break;
+        case FluentSheetDirection::Top:
+            newGeometry.moveTop(newGeometry.top() + qMin(0, delta.y()));
+            break;
+        case FluentSheetDirection::Bottom:
+            newGeometry.moveTop(newGeometry.top() + qMax(0, delta.y()));
+            break;
+        case FluentSheetDirection::Left:
+            newGeometry.moveLeft(newGeometry.left() + qMin(0, delta.x()));
+            break;
+        case FluentSheetDirection::Right:
+            newGeometry.moveLeft(newGeometry.left() + qMax(0, delta.x()));
+            break;
     }
 
     setGeometry(newGeometry);
@@ -883,17 +869,17 @@ void FluentSheet::cancelDrag() {
 }
 
 bool FluentSheet::shouldCloseFromDrag(const QPoint& delta) const {
-    const int threshold = 100; // Minimum drag distance to close
+    const int threshold = 100;  // Minimum drag distance to close
 
     switch (m_direction) {
-    case FluentSheetDirection::Top:
-        return delta.y() < -threshold;
-    case FluentSheetDirection::Bottom:
-        return delta.y() > threshold;
-    case FluentSheetDirection::Left:
-        return delta.x() < -threshold;
-    case FluentSheetDirection::Right:
-        return delta.x() > threshold;
+        case FluentSheetDirection::Top:
+            return delta.y() < -threshold;
+        case FluentSheetDirection::Bottom:
+            return delta.y() > threshold;
+        case FluentSheetDirection::Left:
+            return delta.x() < -threshold;
+        case FluentSheetDirection::Right:
+            return delta.x() > threshold;
     }
 
     return false;
@@ -929,15 +915,13 @@ QColor FluentSheet::getBorderColor() const {
     return theme.color("controlStrokeColorDefault");
 }
 
-QColor FluentSheet::getShadowColor() const {
-    return QColor(0, 0, 0, 50);
-}
+QColor FluentSheet::getShadowColor() const { return QColor(0, 0, 0, 50); }
 
 QPen FluentSheet::getBorderPen() const {
     const QColor borderColor = getBorderColor();
     return QPen(borderColor, 1);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components
 
 #include "FluentSheet.moc"

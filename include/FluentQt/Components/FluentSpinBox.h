@@ -1,57 +1,61 @@
 // include/FluentQt/Components/FluentSpinBox.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
+#include <QHBoxLayout>
+#include <QLineEdit>
+#include <QPropertyAnimation>
+#include <QTimer>
+#include <QVBoxLayout>
+#include <QValidator>
+#include <QWidget>
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
-#include <QWidget>
-#include <QLineEdit>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QPropertyAnimation>
-#include <QValidator>
-#include <QTimer>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentSpinBoxType {
-    Integer,
-    Double,
-    Currency,
-    Percentage
-};
+enum class FluentSpinBoxType { Integer, Double, Currency, Percentage };
 
-enum class FluentSpinBoxSize {
-    Small,
-    Medium,
-    Large
-};
+enum class FluentSpinBoxSize { Small, Medium, Large };
 
 enum class FluentSpinBoxButtonLayout {
-    Vertical,       // Buttons stacked vertically on the right
-    Horizontal,     // Buttons side by side on the right
-    Sides,          // Decrease on left, increase on right
-    Embedded        // Buttons embedded in the input field
+    Vertical,    // Buttons stacked vertically on the right
+    Horizontal,  // Buttons side by side on the right
+    Sides,       // Decrease on left, increase on right
+    Embedded     // Buttons embedded in the input field
 };
 
 class FluentSpinBox : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(double value READ value WRITE setValue NOTIFY valueChanged)
-    Q_PROPERTY(double minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
-    Q_PROPERTY(double maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
-    Q_PROPERTY(double singleStep READ singleStep WRITE setSingleStep NOTIFY singleStepChanged)
-    Q_PROPERTY(int decimals READ decimals WRITE setDecimals NOTIFY decimalsChanged)
+    Q_PROPERTY(
+        double minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
+    Q_PROPERTY(
+        double maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
+    Q_PROPERTY(double singleStep READ singleStep WRITE setSingleStep NOTIFY
+                   singleStepChanged)
+    Q_PROPERTY(
+        int decimals READ decimals WRITE setDecimals NOTIFY decimalsChanged)
     Q_PROPERTY(QString prefix READ prefix WRITE setPrefix NOTIFY prefixChanged)
     Q_PROPERTY(QString suffix READ suffix WRITE setSuffix NOTIFY suffixChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderTextChanged)
-    Q_PROPERTY(FluentSpinBoxType spinBoxType READ spinBoxType WRITE setSpinBoxType NOTIFY spinBoxTypeChanged)
-    Q_PROPERTY(FluentSpinBoxSize spinBoxSize READ spinBoxSize WRITE setSpinBoxSize NOTIFY spinBoxSizeChanged)
-    Q_PROPERTY(FluentSpinBoxButtonLayout buttonLayout READ buttonLayout WRITE setButtonLayout NOTIFY buttonLayoutChanged)
-    Q_PROPERTY(bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
-    Q_PROPERTY(bool wrapping READ wrapping WRITE setWrapping NOTIFY wrappingChanged)
-    Q_PROPERTY(bool accelerated READ isAccelerated WRITE setAccelerated NOTIFY acceleratedChanged)
-    Q_PROPERTY(bool showButtons READ showButtons WRITE setShowButtons NOTIFY showButtonsChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(FluentSpinBoxType spinBoxType READ spinBoxType WRITE
+                   setSpinBoxType NOTIFY spinBoxTypeChanged)
+    Q_PROPERTY(FluentSpinBoxSize spinBoxSize READ spinBoxSize WRITE
+                   setSpinBoxSize NOTIFY spinBoxSizeChanged)
+    Q_PROPERTY(FluentSpinBoxButtonLayout buttonLayout READ buttonLayout WRITE
+                   setButtonLayout NOTIFY buttonLayoutChanged)
+    Q_PROPERTY(
+        bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
+    Q_PROPERTY(
+        bool wrapping READ wrapping WRITE setWrapping NOTIFY wrappingChanged)
+    Q_PROPERTY(bool accelerated READ isAccelerated WRITE setAccelerated NOTIFY
+                   acceleratedChanged)
+    Q_PROPERTY(bool showButtons READ showButtons WRITE setShowButtons NOTIFY
+                   showButtonsChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
 
 public:
     explicit FluentSpinBox(QWidget* parent = nullptr);
@@ -134,11 +138,14 @@ public:
     FluentButton* upButton() const { return m_upButton; }
     FluentButton* downButton() const { return m_downButton; }
 
-
     // Convenience factories (expected by tests)
-    static FluentSpinBox* createIntegerSpinBox(int minimum, int maximum, QWidget* parent = nullptr);
-    static FluentSpinBox* createDoubleSpinBox(double minimum, double maximum, int decimals, QWidget* parent = nullptr);
-    static FluentSpinBox* createCurrencySpinBox(double minimum, double maximum, QWidget* parent = nullptr);
+    static FluentSpinBox* createIntegerSpinBox(int minimum, int maximum,
+                                               QWidget* parent = nullptr);
+    static FluentSpinBox* createDoubleSpinBox(double minimum, double maximum,
+                                              int decimals,
+                                              QWidget* parent = nullptr);
+    static FluentSpinBox* createCurrencySpinBox(double minimum, double maximum,
+                                                QWidget* parent = nullptr);
     static FluentSpinBox* createPercentageSpinBox(QWidget* parent = nullptr);
 
 public slots:
@@ -241,7 +248,8 @@ private:
     // Type and appearance
     FluentSpinBoxType m_spinBoxType{FluentSpinBoxType::Double};
     FluentSpinBoxSize m_spinBoxSize{FluentSpinBoxSize::Medium};
-    FluentSpinBoxButtonLayout m_buttonLayout{FluentSpinBoxButtonLayout::Vertical};
+    FluentSpinBoxButtonLayout m_buttonLayout{
+        FluentSpinBoxButtonLayout::Vertical};
 
     // Behavior properties
     bool m_readOnly{false};
@@ -274,4 +282,4 @@ private:
     int m_spacing{2};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

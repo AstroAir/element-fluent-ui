@@ -1,31 +1,31 @@
 // include/FluentQt/Components/FluentComboBox.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QWidget>
 #include <QAbstractItemModel>
-#include <QStandardItemModel>
-#include <QListView>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QPropertyAnimation>
-#include <QTimer>
 #include <QIcon>
+#include <QLineEdit>
+#include <QListView>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QStandardItemModel>
+#include <QTimer>
 #include <QVariant>
+#include <QWidget>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentComboBoxStyle {
-    Standard,       // Standard dropdown
-    Editable,       // Editable with search
-    MultiSelect     // Multiple selection support
+    Standard,    // Standard dropdown
+    Editable,    // Editable with search
+    MultiSelect  // Multiple selection support
 };
 
 enum class FluentComboBoxDropDirection {
-    Auto,           // Automatically determine direction
-    Down,           // Always drop down
-    Up              // Always drop up
+    Auto,  // Automatically determine direction
+    Down,  // Always drop down
+    Up     // Always drop up
 };
 
 struct FluentComboBoxItem {
@@ -37,26 +37,38 @@ struct FluentComboBoxItem {
 
     FluentComboBoxItem() = default;
     FluentComboBoxItem(const QString& t) : text(t) {}
-    FluentComboBoxItem(const QString& t, const QVariant& d) : text(t), data(d) {}
-    FluentComboBoxItem(const QString& t, const QIcon& i, const QVariant& d) : text(t), icon(i), data(d) {}
+    FluentComboBoxItem(const QString& t, const QVariant& d)
+        : text(t), data(d) {}
+    FluentComboBoxItem(const QString& t, const QIcon& i, const QVariant& d)
+        : text(t), icon(i), data(d) {}
 };
 
 class FluentComboBox : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentComboBoxStyle style READ style WRITE setStyle NOTIFY styleChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderTextChanged)
-    Q_PROPERTY(bool searchEnabled READ isSearchEnabled WRITE setSearchEnabled NOTIFY searchEnabledChanged)
-    Q_PROPERTY(bool multiSelectEnabled READ isMultiSelectEnabled WRITE setMultiSelectEnabled NOTIFY multiSelectEnabledChanged)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
-    Q_PROPERTY(QString currentText READ currentText WRITE setCurrentText NOTIFY currentTextChanged)
+    Q_PROPERTY(
+        FluentComboBoxStyle style READ style WRITE setStyle NOTIFY styleChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(bool searchEnabled READ isSearchEnabled WRITE setSearchEnabled
+                   NOTIFY searchEnabledChanged)
+    Q_PROPERTY(bool multiSelectEnabled READ isMultiSelectEnabled WRITE
+                   setMultiSelectEnabled NOTIFY multiSelectEnabledChanged)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY
+                   currentIndexChanged)
+    Q_PROPERTY(QString currentText READ currentText WRITE setCurrentText NOTIFY
+                   currentTextChanged)
     Q_PROPERTY(QVariant currentData READ currentData NOTIFY currentDataChanged)
-    Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems NOTIFY maxVisibleItemsChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(FluentComboBoxDropDirection dropDirection READ dropDirection WRITE setDropDirection NOTIFY dropDirectionChanged)
+    Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems
+                   NOTIFY maxVisibleItemsChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(FluentComboBoxDropDirection dropDirection READ dropDirection
+                   WRITE setDropDirection NOTIFY dropDirectionChanged)
 
 public:
     explicit FluentComboBox(QWidget* parent = nullptr);
-    explicit FluentComboBox(FluentComboBoxStyle style, QWidget* parent = nullptr);
+    explicit FluentComboBox(FluentComboBoxStyle style,
+                            QWidget* parent = nullptr);
     ~FluentComboBox() override;
 
     // Style and behavior
@@ -91,14 +103,16 @@ public:
     int count() const;
     void addItem(const QString& text);
     void addItem(const QString& text, const QVariant& data);
-    void addItem(const QString& text, const QIcon& icon, const QVariant& data = QVariant());
+    void addItem(const QString& text, const QIcon& icon,
+                 const QVariant& data = QVariant());
     void addItem(const FluentComboBoxItem& item);
     void addItems(const QStringList& texts);
     void addItems(const QList<FluentComboBoxItem>& items);
 
     void insertItem(int index, const QString& text);
     void insertItem(int index, const QString& text, const QVariant& data);
-    void insertItem(int index, const QString& text, const QIcon& icon, const QVariant& data = QVariant());
+    void insertItem(int index, const QString& text, const QIcon& icon,
+                    const QVariant& data = QVariant());
     void insertItem(int index, const FluentComboBoxItem& item);
 
     void removeItem(int index);
@@ -142,7 +156,8 @@ public:
     void setCaseSensitiveSearch(bool sensitive);
 
     // Utility methods
-    int findText(const QString& text, Qt::MatchFlags flags = Qt::MatchExactly) const;
+    int findText(const QString& text,
+                 Qt::MatchFlags flags = Qt::MatchExactly) const;
     int findData(const QVariant& data) const;
 
     bool isDropdownVisible() const;
@@ -234,7 +249,8 @@ private:
     bool m_multiSelectEnabled{false};
     int m_maxVisibleItems{10};
     bool m_animated{true};
-    FluentComboBoxDropDirection m_dropDirection{FluentComboBoxDropDirection::Auto};
+    FluentComboBoxDropDirection m_dropDirection{
+        FluentComboBoxDropDirection::Auto};
     bool m_caseSensitiveSearch{false};
 
     // State
@@ -265,4 +281,4 @@ private:
     bool m_layoutDirty{true};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

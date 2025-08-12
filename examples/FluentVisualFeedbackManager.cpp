@@ -1,20 +1,19 @@
 // examples/FluentVisualFeedbackManager.cpp
 #include "FluentVisualFeedbackManager.h"
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QGraphicsOpacityEffect>
-#include <QGraphicsColorizeEffect>
-#include <QTimer>
 #include <QApplication>
 #include <QDebug>
+#include <QGraphicsColorizeEffect>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include <QTimer>
+#include <QWidget>
 
 namespace FluentQt::Examples {
 
 FluentVisualFeedbackManager::FluentVisualFeedbackManager(QObject* parent)
-    : QObject(parent)
-    , m_cleanupTimer(new QTimer(this))
-    , m_effectTimer(new QTimer(this))
-{
+    : QObject(parent),
+      m_cleanupTimer(new QTimer(this)),
+      m_effectTimer(new QTimer(this)) {
     // Setup cleanup timer to remove finished animations
     m_cleanupTimer->setInterval(1000);
     m_cleanupTimer->setSingleShot(false);
@@ -38,8 +37,10 @@ FluentVisualFeedbackManager::~FluentVisualFeedbackManager() {
     clearAllEffects();
 }
 
-void FluentVisualFeedbackManager::animateThemeTransition(QWidget* widget, int duration) {
-    if (!widget) return;
+void FluentVisualFeedbackManager::animateThemeTransition(QWidget* widget,
+                                                         int duration) {
+    if (!widget)
+        return;
 
     // Create fade out and fade in sequence
     auto* fadeOut = createPropertyAnimation(widget, "windowOpacity");
@@ -55,9 +56,8 @@ void FluentVisualFeedbackManager::animateThemeTransition(QWidget* widget, int du
     fadeIn->setEasingCurve(QEasingCurve::OutQuad);
 
     // Connect animations
-    connect(fadeOut, &QPropertyAnimation::finished, [this, fadeIn]() {
-        fadeIn->start();
-    });
+    connect(fadeOut, &QPropertyAnimation::finished,
+            [this, fadeIn]() { fadeIn->start(); });
 
     connect(fadeIn, &QPropertyAnimation::finished, [this, widget]() {
         emit animationFinished(widget, AnimationType::FadeIn);
@@ -70,8 +70,10 @@ void FluentVisualFeedbackManager::animateThemeTransition(QWidget* widget, int du
     emit animationStarted(widget, AnimationType::FadeIn);
 }
 
-void FluentVisualFeedbackManager::showSuccessFeedback(QWidget* widget, const QString& message) {
-    if (!widget) return;
+void FluentVisualFeedbackManager::showSuccessFeedback(QWidget* widget,
+                                                      const QString& message) {
+    if (!widget)
+        return;
 
     // Create green glow effect
     auto* colorEffect = createColorizeEffect(widget, QColor(0, 255, 0, 100));
@@ -85,15 +87,16 @@ void FluentVisualFeedbackManager::showSuccessFeedback(QWidget* widget, const QSt
     animation->setEasingCurve(QEasingCurve::InOutQuad);
 
     // Auto-remove effect after animation
-    connect(animation, &QPropertyAnimation::finished, [this, widget, colorEffect]() {
-        QTimer::singleShot(1000, [widget, colorEffect]() {
-            if (widget && colorEffect) {
-                widget->setGraphicsEffect(nullptr);
-                colorEffect->deleteLater();
-            }
-        });
-        emit animationFinished(widget, AnimationType::Glow);
-    });
+    connect(animation, &QPropertyAnimation::finished,
+            [this, widget, colorEffect]() {
+                QTimer::singleShot(1000, [widget, colorEffect]() {
+                    if (widget && colorEffect) {
+                        widget->setGraphicsEffect(nullptr);
+                        colorEffect->deleteLater();
+                    }
+                });
+                emit animationFinished(widget, AnimationType::Glow);
+            });
 
     animation->start();
     m_activeAnimations.append(animation);
@@ -103,8 +106,10 @@ void FluentVisualFeedbackManager::showSuccessFeedback(QWidget* widget, const QSt
     emit animationStarted(widget, AnimationType::Glow);
 }
 
-void FluentVisualFeedbackManager::showErrorFeedback(QWidget* widget, const QString& message) {
-    if (!widget) return;
+void FluentVisualFeedbackManager::showErrorFeedback(QWidget* widget,
+                                                    const QString& message) {
+    if (!widget)
+        return;
 
     // Create shake animation
     animateShake(widget, 400);
@@ -126,7 +131,8 @@ void FluentVisualFeedbackManager::showErrorFeedback(QWidget* widget, const QStri
 }
 
 void FluentVisualFeedbackManager::animateButtonPress(QWidget* button) {
-    if (!button) return;
+    if (!button)
+        return;
 
     // Scale down and back up
     auto* scaleDown = createPropertyAnimation(button, "geometry");
@@ -144,9 +150,8 @@ void FluentVisualFeedbackManager::animateButtonPress(QWidget* button) {
     scaleUp->setEndValue(originalGeometry);
     scaleUp->setEasingCurve(QEasingCurve::OutQuad);
 
-    connect(scaleDown, &QPropertyAnimation::finished, [scaleUp]() {
-        scaleUp->start();
-    });
+    connect(scaleDown, &QPropertyAnimation::finished,
+            [scaleUp]() { scaleUp->start(); });
 
     connect(scaleUp, &QPropertyAnimation::finished, [this, button]() {
         emit animationFinished(button, AnimationType::Scale);
@@ -160,7 +165,8 @@ void FluentVisualFeedbackManager::animateButtonPress(QWidget* button) {
 }
 
 void FluentVisualFeedbackManager::animateShake(QWidget* widget, int duration) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     QRect originalGeometry = widget->geometry();
     auto* animation = createPropertyAnimation(widget, "geometry");
@@ -187,7 +193,8 @@ void FluentVisualFeedbackManager::animateShake(QWidget* widget, int duration) {
 }
 
 void FluentVisualFeedbackManager::animatePulse(QWidget* widget, int duration) {
-    if (!widget) return;
+    if (!widget)
+        return;
 
     auto* opacityEffect = createOpacityEffect(widget);
     widget->setGraphicsEffect(opacityEffect);
@@ -200,11 +207,12 @@ void FluentVisualFeedbackManager::animatePulse(QWidget* widget, int duration) {
     animation->setLoopCount(3);
     animation->setDirection(QAbstractAnimation::Alternate);
 
-    connect(animation, &QPropertyAnimation::finished, [this, widget, opacityEffect]() {
-        widget->setGraphicsEffect(nullptr);
-        opacityEffect->deleteLater();
-        emit animationFinished(widget, AnimationType::Pulse);
-    });
+    connect(animation, &QPropertyAnimation::finished,
+            [this, widget, opacityEffect]() {
+                widget->setGraphicsEffect(nullptr);
+                opacityEffect->deleteLater();
+                emit animationFinished(widget, AnimationType::Pulse);
+            });
 
     animation->start();
     m_activeAnimations.append(animation);
@@ -232,21 +240,24 @@ void FluentVisualFeedbackManager::clearAllEffects() {
     m_activeEffects.clear();
 }
 
-QPropertyAnimation* FluentVisualFeedbackManager::createPropertyAnimation(QWidget* widget, const QByteArray& property) {
+QPropertyAnimation* FluentVisualFeedbackManager::createPropertyAnimation(
+    QWidget* widget, const QByteArray& property) {
     auto* animation = new QPropertyAnimation(widget, property, this);
     animation->setEasingCurve(m_defaultEasing);
     animation->setDuration(m_defaultDuration);
     return animation;
 }
 
-QGraphicsOpacityEffect* FluentVisualFeedbackManager::createOpacityEffect(QWidget* widget) {
+QGraphicsOpacityEffect* FluentVisualFeedbackManager::createOpacityEffect(
+    QWidget* widget) {
     Q_UNUSED(widget)
     auto* effect = new QGraphicsOpacityEffect(this);
     effect->setOpacity(1.0);
     return effect;
 }
 
-QGraphicsColorizeEffect* FluentVisualFeedbackManager::createColorizeEffect(QWidget* widget, const QColor& color) {
+QGraphicsColorizeEffect* FluentVisualFeedbackManager::createColorizeEffect(
+    QWidget* widget, const QColor& color) {
     Q_UNUSED(widget)
     auto* effect = new QGraphicsColorizeEffect(this);
     effect->setColor(color);
@@ -259,8 +270,10 @@ void FluentVisualFeedbackManager::onThemeChanged() {
     qDebug() << "Visual feedback manager: Theme changed";
 }
 
-void FluentVisualFeedbackManager::onComponentStateChanged(QWidget* widget, const QString& state) {
-    if (!widget) return;
+void FluentVisualFeedbackManager::onComponentStateChanged(
+    QWidget* widget, const QString& state) {
+    if (!widget)
+        return;
 
     if (state == "success") {
         showSuccessFeedback(widget);
@@ -271,4 +284,4 @@ void FluentVisualFeedbackManager::onComponentStateChanged(QWidget* widget, const
     }
 }
 
-} // namespace FluentQt::Examples
+}  // namespace FluentQt::Examples

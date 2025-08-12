@@ -1,44 +1,42 @@
 // src/Components/FluentSplitter.cpp
 #include "FluentQt/Components/FluentSplitter.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPropertyAnimation>
 #include <QTimer>
 #include <QVBoxLayout>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentSplitter::FluentSplitter(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_resizeMode(FluentSplitterResizeMode::Interactive)
-    , m_animatedResize(true)
-    , m_resizeAnimation(new QPropertyAnimation(this))
-    , m_responsiveTimer(new QTimer(this))
-{
+    : Core::FluentComponent(parent),
+      m_resizeMode(FluentSplitterResizeMode::Interactive),
+      m_animatedResize(true),
+      m_resizeAnimation(new QPropertyAnimation(this)),
+      m_responsiveTimer(new QTimer(this)) {
     setupSplitter();
     setupLayout();
 
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, [this]() { update(); });
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this, [this]() { update(); });
 }
 
 FluentSplitter::FluentSplitter(Qt::Orientation orientation, QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_resizeMode(FluentSplitterResizeMode::Interactive)
-    , m_animatedResize(true)
-    , m_resizeAnimation(new QPropertyAnimation(this))
-    , m_responsiveTimer(new QTimer(this))
-{
+    : Core::FluentComponent(parent),
+      m_resizeMode(FluentSplitterResizeMode::Interactive),
+      m_animatedResize(true),
+      m_resizeAnimation(new QPropertyAnimation(this)),
+      m_responsiveTimer(new QTimer(this)) {
     setupSplitter();
     m_splitter->setOrientation(orientation);
     setupLayout();
 
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, [this]() { update(); });
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this, [this]() { update(); });
 }
 
 void FluentSplitter::setupSplitter() {
@@ -56,16 +54,19 @@ void FluentSplitter::setupLayout() {
     // Setup resize timer for smooth animations
     m_responsiveTimer->setSingleShot(true);
     m_responsiveTimer->setInterval(100);
-    connect(m_responsiveTimer, &QTimer::timeout, this, &FluentSplitter::checkResponsiveLayout);
+    connect(m_responsiveTimer, &QTimer::timeout, this,
+            &FluentSplitter::checkResponsiveLayout);
 
     // Setup resize animation
     m_resizeAnimation->setDuration(250);
     m_resizeAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_resizeAnimation, &QPropertyAnimation::finished, this, &FluentSplitter::onAnimationFinished);
+    connect(m_resizeAnimation, &QPropertyAnimation::finished, this,
+            &FluentSplitter::onAnimationFinished);
 }
 
 void FluentSplitter::setAnimatedResize(bool animated) {
-    if (m_animatedResize == animated) return;
+    if (m_animatedResize == animated)
+        return;
 
     m_animatedResize = animated;
 }
@@ -131,7 +132,8 @@ void FluentSplitter::insertWidget(int index, QWidget* widget) {
 // More widget management methods
 void FluentSplitter::removeWidget(QWidget* widget) {
     if (m_splitter) {
-        // QSplitter doesn't have removeWidget, we need to use widget->setParent(nullptr)
+        // QSplitter doesn't have removeWidget, we need to use
+        // widget->setParent(nullptr)
         widget->setParent(nullptr);
         updateHandles();
     }
@@ -183,8 +185,9 @@ void FluentSplitter::animateToSizes(const QList<int>& sizes) {
 }
 
 void FluentSplitter::collapseWidget(int index) {
-    if (index < 0 || index >= count()) return;
-    
+    if (index < 0 || index >= count())
+        return;
+
     QList<int> sizes = this->sizes();
     if (index < sizes.size()) {
         sizes[index] = 0;
@@ -193,12 +196,14 @@ void FluentSplitter::collapseWidget(int index) {
 }
 
 void FluentSplitter::expandWidget(int index) {
-    if (index < 0 || index >= count()) return;
+    if (index < 0 || index >= count())
+        return;
 
     QList<int> sizes = this->sizes();
     if (index < sizes.size() && sizes[index] == 0) {
         // Calculate reasonable default size
-        int size = (orientation() == Qt::Horizontal ? width() : height()) / count();
+        int size =
+            (orientation() == Qt::Horizontal ? width() : height()) / count();
         sizes[index] = size;
         animateToSizes(sizes);
     }
@@ -213,8 +218,9 @@ void FluentSplitter::toggleWidget(int index) {
 }
 
 bool FluentSplitter::isWidgetCollapsed(int index) const {
-    if (index < 0 || index >= count()) return false;
-    
+    if (index < 0 || index >= count())
+        return false;
+
     QList<int> sizes = this->sizes();
     return index < sizes.size() && sizes[index] == 0;
 }
@@ -285,8 +291,10 @@ int FluentSplitter::handleIndex(FluentSplitterHandle* handle) const {
     return -1;
 }
 
-QList<int> FluentSplitter::calculateSizes(const QList<double>& proportions) const {
-    if (!m_splitter || proportions.isEmpty()) return QList<int>();
+QList<int> FluentSplitter::calculateSizes(
+    const QList<double>& proportions) const {
+    if (!m_splitter || proportions.isEmpty())
+        return QList<int>();
 
     int totalSize = (orientation() == Qt::Horizontal) ? width() : height();
     QList<int> sizes;
@@ -298,15 +306,18 @@ QList<int> FluentSplitter::calculateSizes(const QList<double>& proportions) cons
     return sizes;
 }
 
-QList<double> FluentSplitter::calculateProportions(const QList<int>& sizes) const {
-    if (sizes.isEmpty()) return QList<double>();
+QList<double> FluentSplitter::calculateProportions(
+    const QList<int>& sizes) const {
+    if (sizes.isEmpty())
+        return QList<double>();
 
     int totalSize = 0;
     for (int size : sizes) {
         totalSize += size;
     }
 
-    if (totalSize == 0) return QList<double>();
+    if (totalSize == 0)
+        return QList<double>();
 
     QList<double> proportions;
     for (int size : sizes) {
@@ -317,12 +328,12 @@ QList<double> FluentSplitter::calculateProportions(const QList<int>& sizes) cons
 }
 
 // FluentSplitterHandle implementation
-FluentSplitterHandle::FluentSplitterHandle(Qt::Orientation orientation, QSplitter* parent)
-    : QSplitterHandle(orientation, parent)
-    , m_orientation(orientation)
-    , m_hovered(false)
-    , m_pressed(false)
-{
+FluentSplitterHandle::FluentSplitterHandle(Qt::Orientation orientation,
+                                           QSplitter* parent)
+    : QSplitterHandle(orientation, parent),
+      m_orientation(orientation),
+      m_hovered(false),
+      m_pressed(false) {
     setAttribute(Qt::WA_Hover, true);
 }
 
@@ -361,7 +372,8 @@ void FluentSplitterHandle::mouseMoveEvent(QMouseEvent* event) {
     QSplitterHandle::mouseMoveEvent(event);
     if (m_pressed) {
         QPoint delta = event->pos() - m_pressPos;
-        int deltaValue = (orientation() == Qt::Horizontal) ? delta.x() : delta.y();
+        int deltaValue =
+            (orientation() == Qt::Horizontal) ? delta.x() : delta.y();
         emit handleMoved(deltaValue);
     }
 }
@@ -380,40 +392,42 @@ void FluentSplitterHandle::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     QColor handleColor = palette.neutralQuaternaryAlt;
     if (m_pressed) {
         handleColor = palette.accent;
     } else if (m_hovered) {
         handleColor = palette.accent.lighter(150);
     }
-    
+
     // Draw handle
     QRect handleRect = rect();
     if (orientation() == Qt::Horizontal) {
         // Vertical handle for horizontal splitter
         int centerX = handleRect.center().x();
-        handleRect = QRect(centerX - 1, handleRect.top() + 4, 2, handleRect.height() - 8);
+        handleRect = QRect(centerX - 1, handleRect.top() + 4, 2,
+                           handleRect.height() - 8);
     } else {
         // Horizontal handle for vertical splitter
         int centerY = handleRect.center().y();
-        handleRect = QRect(handleRect.left() + 4, centerY - 1, handleRect.width() - 8, 2);
+        handleRect = QRect(handleRect.left() + 4, centerY - 1,
+                           handleRect.width() - 8, 2);
     }
-    
+
     painter.fillRect(handleRect, handleColor);
-    
+
     // Draw grip dots for visual feedback
     if (m_hovered || m_pressed) {
         painter.setBrush(handleColor.darker(120));
         painter.setPen(Qt::NoPen);
-        
+
         QPoint center = rect().center();
         int dotSize = 2;
         int spacing = 6;
-        
+
         if (orientation() == Qt::Horizontal) {
             // Vertical dots
             for (int i = -1; i <= 1; ++i) {
@@ -463,18 +477,18 @@ void FluentSplitterHandle::setHandleWidth(int width) {
 }
 
 // Additional FluentSplitter methods
-void FluentSplitter::distributeEvenly() {
-    distributeEvenly(true);
-}
+void FluentSplitter::distributeEvenly() { distributeEvenly(true); }
 
 void FluentSplitter::distributeEvenly(bool animated) {
-    if (!m_splitter) return;
+    if (!m_splitter)
+        return;
 
     QList<int> sizes;
     int totalSize = (orientation() == Qt::Horizontal) ? width() : height();
     int widgetCount = m_splitter->count();
 
-    if (widgetCount == 0) return;
+    if (widgetCount == 0)
+        return;
 
     int sizePerWidget = totalSize / widgetCount;
     for (int i = 0; i < widgetCount; ++i) {
@@ -490,7 +504,8 @@ void FluentSplitter::distributeEvenly(bool animated) {
 }
 
 void FluentSplitter::resetToDefaults() {
-    if (!m_splitter) return;
+    if (!m_splitter)
+        return;
 
     // Reset to default proportions
     distributeEvenly(false);
@@ -501,7 +516,8 @@ void FluentSplitter::resetToDefaults() {
 }
 
 void FluentSplitter::refresh() {
-    if (!m_splitter) return;
+    if (!m_splitter)
+        return;
 
     updateHandles();
     update();
@@ -543,4 +559,4 @@ void FluentSplitter::paintEvent(QPaintEvent* event) {
     // Additional custom painting if needed
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

@@ -1,37 +1,38 @@
 // src/Components/FluentAvatar.cpp
 #include "FluentQt/Components/FluentAvatar.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QFontMetrics>
-#include <QApplication>
 #include <QAccessible>
-#include <QFileInfo>
-#include <QImageReader>
+#include <QApplication>
 #include <QBuffer>
+#include <QFileInfo>
+#include <QFontMetrics>
+#include <QImageReader>
+#include <QMouseEvent>
 #include <QNetworkAccessManager>
-#include <QNetworkRequest>
 #include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QPainter>
 #include <QTimer>
 #include <cmath>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentAvatar::FluentAvatar(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-    , m_networkManager(new QNetworkAccessManager(this)) {
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)),
+      m_networkManager(new QNetworkAccessManager(this)) {
     setupAnimations();
     updateColors();
     updateInitials();
     updateAccessibility();
-    setFixedSize(40, 40); // Default size
-    
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentAvatar::updateColors);
-    
-    connect(m_networkManager, &QNetworkAccessManager::finished,
-            this, &FluentAvatar::onImageDownloaded);
+    setFixedSize(40, 40);  // Default size
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentAvatar::updateColors);
+
+    connect(m_networkManager, &QNetworkAccessManager::finished, this,
+            &FluentAvatar::onImageDownloaded);
 }
 
 FluentAvatar::FluentAvatar(const QString& name, QWidget* parent)
@@ -56,13 +57,12 @@ FluentAvatar::FluentAvatar(FluentAvatarSize size, QWidget* parent)
 
 FluentAvatar::~FluentAvatar() = default;
 
-QString FluentAvatar::name() const {
-    return m_name;
-}
+QString FluentAvatar::name() const { return m_name; }
 
 void FluentAvatar::setName(const QString& name) {
-    if (m_name == name) return;
-    
+    if (m_name == name)
+        return;
+
     m_name = name;
     updateInitials();
     update();
@@ -70,50 +70,46 @@ void FluentAvatar::setName(const QString& name) {
     updateAccessibility();
 }
 
-QPixmap FluentAvatar::image() const {
-    return m_image;
-}
+QPixmap FluentAvatar::image() const { return m_image; }
 
 void FluentAvatar::setImage(const QPixmap& image) {
-    if (m_image.cacheKey() == image.cacheKey()) return;
-    
+    if (m_image.cacheKey() == image.cacheKey())
+        return;
+
     m_image = image;
-    m_scaledImage = QPixmap(); // Clear cached scaled image
+    m_scaledImage = QPixmap();  // Clear cached scaled image
     update();
     emit imageChanged(m_image);
 }
 
-QIcon FluentAvatar::icon() const {
-    return m_icon;
-}
+QIcon FluentAvatar::icon() const { return m_icon; }
 
 void FluentAvatar::setIcon(const QIcon& icon) {
-    if (m_icon.cacheKey() == icon.cacheKey()) return;
-    
+    if (m_icon.cacheKey() == icon.cacheKey())
+        return;
+
     m_icon = icon;
     update();
     emit iconChanged(m_icon);
 }
 
-QString FluentAvatar::initials() const {
-    return m_initials;
-}
+QString FluentAvatar::initials() const { return m_initials; }
 
 void FluentAvatar::setInitials(const QString& initials) {
-    if (m_initials == initials) return;
-    
-    m_initials = initials.left(3); // Limit to 3 characters
+    if (m_initials == initials)
+        return;
+
+    m_initials = initials.left(3);  // Limit to 3 characters
     update();
     emit initialsChanged(m_initials);
 }
 
-FluentAvatarSize FluentAvatar::avatarSize() const {
-    return m_avatarSize;
-}
+FluentAvatarSize FluentAvatar::avatarSize() const { return m_avatarSize; }
 
 void FluentAvatar::setAvatarSize(FluentAvatarSize size) {
-    if (m_avatarSize == size) return;
-    
+    if (m_avatarSize == size)
+        return;
+
     m_avatarSize = size;
     updateSizeMetrics();
     updateGeometry();
@@ -121,133 +117,122 @@ void FluentAvatar::setAvatarSize(FluentAvatarSize size) {
     emit avatarSizeChanged(m_avatarSize);
 }
 
-FluentAvatarShape FluentAvatar::shape() const {
-    return m_shape;
-}
+FluentAvatarShape FluentAvatar::shape() const { return m_shape; }
 
 void FluentAvatar::setShape(FluentAvatarShape shape) {
-    if (m_shape == shape) return;
-    
+    if (m_shape == shape)
+        return;
+
     m_shape = shape;
     update();
     emit shapeChanged(m_shape);
 }
 
-FluentAvatarStatus FluentAvatar::status() const {
-    return m_status;
-}
+FluentAvatarStatus FluentAvatar::status() const { return m_status; }
 
 void FluentAvatar::setStatus(FluentAvatarStatus status) {
-    if (m_status == status) return;
-    
+    if (m_status == status)
+        return;
+
     m_status = status;
     update();
     emit statusChanged(m_status);
 }
 
-QColor FluentAvatar::backgroundColor() const {
-    return m_backgroundColor;
-}
+QColor FluentAvatar::backgroundColor() const { return m_backgroundColor; }
 
 void FluentAvatar::setBackgroundColor(const QColor& color) {
-    if (m_backgroundColor == color) return;
-    
+    if (m_backgroundColor == color)
+        return;
+
     m_backgroundColor = color;
     m_hasCustomBackgroundColor = true;
     update();
     emit backgroundColorChanged(m_backgroundColor);
 }
 
-QColor FluentAvatar::textColor() const {
-    return m_textColor;
-}
+QColor FluentAvatar::textColor() const { return m_textColor; }
 
 void FluentAvatar::setTextColor(const QColor& color) {
-    if (m_textColor == color) return;
-    
+    if (m_textColor == color)
+        return;
+
     m_textColor = color;
     m_hasCustomTextColor = true;
     update();
     emit textColorChanged(m_textColor);
 }
 
-bool FluentAvatar::showBorder() const {
-    return m_showBorder;
-}
+bool FluentAvatar::showBorder() const { return m_showBorder; }
 
 void FluentAvatar::setShowBorder(bool show) {
-    if (m_showBorder == show) return;
-    
+    if (m_showBorder == show)
+        return;
+
     m_showBorder = show;
     update();
     emit showBorderChanged(m_showBorder);
 }
 
-bool FluentAvatar::showStatus() const {
-    return m_showStatus;
-}
+bool FluentAvatar::showStatus() const { return m_showStatus; }
 
 void FluentAvatar::setShowStatus(bool show) {
-    if (m_showStatus == show) return;
-    
+    if (m_showStatus == show)
+        return;
+
     m_showStatus = show;
     update();
     emit showStatusChanged(m_showStatus);
 }
 
-bool FluentAvatar::isClickable() const {
-    return m_clickable;
-}
+bool FluentAvatar::isClickable() const { return m_clickable; }
 
 void FluentAvatar::setClickable(bool clickable) {
-    if (m_clickable == clickable) return;
-    
+    if (m_clickable == clickable)
+        return;
+
     m_clickable = clickable;
     setCursor(m_clickable ? Qt::PointingHandCursor : Qt::ArrowCursor);
     setAttribute(Qt::WA_Hover, m_clickable);
     emit clickableChanged(m_clickable);
 }
 
-bool FluentAvatar::isAnimated() const {
-    return m_animated;
-}
+bool FluentAvatar::isAnimated() const { return m_animated; }
 
 void FluentAvatar::setAnimated(bool animated) {
-    if (m_animated == animated) return;
-    
+    if (m_animated == animated)
+        return;
+
     m_animated = animated;
     emit animatedChanged(m_animated);
 }
 
-QString FluentAvatar::imageUrl() const {
-    return m_imageUrl;
-}
+QString FluentAvatar::imageUrl() const { return m_imageUrl; }
 
 void FluentAvatar::setImageUrl(const QString& url) {
-    if (m_imageUrl == url) return;
-    
+    if (m_imageUrl == url)
+        return;
+
     m_imageUrl = url;
-    
+
     if (!url.isEmpty()) {
         loadImageFromUrl(url);
     }
-    
+
     emit imageUrlChanged(m_imageUrl);
 }
 
-QSize FluentAvatar::sizeHint() const {
-    return QSize(m_size, m_size);
-}
+QSize FluentAvatar::sizeHint() const { return QSize(m_size, m_size); }
 
-QSize FluentAvatar::minimumSizeHint() const {
-    return QSize(16, 16);
-}
+QSize FluentAvatar::minimumSizeHint() const { return QSize(16, 16); }
 
-FluentAvatar* FluentAvatar::createWithName(const QString& name, QWidget* parent) {
+FluentAvatar* FluentAvatar::createWithName(const QString& name,
+                                           QWidget* parent) {
     return new FluentAvatar(name, parent);
 }
 
-FluentAvatar* FluentAvatar::createWithImage(const QPixmap& image, QWidget* parent) {
+FluentAvatar* FluentAvatar::createWithImage(const QPixmap& image,
+                                            QWidget* parent) {
     return new FluentAvatar(image, parent);
 }
 
@@ -279,20 +264,17 @@ void FluentAvatar::loadImageFromFile(const QString& filePath) {
 }
 
 void FluentAvatar::loadImageFromUrl(const QString& url) {
-    if (url.isEmpty()) return;
-    
+    if (url.isEmpty())
+        return;
+
     QNetworkRequest request(QUrl(url));
     request.setRawHeader("User-Agent", "FluentQt Avatar Component");
     m_networkManager->get(request);
 }
 
-void FluentAvatar::clearImage() {
-    setImage(QPixmap());
-}
+void FluentAvatar::clearImage() { setImage(QPixmap()); }
 
-void FluentAvatar::clearIcon() {
-    setIcon(QIcon());
-}
+void FluentAvatar::clearIcon() { setIcon(QIcon()); }
 
 void FluentAvatar::reset() {
     clearImage();
@@ -306,12 +288,12 @@ void FluentAvatar::setupAnimations() {
     m_hoverAnimation = new QPropertyAnimation(this, "hoverOpacity", this);
     m_hoverAnimation->setDuration(150);
     m_hoverAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Press animation
     m_pressAnimation = new QPropertyAnimation(this, "pressScale", this);
     m_pressAnimation->setDuration(100);
     m_pressAnimation->setEasingCurve(QEasingCurve::OutBack);
-    
+
     // Status pulse animation
     m_statusAnimation = new QPropertyAnimation(this, "statusOpacity", this);
     m_statusAnimation->setDuration(1000);
@@ -336,7 +318,7 @@ void FluentAvatar::updateSizeMetrics() {
             m_size = 72;
             break;
     }
-    
+
     setFixedSize(m_size, m_size);
 }
 
@@ -344,44 +326,50 @@ void FluentAvatar::updateInitials() {
     if (!m_name.isEmpty() && m_initials.isEmpty()) {
         QStringList words = m_name.split(' ', Qt::SkipEmptyParts);
         QString generatedInitials;
-        
+
         for (const QString& word : words) {
             if (!word.isEmpty()) {
                 generatedInitials += word.at(0).toUpper();
-                if (generatedInitials.length() >= 2) break;
+                if (generatedInitials.length() >= 2)
+                    break;
             }
         }
-        
+
         m_initials = generatedInitials;
     }
 }
 
 QPixmap FluentAvatar::getScaledImage() const {
-    if (m_image.isNull()) return QPixmap();
-    
-    if (m_scaledImage.isNull() || m_scaledImage.size() != QSize(m_size, m_size)) {
+    if (m_image.isNull())
+        return QPixmap();
+
+    if (m_scaledImage.isNull() ||
+        m_scaledImage.size() != QSize(m_size, m_size)) {
         const int devicePixelRatio = devicePixelRatioF();
-        const QSize scaledSize(m_size * devicePixelRatio, m_size * devicePixelRatio);
-        
-        m_scaledImage = m_image.scaled(scaledSize, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        const QSize scaledSize(m_size * devicePixelRatio,
+                               m_size * devicePixelRatio);
+
+        m_scaledImage =
+            m_image.scaled(scaledSize, Qt::KeepAspectRatioByExpanding,
+                           Qt::SmoothTransformation);
         m_scaledImage.setDevicePixelRatio(devicePixelRatio);
-        
+
         // Crop to circle if needed
         if (m_shape == FluentAvatarShape::Circle) {
             QPixmap circularImage(scaledSize);
             circularImage.fill(Qt::transparent);
             circularImage.setDevicePixelRatio(devicePixelRatio);
-            
+
             QPainter painter(&circularImage);
             painter.setRenderHint(QPainter::Antialiasing);
             painter.setBrush(QBrush(m_scaledImage));
             painter.setPen(Qt::NoPen);
             painter.drawEllipse(circularImage.rect());
-            
+
             m_scaledImage = circularImage;
         }
     }
-    
+
     return m_scaledImage;
 }
 
@@ -389,17 +377,17 @@ QColor FluentAvatar::generateBackgroundColor() const {
     if (m_hasCustomBackgroundColor) {
         return m_backgroundColor;
     }
-    
+
     // Generate color based on name hash
     if (!m_name.isEmpty()) {
         const auto& theme = Styling::FluentTheme::instance();
-        
+
         // Simple hash function
         uint hash = 0;
         for (const QChar& ch : m_name) {
             hash = hash * 31 + ch.unicode();
         }
-        
+
         // Predefined color palette
         const QList<QColor> colors = {
             QColor(232, 17, 35),   // Red
@@ -411,10 +399,10 @@ QColor FluentAvatar::generateBackgroundColor() const {
             QColor(255, 140, 0),   // Orange
             QColor(255, 185, 0),   // Yellow
         };
-        
+
         return colors[hash % colors.size()];
     }
-    
+
     const auto& theme = Styling::FluentTheme::instance();
     return theme.color(Styling::FluentThemeColor::AccentFillDefault);
 }
@@ -508,7 +496,8 @@ void FluentAvatar::paintAvatar(QPainter* painter) {
 
 void FluentAvatar::paintImage(QPainter* painter, const QRect& rect) {
     const QPixmap scaledImage = getScaledImage();
-    if (scaledImage.isNull()) return;
+    if (scaledImage.isNull())
+        return;
 
     painter->save();
 
@@ -519,7 +508,7 @@ void FluentAvatar::paintImage(QPainter* painter, const QRect& rect) {
         painter->setClipPath(path);
     } else {
         // Rounded rectangle
-        const qreal radius = rect.width() * 0.1; // 10% of width
+        const qreal radius = rect.width() * 0.1;  // 10% of width
         QPainterPath path;
         path.addRoundedRect(rect, radius, radius);
         painter->setClipPath(path);
@@ -530,10 +519,8 @@ void FluentAvatar::paintImage(QPainter* painter, const QRect& rect) {
     const QRect targetRect = rect;
 
     // Center the image
-    const QPoint offset(
-        (targetRect.width() - imageRect.width()) / 2,
-        (targetRect.height() - imageRect.height()) / 2
-    );
+    const QPoint offset((targetRect.width() - imageRect.width()) / 2,
+                        (targetRect.height() - imageRect.height()) / 2);
 
     painter->drawPixmap(targetRect.topLeft() + offset, scaledImage);
 
@@ -556,13 +543,9 @@ void FluentAvatar::paintIcon(QPainter* painter, const QRect& rect) {
     }
 
     // Draw icon
-    const int iconSize = rect.width() * 0.6; // 60% of avatar size
-    const QRect iconRect(
-        rect.center().x() - iconSize / 2,
-        rect.center().y() - iconSize / 2,
-        iconSize,
-        iconSize
-    );
+    const int iconSize = rect.width() * 0.6;  // 60% of avatar size
+    const QRect iconRect(rect.center().x() - iconSize / 2,
+                         rect.center().y() - iconSize / 2, iconSize, iconSize);
 
     QIcon::Mode mode = isEnabled() ? QIcon::Normal : QIcon::Disabled;
     QPixmap iconPixmap = m_icon.pixmap(QSize(iconSize, iconSize), mode);
@@ -592,7 +575,7 @@ void FluentAvatar::paintInitials(QPainter* painter, const QRect& rect) {
 
         // Calculate font size based on avatar size
         QFont font = this->font();
-        const int fontSize = rect.width() * 0.4; // 40% of avatar size
+        const int fontSize = rect.width() * 0.4;  // 40% of avatar size
         font.setPixelSize(fontSize);
         font.setBold(true);
         painter->setFont(font);
@@ -606,7 +589,8 @@ void FluentAvatar::paintInitials(QPainter* painter, const QRect& rect) {
 void FluentAvatar::paintBorder(QPainter* painter) {
     const QRect rect = this->rect();
     const auto& theme = Styling::FluentTheme::instance();
-    const QColor borderColor = theme.color(Styling::FluentThemeColor::ControlStrokeDefault);
+    const QColor borderColor =
+        theme.color(Styling::FluentThemeColor::ControlStrokeDefault);
 
     painter->save();
 
@@ -626,15 +610,11 @@ void FluentAvatar::paintBorder(QPainter* painter) {
 
 void FluentAvatar::paintStatus(QPainter* painter) {
     const QRect rect = this->rect();
-    const int statusSize = rect.width() * 0.25; // 25% of avatar size
+    const int statusSize = rect.width() * 0.25;  // 25% of avatar size
 
     // Position status indicator at bottom-right
-    const QRect statusRect(
-        rect.right() - statusSize,
-        rect.bottom() - statusSize,
-        statusSize,
-        statusSize
-    );
+    const QRect statusRect(rect.right() - statusSize,
+                           rect.bottom() - statusSize, statusSize, statusSize);
 
     painter->save();
     painter->setOpacity(m_statusOpacity);
@@ -642,16 +622,16 @@ void FluentAvatar::paintStatus(QPainter* painter) {
     QColor statusColor;
     switch (m_status) {
         case FluentAvatarStatus::Online:
-            statusColor = QColor(16, 124, 16); // Green
+            statusColor = QColor(16, 124, 16);  // Green
             break;
         case FluentAvatarStatus::Away:
-            statusColor = QColor(255, 140, 0); // Orange
+            statusColor = QColor(255, 140, 0);  // Orange
             break;
         case FluentAvatarStatus::Busy:
-            statusColor = QColor(196, 43, 28); // Red
+            statusColor = QColor(196, 43, 28);  // Red
             break;
         case FluentAvatarStatus::Offline:
-            statusColor = QColor(128, 128, 128); // Gray
+            statusColor = QColor(128, 128, 128);  // Gray
             break;
         case FluentAvatarStatus::None:
             painter->restore();
@@ -667,7 +647,8 @@ void FluentAvatar::paintStatus(QPainter* painter) {
 }
 
 void FluentAvatar::startHoverAnimation(bool hover) {
-    if (!m_hoverAnimation) return;
+    if (!m_hoverAnimation)
+        return;
 
     m_hoverAnimation->stop();
     m_hoverAnimation->setStartValue(m_hoverOpacity);
@@ -676,7 +657,8 @@ void FluentAvatar::startHoverAnimation(bool hover) {
 }
 
 void FluentAvatar::startPressAnimation() {
-    if (!m_pressAnimation) return;
+    if (!m_pressAnimation)
+        return;
 
     m_pressAnimation->stop();
     m_pressAnimation->setStartValue(m_pressScale);
@@ -710,7 +692,8 @@ void FluentAvatar::updateColors() {
     }
 
     if (!m_hasCustomTextColor) {
-        m_textColor = theme.color(Styling::FluentThemeColor::TextOnAccentFillPrimary);
+        m_textColor =
+            theme.color(Styling::FluentThemeColor::TextOnAccentFillPrimary);
     }
 
     update();
@@ -739,34 +722,31 @@ void FluentAvatar::updateAccessibility() {
 }
 
 // Property accessors for animations
-qreal FluentAvatar::hoverOpacity() const {
-    return m_hoverOpacity;
-}
+qreal FluentAvatar::hoverOpacity() const { return m_hoverOpacity; }
 
 void FluentAvatar::setHoverOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_hoverOpacity, opacity)) return;
+    if (qFuzzyCompare(m_hoverOpacity, opacity))
+        return;
     m_hoverOpacity = opacity;
     update();
 }
 
-qreal FluentAvatar::pressScale() const {
-    return m_pressScale;
-}
+qreal FluentAvatar::pressScale() const { return m_pressScale; }
 
 void FluentAvatar::setPressScale(qreal scale) {
-    if (qFuzzyCompare(m_pressScale, scale)) return;
+    if (qFuzzyCompare(m_pressScale, scale))
+        return;
     m_pressScale = scale;
     update();
 }
 
-qreal FluentAvatar::statusOpacity() const {
-    return m_statusOpacity;
-}
+qreal FluentAvatar::statusOpacity() const { return m_statusOpacity; }
 
 void FluentAvatar::setStatusOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_statusOpacity, opacity)) return;
+    if (qFuzzyCompare(m_statusOpacity, opacity))
+        return;
     m_statusOpacity = opacity;
     update();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

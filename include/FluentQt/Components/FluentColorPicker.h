@@ -1,42 +1,42 @@
 // include/FluentQt/Components/FluentColorPicker.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include "FluentQt/Components/FluentButton.h"
-#include <QWidget>
 #include <QColor>
-#include <QPropertyAnimation>
 #include <QGridLayout>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPropertyAnimation>
 #include <QSlider>
 #include <QSpinBox>
-#include <QLineEdit>
-#include <QLabel>
+#include <QVBoxLayout>
+#include <QWidget>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentColorPickerMode {
-    Palette,        // Predefined color palette
-    Wheel,          // Color wheel picker
-    Sliders,        // RGB/HSV sliders
-    Compact,        // Compact palette + custom button
-    Full            // All modes available
+    Palette,  // Predefined color palette
+    Wheel,    // Color wheel picker
+    Sliders,  // RGB/HSV sliders
+    Compact,  // Compact palette + custom button
+    Full      // All modes available
 };
 
 enum class FluentColorPickerFormat {
-    RGB,            // Red, Green, Blue
-    HSV,            // Hue, Saturation, Value
-    HSL,            // Hue, Saturation, Lightness
-    CMYK,           // Cyan, Magenta, Yellow, Key
-    Hex             // Hexadecimal
+    RGB,   // Red, Green, Blue
+    HSV,   // Hue, Saturation, Value
+    HSL,   // Hue, Saturation, Lightness
+    CMYK,  // Cyan, Magenta, Yellow, Key
+    Hex    // Hexadecimal
 };
 
 enum class FluentColorPickerSize {
-    Small,          // Compact size
-    Medium,         // Standard size
-    Large           // Extended size
+    Small,   // Compact size
+    Medium,  // Standard size
+    Large    // Extended size
 };
 
 class FluentColorWheel;
@@ -46,52 +46,63 @@ class FluentColorPalette;
 class FluentColorPicker : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
-    Q_PROPERTY(FluentColorPickerMode mode READ mode WRITE setMode NOTIFY modeChanged)
-    Q_PROPERTY(FluentColorPickerFormat format READ format WRITE setFormat NOTIFY formatChanged)
-    Q_PROPERTY(FluentColorPickerSize pickerSize READ pickerSize WRITE setPickerSize NOTIFY pickerSizeChanged)
-    Q_PROPERTY(bool showAlpha READ showAlpha WRITE setShowAlpha NOTIFY showAlphaChanged)
-    Q_PROPERTY(bool showPreview READ showPreview WRITE setShowPreview NOTIFY showPreviewChanged)
-    Q_PROPERTY(bool showHistory READ showHistory WRITE setShowHistory NOTIFY showHistoryChanged)
-    Q_PROPERTY(bool showEyeDropper READ showEyeDropper WRITE setShowEyeDropper NOTIFY showEyeDropperChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(QStringList customPalette READ customPalette WRITE setCustomPalette NOTIFY customPaletteChanged)
+    Q_PROPERTY(
+        FluentColorPickerMode mode READ mode WRITE setMode NOTIFY modeChanged)
+    Q_PROPERTY(FluentColorPickerFormat format READ format WRITE setFormat NOTIFY
+                   formatChanged)
+    Q_PROPERTY(FluentColorPickerSize pickerSize READ pickerSize WRITE
+                   setPickerSize NOTIFY pickerSizeChanged)
+    Q_PROPERTY(bool showAlpha READ showAlpha WRITE setShowAlpha NOTIFY
+                   showAlphaChanged)
+    Q_PROPERTY(bool showPreview READ showPreview WRITE setShowPreview NOTIFY
+                   showPreviewChanged)
+    Q_PROPERTY(bool showHistory READ showHistory WRITE setShowHistory NOTIFY
+                   showHistoryChanged)
+    Q_PROPERTY(bool showEyeDropper READ showEyeDropper WRITE setShowEyeDropper
+                   NOTIFY showEyeDropperChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(QStringList customPalette READ customPalette WRITE
+                   setCustomPalette NOTIFY customPaletteChanged)
 
 public:
     explicit FluentColorPicker(QWidget* parent = nullptr);
-    explicit FluentColorPicker(const QColor& initialColor, QWidget* parent = nullptr);
-    explicit FluentColorPicker(FluentColorPickerMode mode, QWidget* parent = nullptr);
+    explicit FluentColorPicker(const QColor& initialColor,
+                               QWidget* parent = nullptr);
+    explicit FluentColorPicker(FluentColorPickerMode mode,
+                               QWidget* parent = nullptr);
     ~FluentColorPicker() override;
 
     // Color properties
     QColor color() const;
     void setColor(const QColor& color);
-    
+
     int alpha() const;
     void setAlpha(int alpha);
 
     // Mode and format
     FluentColorPickerMode mode() const;
     void setMode(FluentColorPickerMode mode);
-    
+
     FluentColorPickerFormat format() const;
     void setFormat(FluentColorPickerFormat format);
-    
+
     FluentColorPickerSize pickerSize() const;
     void setPickerSize(FluentColorPickerSize size);
 
     // Feature toggles
     bool showAlpha() const;
     void setShowAlpha(bool show);
-    
+
     bool showPreview() const;
     void setShowPreview(bool show);
-    
+
     bool showHistory() const;
     void setShowHistory(bool show);
-    
+
     bool showEyeDropper() const;
     void setShowEyeDropper(bool show);
-    
+
     bool isAnimated() const;
     void setAnimated(bool animated);
 
@@ -124,8 +135,10 @@ public:
     FluentColorPalette* colorPalette() const { return m_colorPalette; }
 
     // Static convenience methods
-    static QColor getColor(const QColor& initial = Qt::white, QWidget* parent = nullptr, 
-                          const QString& title = QString(), QColorDialog::ColorDialogOptions options = {});
+    static QColor getColor(const QColor& initial = Qt::white,
+                           QWidget* parent = nullptr,
+                           const QString& title = QString(),
+                           QColorDialog::ColorDialogOptions options = {});
     static FluentColorPicker* createCompactPicker(QWidget* parent = nullptr);
     static FluentColorPicker* createPalettePicker(QWidget* parent = nullptr);
 
@@ -147,7 +160,7 @@ signals:
     void showEyeDropperChanged(bool show);
     void animatedChanged(bool animated);
     void customPaletteChanged(const QStringList& colors);
-    
+
     void colorSelected(const QColor& color);
     void colorHovered(const QColor& color);
     void eyeDropperActivated();
@@ -178,21 +191,21 @@ private:
     void setupPreview();
     void setupHistory();
     void setupEyeDropper();
-    
+
     void updateLayout();
     void updateSizeMetrics();
     void updateVisibility();
-    
+
     // Color conversion methods
     void updateFromColor();
     void updateColorFromInputs();
     QColor getColorFromSliders() const;
     void setColorToSliders(const QColor& color);
-    
+
     // Input validation
     void validateColorInputs();
     void formatColorInputs();
-    
+
     // Animation methods
     void animateColorChange(const QColor& newColor);
     void animatePreviewUpdate();
@@ -203,19 +216,19 @@ private:
     FluentColorPickerMode m_mode{FluentColorPickerMode::Full};
     FluentColorPickerFormat m_format{FluentColorPickerFormat::RGB};
     FluentColorPickerSize m_pickerSize{FluentColorPickerSize::Medium};
-    
+
     // Feature flags
     bool m_showAlpha{true};
     bool m_showPreview{true};
     bool m_showHistory{true};
     bool m_showEyeDropper{true};
     bool m_animated{true};
-    
+
     // Palette and history
     QStringList m_customPalette;
     QList<QColor> m_colorHistory;
     int m_maxHistorySize{20};
-    
+
     // Layout components
     QVBoxLayout* m_mainLayout{nullptr};
     QHBoxLayout* m_topLayout{nullptr};
@@ -223,11 +236,11 @@ private:
     QGridLayout* m_slidersLayout{nullptr};
     QHBoxLayout* m_inputsLayout{nullptr};
     QHBoxLayout* m_previewLayout{nullptr};
-    
+
     // Sub-components
     FluentColorWheel* m_colorWheel{nullptr};
     FluentColorPalette* m_colorPalette{nullptr};
-    
+
     // Sliders (RGB/HSV)
     FluentColorSlider* m_redSlider{nullptr};
     FluentColorSlider* m_greenSlider{nullptr};
@@ -236,43 +249,43 @@ private:
     FluentColorSlider* m_hueSlider{nullptr};
     FluentColorSlider* m_saturationSlider{nullptr};
     FluentColorSlider* m_valueSlider{nullptr};
-    
+
     // Input fields
     QSpinBox* m_redSpinBox{nullptr};
     QSpinBox* m_greenSpinBox{nullptr};
     QSpinBox* m_blueSpinBox{nullptr};
     QSpinBox* m_alphaSpinBox{nullptr};
     QLineEdit* m_hexLineEdit{nullptr};
-    
+
     // Labels
     QLabel* m_redLabel{nullptr};
     QLabel* m_greenLabel{nullptr};
     QLabel* m_blueLabel{nullptr};
     QLabel* m_alphaLabel{nullptr};
     QLabel* m_hexLabel{nullptr};
-    
+
     // Preview and controls
     QWidget* m_previewWidget{nullptr};
     QWidget* m_currentColorWidget{nullptr};
     QWidget* m_newColorWidget{nullptr};
     FluentButton* m_eyeDropperButton{nullptr};
     FluentButton* m_moreButton{nullptr};
-    
+
     // History
     QWidget* m_historyWidget{nullptr};
     QGridLayout* m_historyLayout{nullptr};
     QList<QWidget*> m_historyItems;
-    
+
     // State
     bool m_updatingFromColor{false};
     bool m_updatingFromInputs{false};
     QColor m_previousColor;
-    
+
     // Animation
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_colorAnimation{nullptr};
     QPropertyAnimation* m_previewAnimation{nullptr};
-    
+
     // Size metrics
     int m_wheelSize{200};
     int m_sliderHeight{20};
@@ -306,7 +319,8 @@ private:
 class FluentColorSlider : public QSlider {
     Q_OBJECT
 public:
-    explicit FluentColorSlider(Qt::Orientation orientation, QWidget* parent = nullptr);
+    explicit FluentColorSlider(Qt::Orientation orientation,
+                               QWidget* parent = nullptr);
     void setColorComponent(FluentColorPickerFormat format, int component);
 
 protected:
@@ -338,4 +352,4 @@ private:
     int m_itemSize{24};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

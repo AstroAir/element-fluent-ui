@@ -16,10 +16,20 @@ FluentAccessibilityManager::FluentAccessibilityManager() {
     // Initialize announcement queue timer
     m_announcementTimer = new QTimer(this);
     m_announcementTimer->setSingleShot(true);
-    connect(m_announcementTimer, &QTimer::timeout, this, &FluentAccessibilityManager::processAnnouncementQueue);
+    connect(m_announcementTimer, &QTimer::timeout, this,
+            &FluentAccessibilityManager::processAnnouncementQueue);
 
-    // Detect system accessibility settings
-    detectSystemAccessibilitySettings();
+    // Detect system accessibility settings unless explicitly skipped for
+    // tests/headless
+    const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        platformName == "offscreen" || platformName == "minimal") {
+        qDebug()
+            << "Skipping accessibility system detection (env/platform override)"
+            << platformName;
+    } else {
+        detectSystemAccessibilitySettings();
+    }
 
     qDebug() << "FluentAccessibilityManager initialized";
 }
@@ -70,8 +80,10 @@ void FluentAccessibilityManager::setMinimumContrastRatio(double ratio) {
 }
 
 // Announcement system
-void FluentAccessibilityManager::announceGlobally(const QString& message, LiveRegionType urgency) {
-    if (message.isEmpty()) return;
+void FluentAccessibilityManager::announceGlobally(const QString& message,
+                                                  LiveRegionType urgency) {
+    if (message.isEmpty())
+        return;
 
     QMutexLocker locker(&m_registryMutex);
 
@@ -90,6 +102,14 @@ void FluentAccessibilityManager::announceGlobally(const QString& message, LiveRe
 
 // System integration
 void FluentAccessibilityManager::detectSystemAccessibilitySettings() {
+    const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        platformName == "offscreen" || platformName == "minimal") {
+        qDebug() << "Skipping system accessibility settings detection "
+                    "(env/platform override)"
+                 << platformName;
+        return;
+    }
     // This would typically read from system accessibility settings
     // For now, we'll use placeholder implementations
 
@@ -101,19 +121,37 @@ void FluentAccessibilityManager::detectSystemAccessibilitySettings() {
 }
 
 void FluentAccessibilityManager::applySystemSettings() {
-    // Apply detected system settings
-    detectSystemAccessibilitySettings();
+    const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        platformName == "offscreen" || platformName == "minimal") {
+        qDebug() << "Skipping applySystemSettings (env/platform override)"
+                 << platformName;
+        return;
+    }
+    // Apply detected system settings (detection already done in constructor)
+    // Here we would apply the settings that were detected
     qDebug() << "Applied system accessibility settings";
 }
 
 void FluentAccessibilityManager::onSystemAccessibilityChanged() {
+    const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        platformName == "offscreen" || platformName == "minimal") {
+        qDebug() << "Skipping onSystemAccessibilityChanged handling "
+                    "(env/platform override)"
+                 << platformName;
+        return;
+    }
     // Respond to system accessibility changes
     detectSystemAccessibilitySettings();
     qDebug() << "System accessibility settings changed";
 }
 
-void FluentAccessibilityManager::validateRobustInternal(QWidget* widget, QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
-    if (!widget) return;
+void FluentAccessibilityManager::validateRobustInternal(
+    QWidget* widget,
+    QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
+    if (!widget)
+        return;
 
     // Placeholder implementation for robust validation
     // This would typically check for:
@@ -121,15 +159,19 @@ void FluentAccessibilityManager::validateRobustInternal(QWidget* widget, QList<F
     // - Compatibility with assistive technologies
     // - Proper use of accessibility APIs
 
-    qDebug() << "Validating robust accessibility for widget:" << widget->objectName();
+    qDebug() << "Validating robust accessibility for widget:"
+             << widget->objectName();
 
     // Add any robust validation issues found
     // For now, this is a placeholder implementation
     Q_UNUSED(issues);
 }
 
-void FluentAccessibilityManager::validateUnderstandableInternal(QWidget* widget, QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
-    if (!widget) return;
+void FluentAccessibilityManager::validateUnderstandableInternal(
+    QWidget* widget,
+    QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
+    if (!widget)
+        return;
 
     // Placeholder implementation for understandable validation
     // This would typically check for:
@@ -137,15 +179,19 @@ void FluentAccessibilityManager::validateUnderstandableInternal(QWidget* widget,
     // - Predictable functionality
     // - Input assistance and error identification
 
-    qDebug() << "Validating understandable accessibility for widget:" << widget->objectName();
+    qDebug() << "Validating understandable accessibility for widget:"
+             << widget->objectName();
 
     // Add any understandable validation issues found
     // For now, this is a placeholder implementation
     Q_UNUSED(issues);
 }
 
-void FluentAccessibilityManager::validateOperableInternal(QWidget* widget, QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
-    if (!widget) return;
+void FluentAccessibilityManager::validateOperableInternal(
+    QWidget* widget,
+    QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
+    if (!widget)
+        return;
 
     // Placeholder implementation for operable validation
     // This would typically check for:
@@ -154,15 +200,19 @@ void FluentAccessibilityManager::validateOperableInternal(QWidget* widget, QList
     // - Seizure and physical reaction safety
     // - Navigable content
 
-    qDebug() << "Validating operable accessibility for widget:" << widget->objectName();
+    qDebug() << "Validating operable accessibility for widget:"
+             << widget->objectName();
 
     // Add any operable validation issues found
     // For now, this is a placeholder implementation
     Q_UNUSED(issues);
 }
 
-void FluentAccessibilityManager::validatePerceivableInternal(QWidget* widget, QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
-    if (!widget) return;
+void FluentAccessibilityManager::validatePerceivableInternal(
+    QWidget* widget,
+    QList<FluentQt::Accessibility::AccessibilityIssue>& issues) {
+    if (!widget)
+        return;
 
     // Placeholder implementation for perceivable validation
     // This would typically check for:
@@ -171,7 +221,8 @@ void FluentAccessibilityManager::validatePerceivableInternal(QWidget* widget, QL
     // - Content can be presented in different ways without losing meaning
     // - Sufficient color contrast
 
-    qDebug() << "Validating perceivable accessibility for widget:" << widget->objectName();
+    qDebug() << "Validating perceivable accessibility for widget:"
+             << widget->objectName();
 
     // Add any perceivable validation issues found
     // For now, this is a placeholder implementation
@@ -203,6 +254,4 @@ void FluentAccessibilityManager::processAnnouncementQueue() {
     }
 }
 
-
-
-} // namespace FluentQt::Accessibility
+}  // namespace FluentQt::Accessibility

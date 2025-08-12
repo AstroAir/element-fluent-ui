@@ -1,50 +1,51 @@
 // src/Components/FluentContextMenu.cpp
 #include "FluentQt/Components/FluentContextMenu.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include <QApplication>
-#include <QScreen>
-#include <QPainter>
-#include <QStyleOption>
-#include <QGraphicsDropShadowEffect>
-#include <QPropertyAnimation>
 #include <QEasingCurve>
+#include <QEnterEvent>
+#include <QFocusEvent>
+#include <QGraphicsDropShadowEffect>
 #include <QKeyEvent>
 #include <QMouseEvent>
-#include <QFocusEvent>
-#include <QEnterEvent>
+#include <QPainter>
+#include <QPropertyAnimation>
+#include <QScreen>
+#include <QStyleOption>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentContextMenu::FluentContextMenu(QWidget* parent)
-    : QMenu(parent)
-    , m_animationDuration(200)
-    , m_shadowEnabled(true)
-    , m_roundedCorners(true)
-    , m_fadeAnimation(new QPropertyAnimation(this, "windowOpacity", this))
-{
+    : QMenu(parent),
+      m_animationDuration(200),
+      m_shadowEnabled(true),
+      m_roundedCorners(true),
+      m_fadeAnimation(new QPropertyAnimation(this, "windowOpacity", this)) {
     setupUI();
     setupAnimation();
     setupShadow();
 }
 
 void FluentContextMenu::setupUI() {
-    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint);
+    setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
+                   Qt::NoDropShadowWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
-    
+
     // Apply Fluent styling
     updateTheme();
-    
+
     // Connect to theme changes
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentContextMenu::updateTheme);
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentContextMenu::updateTheme);
 }
 
 void FluentContextMenu::setupAnimation() {
     m_fadeAnimation->setDuration(m_animationDuration);
     m_fadeAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_fadeAnimation, &QPropertyAnimation::finished,
-            this, &FluentContextMenu::onAnimationFinished);
+
+    connect(m_fadeAnimation, &QPropertyAnimation::finished, this,
+            &FluentContextMenu::onAnimationFinished);
 }
 
 void FluentContextMenu::setupShadow() {
@@ -56,7 +57,8 @@ void FluentContextMenu::setupShadow() {
         bool isDarkMode = (theme.mode() == Styling::FluentThemeMode::Dark);
 
         shadow->setBlurRadius(isDarkMode ? 32 : 24);
-        shadow->setColor(isDarkMode ? QColor(0, 0, 0, 120) : QColor(0, 0, 0, 40));
+        shadow->setColor(isDarkMode ? QColor(0, 0, 0, 120)
+                                    : QColor(0, 0, 0, 40));
         shadow->setOffset(0, isDarkMode ? 8 : 6);
 
         setGraphicsEffect(shadow);
@@ -64,35 +66,40 @@ void FluentContextMenu::setupShadow() {
 }
 
 void FluentContextMenu::setAnimationDuration(int duration) {
-    if (m_animationDuration == duration) return;
-    
+    if (m_animationDuration == duration)
+        return;
+
     m_animationDuration = duration;
     m_fadeAnimation->setDuration(duration);
 }
 
 void FluentContextMenu::setShadowEnabled(bool enabled) {
-    if (m_shadowEnabled == enabled) return;
-    
+    if (m_shadowEnabled == enabled)
+        return;
+
     m_shadowEnabled = enabled;
     setupShadow();
 }
 
 void FluentContextMenu::setRoundedCorners(bool rounded) {
-    if (m_roundedCorners == rounded) return;
-    
+    if (m_roundedCorners == rounded)
+        return;
+
     m_roundedCorners = rounded;
     update();
 }
 
-FluentMenuItem* FluentContextMenu::addFluentAction(const QString& text, const QIcon& icon) {
+FluentMenuItem* FluentContextMenu::addFluentAction(const QString& text,
+                                                   const QIcon& icon) {
     auto* action = new QAction(icon, text, this);
     QMenu::addAction(action);
     auto* item = new FluentMenuItem(action, this);
     return item;
 }
 
-FluentMenuItem* FluentContextMenu::addFluentAction(const QString& text, const QIcon& icon,
-                                                   const std::function<void()>& callback) {
+FluentMenuItem* FluentContextMenu::addFluentAction(
+    const QString& text, const QIcon& icon,
+    const std::function<void()>& callback) {
     auto* item = addFluentAction(text, icon);
     if (callback && item->action()) {
         connect(item->action(), &QAction::triggered, callback);
@@ -100,7 +107,9 @@ FluentMenuItem* FluentContextMenu::addFluentAction(const QString& text, const QI
     return item;
 }
 
-FluentMenuItem* FluentContextMenu::addToggleAction(const QString& text, const QIcon& icon, bool checked) {
+FluentMenuItem* FluentContextMenu::addToggleAction(const QString& text,
+                                                   const QIcon& icon,
+                                                   bool checked) {
     auto* action = new QAction(icon, text, this);
     action->setCheckable(true);
     action->setChecked(checked);
@@ -110,7 +119,10 @@ FluentMenuItem* FluentContextMenu::addToggleAction(const QString& text, const QI
     return item;
 }
 
-FluentMenuItem* FluentContextMenu::addRadioAction(const QString& text, const QString& group, const QIcon& icon, bool checked) {
+FluentMenuItem* FluentContextMenu::addRadioAction(const QString& text,
+                                                  const QString& group,
+                                                  const QIcon& icon,
+                                                  bool checked) {
     auto* action = new QAction(icon, text, this);
     action->setCheckable(true);
     action->setChecked(checked);
@@ -134,7 +146,9 @@ FluentMenuItem* FluentContextMenu::addRadioAction(const QString& text, const QSt
     return item;
 }
 
-FluentMenuItem* FluentContextMenu::addCheckableAction(const QString& text, const QIcon& icon, bool checked) {
+FluentMenuItem* FluentContextMenu::addCheckableAction(const QString& text,
+                                                      const QIcon& icon,
+                                                      bool checked) {
     auto* action = new QAction(icon, text, this);
     action->setCheckable(true);
     action->setChecked(checked);
@@ -144,11 +158,10 @@ FluentMenuItem* FluentContextMenu::addCheckableAction(const QString& text, const
     return item;
 }
 
-QAction* FluentContextMenu::addSeparator() {
-    return QMenu::addSeparator();
-}
+QAction* FluentContextMenu::addSeparator() { return QMenu::addSeparator(); }
 
-FluentContextMenu* FluentContextMenu::addFluentSubmenu(const QString& title, const QIcon& icon) {
+FluentContextMenu* FluentContextMenu::addFluentSubmenu(const QString& title,
+                                                       const QIcon& icon) {
     auto* submenu = new FluentContextMenu(this);
     submenu->setTitle(title);
     submenu->setIcon(icon);
@@ -163,13 +176,11 @@ FluentContextMenu* FluentContextMenu::addFluentSubmenu(const QString& title, con
     QMenu::addMenu(submenu);
 
     // Connect submenu signals for cascading behavior
-    connect(submenu, &FluentContextMenu::aboutToShow, this, [this, submenu]() {
-        m_activeSubmenus.append(submenu);
-    });
+    connect(submenu, &FluentContextMenu::aboutToShow, this,
+            [this, submenu]() { m_activeSubmenus.append(submenu); });
 
-    connect(submenu, &FluentContextMenu::aboutToHide, this, [this, submenu]() {
-        m_activeSubmenus.removeAll(submenu);
-    });
+    connect(submenu, &FluentContextMenu::aboutToHide, this,
+            [this, submenu]() { m_activeSubmenus.removeAll(submenu); });
 
     return submenu;
 }
@@ -193,26 +204,23 @@ void FluentContextMenu::animateShow() {
             m_fadeAnimation->start();
             break;
 
-        case FluentAnimationType::Scale:
-            {
-                setWindowOpacity(1.0);
-                FluentAnimationConfig config;
-                config.duration = std::chrono::milliseconds(m_animationDuration);
-                auto scaleAnimation = FluentAnimator::scaleIn(this, config);
-                scaleAnimation->start();
-            }
-            break;
+        case FluentAnimationType::Scale: {
+            setWindowOpacity(1.0);
+            FluentAnimationConfig config;
+            config.duration = std::chrono::milliseconds(m_animationDuration);
+            auto scaleAnimation = FluentAnimator::scaleIn(this, config);
+            scaleAnimation->start();
+        } break;
 
-        case FluentAnimationType::Slide:
-            {
-                setWindowOpacity(1.0);
-                QPoint slideFrom = pos() + QPoint(0, -20);
-                FluentAnimationConfig config;
-                config.duration = std::chrono::milliseconds(m_animationDuration);
-                auto slideAnimation = FluentAnimator::slideIn(this, slideFrom, config);
-                slideAnimation->start();
-            }
-            break;
+        case FluentAnimationType::Slide: {
+            setWindowOpacity(1.0);
+            QPoint slideFrom = pos() + QPoint(0, -20);
+            FluentAnimationConfig config;
+            config.duration = std::chrono::milliseconds(m_animationDuration);
+            auto slideAnimation =
+                FluentAnimator::slideIn(this, slideFrom, config);
+            slideAnimation->start();
+        } break;
 
         default:
             setWindowOpacity(0.0);
@@ -240,7 +248,7 @@ void FluentContextMenu::paintEvent(QPaintEvent* event) {
     const auto& palette = theme.currentPalette();
 
     // Draw background with subtle gradient and elevation
-    QRect bgRect = rect().adjusted(1, 1, -1, -1); // Account for border
+    QRect bgRect = rect().adjusted(1, 1, -1, -1);  // Account for border
 
     if (m_roundedCorners) {
         // Create subtle gradient background
@@ -250,7 +258,8 @@ void FluentContextMenu::paintEvent(QPaintEvent* event) {
 
         painter.setBrush(QBrush(gradient));
         painter.setPen(QPen(palette.neutralQuaternary, 1));
-        painter.drawRoundedRect(bgRect, FluentSpacing::Small, FluentSpacing::Small);
+        painter.drawRoundedRect(bgRect, FluentSpacing::Small,
+                                FluentSpacing::Small);
 
         // Add inner highlight for depth
         QRect highlightRect = bgRect.adjusted(1, 1, -1, -1);
@@ -258,7 +267,8 @@ void FluentContextMenu::paintEvent(QPaintEvent* event) {
         highlightPen.setStyle(Qt::SolidLine);
         painter.setPen(highlightPen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(highlightRect, FluentSpacing::Small - 1, FluentSpacing::Small - 1);
+        painter.drawRoundedRect(highlightRect, FluentSpacing::Small - 1,
+                                FluentSpacing::Small - 1);
     } else {
         painter.fillRect(bgRect, palette.neutralLightest);
         painter.setPen(QPen(palette.neutralQuaternary, 1));
@@ -274,7 +284,8 @@ void FluentContextMenu::updateTheme() {
     const auto& palette = theme.currentPalette();
 
     // Enhanced Fluent Design System colors with proper spacing
-    QString styleSheet = QString(R"(
+    QString styleSheet =
+        QString(R"(
         QMenu {
             background-color: %1;
             border: 1px solid %2;
@@ -329,34 +340,39 @@ void FluentContextMenu::updateTheme() {
             width: 12px;
             height: 12px;
         }
-    )").arg(palette.neutralLightest.name())                    // %1 - Background
-       .arg(palette.neutralQuaternary.name())                  // %2 - Border
-       .arg(palette.neutralPrimary.name())                     // %3 - Text color
-       .arg(palette.accent.lighter(180).name())                // %4 - Hover background
-       .arg(palette.neutralLightest.name())                    // %5 - Hover text
-       .arg(palette.accent.darker(110).name())                 // %6 - Pressed background
-       .arg(palette.neutralTertiary.name())                    // %7 - Disabled text
-       .arg(palette.neutralQuaternaryAlt.name())               // %8 - Separator
-       .arg(FluentSpacing::Small)                              // %9 - Border radius
-       .arg(FluentSpacing::XSmall)                             // %10 - Menu padding
-       .arg(FluentTypography::BodyFontSize)                    // %11 - Font size
-       .arg(FluentSpacing::Small)                              // %12 - Item vertical padding
-       .arg(FluentSpacing::Medium)                             // %13 - Item horizontal padding
-       .arg(FluentSpacing::XXLarge + FluentSpacing::Small)     // %14 - Item left padding (for icons)
-       .arg(1)                                                 // %15 - Item vertical margin
-       .arg(FluentSpacing::XSmall / 2)                         // %16 - Item horizontal margin
-       .arg(FluentSpacing::XSmall)                             // %17 - Item border radius
-       .arg(FluentSpacing::Large + FluentSpacing::XSmall);     // %18 - Item min height
+    )")
+            .arg(palette.neutralLightest.name())      // %1 - Background
+            .arg(palette.neutralQuaternary.name())    // %2 - Border
+            .arg(palette.neutralPrimary.name())       // %3 - Text color
+            .arg(palette.accent.lighter(180).name())  // %4 - Hover background
+            .arg(palette.neutralLightest.name())      // %5 - Hover text
+            .arg(palette.accent.darker(110).name())   // %6 - Pressed background
+            .arg(palette.neutralTertiary.name())      // %7 - Disabled text
+            .arg(palette.neutralQuaternaryAlt.name())  // %8 - Separator
+            .arg(FluentSpacing::Small)                 // %9 - Border radius
+            .arg(FluentSpacing::XSmall)                // %10 - Menu padding
+            .arg(FluentTypography::BodyFontSize)       // %11 - Font size
+            .arg(FluentSpacing::Small)   // %12 - Item vertical padding
+            .arg(FluentSpacing::Medium)  // %13 - Item horizontal padding
+            .arg(FluentSpacing::XXLarge +
+                 FluentSpacing::Small)  // %14 - Item left padding (for icons)
+            .arg(1)                     // %15 - Item vertical margin
+            .arg(FluentSpacing::XSmall / 2)  // %16 - Item horizontal margin
+            .arg(FluentSpacing::XSmall)      // %17 - Item border radius
+            .arg(FluentSpacing::Large +
+                 FluentSpacing::XSmall);  // %18 - Item min height
 
     setStyleSheet(styleSheet);
 
     // Update shadow color based on theme
     if (m_shadowEnabled && graphicsEffect()) {
-        auto* shadow = qobject_cast<QGraphicsDropShadowEffect*>(graphicsEffect());
+        auto* shadow =
+            qobject_cast<QGraphicsDropShadowEffect*>(graphicsEffect());
         if (shadow) {
-            QColor shadowColor = (theme.mode() == Styling::FluentThemeMode::Dark)
-                ? QColor(0, 0, 0, 80)
-                : QColor(0, 0, 0, 40);
+            QColor shadowColor =
+                (theme.mode() == Styling::FluentThemeMode::Dark)
+                    ? QColor(0, 0, 0, 80)
+                    : QColor(0, 0, 0, 40);
             shadow->setColor(shadowColor);
         }
     }
@@ -366,7 +382,8 @@ void FluentContextMenu::onAnimationFinished() {
     // Animation completed
 }
 
-void FluentContextMenu::setEntranceAnimation(Animation::FluentAnimationType type) {
+void FluentContextMenu::setEntranceAnimation(
+    Animation::FluentAnimationType type) {
     m_entranceAnimationType = type;
 }
 
@@ -389,36 +406,32 @@ void FluentContextMenu::animateHide() {
         case FluentAnimationType::Fade:
             m_fadeAnimation->setStartValue(1.0);
             m_fadeAnimation->setEndValue(0.0);
-            connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [this]() {
-                QMenu::hide();
-            });
+            connect(m_fadeAnimation, &QPropertyAnimation::finished, this,
+                    [this]() { QMenu::hide(); });
             m_fadeAnimation->start();
             break;
 
-        case FluentAnimationType::Scale:
-            {
-                FluentAnimationConfig config;
-                config.duration = std::chrono::milliseconds(m_animationDuration / 2); // Faster exit
-                auto scaleAnimation = FluentAnimator::scaleOut(this, config);
-                connect(scaleAnimation.get(), &QPropertyAnimation::finished, this, [this]() {
-                    QMenu::hide();
-                });
-                scaleAnimation.release()->start(); // Release ownership and start
-            }
-            break;
+        case FluentAnimationType::Scale: {
+            FluentAnimationConfig config;
+            config.duration = std::chrono::milliseconds(m_animationDuration /
+                                                        2);  // Faster exit
+            auto scaleAnimation = FluentAnimator::scaleOut(this, config);
+            connect(scaleAnimation.get(), &QPropertyAnimation::finished, this,
+                    [this]() { QMenu::hide(); });
+            scaleAnimation.release()->start();  // Release ownership and start
+        } break;
 
-        case FluentAnimationType::Slide:
-            {
-                QPoint slideTo = pos() + QPoint(0, -10);
-                FluentAnimationConfig config;
-                config.duration = std::chrono::milliseconds(m_animationDuration / 2);
-                auto slideAnimation = FluentAnimator::slideOut(this, slideTo, config);
-                connect(slideAnimation.get(), &QPropertyAnimation::finished, this, [this]() {
-                    QMenu::hide();
-                });
-                slideAnimation.release()->start(); // Release ownership and start
-            }
-            break;
+        case FluentAnimationType::Slide: {
+            QPoint slideTo = pos() + QPoint(0, -10);
+            FluentAnimationConfig config;
+            config.duration =
+                std::chrono::milliseconds(m_animationDuration / 2);
+            auto slideAnimation =
+                FluentAnimator::slideOut(this, slideTo, config);
+            connect(slideAnimation.get(), &QPropertyAnimation::finished, this,
+                    [this]() { QMenu::hide(); });
+            slideAnimation.release()->start();  // Release ownership and start
+        } break;
 
         default:
             QMenu::hide();
@@ -428,14 +441,17 @@ void FluentContextMenu::animateHide() {
 
 // FluentMenuItem implementation
 FluentMenuItem::FluentMenuItem(QAction* action, QWidget* parent)
-    : QWidget(parent)
-    , m_action(action)
-    , m_hoverAnimation(std::make_unique<QPropertyAnimation>(this, "hoverOpacity"))
-    , m_backgroundAnimation(std::make_unique<QPropertyAnimation>(this, "currentBackgroundColor"))
-    , m_focusAnimation(std::make_unique<QPropertyAnimation>(this, "focusOpacity"))
-{
+    : QWidget(parent),
+      m_action(action),
+      m_hoverAnimation(
+          std::make_unique<QPropertyAnimation>(this, "hoverOpacity")),
+      m_backgroundAnimation(
+          std::make_unique<QPropertyAnimation>(this, "currentBackgroundColor")),
+      m_focusAnimation(
+          std::make_unique<QPropertyAnimation>(this, "focusOpacity")) {
     if (m_action) {
-        connect(m_action, &QAction::changed, this, &FluentMenuItem::updateFromAction);
+        connect(m_action, &QAction::changed, this,
+                &FluentMenuItem::updateFromAction);
         updateFromAction();
     }
 
@@ -449,15 +465,14 @@ FluentMenuItem::FluentMenuItem(QAction* action, QWidget* parent)
 }
 
 FluentMenuItem::FluentMenuItem(FluentMenuItemType type, QWidget* parent)
-    : QWidget(parent)
-    , m_itemType(type)
-{
+    : QWidget(parent), m_itemType(type) {
     setAttribute(Qt::WA_Hover, true);
     setMouseTracking(true);
 }
 
 void FluentMenuItem::setAction(QAction* action) {
-    if (m_action == action) return;
+    if (m_action == action)
+        return;
 
     if (m_action) {
         disconnect(m_action, nullptr, this, nullptr);
@@ -466,13 +481,15 @@ void FluentMenuItem::setAction(QAction* action) {
     m_action = action;
 
     if (m_action) {
-        connect(m_action, &QAction::changed, this, &FluentMenuItem::updateFromAction);
+        connect(m_action, &QAction::changed, this,
+                &FluentMenuItem::updateFromAction);
         updateFromAction();
     }
 }
 
 void FluentMenuItem::updateFromAction() {
-    if (!m_action) return;
+    if (!m_action)
+        return;
 
     setEnabled(m_action->isEnabled());
     setVisible(m_action->isVisible());
@@ -480,21 +497,23 @@ void FluentMenuItem::updateFromAction() {
 }
 
 void FluentMenuItem::setItemType(FluentMenuItemType type) {
-    if (m_itemType == type) return;
+    if (m_itemType == type)
+        return;
 
     m_itemType = type;
     update();
 }
 
 void FluentMenuItem::setItemState(FluentMenuItemState state) {
-    if (m_itemState == state) return;
+    if (m_itemState == state)
+        return;
 
     FluentMenuItemState oldState = m_itemState;
     m_itemState = state;
 
     // Trigger hover animation if enabled
-    if (m_hoverAnimationEnabled &&
-        (state == FluentMenuItemState::Hovered || oldState == FluentMenuItemState::Hovered)) {
+    if (m_hoverAnimationEnabled && (state == FluentMenuItemState::Hovered ||
+                                    oldState == FluentMenuItemState::Hovered)) {
         startHoverAnimation(state == FluentMenuItemState::Hovered);
     }
 
@@ -529,7 +548,8 @@ void FluentMenuItem::setupHoverAnimations() {
 }
 
 void FluentMenuItem::startHoverAnimation(bool hovered) {
-    if (!m_hoverAnimationEnabled) return;
+    if (!m_hoverAnimationEnabled)
+        return;
 
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
@@ -555,35 +575,40 @@ void FluentMenuItem::startHoverAnimation(bool hovered) {
 }
 
 void FluentMenuItem::setHoverOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_hoverOpacity, opacity)) return;
+    if (qFuzzyCompare(m_hoverOpacity, opacity))
+        return;
 
     m_hoverOpacity = opacity;
     update();
 }
 
 void FluentMenuItem::setCurrentBackgroundColor(const QColor& color) {
-    if (m_currentBackgroundColor == color) return;
+    if (m_currentBackgroundColor == color)
+        return;
 
     m_currentBackgroundColor = color;
     update();
 }
 
 void FluentMenuItem::setFocusOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_focusOpacity, opacity)) return;
+    if (qFuzzyCompare(m_focusOpacity, opacity))
+        return;
 
     m_focusOpacity = opacity;
     update();
 }
 
 void FluentMenuItem::setShowFocusIndicator(bool show) {
-    if (m_showFocusIndicator == show) return;
+    if (m_showFocusIndicator == show)
+        return;
 
     m_showFocusIndicator = show;
     update();
 }
 
 void FluentMenuItem::startFocusAnimation(bool focused) {
-    if (!m_showFocusIndicator) return;
+    if (!m_showFocusIndicator)
+        return;
 
     if (focused) {
         m_focusAnimation->setStartValue(m_focusOpacity);
@@ -607,7 +632,8 @@ void FluentMenuItem::enterEvent(QEnterEvent* event) {
 void FluentMenuItem::leaveEvent(QEvent* event) {
     QWidget::leaveEvent(event);
     m_hovered = false;
-    setItemState(hasFocus() ? FluentMenuItemState::Focused : FluentMenuItemState::Normal);
+    setItemState(hasFocus() ? FluentMenuItemState::Focused
+                            : FluentMenuItemState::Normal);
 }
 
 void FluentMenuItem::focusInEvent(QFocusEvent* event) {
@@ -618,12 +644,14 @@ void FluentMenuItem::focusInEvent(QFocusEvent* event) {
 
 void FluentMenuItem::focusOutEvent(QFocusEvent* event) {
     QWidget::focusOutEvent(event);
-    setItemState(m_hovered ? FluentMenuItemState::Hovered : FluentMenuItemState::Normal);
+    setItemState(m_hovered ? FluentMenuItemState::Hovered
+                           : FluentMenuItemState::Normal);
     startFocusAnimation(false);
 }
 
 void FluentMenuItem::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter || event->key() == Qt::Key_Space) {
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter ||
+        event->key() == Qt::Key_Space) {
         if (m_action && m_action->isEnabled()) {
             m_action->trigger();
             emit triggered();
@@ -648,12 +676,14 @@ void FluentMenuItem::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && m_pressed) {
         m_pressed = false;
 
-        if (rect().contains(event->pos()) && m_action && m_action->isEnabled()) {
+        if (rect().contains(event->pos()) && m_action &&
+            m_action->isEnabled()) {
             m_action->trigger();
             emit triggered();
         }
 
-        setItemState(m_hovered ? FluentMenuItemState::Hovered : FluentMenuItemState::Normal);
+        setItemState(m_hovered ? FluentMenuItemState::Hovered
+                               : FluentMenuItemState::Normal);
     }
 }
 
@@ -666,8 +696,10 @@ void FluentContextMenu::setSubmenuOverlap(int pixels) {
     m_submenuOverlap = pixels;
 }
 
-void FluentContextMenu::showSubmenuAt(FluentContextMenu* submenu, const QPoint& position) {
-    if (!submenu) return;
+void FluentContextMenu::showSubmenuAt(FluentContextMenu* submenu,
+                                      const QPoint& position) {
+    if (!submenu)
+        return;
 
     // Calculate optimal position for submenu
     QPoint submenuPos = calculateSubmenuPosition(submenu, position);
@@ -694,8 +726,10 @@ QList<FluentContextMenu*> FluentContextMenu::activeSubmenus() const {
     return m_activeSubmenus;
 }
 
-QPoint FluentContextMenu::calculateSubmenuPosition(FluentContextMenu* submenu, const QPoint& triggerPos) {
-    if (!submenu) return triggerPos;
+QPoint FluentContextMenu::calculateSubmenuPosition(FluentContextMenu* submenu,
+                                                   const QPoint& triggerPos) {
+    if (!submenu)
+        return triggerPos;
 
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
     QSize submenuSize = submenu->sizeHint();
@@ -766,9 +800,7 @@ void FluentContextMenu::setTitle(const QString& title) {
     // Set menu title
 }
 
-void FluentContextMenu::hide() {
-    QWidget::hide();
-}
+void FluentContextMenu::hide() { QWidget::hide(); }
 
 void FluentContextMenu::popup(const QPoint& pos) {
     move(pos);
@@ -776,18 +808,14 @@ void FluentContextMenu::popup(const QPoint& pos) {
 }
 
 // Missing FluentMenuItem methods
-void FluentMenuItem::setEnabled(bool enabled) {
-    QWidget::setEnabled(enabled);
-}
+void FluentMenuItem::setEnabled(bool enabled) { QWidget::setEnabled(enabled); }
 
 void FluentMenuItem::setChecked(bool checked) {
     Q_UNUSED(checked)
     // Set checked state
 }
 
-QSize FluentMenuItem::sizeHint() const {
-    return QSize(200, 32);
-}
+QSize FluentMenuItem::sizeHint() const { return QSize(200, 32); }
 
 void FluentMenuItem::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
@@ -795,7 +823,8 @@ void FluentMenuItem::paintEvent(QPaintEvent* event) {
 }
 
 // Missing FluentMenuSeparator methods
-FluentMenuSeparator::FluentMenuSeparator(FluentMenuSeparatorType type, QWidget* parent)
+FluentMenuSeparator::FluentMenuSeparator(FluentMenuSeparatorType type,
+                                         QWidget* parent)
     : QWidget(parent), m_type(type) {
     setFixedHeight(type == FluentMenuSeparatorType::Line ? 8 : 24);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -822,7 +851,8 @@ void FluentMenuSeparator::paintEvent(QPaintEvent* event) {
         // Draw header text
         painter.setPen(palette.neutralSecondary);
         painter.setFont(theme.captionFont());
-        painter.drawText(rect().adjusted(8, 0, -8, 0), Qt::AlignLeft | Qt::AlignVCenter, m_text);
+        painter.drawText(rect().adjusted(8, 0, -8, 0),
+                         Qt::AlignLeft | Qt::AlignVCenter, m_text);
     }
 }
 
@@ -839,4 +869,4 @@ void FluentMenuSeparator::setSeparatorType(FluentMenuSeparatorType type) {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

@@ -1,26 +1,22 @@
 // include/FluentQt/Components/FluentProgressBar.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 #include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QTimer>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentProgressBarType {
-    Determinate,      // Shows specific progress (0-100%)
-    Indeterminate,    // Shows ongoing activity without specific progress
-    Ring,             // Circular progress indicator
-    Dots              // Animated dots indicator
+    Determinate,    // Shows specific progress (0-100%)
+    Indeterminate,  // Shows ongoing activity without specific progress
+    Ring,           // Circular progress indicator
+    Dots            // Animated dots indicator
 };
 
-enum class FluentProgressBarSize {
-    Small,
-    Medium,
-    Large
-};
+enum class FluentProgressBarSize { Small, Medium, Large };
 
 class FluentProgressBar : public Core::FluentComponent {
     Q_OBJECT
@@ -28,40 +24,46 @@ class FluentProgressBar : public Core::FluentComponent {
     Q_PROPERTY(int minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
     Q_PROPERTY(int maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
-    Q_PROPERTY(FluentProgressBarType progressType READ progressType WRITE setProgressType NOTIFY progressTypeChanged)
-    Q_PROPERTY(FluentProgressBarSize progressSize READ progressSize WRITE setProgressSize NOTIFY progressSizeChanged)
-    Q_PROPERTY(bool textVisible READ isTextVisible WRITE setTextVisible NOTIFY textVisibleChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(FluentProgressBarType progressType READ progressType WRITE
+                   setProgressType NOTIFY progressTypeChanged)
+    Q_PROPERTY(FluentProgressBarSize progressSize READ progressSize WRITE
+                   setProgressSize NOTIFY progressSizeChanged)
+    Q_PROPERTY(bool textVisible READ isTextVisible WRITE setTextVisible NOTIFY
+                   textVisibleChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY
+                   accentColorChanged)
 
 public:
     explicit FluentProgressBar(QWidget* parent = nullptr);
-    explicit FluentProgressBar(FluentProgressBarType type, QWidget* parent = nullptr);
+    explicit FluentProgressBar(FluentProgressBarType type,
+                               QWidget* parent = nullptr);
     ~FluentProgressBar() override;
 
     // Value properties
     int value() const;
     void setValue(int value);
-    
+
     int minimum() const;
     void setMinimum(int minimum);
-    
+
     int maximum() const;
     void setMaximum(int maximum);
-    
+
     void setRange(int minimum, int maximum);
 
     // Text properties
     QString text() const;
     void setText(const QString& text);
-    
+
     bool isTextVisible() const;
     void setTextVisible(bool visible);
 
     // Type and appearance
     FluentProgressBarType progressType() const;
     void setProgressType(FluentProgressBarType type);
-    
+
     FluentProgressBarSize progressSize() const;
     void setProgressSize(FluentProgressBarSize size);
 
@@ -118,14 +120,14 @@ private:
     void setupTimer();
     void updateGeometry();
     void updateTextContent();
-    
+
     // Drawing methods
     void drawDeterminateBar(QPainter& painter, const QRect& rect);
     void drawIndeterminateBar(QPainter& painter, const QRect& rect);
     void drawRingProgress(QPainter& painter, const QRect& rect);
     void drawDotsProgress(QPainter& painter, const QRect& rect);
     void drawProgressText(QPainter& painter, const QRect& rect);
-    
+
     // Helper methods
     QRect progressRect() const;
     QRect textRect() const;
@@ -145,23 +147,23 @@ private:
     bool m_textVisible{true};
     bool m_animated{true};
     QColor m_accentColor;
-    
+
     // Animation state
     bool m_isRunning{false};
     bool m_isPaused{false};
-    qreal m_animationProgress{0.0}; // For indeterminate animations
-    int m_animationDirection{1};    // 1 for forward, -1 for backward
-    
+    qreal m_animationProgress{0.0};  // For indeterminate animations
+    int m_animationDirection{1};     // 1 for forward, -1 for backward
+
     // Animation components
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_valueAnimation{nullptr};
     QPropertyAnimation* m_indeterminateAnimation{nullptr};
     QTimer* m_animationTimer{nullptr};
-    
+
     // Cached values
     QString m_cachedText;
     QRect m_cachedProgressRect;
     QRect m_cachedTextRect;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

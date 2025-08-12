@@ -1,16 +1,16 @@
 // src/Components/FluentResizable.cpp
 #include "FluentQt/Components/FluentResizable.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QMouseEvent>
-#include <QTouchEvent>
-#include <QKeyEvent>
-#include <QApplication>
-#include <QVBoxLayout>
 #include <QAccessible>
+#include <QApplication>
 #include <QDebug>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QTouchEvent>
+#include <QVBoxLayout>
 #include <QtMath>
 
 namespace FluentQt::Components {
@@ -20,7 +20,8 @@ class FluentResizeHandleWidget : public QWidget {
     Q_OBJECT
 
 public:
-    explicit FluentResizeHandleWidget(FluentResizeHandle handleType, QWidget* parent = nullptr)
+    explicit FluentResizeHandleWidget(FluentResizeHandle handleType,
+                                      QWidget* parent = nullptr)
         : QWidget(parent), m_handleType(handleType) {
         setFixedSize(8, 8);
         setAttribute(Qt::WA_Hover, true);
@@ -53,7 +54,8 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing);
 
         const QRect rect = this->rect();
-        const QColor handleColor = m_hovered ? QColor(0, 120, 215) : QColor(100, 100, 100);
+        const QColor handleColor =
+            m_hovered ? QColor(0, 120, 215) : QColor(100, 100, 100);
 
         painter.setBrush(handleColor);
         painter.setPen(Qt::NoPen);
@@ -80,9 +82,7 @@ public:
         update();
     }
 
-    void hidePreview() {
-        setVisible(false);
-    }
+    void hidePreview() { setVisible(false); }
 
 protected:
     void paintEvent(QPaintEvent* event) override {
@@ -92,7 +92,7 @@ protected:
 
         const QRect rect = this->rect();
         const QColor previewColor = QColor(0, 120, 215, 80);
-        
+
         painter.setBrush(previewColor);
         painter.setPen(QPen(QColor(0, 120, 215), 2, Qt::DashLine));
         painter.drawRect(rect.adjusted(1, 1, -1, -1));
@@ -100,36 +100,36 @@ protected:
 };
 
 FluentResizable::FluentResizable(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_resizeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry"))
-    , m_resizePreview(std::make_unique<FluentResizePreview>(this))
-{
+    : Core::FluentComponent(parent),
+      m_resizeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry")),
+      m_resizePreview(std::make_unique<FluentResizePreview>(this)) {
     setupLayout();
     setupHandles();
     setupAnimations();
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&FluentQt::Styling::FluentTheme::instance(), &FluentQt::Styling::FluentTheme::themeChanged,
-            this, &FluentResizable::onThemeChanged);
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentResizable::onThemeChanged);
 
     setMinimumSize(m_minimumSize);
     setMaximumSize(m_maximumSize);
 }
 
 FluentResizable::FluentResizable(QWidget* contentWidget, QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_resizeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry"))
-    , m_resizePreview(std::make_unique<FluentResizePreview>(this))
-{
+    : Core::FluentComponent(parent),
+      m_resizeAnimation(std::make_unique<QPropertyAnimation>(this, "geometry")),
+      m_resizePreview(std::make_unique<FluentResizePreview>(this)) {
     setupLayout();
     setupHandles();
     setupAnimations();
     setupAccessibility();
 
     // Connect to theme changes
-    connect(&FluentQt::Styling::FluentTheme::instance(), &FluentQt::Styling::FluentTheme::themeChanged,
-            this, &FluentResizable::onThemeChanged);
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentResizable::onThemeChanged);
 
     setMinimumSize(m_minimumSize);
     setMaximumSize(m_maximumSize);
@@ -213,18 +213,14 @@ void FluentResizable::setMaximumSize(const QSize& size) {
     }
 }
 
-void FluentResizable::setSmoothResize(bool smooth) {
-    m_smoothResize = smooth;
-}
+void FluentResizable::setSmoothResize(bool smooth) { m_smoothResize = smooth; }
 
 void FluentResizable::setTouchEnabled(bool enabled) {
     m_touchEnabled = enabled;
     setAttribute(Qt::WA_AcceptTouchEvents, enabled);
 }
 
-void FluentResizable::setSnapToGrid(bool snap) {
-    m_snapToGrid = snap;
-}
+void FluentResizable::setSnapToGrid(bool snap) { m_snapToGrid = snap; }
 
 void FluentResizable::setGridSize(int size) {
     if (size > 0) {
@@ -243,7 +239,8 @@ void FluentResizable::setMaintainAspectRatio(bool maintain) {
 QSize FluentResizable::sizeHint() const {
     if (!m_sizeHintValid) {
         if (m_contentWidget) {
-            m_cachedSizeHint = m_contentWidget->sizeHint() + QSize(m_handleSize * 2, m_handleSize * 2);
+            m_cachedSizeHint = m_contentWidget->sizeHint() +
+                               QSize(m_handleSize * 2, m_handleSize * 2);
         } else {
             m_cachedSizeHint = QSize(200, 150);
         }
@@ -252,9 +249,7 @@ QSize FluentResizable::sizeHint() const {
     return m_cachedSizeHint;
 }
 
-QSize FluentResizable::minimumSizeHint() const {
-    return m_minimumSize;
-}
+QSize FluentResizable::minimumSizeHint() const { return m_minimumSize; }
 
 void FluentResizable::resizeToSize(const QSize& size, bool animated) {
     const QSize constrainedSize = constrainSize(size);
@@ -281,9 +276,7 @@ void FluentResizable::resetToMaximumSize() {
     resizeToSize(m_maximumSize, true);
 }
 
-void FluentResizable::resetToSizeHint() {
-    resizeToSize(sizeHint(), true);
-}
+void FluentResizable::resetToSizeHint() { resizeToSize(sizeHint(), true); }
 
 void FluentResizable::toggleHandleVisibility() {
     setShowHandles(!m_showHandles);
@@ -298,13 +291,14 @@ void FluentResizable::setupLayout() {
 void FluentResizable::setupHandles() {
     // Create handle widgets for each resize direction
     const std::array<FluentResizeHandle, 8> handleTypes = {
-        FluentResizeHandle::Top, FluentResizeHandle::TopRight, FluentResizeHandle::Right,
-        FluentResizeHandle::BottomRight, FluentResizeHandle::Bottom, FluentResizeHandle::BottomLeft,
-        FluentResizeHandle::Left, FluentResizeHandle::TopLeft
-    };
+        FluentResizeHandle::Top,    FluentResizeHandle::TopRight,
+        FluentResizeHandle::Right,  FluentResizeHandle::BottomRight,
+        FluentResizeHandle::Bottom, FluentResizeHandle::BottomLeft,
+        FluentResizeHandle::Left,   FluentResizeHandle::TopLeft};
 
     for (size_t i = 0; i < m_handles.size(); ++i) {
-        m_handles[i] = std::make_unique<FluentResizeHandleWidget>(handleTypes[i], this);
+        m_handles[i] =
+            std::make_unique<FluentResizeHandleWidget>(handleTypes[i], this);
         connect(m_handles[i].get(), &FluentResizeHandleWidget::hoverChanged,
                 this, &FluentResizable::onHandleHoverChanged);
     }
@@ -316,16 +310,18 @@ void FluentResizable::setupHandles() {
 void FluentResizable::setupAnimations() {
     m_resizeAnimation->setDuration(200);
     m_resizeAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_resizeAnimation.get(), &QPropertyAnimation::valueChanged,
-            this, &FluentResizable::onResizeAnimationValueChanged);
-    connect(m_resizeAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentResizable::onResizeAnimationFinished);
+
+    connect(m_resizeAnimation.get(), &QPropertyAnimation::valueChanged, this,
+            &FluentResizable::onResizeAnimationValueChanged);
+    connect(m_resizeAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentResizable::onResizeAnimationFinished);
 }
 
 void FluentResizable::setupAccessibility() {
     setAccessibleName("Resizable Container");
-    setAccessibleDescription("A resizable container that can be adjusted by dragging the resize handles");
+    setAccessibleDescription(
+        "A resizable container that can be adjusted by dragging the resize "
+        "handles");
 
     // Set focus policy to enable keyboard navigation
     setFocusPolicy(Qt::StrongFocus);
@@ -425,7 +421,8 @@ bool FluentResizable::event(QEvent* event) {
     if (m_touchEnabled && event->type() == QEvent::TouchBegin) {
         touchEvent(static_cast<QTouchEvent*>(event));
         return true;
-    } else if (m_touchEnabled && (event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd)) {
+    } else if (m_touchEnabled && (event->type() == QEvent::TouchUpdate ||
+                                  event->type() == QEvent::TouchEnd)) {
         touchEvent(static_cast<QTouchEvent*>(event));
         return true;
     }
@@ -443,35 +440,36 @@ void FluentResizable::touchEvent(QTouchEvent* event) {
     const QTouchEvent::TouchPoint& touchPoint = touchPoints.first();
 
     switch (event->type()) {
-    case QEvent::TouchBegin:
-        if (m_activeTouchId == -1) {
-            m_activeTouchId = touchPoint.id();
-            m_touchStartPos = touchPoint.position();
+        case QEvent::TouchBegin:
+            if (m_activeTouchId == -1) {
+                m_activeTouchId = touchPoint.id();
+                m_touchStartPos = touchPoint.position();
 
-            const FluentResizeHandle handle = getHandleAt(touchPoint.position().toPoint());
-            if (handle != FluentResizeHandle::None) {
-                startResize(handle, touchPoint.position().toPoint());
+                const FluentResizeHandle handle =
+                    getHandleAt(touchPoint.position().toPoint());
+                if (handle != FluentResizeHandle::None) {
+                    startResize(handle, touchPoint.position().toPoint());
+                }
             }
-        }
-        break;
+            break;
 
-    case QEvent::TouchUpdate:
-        if (touchPoint.id() == m_activeTouchId && m_resizing) {
-            updateResize(touchPoint.position().toPoint());
-        }
-        break;
-
-    case QEvent::TouchEnd:
-        if (touchPoint.id() == m_activeTouchId) {
-            if (m_resizing) {
-                finishResize();
+        case QEvent::TouchUpdate:
+            if (touchPoint.id() == m_activeTouchId && m_resizing) {
+                updateResize(touchPoint.position().toPoint());
             }
-            m_activeTouchId = -1;
-        }
-        break;
+            break;
 
-    default:
-        break;
+        case QEvent::TouchEnd:
+            if (touchPoint.id() == m_activeTouchId) {
+                if (m_resizing) {
+                    finishResize();
+                }
+                m_activeTouchId = -1;
+            }
+            break;
+
+        default:
+            break;
     }
 
     event->accept();
@@ -487,26 +485,30 @@ void FluentResizable::keyPressEvent(QKeyEvent* event) {
     QSize newSize = size();
 
     switch (event->key()) {
-    case Qt::Key_Left:
-        newSize.setWidth(qMax(m_minimumSize.width(), newSize.width() - step));
-        break;
-    case Qt::Key_Right:
-        newSize.setWidth(qMin(m_maximumSize.width(), newSize.width() + step));
-        break;
-    case Qt::Key_Up:
-        newSize.setHeight(qMax(m_minimumSize.height(), newSize.height() - step));
-        break;
-    case Qt::Key_Down:
-        newSize.setHeight(qMin(m_maximumSize.height(), newSize.height() + step));
-        break;
-    case Qt::Key_Escape:
-        if (m_resizing) {
-            cancelResize();
-        }
-        break;
-    default:
-        Core::FluentComponent::keyPressEvent(event);
-        return;
+        case Qt::Key_Left:
+            newSize.setWidth(
+                qMax(m_minimumSize.width(), newSize.width() - step));
+            break;
+        case Qt::Key_Right:
+            newSize.setWidth(
+                qMin(m_maximumSize.width(), newSize.width() + step));
+            break;
+        case Qt::Key_Up:
+            newSize.setHeight(
+                qMax(m_minimumSize.height(), newSize.height() - step));
+            break;
+        case Qt::Key_Down:
+            newSize.setHeight(
+                qMin(m_maximumSize.height(), newSize.height() + step));
+            break;
+        case Qt::Key_Escape:
+            if (m_resizing) {
+                cancelResize();
+            }
+            break;
+        default:
+            Core::FluentComponent::keyPressEvent(event);
+            return;
     }
 
     if (newSize != size()) {
@@ -524,7 +526,8 @@ void FluentResizable::updateStateStyle() {
     update();
 }
 
-void FluentResizable::performStateTransition(Core::FluentState from, Core::FluentState to) {
+void FluentResizable::performStateTransition(Core::FluentState from,
+                                             Core::FluentState to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
     // Handle state transitions if needed
@@ -547,9 +550,7 @@ void FluentResizable::onHandleHoverChanged(bool hovered) {
     update();
 }
 
-void FluentResizable::onThemeChanged() {
-    updateStateStyle();
-}
+void FluentResizable::onThemeChanged() { updateStateStyle(); }
 
 // Handle management methods
 void FluentResizable::updateHandlePositions() {
@@ -562,28 +563,34 @@ void FluentResizable::updateHandlePositions() {
     const int halfHandle = handleSize / 2;
 
     // Position handles around the perimeter
-    if (m_handles[0]) { // Top
-        m_handles[0]->move(rect.center().x() - halfHandle, rect.top() - halfHandle);
+    if (m_handles[0]) {  // Top
+        m_handles[0]->move(rect.center().x() - halfHandle,
+                           rect.top() - halfHandle);
     }
-    if (m_handles[1]) { // TopRight
+    if (m_handles[1]) {  // TopRight
         m_handles[1]->move(rect.right() - halfHandle, rect.top() - halfHandle);
     }
-    if (m_handles[2]) { // Right
-        m_handles[2]->move(rect.right() - halfHandle, rect.center().y() - halfHandle);
+    if (m_handles[2]) {  // Right
+        m_handles[2]->move(rect.right() - halfHandle,
+                           rect.center().y() - halfHandle);
     }
-    if (m_handles[3]) { // BottomRight
-        m_handles[3]->move(rect.right() - halfHandle, rect.bottom() - halfHandle);
+    if (m_handles[3]) {  // BottomRight
+        m_handles[3]->move(rect.right() - halfHandle,
+                           rect.bottom() - halfHandle);
     }
-    if (m_handles[4]) { // Bottom
-        m_handles[4]->move(rect.center().x() - halfHandle, rect.bottom() - halfHandle);
+    if (m_handles[4]) {  // Bottom
+        m_handles[4]->move(rect.center().x() - halfHandle,
+                           rect.bottom() - halfHandle);
     }
-    if (m_handles[5]) { // BottomLeft
-        m_handles[5]->move(rect.left() - halfHandle, rect.bottom() - halfHandle);
+    if (m_handles[5]) {  // BottomLeft
+        m_handles[5]->move(rect.left() - halfHandle,
+                           rect.bottom() - halfHandle);
     }
-    if (m_handles[6]) { // Left
-        m_handles[6]->move(rect.left() - halfHandle, rect.center().y() - halfHandle);
+    if (m_handles[6]) {  // Left
+        m_handles[6]->move(rect.left() - halfHandle,
+                           rect.center().y() - halfHandle);
     }
-    if (m_handles[7]) { // TopLeft
+    if (m_handles[7]) {  // TopLeft
         m_handles[7]->move(rect.left() - halfHandle, rect.top() - halfHandle);
     }
 }
@@ -593,7 +600,8 @@ void FluentResizable::updateHandleVisibility() {
 
     for (size_t i = 0; i < m_handles.size(); ++i) {
         if (m_handles[i]) {
-            const FluentResizeHandle handleType = static_cast<FluentResizeHandle>(1 << i);
+            const FluentResizeHandle handleType =
+                static_cast<FluentResizeHandle>(1 << i);
             const bool handleEnabled = (m_enabledHandles & handleType) != 0;
             m_handles[i]->setVisible(visible && handleEnabled);
         }
@@ -603,7 +611,8 @@ void FluentResizable::updateHandleVisibility() {
 FluentResizeHandle FluentResizable::getHandleAt(const QPoint& pos) const {
     for (size_t i = 0; i < m_handles.size(); ++i) {
         if (m_handles[i] && m_handles[i]->isVisible()) {
-            const QRect handleRect = getHandleRect(static_cast<FluentResizeHandle>(1 << i));
+            const QRect handleRect =
+                getHandleRect(static_cast<FluentResizeHandle>(1 << i));
             if (handleRect.contains(pos)) {
                 return static_cast<FluentResizeHandle>(1 << i);
             }
@@ -618,48 +627,60 @@ QRect FluentResizable::getHandleRect(FluentResizeHandle handle) const {
     const int halfHandle = handleSize / 2;
 
     switch (handle) {
-    case FluentResizeHandle::Top:
-        return QRect(rect.center().x() - halfHandle, rect.top() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::TopRight:
-        return QRect(rect.right() - halfHandle, rect.top() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::Right:
-        return QRect(rect.right() - halfHandle, rect.center().y() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::BottomRight:
-        return QRect(rect.right() - halfHandle, rect.bottom() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::Bottom:
-        return QRect(rect.center().x() - halfHandle, rect.bottom() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::BottomLeft:
-        return QRect(rect.left() - halfHandle, rect.bottom() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::Left:
-        return QRect(rect.left() - halfHandle, rect.center().y() - halfHandle, handleSize, handleSize);
-    case FluentResizeHandle::TopLeft:
-        return QRect(rect.left() - halfHandle, rect.top() - halfHandle, handleSize, handleSize);
-    default:
-        return QRect();
+        case FluentResizeHandle::Top:
+            return QRect(rect.center().x() - halfHandle,
+                         rect.top() - halfHandle, handleSize, handleSize);
+        case FluentResizeHandle::TopRight:
+            return QRect(rect.right() - halfHandle, rect.top() - halfHandle,
+                         handleSize, handleSize);
+        case FluentResizeHandle::Right:
+            return QRect(rect.right() - halfHandle,
+                         rect.center().y() - halfHandle, handleSize,
+                         handleSize);
+        case FluentResizeHandle::BottomRight:
+            return QRect(rect.right() - halfHandle, rect.bottom() - halfHandle,
+                         handleSize, handleSize);
+        case FluentResizeHandle::Bottom:
+            return QRect(rect.center().x() - halfHandle,
+                         rect.bottom() - halfHandle, handleSize, handleSize);
+        case FluentResizeHandle::BottomLeft:
+            return QRect(rect.left() - halfHandle, rect.bottom() - halfHandle,
+                         handleSize, handleSize);
+        case FluentResizeHandle::Left:
+            return QRect(rect.left() - halfHandle,
+                         rect.center().y() - halfHandle, handleSize,
+                         handleSize);
+        case FluentResizeHandle::TopLeft:
+            return QRect(rect.left() - halfHandle, rect.top() - halfHandle,
+                         handleSize, handleSize);
+        default:
+            return QRect();
     }
 }
 
-Qt::CursorShape FluentResizable::getCursorForHandle(FluentResizeHandle handle) const {
+Qt::CursorShape FluentResizable::getCursorForHandle(
+    FluentResizeHandle handle) const {
     switch (handle) {
-    case FluentResizeHandle::Top:
-    case FluentResizeHandle::Bottom:
-        return Qt::SizeVerCursor;
-    case FluentResizeHandle::Left:
-    case FluentResizeHandle::Right:
-        return Qt::SizeHorCursor;
-    case FluentResizeHandle::TopLeft:
-    case FluentResizeHandle::BottomRight:
-        return Qt::SizeFDiagCursor;
-    case FluentResizeHandle::TopRight:
-    case FluentResizeHandle::BottomLeft:
-        return Qt::SizeBDiagCursor;
-    default:
-        return Qt::ArrowCursor;
+        case FluentResizeHandle::Top:
+        case FluentResizeHandle::Bottom:
+            return Qt::SizeVerCursor;
+        case FluentResizeHandle::Left:
+        case FluentResizeHandle::Right:
+            return Qt::SizeHorCursor;
+        case FluentResizeHandle::TopLeft:
+        case FluentResizeHandle::BottomRight:
+            return Qt::SizeFDiagCursor;
+        case FluentResizeHandle::TopRight:
+        case FluentResizeHandle::BottomLeft:
+            return Qt::SizeBDiagCursor;
+        default:
+            return Qt::ArrowCursor;
     }
 }
 
 // Resize logic methods
-void FluentResizable::startResize(FluentResizeHandle handle, const QPoint& startPos) {
+void FluentResizable::startResize(FluentResizeHandle handle,
+                                  const QPoint& startPos) {
     m_resizing = true;
     m_activeHandle = handle;
     m_resizeStartPos = startPos;
@@ -742,7 +763,8 @@ void FluentResizable::cancelResize() {
     emit resizeCancelled();
 }
 
-QSize FluentResizable::calculateNewSize(FluentResizeHandle handle, const QPoint& delta) const {
+QSize FluentResizable::calculateNewSize(FluentResizeHandle handle,
+                                        const QPoint& delta) const {
     QSize newSize = m_resizeStartSize;
 
     // Apply delta based on handle type
@@ -788,13 +810,16 @@ QSize FluentResizable::snapSizeToGrid(const QSize& size) const {
         return size;
     }
 
-    const int snappedWidth = qRound(static_cast<qreal>(size.width()) / m_gridSize) * m_gridSize;
-    const int snappedHeight = qRound(static_cast<qreal>(size.height()) / m_gridSize) * m_gridSize;
+    const int snappedWidth =
+        qRound(static_cast<qreal>(size.width()) / m_gridSize) * m_gridSize;
+    const int snappedHeight =
+        qRound(static_cast<qreal>(size.height()) / m_gridSize) * m_gridSize;
 
     return QSize(snappedWidth, snappedHeight);
 }
 
-QSize FluentResizable::maintainAspectRatioSize(const QSize& size, FluentResizeHandle handle) const {
+QSize FluentResizable::maintainAspectRatioSize(
+    const QSize& size, FluentResizeHandle handle) const {
     if (m_aspectRatio <= 0.0) {
         return size;
     }
@@ -802,7 +827,8 @@ QSize FluentResizable::maintainAspectRatioSize(const QSize& size, FluentResizeHa
     QSize adjustedSize = size;
 
     // Determine which dimension to prioritize based on handle
-    const bool prioritizeWidth = (handle & (FluentResizeHandle::Left | FluentResizeHandle::Right)) != 0;
+    const bool prioritizeWidth =
+        (handle & (FluentResizeHandle::Left | FluentResizeHandle::Right)) != 0;
 
     if (prioritizeWidth) {
         adjustedSize.setHeight(qRound(adjustedSize.width() / m_aspectRatio));
@@ -904,6 +930,6 @@ void FluentResizable::updateContentGeometry() {
     m_contentWidget->setGeometry(contentRect);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components
 
 #include "FluentResizable.moc"

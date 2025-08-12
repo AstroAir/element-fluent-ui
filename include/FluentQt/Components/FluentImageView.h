@@ -1,27 +1,27 @@
 // include/FluentQt/Components/FluentImageView.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QPixmap>
-#include <QMovie>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMovie>
+#include <QPixmap>
+#include <QPropertyAnimation>
+#include <QPushButton>
 #include <QScrollArea>
+#include <QVBoxLayout>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentImageScaleMode {
-    None,           // No scaling
-    Fit,            // Scale to fit while maintaining aspect ratio
-    Fill,           // Scale to fill, may crop
-    Stretch,        // Stretch to fill, may distort
-    FitWidth,       // Scale to fit width
-    FitHeight       // Scale to fit height
+    None,      // No scaling
+    Fit,       // Scale to fit while maintaining aspect ratio
+    Fill,      // Scale to fill, may crop
+    Stretch,   // Stretch to fill, may distort
+    FitWidth,  // Scale to fit width
+    FitHeight  // Scale to fit height
 };
 
 enum class FluentImageAlignment {
@@ -40,15 +40,24 @@ class FluentImageView : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QPixmap pixmap READ pixmap WRITE setPixmap NOTIFY pixmapChanged)
     Q_PROPERTY(QString source READ source WRITE setSource NOTIFY sourceChanged)
-    Q_PROPERTY(FluentImageScaleMode scaleMode READ scaleMode WRITE setScaleMode NOTIFY scaleModeChanged)
-    Q_PROPERTY(FluentImageAlignment alignment READ alignment WRITE setAlignment NOTIFY alignmentChanged)
-    Q_PROPERTY(bool smoothTransformation READ smoothTransformation WRITE setSmoothTransformation NOTIFY smoothTransformationChanged)
-    Q_PROPERTY(bool zoomEnabled READ isZoomEnabled WRITE setZoomEnabled NOTIFY zoomEnabledChanged)
-    Q_PROPERTY(qreal zoomFactor READ zoomFactor WRITE setZoomFactor NOTIFY zoomFactorChanged)
-    Q_PROPERTY(qreal minZoomFactor READ minZoomFactor WRITE setMinZoomFactor NOTIFY minZoomFactorChanged)
-    Q_PROPERTY(qreal maxZoomFactor READ maxZoomFactor WRITE setMaxZoomFactor NOTIFY maxZoomFactorChanged)
-    Q_PROPERTY(bool showControls READ showControls WRITE setShowControls NOTIFY showControlsChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(FluentImageScaleMode scaleMode READ scaleMode WRITE setScaleMode
+                   NOTIFY scaleModeChanged)
+    Q_PROPERTY(FluentImageAlignment alignment READ alignment WRITE setAlignment
+                   NOTIFY alignmentChanged)
+    Q_PROPERTY(bool smoothTransformation READ smoothTransformation WRITE
+                   setSmoothTransformation NOTIFY smoothTransformationChanged)
+    Q_PROPERTY(bool zoomEnabled READ isZoomEnabled WRITE setZoomEnabled NOTIFY
+                   zoomEnabledChanged)
+    Q_PROPERTY(qreal zoomFactor READ zoomFactor WRITE setZoomFactor NOTIFY
+                   zoomFactorChanged)
+    Q_PROPERTY(qreal minZoomFactor READ minZoomFactor WRITE setMinZoomFactor
+                   NOTIFY minZoomFactorChanged)
+    Q_PROPERTY(qreal maxZoomFactor READ maxZoomFactor WRITE setMaxZoomFactor
+                   NOTIFY maxZoomFactorChanged)
+    Q_PROPERTY(bool showControls READ showControls WRITE setShowControls NOTIFY
+                   showControlsChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderTextChanged)
 
 public:
     explicit FluentImageView(QWidget* parent = nullptr);
@@ -135,10 +144,11 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    
+
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onZoomInClicked();
@@ -163,7 +173,8 @@ private:
 
     // Utility methods
     QPixmap getScaledPixmap(const QSize& targetSize) const;
-    QRect calculateImageRect(const QSize& imageSize, const QRect& targetRect) const;
+    QRect calculateImageRect(const QSize& imageSize,
+                             const QRect& targetRect) const;
     Qt::Alignment getQtAlignment() const;
     void updateControlsVisibility();
     void updateImageDisplay();
@@ -173,27 +184,27 @@ private:
     QPixmap m_pixmap;
     QString m_source;
     QMovie* m_movie{nullptr};
-    
+
     // Display properties
     FluentImageScaleMode m_scaleMode{FluentImageScaleMode::Fit};
     FluentImageAlignment m_alignment{FluentImageAlignment::Center};
     bool m_smoothTransformation{true};
-    
+
     // Zoom properties
     bool m_zoomEnabled{true};
     qreal m_zoomFactor{1.0};
     qreal m_minZoomFactor{0.1};
     qreal m_maxZoomFactor{10.0};
-    
+
     // Transform properties
-    int m_rotation{0}; // In degrees
+    int m_rotation{0};  // In degrees
     bool m_horizontalFlip{false};
     bool m_verticalFlip{false};
-    
+
     // Control properties
     bool m_showControls{false};
     QString m_placeholderText{"No image"};
-    
+
     // UI components
     QVBoxLayout* m_mainLayout{nullptr};
     QLabel* m_imageLabel{nullptr};
@@ -206,10 +217,10 @@ private:
     QPushButton* m_actualSizeButton{nullptr};
     QPushButton* m_rotateLeftButton{nullptr};
     QPushButton* m_rotateRightButton{nullptr};
-    
+
     // Cached values
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

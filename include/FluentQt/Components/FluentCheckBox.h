@@ -1,27 +1,27 @@
 // include/FluentQt/Components/FluentCheckBox.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 #include <QCheckBox>
-#include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentCheckState {
-    Unchecked,
-    PartiallyChecked,
-    Checked
-};
+enum class FluentCheckState { Unchecked, PartiallyChecked, Checked };
 
 class FluentCheckBox : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
-    Q_PROPERTY(FluentCheckState checkState READ checkState WRITE setCheckState NOTIFY checkStateChanged)
-    Q_PROPERTY(bool tristate READ isTristate WRITE setTristate NOTIFY tristateChanged)
-    Q_PROPERTY(bool autoExclusive READ autoExclusive WRITE setAutoExclusive NOTIFY autoExclusiveChanged)
-    Q_PROPERTY(QSize iconSize READ iconSize WRITE setIconSize NOTIFY iconSizeChanged)
+    Q_PROPERTY(FluentCheckState checkState READ checkState WRITE setCheckState
+                   NOTIFY checkStateChanged)
+    Q_PROPERTY(
+        bool tristate READ isTristate WRITE setTristate NOTIFY tristateChanged)
+    Q_PROPERTY(bool autoExclusive READ autoExclusive WRITE setAutoExclusive
+                   NOTIFY autoExclusiveChanged)
+    Q_PROPERTY(
+        QSize iconSize READ iconSize WRITE setIconSize NOTIFY iconSizeChanged)
 
 public:
     explicit FluentCheckBox(QWidget* parent = nullptr);
@@ -35,7 +35,7 @@ public:
     // Check state
     FluentCheckState checkState() const;
     void setCheckState(FluentCheckState state);
-    
+
     bool isChecked() const;
     void setChecked(bool checked);
 
@@ -94,7 +94,7 @@ private:
     void drawPartialMark(QPainter& painter, const QRect& rect) const;
     QRect checkBoxRect() const;
     QRect textRect() const;
-    
+
     void nextCheckState();
 
 private:
@@ -104,14 +104,14 @@ private:
     bool m_autoExclusive{false};
     QSize m_iconSize{20, 20};
     bool m_pressed{false};
-    
+
     // Animation
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_checkAnimation{nullptr};
     QPropertyAnimation* m_stateAnimation{nullptr};
     QGraphicsOpacityEffect* m_checkOpacityEffect{nullptr};
-    
-    qreal m_checkProgress{0.0}; // 0.0 = unchecked, 1.0 = checked
+
+    qreal m_checkProgress{0.0};  // 0.0 = unchecked, 1.0 = checked
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

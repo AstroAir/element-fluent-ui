@@ -1,57 +1,56 @@
 // src/Components/FluentTimelineItem.cpp
 #include "FluentQt/Components/FluentTimelineItem.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QPainterPath>
-#include <QMouseEvent>
-#include <QResizeEvent>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QApplication>
 #include <QDebug>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
+#include <QResizeEvent>
+#include <QVBoxLayout>
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Core;
 using namespace FluentQt::Styling;
 
 FluentTimelineItem::FluentTimelineItem(QWidget* parent)
-    : FluentComponent(parent)
-{
+    : FluentComponent(parent) {
     setupLayout();
     setupAnimations();
-    
+
     // Connect to theme changes
-    connect(&FluentTheme::instance(), &FluentTheme::themeChanged,
-            this, &FluentTimelineItem::onThemeChanged);
-    
+    connect(&FluentTheme::instance(), &FluentTheme::themeChanged, this,
+            &FluentTimelineItem::onThemeChanged);
+
     updateColors();
     updateAccessibility();
-    
+
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover);
     setCursor(Qt::PointingHandCursor);
 }
 
 FluentTimelineItem::FluentTimelineItem(const QString& title, QWidget* parent)
-    : FluentTimelineItem(parent)
-{
+    : FluentTimelineItem(parent) {
     setTitle(title);
 }
 
-FluentTimelineItem::FluentTimelineItem(const QString& title, const QString& description, QWidget* parent)
-    : FluentTimelineItem(parent)
-{
+FluentTimelineItem::FluentTimelineItem(const QString& title,
+                                       const QString& description,
+                                       QWidget* parent)
+    : FluentTimelineItem(parent) {
     setTitle(title);
     setDescription(description);
 }
 
-FluentTimelineItem::FluentTimelineItem(const FluentTimelineItemData& data, QWidget* parent)
-    : FluentTimelineItem(parent)
-{
+FluentTimelineItem::FluentTimelineItem(const FluentTimelineItemData& data,
+                                       QWidget* parent)
+    : FluentTimelineItem(parent) {
     setData(data);
 }
 
@@ -124,7 +123,8 @@ void FluentTimelineItem::setUserData(const QVariant& data) {
 
 void FluentTimelineItem::setItemState(FluentTimelineItemState state) {
     if (m_data.state != state) {
-        // Store old state for potential future use (e.g., transition animations)
+        // Store old state for potential future use (e.g., transition
+        // animations)
         [[maybe_unused]] const FluentTimelineItemState oldState = m_data.state;
         m_data.state = state;
 
@@ -160,7 +160,8 @@ void FluentTimelineItem::setItemSize(FluentTimelineItemSize size) {
     }
 }
 
-void FluentTimelineItem::setIndicatorStyle(FluentTimelineItemIndicatorStyle style) {
+void FluentTimelineItem::setIndicatorStyle(
+    FluentTimelineItemIndicatorStyle style) {
     if (m_data.indicatorStyle != style) {
         m_data.indicatorStyle = style;
         m_sizeHintValid = false;
@@ -181,16 +182,16 @@ void FluentTimelineItem::setExpandable(bool expandable) {
 void FluentTimelineItem::setExpanded(bool expanded) {
     if (m_data.expanded != expanded) {
         m_data.expanded = expanded;
-        
+
         if (isVisible()) {
             animateExpansion(expanded);
         } else {
             m_expansionProgress = expanded ? 1.0 : 0.0;
         }
-        
+
         updateLayout();
         emit expandedChanged(expanded);
-        
+
         if (expanded) {
             emit this->expanded();
         } else {
@@ -202,10 +203,10 @@ void FluentTimelineItem::setExpanded(bool expanded) {
 void FluentTimelineItem::setInteractive(bool interactive) {
     if (m_data.interactive != interactive) {
         m_data.interactive = interactive;
-        
+
         setCursor(interactive ? Qt::PointingHandCursor : Qt::ArrowCursor);
         setFocusPolicy(interactive ? Qt::StrongFocus : Qt::NoFocus);
-        
+
         emit interactiveChanged(interactive);
     }
 }
@@ -261,42 +262,62 @@ void FluentTimelineItem::setData(const FluentTimelineItemData& data) {
     const bool hasDescriptionChanged = (m_data.description != data.description);
     const bool hasSubtitleChanged = (m_data.subtitle != data.subtitle);
     const bool hasDateTimeChanged = (m_data.dateTime != data.dateTime);
-    const bool hasIconChanged = (m_data.icon.cacheKey() != data.icon.cacheKey());
-    const bool hasAvatarChanged = (m_data.avatar.cacheKey() != data.avatar.cacheKey());
+    const bool hasIconChanged =
+        (m_data.icon.cacheKey() != data.icon.cacheKey());
+    const bool hasAvatarChanged =
+        (m_data.avatar.cacheKey() != data.avatar.cacheKey());
     const bool hasStateChanged = (m_data.state != data.state);
     const bool hasTypeChanged = (m_data.type != data.type);
     const bool hasSizeChanged = (m_data.size != data.size);
-    const bool hasIndicatorStyleChanged = (m_data.indicatorStyle != data.indicatorStyle);
+    const bool hasIndicatorStyleChanged =
+        (m_data.indicatorStyle != data.indicatorStyle);
     const bool hasExpandableChanged = (m_data.expandable != data.expandable);
     const bool hasExpandedChanged = (m_data.expanded != data.expanded);
     const bool hasInteractiveChanged = (m_data.interactive != data.interactive);
-    const bool hasShowDateTimeChanged = (m_data.showDateTime != data.showDateTime);
-    const bool hasShowIndicatorChanged = (m_data.showIndicator != data.showIndicator);
-    
+    const bool hasShowDateTimeChanged =
+        (m_data.showDateTime != data.showDateTime);
+    const bool hasShowIndicatorChanged =
+        (m_data.showIndicator != data.showIndicator);
+
     m_data = data;
-    
+
     m_sizeHintValid = false;
     updateGeometry();
     updateColors();
     updateAccessibility();
     update();
-    
+
     // Emit change signals
-    if (hasTitleChanged) emit titleChanged(data.title);
-    if (hasDescriptionChanged) emit descriptionChanged(data.description);
-    if (hasSubtitleChanged) emit subtitleChanged(data.subtitle);
-    if (hasDateTimeChanged) emit dateTimeChanged(data.dateTime);
-    if (hasIconChanged) emit iconChanged(data.icon);
-    if (hasAvatarChanged) emit avatarChanged(data.avatar);
-    if (hasStateChanged) emit itemStateChanged(data.state);
-    if (hasTypeChanged) emit itemTypeChanged(data.type);
-    if (hasSizeChanged) emit itemSizeChanged(data.size);
-    if (hasIndicatorStyleChanged) emit indicatorStyleChanged(data.indicatorStyle);
-    if (hasExpandableChanged) emit expandableChanged(data.expandable);
-    if (hasExpandedChanged) emit expandedChanged(data.expanded);
-    if (hasInteractiveChanged) emit interactiveChanged(data.interactive);
-    if (hasShowDateTimeChanged) emit showDateTimeChanged(data.showDateTime);
-    if (hasShowIndicatorChanged) emit showIndicatorChanged(data.showIndicator);
+    if (hasTitleChanged)
+        emit titleChanged(data.title);
+    if (hasDescriptionChanged)
+        emit descriptionChanged(data.description);
+    if (hasSubtitleChanged)
+        emit subtitleChanged(data.subtitle);
+    if (hasDateTimeChanged)
+        emit dateTimeChanged(data.dateTime);
+    if (hasIconChanged)
+        emit iconChanged(data.icon);
+    if (hasAvatarChanged)
+        emit avatarChanged(data.avatar);
+    if (hasStateChanged)
+        emit itemStateChanged(data.state);
+    if (hasTypeChanged)
+        emit itemTypeChanged(data.type);
+    if (hasSizeChanged)
+        emit itemSizeChanged(data.size);
+    if (hasIndicatorStyleChanged)
+        emit indicatorStyleChanged(data.indicatorStyle);
+    if (hasExpandableChanged)
+        emit expandableChanged(data.expandable);
+    if (hasExpandedChanged)
+        emit expandedChanged(data.expanded);
+    if (hasInteractiveChanged)
+        emit interactiveChanged(data.interactive);
+    if (hasShowDateTimeChanged)
+        emit showDateTimeChanged(data.showDateTime);
+    if (hasShowIndicatorChanged)
+        emit showIndicatorChanged(data.showIndicator);
 }
 
 void FluentTimelineItem::setContentWidget(QWidget* widget) {
@@ -305,14 +326,14 @@ void FluentTimelineItem::setContentWidget(QWidget* widget) {
             m_mainLayout->removeWidget(m_contentWidget);
             m_contentWidget->setParent(nullptr);
         }
-        
+
         m_contentWidget = widget;
-        
+
         if (m_contentWidget) {
             m_contentWidget->setParent(this);
             m_mainLayout->addWidget(m_contentWidget);
         }
-        
+
         updateLayout();
     }
 }
@@ -323,29 +344,30 @@ void FluentTimelineItem::setExpandedWidget(QWidget* widget) {
             m_mainLayout->removeWidget(m_expandedWidget);
             m_expandedWidget->setParent(nullptr);
         }
-        
+
         m_expandedWidget = widget;
-        
+
         if (m_expandedWidget) {
             m_expandedWidget->setParent(this);
             m_mainLayout->addWidget(m_expandedWidget);
             m_expandedWidget->setVisible(m_data.expanded);
         }
-        
+
         updateLayout();
     }
 }
 
 QSize FluentTimelineItem::sizeHint() const {
     if (!m_sizeHintValid) {
-        const_cast<FluentTimelineItem*>(this)->m_cachedSizeHint = calculateSizeHint();
+        const_cast<FluentTimelineItem*>(this)->m_cachedSizeHint =
+            calculateSizeHint();
         const_cast<FluentTimelineItem*>(this)->m_sizeHintValid = true;
     }
     return m_cachedSizeHint;
 }
 
 QSize FluentTimelineItem::minimumSizeHint() const {
-    return QSize(100, 40); // Minimum reasonable size
+    return QSize(100, 40);  // Minimum reasonable size
 }
 
 QSize FluentTimelineItem::calculateSizeHint() const {
@@ -355,7 +377,7 @@ QSize FluentTimelineItem::calculateSizeHint() const {
     const QFontMetrics descMetrics(getDescriptionFont());
     const QFontMetrics dateMetrics(getDateTimeFont());
 
-    int width = 200; // Base width
+    int width = 200;  // Base width
     int height = 0;
 
     // Calculate height based on content
@@ -368,8 +390,8 @@ QSize FluentTimelineItem::calculateSizeHint() const {
     }
 
     if (!m_data.description.isEmpty()) {
-        const QRect descRect = descMetrics.boundingRect(QRect(0, 0, width - 60, 0),
-                                                       Qt::TextWordWrap, m_data.description);
+        const QRect descRect = descMetrics.boundingRect(
+            QRect(0, 0, width - 60, 0), Qt::TextWordWrap, m_data.description);
         height += descRect.height() + 4;
     }
 
@@ -410,7 +432,8 @@ QSize FluentTimelineItem::calculateSizeHint() const {
 }
 
 void FluentTimelineItem::animateExpansion(bool expanded) {
-    if (!m_expansionAnimation) return;
+    if (!m_expansionAnimation)
+        return;
 
     m_expansionAnimation->stop();
     m_expansionAnimation->setStartValue(m_expansionProgress);
@@ -424,7 +447,8 @@ void FluentTimelineItem::animateStateChange(FluentTimelineItemState newState) {
     // newState parameter available for future state-specific animations
     [[maybe_unused]] FluentTimelineItemState targetState = newState;
 
-    if (!m_stateAnimation) return;
+    if (!m_stateAnimation)
+        return;
 
     m_stateAnimation->stop();
     m_stateAnimation->setStartValue(m_stateProgress);
@@ -435,7 +459,8 @@ void FluentTimelineItem::animateStateChange(FluentTimelineItemState newState) {
 }
 
 // Static factory methods
-FluentTimelineItem* FluentTimelineItem::createMilestone(const QString& title, const QDateTime& dateTime, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createMilestone(
+    const QString& title, const QDateTime& dateTime, QWidget* parent) {
     FluentTimelineItemData data;
     data.title = title;
     data.dateTime = dateTime;
@@ -446,7 +471,10 @@ FluentTimelineItem* FluentTimelineItem::createMilestone(const QString& title, co
     return new FluentTimelineItem(data, parent);
 }
 
-FluentTimelineItem* FluentTimelineItem::createEvent(const QString& title, const QString& description, const QDateTime& dateTime, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createEvent(const QString& title,
+                                                    const QString& description,
+                                                    const QDateTime& dateTime,
+                                                    QWidget* parent) {
     FluentTimelineItemData data;
     data.title = title;
     data.description = description;
@@ -457,7 +485,8 @@ FluentTimelineItem* FluentTimelineItem::createEvent(const QString& title, const 
     return new FluentTimelineItem(data, parent);
 }
 
-FluentTimelineItem* FluentTimelineItem::createTask(const QString& title, FluentTimelineItemState state, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createTask(
+    const QString& title, FluentTimelineItemState state, QWidget* parent) {
     FluentTimelineItemData data;
     data.title = title;
     data.type = FluentTimelineItemType::Task;
@@ -467,7 +496,9 @@ FluentTimelineItem* FluentTimelineItem::createTask(const QString& title, FluentT
     return new FluentTimelineItem(data, parent);
 }
 
-FluentTimelineItem* FluentTimelineItem::createNote(const QString& title, const QString& description, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createNote(const QString& title,
+                                                   const QString& description,
+                                                   QWidget* parent) {
     FluentTimelineItemData data;
     data.title = title;
     data.description = description;
@@ -478,7 +509,9 @@ FluentTimelineItem* FluentTimelineItem::createNote(const QString& title, const Q
     return new FluentTimelineItem(data, parent);
 }
 
-FluentTimelineItem* FluentTimelineItem::createIconItem(const QIcon& icon, const QString& title, const QString& description, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createIconItem(
+    const QIcon& icon, const QString& title, const QString& description,
+    QWidget* parent) {
     FluentTimelineItemData data;
     data.icon = icon;
     data.title = title;
@@ -488,7 +521,9 @@ FluentTimelineItem* FluentTimelineItem::createIconItem(const QIcon& icon, const 
     return new FluentTimelineItem(data, parent);
 }
 
-FluentTimelineItem* FluentTimelineItem::createAvatarItem(const QPixmap& avatar, const QString& title, const QString& description, QWidget* parent) {
+FluentTimelineItem* FluentTimelineItem::createAvatarItem(
+    const QPixmap& avatar, const QString& title, const QString& description,
+    QWidget* parent) {
     FluentTimelineItemData data;
     data.avatar = avatar;
     data.title = title;
@@ -651,7 +686,8 @@ void FluentTimelineItem::updateStateStyle() {
     updateColors();
 }
 
-void FluentTimelineItem::performStateTransition(FluentState from, FluentState to) {
+void FluentTimelineItem::performStateTransition(FluentState from,
+                                                FluentState to) {
     FluentComponent::performStateTransition(from, to);
 
     // Add any state transition animations here
@@ -685,14 +721,16 @@ void FluentTimelineItem::setupLayout() {
 
 void FluentTimelineItem::setupAnimations() {
     // Expansion animation
-    m_expansionAnimation = std::make_unique<QPropertyAnimation>(this, "expansionProgress");
-    connect(m_expansionAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentTimelineItem::onExpansionAnimationFinished);
+    m_expansionAnimation =
+        std::make_unique<QPropertyAnimation>(this, "expansionProgress");
+    connect(m_expansionAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentTimelineItem::onExpansionAnimationFinished);
 
     // State animation
-    m_stateAnimation = std::make_unique<QPropertyAnimation>(this, "stateProgress");
-    connect(m_stateAnimation.get(), &QPropertyAnimation::finished,
-            this, &FluentTimelineItem::onStateAnimationFinished);
+    m_stateAnimation =
+        std::make_unique<QPropertyAnimation>(this, "stateProgress");
+    connect(m_stateAnimation.get(), &QPropertyAnimation::finished, this,
+            &FluentTimelineItem::onStateAnimationFinished);
 
     // Opacity effect for animations
     m_opacityEffect = std::make_unique<QGraphicsOpacityEffect>(this);
@@ -700,7 +738,8 @@ void FluentTimelineItem::setupAnimations() {
 
 void FluentTimelineItem::updateLayout() {
     if (m_expandedWidget) {
-        m_expandedWidget->setVisible(m_data.expanded && m_expansionProgress > 0.5);
+        m_expandedWidget->setVisible(m_data.expanded &&
+                                     m_expansionProgress > 0.5);
     }
 
     m_sizeHintValid = false;
@@ -723,14 +762,16 @@ void FluentTimelineItem::updateAccessibility() {
     if (m_data.expandable) {
         FluentQt::Accessibility::setAccessibleRole(this, QAccessible::Button);
     } else {
-        FluentQt::Accessibility::setAccessibleRole(this, QAccessible::StaticText);
+        FluentQt::Accessibility::setAccessibleRole(this,
+                                                   QAccessible::StaticText);
     }
 }
 
 void FluentTimelineItem::paintIndicator(QPainter& painter, const QRect& rect) {
     const QColor indicatorColor = getStateColor();
     const int size = getIndicatorSize();
-    const QRect indicatorRect = QRect(rect.center() - QPoint(size/2, size/2), QSize(size, size));
+    const QRect indicatorRect =
+        QRect(rect.center() - QPoint(size / 2, size / 2), QSize(size, size));
 
     painter.setRenderHint(QPainter::Antialiasing);
 
@@ -773,7 +814,9 @@ void FluentTimelineItem::paintIndicator(QPainter& painter, const QRect& rect) {
 
         case FluentTimelineItemIndicatorStyle::Avatar:
             if (!m_data.avatar.isNull()) {
-                painter.setBrush(QBrush(m_data.avatar.scaled(indicatorRect.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation)));
+                painter.setBrush(QBrush(m_data.avatar.scaled(
+                    indicatorRect.size(), Qt::KeepAspectRatioByExpanding,
+                    Qt::SmoothTransformation)));
                 painter.setPen(Qt::NoPen);
                 painter.drawEllipse(indicatorRect);
             }
@@ -803,7 +846,8 @@ void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
         painter.setFont(getTitleFont());
         painter.setPen(textColor);
 
-        const QRect titleRect(leftMargin, y, rightMargin - leftMargin, getTitleFont().pointSize() + 4);
+        const QRect titleRect(leftMargin, y, rightMargin - leftMargin,
+                              getTitleFont().pointSize() + 4);
         painter.drawText(titleRect, Qt::AlignLeft | Qt::AlignTop, m_data.title);
         y += titleRect.height() + 2;
     }
@@ -813,8 +857,10 @@ void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
         painter.setFont(getTitleFont());
         painter.setPen(secondaryTextColor);
 
-        const QRect subtitleRect(leftMargin, y, rightMargin - leftMargin, getTitleFont().pointSize() + 2);
-        painter.drawText(subtitleRect, Qt::AlignLeft | Qt::AlignTop, m_data.subtitle);
+        const QRect subtitleRect(leftMargin, y, rightMargin - leftMargin,
+                                 getTitleFont().pointSize() + 2);
+        painter.drawText(subtitleRect, Qt::AlignLeft | Qt::AlignTop,
+                         m_data.subtitle);
         y += subtitleRect.height() + 2;
     }
 
@@ -823,11 +869,15 @@ void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
         painter.setFont(getDescriptionFont());
         painter.setPen(secondaryTextColor);
 
-        const QRect descRect(leftMargin, y, rightMargin - leftMargin, rect.bottom() - y);
-        painter.drawText(descRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap, m_data.description);
+        const QRect descRect(leftMargin, y, rightMargin - leftMargin,
+                             rect.bottom() - y);
+        painter.drawText(descRect,
+                         Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
+                         m_data.description);
 
         const QFontMetrics metrics(getDescriptionFont());
-        const QRect boundingRect = metrics.boundingRect(descRect, Qt::TextWordWrap, m_data.description);
+        const QRect boundingRect = metrics.boundingRect(
+            descRect, Qt::TextWordWrap, m_data.description);
         y += boundingRect.height() + 4;
     }
 
@@ -836,9 +886,12 @@ void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
         painter.setFont(getDateTimeFont());
         painter.setPen(secondaryTextColor);
 
-        const QString dateTimeText = m_data.dateTime.toString("MMM dd, yyyy hh:mm");
-        const QRect dateTimeRect(leftMargin, y, rightMargin - leftMargin, getDateTimeFont().pointSize() + 2);
-        painter.drawText(dateTimeRect, Qt::AlignLeft | Qt::AlignTop, dateTimeText);
+        const QString dateTimeText =
+            m_data.dateTime.toString("MMM dd, yyyy hh:mm");
+        const QRect dateTimeRect(leftMargin, y, rightMargin - leftMargin,
+                                 getDateTimeFont().pointSize() + 2);
+        painter.drawText(dateTimeRect, Qt::AlignLeft | Qt::AlignTop,
+                         dateTimeText);
     }
 
     // Paint custom text if provided
@@ -846,8 +899,10 @@ void FluentTimelineItem::paintContent(QPainter& painter, const QRect& rect) {
         painter.setFont(getDescriptionFont());
         painter.setPen(getStateColor());
 
-        const QRect customRect(leftMargin, rect.bottom() - 20, rightMargin - leftMargin, 20);
-        painter.drawText(customRect, Qt::AlignLeft | Qt::AlignBottom, m_data.customText);
+        const QRect customRect(leftMargin, rect.bottom() - 20,
+                               rightMargin - leftMargin, 20);
+        painter.drawText(customRect, Qt::AlignLeft | Qt::AlignBottom,
+                         m_data.customText);
     }
 }
 
@@ -893,8 +948,8 @@ QRect FluentTimelineItem::getTitleRect() const {
     const QRect contentRect = getContentRect();
     const QFontMetrics metrics(getTitleFont());
 
-    return QRect(contentRect.left(), contentRect.top(),
-                contentRect.width(), metrics.height() + 4);
+    return QRect(contentRect.left(), contentRect.top(), contentRect.width(),
+                 metrics.height() + 4);
 }
 
 QRect FluentTimelineItem::getDescriptionRect() const {
@@ -902,15 +957,17 @@ QRect FluentTimelineItem::getDescriptionRect() const {
     const QRect contentRect = getContentRect();
 
     return QRect(contentRect.left(), titleRect.bottom() + 2,
-                contentRect.width(), contentRect.bottom() - titleRect.bottom() - 2);
+                 contentRect.width(),
+                 contentRect.bottom() - titleRect.bottom() - 2);
 }
 
 QRect FluentTimelineItem::getDateTimeRect() const {
     const QRect contentRect = getContentRect();
     const QFontMetrics metrics(getDateTimeFont());
 
-    return QRect(contentRect.left(), contentRect.bottom() - metrics.height() - 4,
-                contentRect.width(), metrics.height() + 4);
+    return QRect(contentRect.left(),
+                 contentRect.bottom() - metrics.height() - 4,
+                 contentRect.width(), metrics.height() + 4);
 }
 
 QColor FluentTimelineItem::getStateColor() const {

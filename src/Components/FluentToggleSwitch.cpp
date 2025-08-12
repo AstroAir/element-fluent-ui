@@ -1,57 +1,53 @@
 // src/Components/FluentToggleSwitch.cpp
 #include "FluentQt/Components/FluentToggleSwitch.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QPainter>
-#include <QMouseEvent>
-#include <QKeyEvent>
 #include <QApplication>
-#include <QPropertyAnimation>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
 #include <QtMath>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentToggleSwitch::FluentToggleSwitch(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-{
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setupAnimations();
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_Hover, true);
-    
+
     updateSizeMetrics();
     updateLayout();
-    
+
     // Connect to theme changes
     auto& theme = Styling::FluentTheme::instance();
-    connect(&theme, &Styling::FluentTheme::themeChanged,
-            this, &FluentToggleSwitch::updateColors);
-    connect(&theme, &Styling::FluentTheme::accentColorChanged,
-            this, &FluentToggleSwitch::updateColors);
+    connect(&theme, &Styling::FluentTheme::themeChanged, this,
+            &FluentToggleSwitch::updateColors);
+    connect(&theme, &Styling::FluentTheme::accentColorChanged, this,
+            &FluentToggleSwitch::updateColors);
 }
 
 FluentToggleSwitch::FluentToggleSwitch(const QString& text, QWidget* parent)
-    : FluentToggleSwitch(parent)
-{
+    : FluentToggleSwitch(parent) {
     setText(text);
 }
 
-FluentToggleSwitch::FluentToggleSwitch(const QString& text, bool checked, QWidget* parent)
-    : FluentToggleSwitch(text, parent)
-{
+FluentToggleSwitch::FluentToggleSwitch(const QString& text, bool checked,
+                                       QWidget* parent)
+    : FluentToggleSwitch(text, parent) {
     setChecked(checked);
 }
 
 FluentToggleSwitch::~FluentToggleSwitch() = default;
 
-bool FluentToggleSwitch::isChecked() const {
-    return m_checked;
-}
+bool FluentToggleSwitch::isChecked() const { return m_checked; }
 
 void FluentToggleSwitch::setChecked(bool checked) {
     if (m_checked != checked) {
         m_checked = checked;
-        
+
         if (m_animated) {
             startToggleAnimation();
         } else {
@@ -59,19 +55,15 @@ void FluentToggleSwitch::setChecked(bool checked) {
             updateLayout();
             update();
         }
-        
+
         emit checkedChanged(checked);
         emit toggled(checked);
     }
 }
 
-void FluentToggleSwitch::toggle() {
-    setChecked(!m_checked);
-}
+void FluentToggleSwitch::toggle() { setChecked(!m_checked); }
 
-QString FluentToggleSwitch::text() const {
-    return m_text;
-}
+QString FluentToggleSwitch::text() const { return m_text; }
 
 void FluentToggleSwitch::setText(const QString& text) {
     if (m_text != text) {
@@ -83,9 +75,7 @@ void FluentToggleSwitch::setText(const QString& text) {
     }
 }
 
-QString FluentToggleSwitch::onText() const {
-    return m_onText;
-}
+QString FluentToggleSwitch::onText() const { return m_onText; }
 
 void FluentToggleSwitch::setOnText(const QString& text) {
     if (m_onText != text) {
@@ -97,9 +87,7 @@ void FluentToggleSwitch::setOnText(const QString& text) {
     }
 }
 
-QString FluentToggleSwitch::offText() const {
-    return m_offText;
-}
+QString FluentToggleSwitch::offText() const { return m_offText; }
 
 void FluentToggleSwitch::setOffText(const QString& text) {
     if (m_offText != text) {
@@ -111,9 +99,7 @@ void FluentToggleSwitch::setOffText(const QString& text) {
     }
 }
 
-QIcon FluentToggleSwitch::onIcon() const {
-    return m_onIcon;
-}
+QIcon FluentToggleSwitch::onIcon() const { return m_onIcon; }
 
 void FluentToggleSwitch::setOnIcon(const QIcon& icon) {
     m_onIcon = icon;
@@ -123,9 +109,7 @@ void FluentToggleSwitch::setOnIcon(const QIcon& icon) {
     emit onIconChanged(icon);
 }
 
-QIcon FluentToggleSwitch::offIcon() const {
-    return m_offIcon;
-}
+QIcon FluentToggleSwitch::offIcon() const { return m_offIcon; }
 
 void FluentToggleSwitch::setOffIcon(const QIcon& icon) {
     m_offIcon = icon;
@@ -135,9 +119,7 @@ void FluentToggleSwitch::setOffIcon(const QIcon& icon) {
     emit offIconChanged(icon);
 }
 
-bool FluentToggleSwitch::showIcons() const {
-    return m_showIcons;
-}
+bool FluentToggleSwitch::showIcons() const { return m_showIcons; }
 
 void FluentToggleSwitch::setShowIcons(bool show) {
     if (m_showIcons != show) {
@@ -149,9 +131,7 @@ void FluentToggleSwitch::setShowIcons(bool show) {
     }
 }
 
-FluentToggleSwitchSize FluentToggleSwitch::size() const {
-    return m_size;
-}
+FluentToggleSwitchSize FluentToggleSwitch::size() const { return m_size; }
 
 void FluentToggleSwitch::setSize(FluentToggleSwitchSize size) {
     if (m_size != size) {
@@ -168,7 +148,8 @@ FluentToggleSwitchLabelPosition FluentToggleSwitch::labelPosition() const {
     return m_labelPosition;
 }
 
-void FluentToggleSwitch::setLabelPosition(FluentToggleSwitchLabelPosition position) {
+void FluentToggleSwitch::setLabelPosition(
+    FluentToggleSwitchLabelPosition position) {
     if (m_labelPosition != position) {
         m_labelPosition = position;
         m_layoutDirty = true;
@@ -178,9 +159,7 @@ void FluentToggleSwitch::setLabelPosition(FluentToggleSwitchLabelPosition positi
     }
 }
 
-bool FluentToggleSwitch::showStateText() const {
-    return m_showStateText;
-}
+bool FluentToggleSwitch::showStateText() const { return m_showStateText; }
 
 void FluentToggleSwitch::setShowStateText(bool show) {
     if (m_showStateText != show) {
@@ -192,9 +171,7 @@ void FluentToggleSwitch::setShowStateText(bool show) {
     }
 }
 
-bool FluentToggleSwitch::isAnimated() const {
-    return m_animated;
-}
+bool FluentToggleSwitch::isAnimated() const { return m_animated; }
 
 void FluentToggleSwitch::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -222,21 +199,13 @@ QSize FluentToggleSwitch::thumbSize() const {
     return QSize(m_thumbSize, m_thumbSize);
 }
 
-QRect FluentToggleSwitch::switchRect() const {
-    return m_switchRect;
-}
+QRect FluentToggleSwitch::switchRect() const { return m_switchRect; }
 
-QRect FluentToggleSwitch::thumbRect() const {
-    return m_thumbRect;
-}
+QRect FluentToggleSwitch::thumbRect() const { return m_thumbRect; }
 
-QRect FluentToggleSwitch::labelRect() const {
-    return m_labelRect;
-}
+QRect FluentToggleSwitch::labelRect() const { return m_labelRect; }
 
-QRect FluentToggleSwitch::stateTextRect() const {
-    return m_stateTextRect;
-}
+QRect FluentToggleSwitch::stateTextRect() const { return m_stateTextRect; }
 
 QString FluentToggleSwitch::currentStateText() const {
     return m_checked ? m_onText : m_offText;
@@ -249,14 +218,15 @@ QIcon FluentToggleSwitch::currentIcon() const {
 QSize FluentToggleSwitch::sizeHint() const {
     auto& theme = Styling::FluentTheme::instance();
     QFontMetrics fm(theme.bodyFont());
-    
+
     int totalWidth = m_switchWidth;
     int totalHeight = m_switchHeight;
-    
+
     // Add space for main label
-    if (!m_text.isEmpty() && m_labelPosition != FluentToggleSwitchLabelPosition::None) {
+    if (!m_text.isEmpty() &&
+        m_labelPosition != FluentToggleSwitchLabelPosition::None) {
         QRect textRect = fm.boundingRect(m_text);
-        
+
         if (m_labelPosition == FluentToggleSwitchLabelPosition::Left ||
             m_labelPosition == FluentToggleSwitchLabelPosition::Right) {
             totalWidth += textRect.width() + 8;
@@ -266,13 +236,16 @@ QSize FluentToggleSwitch::sizeHint() const {
             totalHeight += textRect.height() + 4;
         }
     }
-    
+
     // Add space for state text
     if (m_showStateText) {
-        QString stateText = qMax(m_onText.length(), m_offText.length()) > 0 ? 
-                           (m_onText.length() > m_offText.length() ? m_onText : m_offText) : "Off";
+        QString stateText =
+            qMax(m_onText.length(), m_offText.length()) > 0
+                ? (m_onText.length() > m_offText.length() ? m_onText
+                                                          : m_offText)
+                : "Off";
         QRect stateRect = fm.boundingRect(stateText);
-        
+
         if (m_labelPosition == FluentToggleSwitchLabelPosition::Left ||
             m_labelPosition == FluentToggleSwitchLabelPosition::Right) {
             totalWidth += stateRect.width() + 8;
@@ -282,7 +255,7 @@ QSize FluentToggleSwitch::sizeHint() const {
             totalHeight += stateRect.height() + 4;
         }
     }
-    
+
     return QSize(totalWidth, totalHeight);
 }
 
@@ -290,9 +263,7 @@ QSize FluentToggleSwitch::minimumSizeHint() const {
     return QSize(m_switchWidth, m_switchHeight);
 }
 
-void FluentToggleSwitch::animateToggle() {
-    setChecked(!m_checked);
-}
+void FluentToggleSwitch::animateToggle() { setChecked(!m_checked); }
 
 void FluentToggleSwitch::setupAnimations() {
     // Initialize animation properties
@@ -324,8 +295,9 @@ void FluentToggleSwitch::updateSizeMetrics() {
 }
 
 void FluentToggleSwitch::updateLayout() {
-    if (!m_layoutDirty) return;
-    
+    if (!m_layoutDirty)
+        return;
+
     layoutComponents();
     m_layoutDirty = false;
 }
@@ -340,23 +312,23 @@ void FluentToggleSwitch::startToggleAnimation() {
         m_toggleAnimation->stop();
         m_toggleAnimation->deleteLater();
     }
-    
+
     m_toggleAnimation = new QParallelAnimationGroup(this);
-    
+
     // Thumb position animation
     m_thumbAnimation = new QPropertyAnimation(this, "thumbPosition", this);
     m_thumbAnimation->setDuration(m_animationDuration);
     m_thumbAnimation->setStartValue(m_thumbPosition);
     m_thumbAnimation->setEndValue(m_checked ? 1.0 : 0.0);
     m_thumbAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Color animation
     m_colorAnimation = new QPropertyAnimation(this, "switchColor", this);
     m_colorAnimation->setDuration(m_animationDuration);
     m_colorAnimation->setStartValue(m_switchColor);
     m_colorAnimation->setEndValue(getSwitchColor());
     m_colorAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
+
     // Scale animation for press feedback
     if (m_pressed) {
         m_scaleAnimation = new QPropertyAnimation(this, "scale", this);
@@ -366,13 +338,13 @@ void FluentToggleSwitch::startToggleAnimation() {
         m_scaleAnimation->setEasingCurve(QEasingCurve::OutCubic);
         m_toggleAnimation->addAnimation(m_scaleAnimation);
     }
-    
+
     m_toggleAnimation->addAnimation(m_thumbAnimation);
     m_toggleAnimation->addAnimation(m_colorAnimation);
-    
-    connect(m_toggleAnimation, &QParallelAnimationGroup::finished,
-            this, &FluentToggleSwitch::onToggleAnimationFinished);
-    
+
+    connect(m_toggleAnimation, &QParallelAnimationGroup::finished, this,
+            &FluentToggleSwitch::onToggleAnimationFinished);
+
     m_toggleAnimation->start();
 }
 
@@ -389,9 +361,7 @@ void FluentToggleSwitch::onToggleAnimationFinished() {
     }
 }
 
-void FluentToggleSwitch::onThumbPositionChanged() {
-    updateThumbPosition();
-}
+void FluentToggleSwitch::onThumbPositionChanged() { updateThumbPosition(); }
 
 void FluentToggleSwitch::updateColors() {
     m_switchColor = getSwitchColor();
@@ -455,14 +425,16 @@ QRect FluentToggleSwitch::calculateThumbRect() const {
 
     // Calculate thumb position based on animation progress
     int thumbX = switchRect.left() + m_padding +
-                (int)((switchRect.width() - m_thumbSize - 2 * m_padding) * m_thumbPosition);
+                 (int)((switchRect.width() - m_thumbSize - 2 * m_padding) *
+                       m_thumbPosition);
     int thumbY = switchRect.top() + (switchRect.height() - m_thumbSize) / 2;
 
     return QRect(thumbX, thumbY, m_thumbSize, m_thumbSize);
 }
 
 QRect FluentToggleSwitch::calculateLabelRect() const {
-    if (m_text.isEmpty() || m_labelPosition == FluentToggleSwitchLabelPosition::None) {
+    if (m_text.isEmpty() ||
+        m_labelPosition == FluentToggleSwitchLabelPosition::None) {
         return QRect();
     }
 
@@ -474,20 +446,19 @@ QRect FluentToggleSwitch::calculateLabelRect() const {
     switch (m_labelPosition) {
         case FluentToggleSwitchLabelPosition::Left:
             return QRect(rect.left(),
-                        rect.top() + (rect.height() - textRect.height()) / 2,
-                        textRect.width(), textRect.height());
+                         rect.top() + (rect.height() - textRect.height()) / 2,
+                         textRect.width(), textRect.height());
         case FluentToggleSwitchLabelPosition::Right:
             return QRect(m_switchRect.right() + 8,
-                        rect.top() + (rect.height() - textRect.height()) / 2,
-                        textRect.width(), textRect.height());
+                         rect.top() + (rect.height() - textRect.height()) / 2,
+                         textRect.width(), textRect.height());
         case FluentToggleSwitchLabelPosition::Above:
             return QRect(rect.left() + (rect.width() - textRect.width()) / 2,
-                        rect.top(),
-                        textRect.width(), textRect.height());
+                         rect.top(), textRect.width(), textRect.height());
         case FluentToggleSwitchLabelPosition::Below:
             return QRect(rect.left() + (rect.width() - textRect.width()) / 2,
-                        m_switchRect.bottom() + 4,
-                        textRect.width(), textRect.height());
+                         m_switchRect.bottom() + 4, textRect.width(),
+                         textRect.height());
         default:
             return QRect();
     }
@@ -526,9 +497,8 @@ QRect FluentToggleSwitch::calculateIconRect() const {
 
 QPoint FluentToggleSwitch::getThumbPosition(bool checked) const {
     QRect switchRect = m_switchRect;
-    int x = checked ?
-            switchRect.right() - m_padding - m_thumbSize :
-            switchRect.left() + m_padding;
+    int x = checked ? switchRect.right() - m_padding - m_thumbSize
+                    : switchRect.left() + m_padding;
     int y = switchRect.top() + (switchRect.height() - m_thumbSize) / 2;
 
     return QPoint(x, y);
@@ -750,7 +720,8 @@ void FluentToggleSwitch::paintThumb(QPainter* painter) {
 }
 
 void FluentToggleSwitch::paintLabel(QPainter* painter) {
-    if (m_text.isEmpty() || m_labelPosition == FluentToggleSwitchLabelPosition::None) {
+    if (m_text.isEmpty() ||
+        m_labelPosition == FluentToggleSwitchLabelPosition::None) {
         return;
     }
 
@@ -770,8 +741,8 @@ void FluentToggleSwitch::paintStateText(QPainter* painter) {
 
     auto& theme = Styling::FluentTheme::instance();
     painter->setFont(theme.captionFont());
-    painter->setPen(m_checked ? theme.color("textOnAccentFillColorPrimary") :
-                               theme.color("textFillColorSecondary"));
+    painter->setPen(m_checked ? theme.color("textOnAccentFillColorPrimary")
+                              : theme.color("textFillColorSecondary"));
 
     painter->drawText(m_stateTextRect, Qt::AlignCenter, currentStateText());
 
@@ -780,7 +751,8 @@ void FluentToggleSwitch::paintStateText(QPainter* painter) {
 
 void FluentToggleSwitch::paintIcon(QPainter* painter) {
     QIcon icon = currentIcon();
-    if (icon.isNull()) return;
+    if (icon.isNull())
+        return;
 
     painter->save();
 
@@ -808,4 +780,4 @@ void FluentToggleSwitch::paintFocusIndicator(QPainter* painter) {
     painter->restore();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

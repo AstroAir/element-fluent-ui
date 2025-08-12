@@ -1,15 +1,15 @@
 // include/FluentQt/Styling/FluentTheme.h
 #pragma once
 
-#include <QObject>
+#include <QBrush>
 #include <QColor>
 #include <QFont>
-#include <QBrush>
+#include <QObject>
 #include <QPalette>
 #include <QSettings>
 #include <QTimer>
-#include <unordered_map>
 #include <string_view>
+#include <unordered_map>
 
 namespace FluentQt::Styling {
 
@@ -17,12 +17,12 @@ namespace FluentQt::Styling {
 enum class FluentThemeMode {
     Light,
     Dark,
-    System,         // Follow system preference
-    HighContrast,   // High contrast mode
-    HighContrastLight, // High contrast light
-    HighContrastDark,  // High contrast dark
-    Custom,         // Custom theme mode
-    Auto            // Automatic based on time/location
+    System,             // Follow system preference
+    HighContrast,       // High contrast mode
+    HighContrastLight,  // High contrast light
+    HighContrastDark,   // High contrast dark
+    Custom,             // Custom theme mode
+    Auto                // Automatic based on time/location
 };
 
 // Enhanced accent colors with more options
@@ -42,55 +42,55 @@ enum class FluentAccentColor {
     DeepOrange,
     Brown,
     BlueGrey,
-    Custom,         // Custom color
-    System,         // System accent color
-    Dynamic         // Dynamic color based on content
+    Custom,  // Custom color
+    System,  // System accent color
+    Dynamic  // Dynamic color based on content
 };
 
 // Theme variants for different use cases
 enum class FluentThemeVariant {
-    Default,        // Standard theme
-    Compact,        // Compact spacing and sizing
-    Touch,          // Touch-optimized
-    Dense,          // Dense information display
-    Accessible,     // Enhanced accessibility
-    Gaming,         // Gaming-optimized
-    Productivity,   // Productivity-focused
-    Creative,       // Creative work optimized
-    Presentation,   // Presentation mode
-    Custom          // Custom variant
+    Default,       // Standard theme
+    Compact,       // Compact spacing and sizing
+    Touch,         // Touch-optimized
+    Dense,         // Dense information display
+    Accessible,    // Enhanced accessibility
+    Gaming,        // Gaming-optimized
+    Productivity,  // Productivity-focused
+    Creative,      // Creative work optimized
+    Presentation,  // Presentation mode
+    Custom         // Custom variant
 };
 
 // Color scheme types
 enum class FluentColorScheme {
-    Monochromatic,  // Single hue variations
-    Analogous,      // Adjacent hues
-    Complementary,  // Opposite hues
-    Triadic,        // Three evenly spaced hues
-    Tetradic,       // Four hues (rectangle)
-    SplitComplementary, // Base + two adjacent to complement
-    Custom,         // Custom color scheme
-    Material,       // Material Design inspired
-    Fluent,         // Fluent Design inspired
-    Accessible      // Accessibility-focused
+    Monochromatic,       // Single hue variations
+    Analogous,           // Adjacent hues
+    Complementary,       // Opposite hues
+    Triadic,             // Three evenly spaced hues
+    Tetradic,            // Four hues (rectangle)
+    SplitComplementary,  // Base + two adjacent to complement
+    Custom,              // Custom color scheme
+    Material,            // Material Design inspired
+    Fluent,              // Fluent Design inspired
+    Accessible           // Accessibility-focused
 };
 
 // Dynamic theming modes
 enum class FluentDynamicMode {
-    Static,         // No dynamic changes
-    TimeOfDay,      // Changes based on time
-    Location,       // Changes based on location/weather
-    Content,        // Changes based on content
-    Usage,          // Changes based on usage patterns
-    Ambient,        // Changes based on ambient light
-    Custom          // Custom dynamic logic
+    Static,     // No dynamic changes
+    TimeOfDay,  // Changes based on time
+    Location,   // Changes based on location/weather
+    Content,    // Changes based on content
+    Usage,      // Changes based on usage patterns
+    Ambient,    // Changes based on ambient light
+    Custom      // Custom dynamic logic
 };
 
 struct FluentColorPalette {
     // Primary colors
     QColor accent;
     QColor accentLight1;
-    QColor accentLight2; 
+    QColor accentLight2;
     QColor accentLight3;
     QColor accentDark1;
     QColor accentDark2;
@@ -173,13 +173,20 @@ struct FluentColorPalette {
 class FluentTheme : public QObject {
     Q_OBJECT
     Q_PROPERTY(FluentThemeMode mode READ mode WRITE setMode NOTIFY modeChanged)
-    Q_PROPERTY(FluentAccentColor accentColor READ accentColorEnum WRITE setAccentColor NOTIFY accentColorChanged)
-    Q_PROPERTY(FluentThemeVariant variant READ variant WRITE setVariant NOTIFY variantChanged)
-    Q_PROPERTY(FluentColorScheme colorScheme READ colorScheme WRITE setColorScheme NOTIFY colorSchemeChanged)
-    Q_PROPERTY(FluentDynamicMode dynamicMode READ dynamicMode WRITE setDynamicMode NOTIFY dynamicModeChanged)
-    Q_PROPERTY(bool highContrastMode READ isHighContrastMode WRITE setHighContrastMode NOTIFY highContrastModeChanged)
-    Q_PROPERTY(bool reducedMotionMode READ isReducedMotionMode WRITE setReducedMotionMode NOTIFY reducedMotionModeChanged)
-    Q_PROPERTY(double contrastRatio READ contrastRatio WRITE setContrastRatio NOTIFY contrastRatioChanged)
+    Q_PROPERTY(FluentAccentColor accentColor READ accentColorEnum WRITE
+                   setAccentColor NOTIFY accentColorChanged)
+    Q_PROPERTY(FluentThemeVariant variant READ variant WRITE setVariant NOTIFY
+                   variantChanged)
+    Q_PROPERTY(FluentColorScheme colorScheme READ colorScheme WRITE
+                   setColorScheme NOTIFY colorSchemeChanged)
+    Q_PROPERTY(FluentDynamicMode dynamicMode READ dynamicMode WRITE
+                   setDynamicMode NOTIFY dynamicModeChanged)
+    Q_PROPERTY(bool highContrastMode READ isHighContrastMode WRITE
+                   setHighContrastMode NOTIFY highContrastModeChanged)
+    Q_PROPERTY(bool reducedMotionMode READ isReducedMotionMode WRITE
+                   setReducedMotionMode NOTIFY reducedMotionModeChanged)
+    Q_PROPERTY(double contrastRatio READ contrastRatio WRITE setContrastRatio
+                   NOTIFY contrastRatioChanged)
 
 public:
     static FluentTheme& instance();
@@ -214,7 +221,9 @@ public:
     FluentDynamicMode dynamicMode() const noexcept { return m_dynamicMode; }
     void setDynamicMode(FluentDynamicMode mode);
     void enableDynamicTheming(bool enabled = true);
-    bool isDynamicThemingEnabled() const noexcept { return m_dynamicThemingEnabled; }
+    bool isDynamicThemingEnabled() const noexcept {
+        return m_dynamicThemingEnabled;
+    }
 
     // Accessibility features
     bool isHighContrastMode() const noexcept { return m_highContrastMode; }
@@ -225,21 +234,30 @@ public:
     void setContrastRatio(double ratio);
 
     // Advanced color management
-    void generateColorPalette(const QColor& baseColor, FluentColorScheme scheme = FluentColorScheme::Fluent);
+    void generateColorPalette(
+        const QColor& baseColor,
+        FluentColorScheme scheme = FluentColorScheme::Fluent);
     void generateAccessiblePalette(double targetContrastRatio = 4.5);
-    QColor generateContrastColor(const QColor& baseColor, double targetRatio = 4.5);
-    bool meetsAccessibilityStandards(const QColor& foreground, const QColor& background) const;
-    double calculateContrastRatio(const QColor& foreground, const QColor& background) const;
+    QColor generateContrastColor(const QColor& baseColor,
+                                 double targetRatio = 4.5);
+    bool meetsAccessibilityStandards(const QColor& foreground,
+                                     const QColor& background) const;
+    double calculateContrastRatio(const QColor& foreground,
+                                  const QColor& background) const;
 
     // Color palette access
-    const FluentColorPalette& lightPalette() const noexcept { return m_lightPalette; }
-    const FluentColorPalette& darkPalette() const noexcept { return m_darkPalette; }
+    const FluentColorPalette& lightPalette() const noexcept {
+        return m_lightPalette;
+    }
+    const FluentColorPalette& darkPalette() const noexcept {
+        return m_darkPalette;
+    }
     const FluentColorPalette& currentPalette() const noexcept;
 
     // Dynamic color access
     QColor color(std::string_view colorName) const;
     QBrush brush(std::string_view brushName) const;
-    
+
     // Typography
     QFont displayFont() const;
     QFont titleLargeFont() const;
@@ -253,7 +271,7 @@ public:
     QFont overlineFont() const;
 
     // Typography with semantic meaning
-    QFont headingFont(int level = 1) const; // H1-H6
+    QFont headingFont(int level = 1) const;  // H1-H6
     QFont buttonFont() const;
     QFont linkFont() const;
     QFont codeFont() const;
@@ -280,15 +298,19 @@ public:
     void setCustomColor(const QString& name, const QColor& color);
     QColor customColor(const QString& name) const;
 
-    // Accessibility features (duplicate methods removed - already declared above)
-    qreal contrastRatio(const QColor& foreground, const QColor& background) const;
-    QColor ensureContrast(const QColor& foreground, const QColor& background, qreal minRatio = 4.5) const;
+    // Accessibility features (duplicate methods removed - already declared
+    // above)
+    qreal contrastRatio(const QColor& foreground,
+                        const QColor& background) const;
+    QColor ensureContrast(const QColor& foreground, const QColor& background,
+                          qreal minRatio = 4.5) const;
 
     // Advanced color utilities
     QColor lighten(const QColor& color, qreal amount = 0.1) const;
     QColor darken(const QColor& color, qreal amount = 0.1) const;
     QColor adjustAlpha(const QColor& color, qreal alpha) const;
-    QColor blend(const QColor& color1, const QColor& color2, qreal ratio = 0.5) const;
+    QColor blend(const QColor& color1, const QColor& color2,
+                 qreal ratio = 0.5) const;
 
     // Theme management
     void resetToDefaults();
@@ -332,6 +354,10 @@ private:
     void saveCustomColors(QSettings& settings);
     void updateSystemAccentColor(const QColor& systemColor);
     FluentAccentColor findClosestAccentColor(const QColor& targetColor) const;
+
+    // ElaWidgetTools-inspired theme transition
+    void animateThemeTransition(FluentThemeMode fromMode,
+                                FluentThemeMode toMode);
 
     // Brush creation helpers
     QBrush createAcrylicBrush(const QColor& baseColor) const;
@@ -388,4 +414,4 @@ private:
     bool m_useSystemAccentColor{false};
 };
 
-} // namespace FluentQt::Styling
+}  // namespace FluentQt::Styling

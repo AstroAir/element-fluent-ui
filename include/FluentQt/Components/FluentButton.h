@@ -1,16 +1,16 @@
 // include/FluentQt/Components/FluentButton.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QPushButton>
-#include <QIcon>
 #include <QFontMetrics>
+#include <QGraphicsEffect>
+#include <QIcon>
 #include <QPropertyAnimation>
+#include <QPushButton>
 #include <QSequentialAnimationGroup>
 #include <QTimer>
-#include <QGraphicsEffect>
 #include <memory>
 #include <optional>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -36,41 +36,39 @@ enum class FluentButtonStyle {
     Icon
 };
 
-enum class FluentButtonSize {
-    Small,
-    Medium,
-    Large,
-    ExtraLarge
-};
+enum class FluentButtonSize { Small, Medium, Large, ExtraLarge };
 
-enum class FluentIconPosition {
-    Left,
-    Right,
-    Top,
-    Bottom
-};
+enum class FluentIconPosition { Left, Right, Top, Bottom };
 
 class FluentButton : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
     Q_PROPERTY(QIcon icon READ icon WRITE setIcon NOTIFY iconChanged)
-    Q_PROPERTY(FluentButtonStyle buttonStyle READ buttonStyle WRITE setButtonStyle NOTIFY styleChanged)
-    Q_PROPERTY(FluentButtonSize buttonSize READ buttonSize WRITE setButtonSize NOTIFY sizeChanged)
-    Q_PROPERTY(FluentIconPosition iconPosition READ iconPosition WRITE setIconPosition NOTIFY iconPositionChanged)
-    Q_PROPERTY(bool loading READ isLoading WRITE setLoading NOTIFY loadingChanged)
+    Q_PROPERTY(FluentButtonStyle buttonStyle READ buttonStyle WRITE
+                   setButtonStyle NOTIFY styleChanged)
+    Q_PROPERTY(FluentButtonSize buttonSize READ buttonSize WRITE setButtonSize
+                   NOTIFY sizeChanged)
+    Q_PROPERTY(FluentIconPosition iconPosition READ iconPosition WRITE
+                   setIconPosition NOTIFY iconPositionChanged)
+    Q_PROPERTY(
+        bool loading READ isLoading WRITE setLoading NOTIFY loadingChanged)
     Q_PROPERTY(bool checkable READ isCheckable WRITE setCheckable)
-    Q_PROPERTY(bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged)
+    Q_PROPERTY(
+        bool checked READ isChecked WRITE setChecked NOTIFY checkedChanged)
 
     // Animation properties
-    Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE setBackgroundOpacity)
-    Q_PROPERTY(qreal loadingRotation READ loadingRotation WRITE setLoadingRotation)
+    Q_PROPERTY(qreal backgroundOpacity READ backgroundOpacity WRITE
+                   setBackgroundOpacity)
+    Q_PROPERTY(
+        qreal loadingRotation READ loadingRotation WRITE setLoadingRotation)
     Q_PROPERTY(qreal revealProgress READ revealProgress WRITE setRevealProgress)
     Q_PROPERTY(bool flat READ isFlat WRITE setFlat)
 
 public:
     explicit FluentButton(QWidget* parent = nullptr);
     explicit FluentButton(const QString& text, QWidget* parent = nullptr);
-    explicit FluentButton(const QIcon& icon, const QString& text, QWidget* parent = nullptr);
+    explicit FluentButton(const QIcon& icon, const QString& text,
+                          QWidget* parent = nullptr);
     ~FluentButton() override;
 
     // Content properties
@@ -118,9 +116,12 @@ public:
     QSize minimumSizeHint() const override;
 
     // Convenience static methods
-    static FluentButton* createPrimaryButton(const QString& text, QWidget* parent = nullptr);
-    static FluentButton* createAccentButton(const QString& text, QWidget* parent = nullptr);
-    static FluentButton* createIconButton(const QIcon& icon, QWidget* parent = nullptr);
+    static FluentButton* createPrimaryButton(const QString& text,
+                                             QWidget* parent = nullptr);
+    static FluentButton* createAccentButton(const QString& text,
+                                            QWidget* parent = nullptr);
+    static FluentButton* createIconButton(const QIcon& icon,
+                                          QWidget* parent = nullptr);
 
 public slots:
     void animateClick();
@@ -153,7 +154,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onLoadingAnimationValueChanged(const QVariant& value);
@@ -192,7 +194,8 @@ private:
     int getBorderWidth() const;
 
     // Animation methods
-    void startStateTransitionAnimation(Core::FluentState from, Core::FluentState to);
+    void startStateTransitionAnimation(Core::FluentState from,
+                                       Core::FluentState to);
     void startLoadingAnimation();
     void stopLoadingAnimation();
     void startRevealAnimation(const QPoint& center);
@@ -253,9 +256,8 @@ private:
     mutable bool m_contentCacheValid{false};
 
     // Dirty region tracking
-    mutable FluentButtonDirtyRegions m_dirtyRegions{FluentButtonDirtyRegion::All};
+    mutable FluentButtonDirtyRegions m_dirtyRegions{
+        FluentButtonDirtyRegion::All};
 };
 
-
-
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

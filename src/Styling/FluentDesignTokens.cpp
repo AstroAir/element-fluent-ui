@@ -1,8 +1,8 @@
 // src/Styling/FluentDesignTokens.cpp
-#include "FluentQt/Styling/FluentAdvancedTheme.h"
-#include <QDebug>
 #include <QApplication>
+#include <QDebug>
 #include <QScreen>
+#include "FluentQt/Styling/FluentAdvancedTheme.h"
 
 namespace FluentQt::Styling {
 
@@ -66,8 +66,7 @@ private:
             {"neutral.48", QColor("#1f1f1f")},
             {"neutral.50", QColor("#141414")},
             {"neutral.52", QColor("#0a0a0a")},
-            {"neutral.54", QColor("#000000")}
-        };
+            {"neutral.54", QColor("#000000")}};
 
         for (const auto& color : neutralColors) {
             FluentDesignToken token;
@@ -81,23 +80,14 @@ private:
 
         // Brand color palette (Microsoft Blue)
         QList<QPair<QString, QColor>> brandColors = {
-            {"brand.10", QColor("#061724")},
-            {"brand.20", QColor("#082338")},
-            {"brand.30", QColor("#0a2e4a")},
-            {"brand.40", QColor("#0c3b5e")},
-            {"brand.50", QColor("#0e4775")},
-            {"brand.60", QColor("#0f548c")},
-            {"brand.70", QColor("#115ea3")},
-            {"brand.80", QColor("#106ebe")},
-            {"brand.90", QColor("#0f7bd8")},
-            {"brand.100", QColor("#0d8cf0")},
-            {"brand.110", QColor("#2899f5")},
-            {"brand.120", QColor("#479ef5")},
-            {"brand.130", QColor("#62abf5")},
-            {"brand.140", QColor("#77b7f7")},
-            {"brand.150", QColor("#96c6fa")},
-            {"brand.160", QColor("#b4d6fa")}
-        };
+            {"brand.10", QColor("#061724")},  {"brand.20", QColor("#082338")},
+            {"brand.30", QColor("#0a2e4a")},  {"brand.40", QColor("#0c3b5e")},
+            {"brand.50", QColor("#0e4775")},  {"brand.60", QColor("#0f548c")},
+            {"brand.70", QColor("#115ea3")},  {"brand.80", QColor("#106ebe")},
+            {"brand.90", QColor("#0f7bd8")},  {"brand.100", QColor("#0d8cf0")},
+            {"brand.110", QColor("#2899f5")}, {"brand.120", QColor("#479ef5")},
+            {"brand.130", QColor("#62abf5")}, {"brand.140", QColor("#77b7f7")},
+            {"brand.150", QColor("#96c6fa")}, {"brand.160", QColor("#b4d6fa")}};
 
         for (const auto& color : brandColors) {
             FluentDesignToken token;
@@ -125,8 +115,7 @@ private:
             {"color.border.focus", "brand.100"},
             {"color.surface.primary", "neutral.0"},
             {"color.surface.secondary", "neutral.2"},
-            {"color.surface.tertiary", "neutral.4"}
-        };
+            {"color.surface.tertiary", "neutral.4"}};
 
         for (const auto& semantic : semanticColors) {
             FluentDesignToken token;
@@ -134,7 +123,8 @@ private:
             token.value = semantic.second;
             token.type = FluentTokenType::Color;
             token.category = "semantic";
-            token.description = QString("Semantic color reference to %1").arg(semantic.second);
+            token.description =
+                QString("Semantic color reference to %1").arg(semantic.second);
             token.isComputed = true;
             token.computeExpression = semantic.second;
             manager.registerToken(token);
@@ -149,16 +139,20 @@ private:
             {"typography.caption1", createFont("Segoe UI", 12, QFont::Normal)},
             {"typography.caption2", createFont("Segoe UI", 11, QFont::Normal)},
             {"typography.body1", createFont("Segoe UI", 14, QFont::Normal)},
-            {"typography.body1Strong", createFont("Segoe UI", 14, QFont::DemiBold)},
+            {"typography.body1Strong",
+             createFont("Segoe UI", 14, QFont::DemiBold)},
             {"typography.body2", createFont("Segoe UI", 13, QFont::Normal)},
-            {"typography.subtitle1", createFont("Segoe UI", 16, QFont::DemiBold)},
-            {"typography.subtitle2", createFont("Segoe UI", 14, QFont::DemiBold)},
+            {"typography.subtitle1",
+             createFont("Segoe UI", 16, QFont::DemiBold)},
+            {"typography.subtitle2",
+             createFont("Segoe UI", 14, QFont::DemiBold)},
             {"typography.title1", createFont("Segoe UI", 28, QFont::DemiBold)},
             {"typography.title2", createFont("Segoe UI", 24, QFont::DemiBold)},
             {"typography.title3", createFont("Segoe UI", 20, QFont::DemiBold)},
-            {"typography.largeTitle", createFont("Segoe UI", 40, QFont::DemiBold)},
-            {"typography.display", createFont("Segoe UI", 68, QFont::DemiBold)}
-        };
+            {"typography.largeTitle",
+             createFont("Segoe UI", 40, QFont::DemiBold)},
+            {"typography.display",
+             createFont("Segoe UI", 68, QFont::DemiBold)}};
 
         for (const auto& typo : typographyTokens) {
             FluentDesignToken token;
@@ -177,8 +171,7 @@ private:
             {"typography.lineHeight.300", 1.25},
             {"typography.lineHeight.400", 1.375},
             {"typography.lineHeight.500", 1.5},
-            {"typography.lineHeight.600", 1.75}
-        };
+            {"typography.lineHeight.600", 1.75}};
 
         for (const auto& lineHeight : lineHeightTokens) {
             FluentDesignToken token;
@@ -186,7 +179,8 @@ private:
             token.value = lineHeight.second;
             token.type = FluentTokenType::Typography;
             token.category = "lineHeight";
-            token.description = QString("Line height ratio %1").arg(lineHeight.second);
+            token.description =
+                QString("Line height ratio %1").arg(lineHeight.second);
             manager.registerToken(token);
         }
     }
@@ -196,18 +190,10 @@ private:
 
         // Microsoft FluentUI Spacing Scale (4px base unit)
         QList<QPair<QString, int>> spacingTokens = {
-            {"spacing.none", 0},
-            {"spacing.xxs", 2},
-            {"spacing.xs", 4},
-            {"spacing.sNudge", 6},
-            {"spacing.s", 8},
-            {"spacing.mNudge", 10},
-            {"spacing.m", 12},
-            {"spacing.l", 16},
-            {"spacing.xl", 20},
-            {"spacing.xxl", 24},
-            {"spacing.xxxl", 32}
-        };
+            {"spacing.none", 0},   {"spacing.xxs", 2},  {"spacing.xs", 4},
+            {"spacing.sNudge", 6}, {"spacing.s", 8},    {"spacing.mNudge", 10},
+            {"spacing.m", 12},     {"spacing.l", 16},   {"spacing.xl", 20},
+            {"spacing.xxl", 24},   {"spacing.xxxl", 32}};
 
         for (const auto& spacing : spacingTokens) {
             FluentDesignToken token;
@@ -215,7 +201,8 @@ private:
             token.value = spacing.second;
             token.type = FluentTokenType::Spacing;
             token.category = "spacing";
-            token.description = QString("Spacing value %1px").arg(spacing.second);
+            token.description =
+                QString("Spacing value %1px").arg(spacing.second);
             manager.registerToken(token);
         }
 
@@ -225,8 +212,7 @@ private:
             {"spacing.button.padding.vertical", "spacing.s"},
             {"spacing.card.padding", "spacing.l"},
             {"spacing.dialog.padding", "spacing.xl"},
-            {"spacing.list.item.padding", "spacing.s"}
-        };
+            {"spacing.list.item.padding", "spacing.s"}};
 
         for (const auto& compSpacing : componentSpacing) {
             FluentDesignToken token;
@@ -234,7 +220,8 @@ private:
             token.value = compSpacing.second;
             token.type = FluentTokenType::Spacing;
             token.category = "component";
-            token.description = QString("Component spacing reference to %1").arg(compSpacing.second);
+            token.description = QString("Component spacing reference to %1")
+                                    .arg(compSpacing.second);
             token.isComputed = true;
             token.computeExpression = compSpacing.second;
             manager.registerToken(token);
@@ -246,13 +233,24 @@ private:
 
         // Microsoft FluentUI Shadow Tokens
         QList<QPair<QString, QString>> shadowTokens = {
-            {"shadow.2", "0px 1px 2px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12)"},
-            {"shadow.4", "0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12)"},
-            {"shadow.8", "0px 4px 8px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12)"},
-            {"shadow.16", "0px 8px 16px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, 0.12)"},
-            {"shadow.28", "0px 14px 28px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.20)"},
-            {"shadow.64", "0px 32px 64px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, 0.20)"}
-        };
+            {"shadow.2",
+             "0px 1px 2px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, "
+             "0.12)"},
+            {"shadow.4",
+             "0px 2px 4px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, "
+             "0.12)"},
+            {"shadow.8",
+             "0px 4px 8px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, "
+             "0.12)"},
+            {"shadow.16",
+             "0px 8px 16px rgba(0, 0, 0, 0.14), 0px 0px 2px rgba(0, 0, 0, "
+             "0.12)"},
+            {"shadow.28",
+             "0px 14px 28px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, "
+             "0.20)"},
+            {"shadow.64",
+             "0px 32px 64px rgba(0, 0, 0, 0.24), 0px 0px 8px rgba(0, 0, 0, "
+             "0.20)"}};
 
         for (const auto& shadow : shadowTokens) {
             FluentDesignToken token;
@@ -270,14 +268,10 @@ private:
 
         // Microsoft FluentUI Animation Tokens
         QList<QPair<QString, int>> durationTokens = {
-            {"duration.ultraFast", 50},
-            {"duration.faster", 100},
-            {"duration.fast", 150},
-            {"duration.normal", 200},
-            {"duration.slow", 300},
-            {"duration.slower", 400},
-            {"duration.ultraSlow", 500}
-        };
+            {"duration.ultraFast", 50}, {"duration.faster", 100},
+            {"duration.fast", 150},     {"duration.normal", 200},
+            {"duration.slow", 300},     {"duration.slower", 400},
+            {"duration.ultraSlow", 500}};
 
         for (const auto& duration : durationTokens) {
             FluentDesignToken token;
@@ -285,7 +279,8 @@ private:
             token.value = duration.second;
             token.type = FluentTokenType::Animation;
             token.category = "duration";
-            token.description = QString("Animation duration %1ms").arg(duration.second);
+            token.description =
+                QString("Animation duration %1ms").arg(duration.second);
             manager.registerToken(token);
         }
 
@@ -299,8 +294,7 @@ private:
             {"easing.decelerateMin", "cubic-bezier(0.33,0,0.1,1)"},
             {"easing.maxEasyEase", "cubic-bezier(0.8,0,0.1,1)"},
             {"easing.easyEase", "cubic-bezier(0.33,0,0.67,1)"},
-            {"easing.linear", "cubic-bezier(0,0,1,1)"}
-        };
+            {"easing.linear", "cubic-bezier(0,0,1,1)"}};
 
         for (const auto& easing : easingTokens) {
             FluentDesignToken token;
@@ -318,13 +312,9 @@ private:
 
         // Border radius tokens
         QList<QPair<QString, int>> radiusTokens = {
-            {"borderRadius.none", 0},
-            {"borderRadius.small", 2},
-            {"borderRadius.medium", 4},
-            {"borderRadius.large", 6},
-            {"borderRadius.xLarge", 8},
-            {"borderRadius.circular", 10000}
-        };
+            {"borderRadius.none", 0},   {"borderRadius.small", 2},
+            {"borderRadius.medium", 4}, {"borderRadius.large", 6},
+            {"borderRadius.xLarge", 8}, {"borderRadius.circular", 10000}};
 
         for (const auto& radius : radiusTokens) {
             FluentDesignToken token;
@@ -332,17 +322,16 @@ private:
             token.value = radius.second;
             token.type = FluentTokenType::Border;
             token.category = "radius";
-            token.description = QString("Border radius %1px").arg(radius.second);
+            token.description =
+                QString("Border radius %1px").arg(radius.second);
             manager.registerToken(token);
         }
 
         // Border width tokens
-        QList<QPair<QString, int>> widthTokens = {
-            {"borderWidth.thin", 1},
-            {"borderWidth.thick", 2},
-            {"borderWidth.thicker", 3},
-            {"borderWidth.thickest", 4}
-        };
+        QList<QPair<QString, int>> widthTokens = {{"borderWidth.thin", 1},
+                                                  {"borderWidth.thick", 2},
+                                                  {"borderWidth.thicker", 3},
+                                                  {"borderWidth.thickest", 4}};
 
         for (const auto& width : widthTokens) {
             FluentDesignToken token;
@@ -364,8 +353,7 @@ private:
             {"breakpoint.medium", 640},
             {"breakpoint.large", 1024},
             {"breakpoint.xLarge", 1366},
-            {"breakpoint.xxLarge", 1920}
-        };
+            {"breakpoint.xxLarge", 1920}};
 
         for (const auto& breakpoint : breakpointTokens) {
             FluentDesignToken token;
@@ -373,12 +361,14 @@ private:
             token.value = breakpoint.second;
             token.type = FluentTokenType::Breakpoint;
             token.category = "breakpoint";
-            token.description = QString("Responsive breakpoint %1px").arg(breakpoint.second);
+            token.description =
+                QString("Responsive breakpoint %1px").arg(breakpoint.second);
             manager.registerToken(token);
         }
     }
 
-    static QFont createFont(const QString& family, int size, QFont::Weight weight) {
+    static QFont createFont(const QString& family, int size,
+                            QFont::Weight weight) {
         QFont font(family, size);
         font.setWeight(weight);
         return font;
@@ -413,10 +403,9 @@ void validateDesignTokenSystem() {
     auto& manager = FluentAdvancedThemeManager::instance();
 
     // Validate required token categories exist
-    QStringList requiredCategories = {
-        "neutral", "brand", "semantic", "typography", "spacing",
-        "shadow", "animation", "border", "breakpoint"
-    };
+    QStringList requiredCategories = {"neutral",    "brand",   "semantic",
+                                      "typography", "spacing", "shadow",
+                                      "animation",  "border",  "breakpoint"};
 
     for (const QString& category : requiredCategories) {
         QStringList categoryTokens = manager.getTokenNames();
@@ -444,9 +433,8 @@ void validateDesignTokenSystem() {
 void validateSemanticTokenReferences() {
     auto& manager = FluentAdvancedThemeManager::instance();
 
-    QStringList semanticTokens = {
-        "color.background.primary", "color.text.primary", "color.border.primary"
-    };
+    QStringList semanticTokens = {"color.background.primary",
+                                  "color.text.primary", "color.border.primary"};
 
     for (const QString& token : semanticTokens) {
         QVariant resolved = manager.resolveToken(token);
@@ -461,14 +449,17 @@ void validateColorAccessibility() {
     auto& manager = FluentAdvancedThemeManager::instance();
 
     // Check common color combinations for WCAG compliance
-    QColor background = manager.resolveToken("color.background.primary").value<QColor>();
-    QColor textPrimary = manager.resolveToken("color.text.primary").value<QColor>();
+    QColor background =
+        manager.resolveToken("color.background.primary").value<QColor>();
+    QColor textPrimary =
+        manager.resolveToken("color.text.primary").value<QColor>();
 
     if (background.isValid() && textPrimary.isValid()) {
         // Calculate contrast ratio (simplified)
         double ratio = calculateSimpleContrastRatio(textPrimary, background);
         if (ratio < 4.5) {
-            qWarning() << "Primary text/background combination may not meet WCAG AA contrast requirements";
+            qWarning() << "Primary text/background combination may not meet "
+                          "WCAG AA contrast requirements";
         }
     }
 }
@@ -526,18 +517,21 @@ void registerButtonTokens(FluentAdvancedThemeManager& manager) {
         {"button.secondary.background.hover", "neutral.4"},
         {"button.secondary.background.pressed", "neutral.8"},
         {"button.secondary.text", "neutral.54"},
-        {"button.secondary.border", "neutral.12"}
-    };
+        {"button.secondary.border", "neutral.12"}};
 
     for (const auto& token : buttonTokens) {
         FluentDesignToken designToken;
         designToken.name = token.first;
         designToken.value = token.second;
-        designToken.type = token.first.contains("color") || token.first.contains("background") ||
-                          token.first.contains("text") || token.first.contains("border") ?
-                          FluentTokenType::Color : FluentTokenType::Size;
+        designToken.type = token.first.contains("color") ||
+                                   token.first.contains("background") ||
+                                   token.first.contains("text") ||
+                                   token.first.contains("border")
+                               ? FluentTokenType::Color
+                               : FluentTokenType::Size;
         designToken.category = "button";
-        designToken.description = QString("Button component token: %1").arg(token.first);
+        designToken.description =
+            QString("Button component token: %1").arg(token.first);
 
         // Mark computed tokens
         if (token.second.toString().contains(".")) {
@@ -566,8 +560,7 @@ void registerCardTokens(FluentAdvancedThemeManager& manager) {
 
         {"card.header.fontSize", "typography.subtitle1"},
         {"card.body.fontSize", "typography.body1"},
-        {"card.caption.fontSize", "typography.caption1"}
-    };
+        {"card.caption.fontSize", "typography.caption1"}};
 
     for (const auto& token : cardTokens) {
         FluentDesignToken designToken;
@@ -575,7 +568,8 @@ void registerCardTokens(FluentAdvancedThemeManager& manager) {
         designToken.value = token.second;
         designToken.type = determineTokenType(token.first);
         designToken.category = "card";
-        designToken.description = QString("Card component token: %1").arg(token.first);
+        designToken.description =
+            QString("Card component token: %1").arg(token.first);
         designToken.isComputed = token.second.toString().contains(".");
         if (designToken.isComputed) {
             designToken.computeExpression = token.second.toString();
@@ -611,8 +605,7 @@ void registerInputTokens(FluentAdvancedThemeManager& manager) {
 
         {"input.text", "color.text.primary"},
         {"input.text.placeholder", "color.text.tertiary"},
-        {"input.text.disabled", "color.text.disabled"}
-    };
+        {"input.text.disabled", "color.text.disabled"}};
 
     for (const auto& token : inputTokens) {
         FluentDesignToken designToken;
@@ -620,7 +613,8 @@ void registerInputTokens(FluentAdvancedThemeManager& manager) {
         designToken.value = token.second;
         designToken.type = determineTokenType(token.first);
         designToken.category = "input";
-        designToken.description = QString("Input component token: %1").arg(token.first);
+        designToken.description =
+            QString("Input component token: %1").arg(token.first);
         designToken.isComputed = token.second.toString().contains(".");
         if (designToken.isComputed) {
             designToken.computeExpression = token.second.toString();
@@ -654,8 +648,7 @@ void registerNavigationTokens(FluentAdvancedThemeManager& manager) {
         {"navigation.item.text.selected", "color.text.accent"},
 
         {"navigation.breadcrumb.separator", "color.text.tertiary"},
-        {"navigation.breadcrumb.fontSize", "typography.body2"}
-    };
+        {"navigation.breadcrumb.fontSize", "typography.body2"}};
 
     for (const auto& token : navigationTokens) {
         FluentDesignToken designToken;
@@ -663,7 +656,8 @@ void registerNavigationTokens(FluentAdvancedThemeManager& manager) {
         designToken.value = token.second;
         designToken.type = determineTokenType(token.first);
         designToken.category = "navigation";
-        designToken.description = QString("Navigation component token: %1").arg(token.first);
+        designToken.description =
+            QString("Navigation component token: %1").arg(token.first);
         designToken.isComputed = token.second.toString().contains(".");
         if (designToken.isComputed) {
             designToken.computeExpression = token.second.toString();
@@ -679,11 +673,11 @@ void setupTokenChangeNotifications() {
 
     // Connect to theme changes to update dependent tokens
     QObject::connect(&manager, &FluentAdvancedThemeManager::themeChanged,
-                    [&manager](const QString& themeName) {
-                        Q_UNUSED(themeName)
-                        // Recompute all computed tokens when theme changes
-                        recomputeAllTokens(manager);
-                    });
+                     [&manager](const QString& themeName) {
+                         Q_UNUSED(themeName)
+                         // Recompute all computed tokens when theme changes
+                         recomputeAllTokens(manager);
+                     });
 }
 
 // Helper functions
@@ -694,7 +688,7 @@ FluentTokenType determineTokenType(const QString& tokenName) {
     } else if (tokenName.contains("fontSize") || tokenName.contains("font")) {
         return FluentTokenType::Typography;
     } else if (tokenName.contains("padding") || tokenName.contains("margin") ||
-              tokenName.contains("spacing")) {
+               tokenName.contains("spacing")) {
         return FluentTokenType::Spacing;
     } else if (tokenName.contains("shadow")) {
         return FluentTokenType::Shadow;
@@ -707,10 +701,15 @@ FluentTokenType determineTokenType(const QString& tokenName) {
     }
 }
 
-double calculateSimpleContrastRatio(const QColor& color1, const QColor& color2) {
+double calculateSimpleContrastRatio(const QColor& color1,
+                                    const QColor& color2) {
     // Simplified contrast calculation for validation
-    double lum1 = (color1.red() * 0.299 + color1.green() * 0.587 + color1.blue() * 0.114) / 255.0;
-    double lum2 = (color2.red() * 0.299 + color2.green() * 0.587 + color2.blue() * 0.114) / 255.0;
+    double lum1 = (color1.red() * 0.299 + color1.green() * 0.587 +
+                   color1.blue() * 0.114) /
+                  255.0;
+    double lum2 = (color2.red() * 0.299 + color2.green() * 0.587 +
+                   color2.blue() * 0.114) /
+                  255.0;
 
     double lighter = qMax(lum1, lum2);
     double darker = qMin(lum1, lum2);
@@ -729,4 +728,4 @@ void recomputeAllTokens(FluentAdvancedThemeManager& manager) {
     }
 }
 
-} // namespace FluentQt::Styling
+}  // namespace FluentQt::Styling

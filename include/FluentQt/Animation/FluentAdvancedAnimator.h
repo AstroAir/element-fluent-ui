@@ -1,21 +1,21 @@
 // include/FluentQt/Animation/FluentAdvancedAnimator.h
 #pragma once
 
+#include <QColor>
+#include <QEasingCurve>
+#include <QGestureEvent>
+#include <QGraphicsEffect>
+#include <QLocale>
 #include <QObject>
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
 #include <QParallelAnimationGroup>
 #include <QPauseAnimation>
-#include <QGraphicsEffect>
-#include <QTimer>
-#include <QEasingCurve>
 #include <QPoint>
+#include <QPropertyAnimation>
 #include <QRect>
-#include <QColor>
+#include <QSequentialAnimationGroup>
+#include <QTimer>
 #include <QTouchEvent>
-#include <QGestureEvent>
-#include <QLocale>
+#include <QWidget>
 #include <memory>
 #include <unordered_map>
 
@@ -32,7 +32,7 @@ enum class FluentAdvancedAnimationType {
     Shake,
     Bounce,
     Glow,
-    
+
     // Page transitions
     SlideLeft,
     SlideRight,
@@ -41,14 +41,14 @@ enum class FluentAdvancedAnimationType {
     FadeThrough,
     SharedElement,
     Morph,
-    
+
     // Gesture animations
     Swipe,
     Pinch,
     Rotate,
     Drag,
     Fling,
-    
+
     // Advanced effects
     Parallax,
     Reveal,
@@ -62,34 +62,34 @@ enum class FluentAdvancedAnimationType {
 
 // Enhanced animation performance levels
 enum class FluentAnimationPerformance {
-    High,       // Full quality, all effects
-    Medium,     // Reduced quality for better performance
-    Low,        // Minimal effects, maximum performance
-    Adaptive,   // Automatically adjust based on system performance
-    PowerSaver, // Minimal animations for battery saving
-    Gaming,     // Optimized for gaming/high-refresh displays
-    Accessibility // Optimized for accessibility needs
+    High,          // Full quality, all effects
+    Medium,        // Reduced quality for better performance
+    Low,           // Minimal effects, maximum performance
+    Adaptive,      // Automatically adjust based on system performance
+    PowerSaver,    // Minimal animations for battery saving
+    Gaming,        // Optimized for gaming/high-refresh displays
+    Accessibility  // Optimized for accessibility needs
 };
 
 // Cultural animation preferences
 enum class FluentCulturalAnimationStyle {
-    Western,        // Direct, immediate animations
-    Eastern,        // Subtle, flowing animations
-    Minimal,        // Clean, simple animations
-    Expressive,     // Rich, detailed animations
-    Formal,         // Conservative, professional animations
-    Playful,        // Fun, bouncy animations
-    Adaptive        // Adapts to cultural context
+    Western,     // Direct, immediate animations
+    Eastern,     // Subtle, flowing animations
+    Minimal,     // Clean, simple animations
+    Expressive,  // Rich, detailed animations
+    Formal,      // Conservative, professional animations
+    Playful,     // Fun, bouncy animations
+    Adaptive     // Adapts to cultural context
 };
 
 // Accessibility animation modes
 enum class FluentAccessibilityAnimationMode {
-    Full,           // All animations enabled
-    Reduced,        // Reduced motion (respects system preference)
-    Essential,      // Only essential feedback animations
-    None,           // No animations (static UI)
-    HighContrast,   // High contrast compatible animations
-    Custom          // Custom accessibility settings
+    Full,          // All animations enabled
+    Reduced,       // Reduced motion (respects system preference)
+    Essential,     // Only essential feedback animations
+    None,          // No animations (static UI)
+    HighContrast,  // High contrast compatible animations
+    Custom         // Custom accessibility settings
 };
 
 // Gesture types for gesture animations
@@ -111,9 +111,10 @@ struct FluentAdvancedAnimationConfig {
     QEasingCurve::Type easing{QEasingCurve::OutCubic};
     int delay{0};
     bool respectReducedMotion{true};
-    FluentAnimationPerformance performance{FluentAnimationPerformance::Adaptive};
+    FluentAnimationPerformance performance{
+        FluentAnimationPerformance::Adaptive};
     bool enableHardwareAcceleration{true};
-    double intensity{1.0}; // 0.0 to 2.0
+    double intensity{1.0};  // 0.0 to 2.0
     QVariantMap customProperties;
 };
 
@@ -150,67 +151,98 @@ class FluentAdvancedAnimator : public QObject {
 public:
     explicit FluentAdvancedAnimator(QObject* parent = nullptr);
     ~FluentAdvancedAnimator() override;
-    
+
     // Configuration
     void setDefaultConfig(const FluentAdvancedAnimationConfig& config);
-    FluentAdvancedAnimationConfig getDefaultConfig() const { return m_defaultConfig; }
-    
+    FluentAdvancedAnimationConfig getDefaultConfig() const {
+        return m_defaultConfig;
+    }
+
     void setPerformanceLevel(FluentAnimationPerformance level);
-    FluentAnimationPerformance getPerformanceLevel() const { return m_performanceLevel; }
-    
+    FluentAnimationPerformance getPerformanceLevel() const {
+        return m_performanceLevel;
+    }
+
     // Micro-interactions
-    void enableMicroInteractions(QWidget* widget, const FluentMicroInteractionConfig& config = {});
+    void enableMicroInteractions(
+        QWidget* widget, const FluentMicroInteractionConfig& config = {});
     void disableMicroInteractions(QWidget* widget);
-    
-    std::unique_ptr<QPropertyAnimation> createHoverAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createPressAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createFocusAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createRippleAnimation(QWidget* widget, const QPoint& center, const FluentAdvancedAnimationConfig& config = {});
-    
+
+    std::unique_ptr<QPropertyAnimation> createHoverAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createPressAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createFocusAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createRippleAnimation(
+        QWidget* widget, const QPoint& center,
+        const FluentAdvancedAnimationConfig& config = {});
+
     // Advanced effects
-    std::unique_ptr<QPropertyAnimation> createPulseAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createShakeAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createBounceAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createGlowAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    
+    std::unique_ptr<QPropertyAnimation> createPulseAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createShakeAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createBounceAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createGlowAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+
     // Page transitions
-    std::unique_ptr<QSequentialAnimationGroup> createPageTransition(QWidget* fromPage, QWidget* toPage, 
-                                                                    const FluentPageTransitionConfig& config = {});
-    
-    std::unique_ptr<QParallelAnimationGroup> createSharedElementTransition(const QList<QPair<QWidget*, QWidget*>>& sharedElements,
-                                                                           const FluentAdvancedAnimationConfig& config = {});
-    
+    std::unique_ptr<QSequentialAnimationGroup> createPageTransition(
+        QWidget* fromPage, QWidget* toPage,
+        const FluentPageTransitionConfig& config = {});
+
+    std::unique_ptr<QParallelAnimationGroup> createSharedElementTransition(
+        const QList<QPair<QWidget*, QWidget*>>& sharedElements,
+        const FluentAdvancedAnimationConfig& config = {});
+
     // Gesture animations
     void enableGestureAnimations(QWidget* widget);
     void disableGestureAnimations(QWidget* widget);
-    
-    std::unique_ptr<QPropertyAnimation> createSwipeAnimation(QWidget* widget, const QPoint& direction, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createPinchAnimation(QWidget* widget, double scaleFactor, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createRotateAnimation(QWidget* widget, double angle, const FluentAdvancedAnimationConfig& config = {});
-    
+
+    std::unique_ptr<QPropertyAnimation> createSwipeAnimation(
+        QWidget* widget, const QPoint& direction,
+        const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createPinchAnimation(
+        QWidget* widget, double scaleFactor,
+        const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createRotateAnimation(
+        QWidget* widget, double angle,
+        const FluentAdvancedAnimationConfig& config = {});
+
     // Advanced visual effects
-    std::unique_ptr<QPropertyAnimation> createParallaxAnimation(QWidget* widget, const QPoint& offset, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QSequentialAnimationGroup> createRevealAnimation(QWidget* widget, const QPoint& center, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QPropertyAnimation> createDissolveAnimation(QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
-    std::unique_ptr<QSequentialAnimationGroup> createFlipAnimation(QWidget* widget, Qt::Axis axis, const FluentAdvancedAnimationConfig& config = {});
-    
+    std::unique_ptr<QPropertyAnimation> createParallaxAnimation(
+        QWidget* widget, const QPoint& offset,
+        const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QSequentialAnimationGroup> createRevealAnimation(
+        QWidget* widget, const QPoint& center,
+        const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QPropertyAnimation> createDissolveAnimation(
+        QWidget* widget, const FluentAdvancedAnimationConfig& config = {});
+    std::unique_ptr<QSequentialAnimationGroup> createFlipAnimation(
+        QWidget* widget, Qt::Axis axis,
+        const FluentAdvancedAnimationConfig& config = {});
+
     // Performance optimization
     void optimizeForPerformance();
     void enableHardwareAcceleration(QWidget* widget, bool enabled = true);
     bool shouldSkipAnimation(QWidget* widget) const;
-    
+
     // Animation management
     void pauseAllAnimations();
     void resumeAllAnimations();
     void stopAllAnimations();
     void clearAnimations(QWidget* widget);
-    
+
     // Animation groups and sequences
-    std::unique_ptr<QSequentialAnimationGroup> createSequence(const QList<QAbstractAnimation*>& animations);
-    std::unique_ptr<QParallelAnimationGroup> createParallel(const QList<QAbstractAnimation*>& animations);
-    std::unique_ptr<QSequentialAnimationGroup> createStaggered(const QList<QWidget*>& widgets, 
-                                                               FluentAdvancedAnimationType type,
-                                                               int staggerDelay = 50);
+    std::unique_ptr<QSequentialAnimationGroup> createSequence(
+        const QList<QAbstractAnimation*>& animations);
+    std::unique_ptr<QParallelAnimationGroup> createParallel(
+        const QList<QAbstractAnimation*>& animations);
+    std::unique_ptr<QSequentialAnimationGroup> createStaggered(
+        const QList<QWidget*>& widgets, FluentAdvancedAnimationType type,
+        int staggerDelay = 50);
 
 signals:
     void animationStarted(QWidget* widget, FluentAdvancedAnimationType type);
@@ -224,22 +256,25 @@ private slots:
     void onMicroInteractionTriggered();
 
 private:
-    void setupMicroInteractionHandlers(QWidget* widget, const FluentMicroInteractionConfig& config);
+    void setupMicroInteractionHandlers(
+        QWidget* widget, const FluentMicroInteractionConfig& config);
     void setupGestureHandlers(QWidget* widget);
-    QPropertyAnimation* createBaseAnimation(QWidget* widget, const QByteArray& property, 
-                                          const QVariant& startValue, const QVariant& endValue,
-                                          const FluentAdvancedAnimationConfig& config);
+    QPropertyAnimation* createBaseAnimation(
+        QWidget* widget, const QByteArray& property, const QVariant& startValue,
+        const QVariant& endValue, const FluentAdvancedAnimationConfig& config);
     void applyPerformanceOptimizations(QPropertyAnimation* animation);
     bool isReducedMotionEnabled() const;
 
 private:
     FluentAdvancedAnimationConfig m_defaultConfig;
-    FluentAnimationPerformance m_performanceLevel{FluentAnimationPerformance::Adaptive};
-    
+    FluentAnimationPerformance m_performanceLevel{
+        FluentAnimationPerformance::Adaptive};
+
     // Widget tracking
-    std::unordered_map<QWidget*, FluentMicroInteractionConfig> m_microInteractionWidgets;
+    std::unordered_map<QWidget*, FluentMicroInteractionConfig>
+        m_microInteractionWidgets;
     std::unordered_map<QWidget*, QList<QPropertyAnimation*>> m_activeAnimations;
-    
+
     // Performance monitoring
     QTimer* m_performanceTimer;
     int m_activeAnimationCount{0};
@@ -252,24 +287,29 @@ class FluentMicroInteractionManager : public QObject {
 
 public:
     static FluentMicroInteractionManager& instance();
-    
+
     // Global configuration
-    void setGlobalMicroInteractionConfig(const FluentMicroInteractionConfig& config);
-    FluentMicroInteractionConfig getGlobalMicroInteractionConfig() const { return m_globalConfig; }
-    
+    void setGlobalMicroInteractionConfig(
+        const FluentMicroInteractionConfig& config);
+    FluentMicroInteractionConfig getGlobalMicroInteractionConfig() const {
+        return m_globalConfig;
+    }
+
     // Widget registration
-    void registerWidget(QWidget* widget, const FluentMicroInteractionConfig& config = {});
+    void registerWidget(QWidget* widget,
+                        const FluentMicroInteractionConfig& config = {});
     void unregisterWidget(QWidget* widget);
-    
+
     // Enable/disable globally
     void setMicroInteractionsEnabled(bool enabled);
     bool areMicroInteractionsEnabled() const { return m_enabled; }
-    
+
     // Performance adaptation
     void adaptToPerformance(double frameRate);
 
 signals:
-    void microInteractionConfigChanged(const FluentMicroInteractionConfig& config);
+    void microInteractionConfigChanged(
+        const FluentMicroInteractionConfig& config);
     void microInteractionsEnabledChanged(bool enabled);
 
 private:
@@ -287,22 +327,26 @@ class FluentPageTransitionManager : public QObject {
 
 public:
     explicit FluentPageTransitionManager(QObject* parent = nullptr);
-    
+
     // Transition execution
-    void transitionToPage(QWidget* fromPage, QWidget* toPage, const FluentPageTransitionConfig& config = {});
-    void transitionWithSharedElements(QWidget* fromPage, QWidget* toPage, 
-                                     const QList<QPair<QWidget*, QWidget*>>& sharedElements,
-                                     const FluentPageTransitionConfig& config = {});
-    
+    void transitionToPage(QWidget* fromPage, QWidget* toPage,
+                          const FluentPageTransitionConfig& config = {});
+    void transitionWithSharedElements(
+        QWidget* fromPage, QWidget* toPage,
+        const QList<QPair<QWidget*, QWidget*>>& sharedElements,
+        const FluentPageTransitionConfig& config = {});
+
     // Transition history
     void pushPage(QWidget* page);
     QWidget* popPage();
     QWidget* currentPage() const;
     bool canGoBack() const;
-    
+
     // Configuration
     void setDefaultTransitionConfig(const FluentPageTransitionConfig& config);
-    FluentPageTransitionConfig getDefaultTransitionConfig() const { return m_defaultConfig; }
+    FluentPageTransitionConfig getDefaultTransitionConfig() const {
+        return m_defaultConfig;
+    }
 
 signals:
     void transitionStarted(QWidget* fromPage, QWidget* toPage);
@@ -321,23 +365,33 @@ class FluentGestureAnimationController : public QObject {
     Q_OBJECT
 
 public:
-    explicit FluentGestureAnimationController(QWidget* widget, QObject* parent = nullptr);
-    
+    explicit FluentGestureAnimationController(QWidget* widget,
+                                              QObject* parent = nullptr);
+
     // Gesture configuration
     void enableGesture(FluentGestureType gesture, bool enabled = true);
     bool isGestureEnabled(FluentGestureType gesture) const;
-    
-    void setGestureAnimation(FluentGestureType gesture, FluentAdvancedAnimationType animation);
-    FluentAdvancedAnimationType getGestureAnimation(FluentGestureType gesture) const;
-    
+
+    void setGestureAnimation(FluentGestureType gesture,
+                             FluentAdvancedAnimationType animation);
+    FluentAdvancedAnimationType getGestureAnimation(
+        FluentGestureType gesture) const;
+
     // Gesture sensitivity
-    void setSwipeSensitivity(double sensitivity) { m_swipeSensitivity = sensitivity; }
-    void setPinchSensitivity(double sensitivity) { m_pinchSensitivity = sensitivity; }
-    void setRotationSensitivity(double sensitivity) { m_rotationSensitivity = sensitivity; }
+    void setSwipeSensitivity(double sensitivity) {
+        m_swipeSensitivity = sensitivity;
+    }
+    void setPinchSensitivity(double sensitivity) {
+        m_pinchSensitivity = sensitivity;
+    }
+    void setRotationSensitivity(double sensitivity) {
+        m_rotationSensitivity = sensitivity;
+    }
 
 signals:
     void gestureDetected(FluentGestureType gesture, const QVariantMap& data);
-    void gestureAnimationTriggered(FluentGestureType gesture, FluentAdvancedAnimationType animation);
+    void gestureAnimationTriggered(FluentGestureType gesture,
+                                   FluentAdvancedAnimationType animation);
 
 protected:
     bool eventFilter(QObject* object, QEvent* event) override;
@@ -350,12 +404,13 @@ private:
 private:
     QWidget* m_widget;
     std::unordered_map<FluentGestureType, bool> m_enabledGestures;
-    std::unordered_map<FluentGestureType, FluentAdvancedAnimationType> m_gestureAnimations;
-    
+    std::unordered_map<FluentGestureType, FluentAdvancedAnimationType>
+        m_gestureAnimations;
+
     double m_swipeSensitivity{1.0};
     double m_pinchSensitivity{1.0};
     double m_rotationSensitivity{1.0};
-    
+
     // Gesture state
     QPoint m_lastTouchPoint;
     QPoint m_gestureStartPoint;
@@ -369,19 +424,20 @@ class FluentAnimationPerformanceMonitor : public QObject {
 
 public:
     static FluentAnimationPerformanceMonitor& instance();
-    
+
     // Performance monitoring
     void startMonitoring();
     void stopMonitoring();
-    
-    void recordAnimationStart(QWidget* widget, FluentAdvancedAnimationType type);
+
+    void recordAnimationStart(QWidget* widget,
+                              FluentAdvancedAnimationType type);
     void recordAnimationEnd(QWidget* widget, FluentAdvancedAnimationType type);
-    
+
     // Performance metrics
     double getCurrentFrameRate() const { return m_currentFrameRate; }
     int getActiveAnimationCount() const { return m_activeAnimationCount; }
     double getAverageAnimationDuration() const;
-    
+
     // Performance recommendations
     FluentAnimationPerformance getRecommendedPerformanceLevel() const;
     bool shouldReduceAnimations() const;
@@ -405,17 +461,18 @@ private:
 };
 
 // Convenience macros
-#define FLUENT_MICRO_INTERACTIONS(widget) \
-    FluentQt::Animation::FluentMicroInteractionManager::instance().registerWidget(widget)
+#define FLUENT_MICRO_INTERACTIONS(widget)                          \
+    FluentQt::Animation::FluentMicroInteractionManager::instance() \
+        .registerWidget(widget)
 
 #define FLUENT_GESTURE_ANIMATIONS(widget) \
     new FluentQt::Animation::FluentGestureAnimationController(widget, widget)
 
-#define FLUENT_PAGE_TRANSITION(from, to, type) \
-    do { \
+#define FLUENT_PAGE_TRANSITION(from, to, type)                  \
+    do {                                                        \
         FluentQt::Animation::FluentPageTransitionConfig config; \
-        config.type = type; \
-        /* Apply transition */ \
-    } while(0)
+        config.type = type;                                     \
+        /* Apply transition */                                  \
+    } while (0)
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

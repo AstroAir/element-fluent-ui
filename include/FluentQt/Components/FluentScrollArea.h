@@ -1,13 +1,13 @@
 // include/FluentQt/Components/FluentScrollArea.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
+#include <QEasingCurve>
+#include <QPropertyAnimation>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QPropertyAnimation>
 #include <QTimer>
-#include <QEasingCurve>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -18,11 +18,7 @@ enum class FluentScrollBarPolicy {
     AutoHide  // Hide when not needed, show on hover
 };
 
-enum class FluentScrollDirection {
-    Vertical,
-    Horizontal,
-    Both
-};
+enum class FluentScrollDirection { Vertical, Horizontal, Both };
 
 enum class FluentScrollBehavior {
     Instant,
@@ -35,16 +31,26 @@ class FluentScrollIndicator;
 
 class FluentScrollArea : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentScrollBarPolicy horizontalScrollBarPolicy READ horizontalScrollBarPolicy WRITE setHorizontalScrollBarPolicy NOTIFY horizontalScrollBarPolicyChanged)
-    Q_PROPERTY(FluentScrollBarPolicy verticalScrollBarPolicy READ verticalScrollBarPolicy WRITE setVerticalScrollBarPolicy NOTIFY verticalScrollBarPolicyChanged)
-    Q_PROPERTY(FluentScrollBehavior scrollBehavior READ scrollBehavior WRITE setScrollBehavior NOTIFY scrollBehaviorChanged)
-    Q_PROPERTY(bool smoothScrolling READ smoothScrolling WRITE setSmoothScrolling)
+    Q_PROPERTY(FluentScrollBarPolicy horizontalScrollBarPolicy READ
+                   horizontalScrollBarPolicy WRITE setHorizontalScrollBarPolicy
+                       NOTIFY horizontalScrollBarPolicyChanged)
+    Q_PROPERTY(FluentScrollBarPolicy verticalScrollBarPolicy READ
+                   verticalScrollBarPolicy WRITE setVerticalScrollBarPolicy
+                       NOTIFY verticalScrollBarPolicyChanged)
+    Q_PROPERTY(FluentScrollBehavior scrollBehavior READ scrollBehavior WRITE
+                   setScrollBehavior NOTIFY scrollBehaviorChanged)
+    Q_PROPERTY(
+        bool smoothScrolling READ smoothScrolling WRITE setSmoothScrolling)
     Q_PROPERTY(int scrollSpeed READ scrollSpeed WRITE setScrollSpeed)
-    Q_PROPERTY(bool showScrollIndicators READ showScrollIndicators WRITE setShowScrollIndicators)
-    Q_PROPERTY(bool autoHideScrollBars READ autoHideScrollBars WRITE setAutoHideScrollBars)
+    Q_PROPERTY(bool showScrollIndicators READ showScrollIndicators WRITE
+                   setShowScrollIndicators)
+    Q_PROPERTY(bool autoHideScrollBars READ autoHideScrollBars WRITE
+                   setAutoHideScrollBars)
     Q_PROPERTY(int scrollBarWidth READ scrollBarWidth WRITE setScrollBarWidth)
-    Q_PROPERTY(bool elasticScrolling READ elasticScrolling WRITE setElasticScrolling)
-    Q_PROPERTY(qreal scrollBarOpacity READ scrollBarOpacity WRITE setScrollBarOpacity)
+    Q_PROPERTY(
+        bool elasticScrolling READ elasticScrolling WRITE setElasticScrolling)
+    Q_PROPERTY(
+        qreal scrollBarOpacity READ scrollBarOpacity WRITE setScrollBarOpacity)
 
 public:
     explicit FluentScrollArea(QWidget* parent = nullptr);
@@ -58,14 +64,20 @@ public:
     bool widgetResizable() const;
 
     // Scroll bar policies
-    FluentScrollBarPolicy horizontalScrollBarPolicy() const noexcept { return m_horizontalPolicy; }
+    FluentScrollBarPolicy horizontalScrollBarPolicy() const noexcept {
+        return m_horizontalPolicy;
+    }
     void setHorizontalScrollBarPolicy(FluentScrollBarPolicy policy);
 
-    FluentScrollBarPolicy verticalScrollBarPolicy() const noexcept { return m_verticalPolicy; }
+    FluentScrollBarPolicy verticalScrollBarPolicy() const noexcept {
+        return m_verticalPolicy;
+    }
     void setVerticalScrollBarPolicy(FluentScrollBarPolicy policy);
 
     // Scroll behavior
-    FluentScrollBehavior scrollBehavior() const noexcept { return m_scrollBehavior; }
+    FluentScrollBehavior scrollBehavior() const noexcept {
+        return m_scrollBehavior;
+    }
     void setScrollBehavior(FluentScrollBehavior behavior);
 
     bool smoothScrolling() const noexcept { return m_smoothScrolling; }
@@ -127,12 +139,17 @@ public:
     QSize minimumSizeHint() const override;
 
     // Scroll bar access
-    FluentScrollBar* horizontalScrollBar() const { return m_horizontalScrollBar.get(); }
-    FluentScrollBar* verticalScrollBar() const { return m_verticalScrollBar.get(); }
+    FluentScrollBar* horizontalScrollBar() const {
+        return m_horizontalScrollBar.get();
+    }
+    FluentScrollBar* verticalScrollBar() const {
+        return m_verticalScrollBar.get();
+    }
 
 public slots:
     void ensureVisible(int x, int y, int xmargin = 50, int ymargin = 50);
-    void ensureWidgetVisible(QWidget* childWidget, int xmargin = 50, int ymargin = 50);
+    void ensureWidgetVisible(QWidget* childWidget, int xmargin = 50,
+                             int ymargin = 50);
     void centerOn(const QPoint& position);
     void centerOnWidget(QWidget* widget);
 
@@ -163,7 +180,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onScrollAnimationValueChanged(const QVariant& value);
@@ -262,4 +280,4 @@ private:
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

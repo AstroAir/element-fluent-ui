@@ -1,18 +1,19 @@
 // src/Animation/FluentAnimationPerformanceManager.cpp
 #include "FluentQt/Animation/FluentAnimationPerformanceManager.h"
-#include "FluentQt/Core/FluentPerformance.h" // added for FLUENT_PROFILE macros
 #include <QApplication>
 #include <QDebug>
 #include <QMutexLocker>
-#include <QThread>
 #include <QScreen>
 #include <QSettings>
+#include <QThread>
 #include <algorithm>
 #include <chrono>
+#include "FluentQt/Core/FluentPerformance.h"  // added for FLUENT_PROFILE macros
 
 namespace FluentQt::Animation {
 
-FluentAnimationPerformanceManager& FluentAnimationPerformanceManager::instance() {
+FluentAnimationPerformanceManager&
+FluentAnimationPerformanceManager::instance() {
     static FluentAnimationPerformanceManager instance;
     return instance;
 }
@@ -21,11 +22,13 @@ FluentAnimationPerformanceManager::FluentAnimationPerformanceManager() {
     // Initialize timers
     m_performanceTimer = new QTimer(this);
     m_performanceTimer->setSingleShot(false);
-    connect(m_performanceTimer, &QTimer::timeout, this, &FluentAnimationPerformanceManager::onPerformanceTimer);
+    connect(m_performanceTimer, &QTimer::timeout, this,
+            &FluentAnimationPerformanceManager::onPerformanceTimer);
 
     m_optimizationTimer = new QTimer(this);
     m_optimizationTimer->setSingleShot(false);
-    connect(m_optimizationTimer, &QTimer::timeout, this, &FluentAnimationPerformanceManager::onOptimizationTimer);
+    connect(m_optimizationTimer, &QTimer::timeout, this,
+            &FluentAnimationPerformanceManager::onOptimizationTimer);
 
     // Initialize default configuration
     m_config.targetPerformance = FluentAnimationPerformance::Adaptive;
@@ -52,18 +55,21 @@ FluentAnimationPerformanceManager::FluentAnimationPerformanceManager() {
     qDebug() << "FluentAnimationPerformanceManager initialized";
 }
 
-void FluentAnimationPerformanceManager::setPerformanceConfig(const FluentPerformanceConfig& config) {
+void FluentAnimationPerformanceManager::setPerformanceConfig(
+    const FluentPerformanceConfig& config) {
     QMutexLocker locker(&m_configMutex);
     m_config = config;
 
     if (config.enablePerformanceMonitoring && !m_performanceMonitoringEnabled) {
         startPerformanceMonitoring();
-    } else if (!config.enablePerformanceMonitoring && m_performanceMonitoringEnabled) {
+    } else if (!config.enablePerformanceMonitoring &&
+               m_performanceMonitoringEnabled) {
         stopPerformanceMonitoring();
     }
 }
 
-void FluentAnimationPerformanceManager::setTargetPerformance(FluentAnimationPerformance performance) {
+void FluentAnimationPerformanceManager::setTargetPerformance(
+    FluentAnimationPerformance performance) {
     QMutexLocker locker(&m_configMutex);
     m_config.targetPerformance = performance;
 
@@ -103,8 +109,8 @@ void FluentAnimationPerformanceManager::startPerformanceMonitoring() {
 
     m_performanceMonitoringEnabled = true;
     m_frameTimer.start();
-    m_performanceTimer->start(100); // Update every 100ms
-    m_optimizationTimer->start(1000); // Optimize every second
+    m_performanceTimer->start(100);    // Update every 100ms
+    m_optimizationTimer->start(1000);  // Optimize every second
 
     qDebug() << "Performance monitoring started";
 }
@@ -121,12 +127,14 @@ void FluentAnimationPerformanceManager::stopPerformanceMonitoring() {
     qDebug() << "Performance monitoring stopped";
 }
 
-FluentAnimationMetrics FluentAnimationPerformanceManager::getCurrentMetrics() const {
+FluentAnimationMetrics FluentAnimationPerformanceManager::getCurrentMetrics()
+    const {
     QMutexLocker locker(&m_metricsMutex);
     return m_currentMetrics;
 }
 
-FluentAnimationMetrics FluentAnimationPerformanceManager::getAverageMetrics(std::chrono::seconds duration) const {
+FluentAnimationMetrics FluentAnimationPerformanceManager::getAverageMetrics(
+    std::chrono::seconds duration) const {
     QMutexLocker locker(&m_metricsMutex);
 
     FluentAnimationMetrics averageMetrics;
@@ -162,7 +170,8 @@ FluentAnimationMetrics FluentAnimationPerformanceManager::getAverageMetrics(std:
     return averageMetrics;
 }
 
-int FluentAnimationPerformanceManager::requestAnimation(const FluentAnimationRequest& request) {
+int FluentAnimationPerformanceManager::requestAnimation(
+    const FluentAnimationRequest& request) {
     QMutexLocker locker(&m_queueMutex);
 
     int requestId = m_nextRequestId++;
@@ -195,55 +204,63 @@ void FluentAnimationPerformanceManager::optimizePerformance() {
 
     auto metrics = getCurrentMetrics();
 
-    // Apply enabled optimization strategies
-    for (auto strategy : m_enabledStrategies) {
-        switch (strategy) {
-            case FluentOptimizationStrategy::ReduceQuality:
-                applyReduceQualityStrategy();
-                break;
-            case FluentOptimizationStrategy::SkipFrames:
-                applySkipFramesStrategy();
-                break;
-            case FluentOptimizationStrategy::SimplifyEffects:
-                applySimplifyEffectsStrategy();
-                break;
-            case FluentOptimizationStrategy::BatchAnimations:
-                applyBatchAnimationsStrategy();
-                break;
-            case FluentOptimizationStrategy::ReduceDuration:
-                applyReduceDurationStrategy();
-                break;
-            case FluentOptimizationStrategy::PrioritizeVisible:
-                applyPrioritizeVisibleStrategy();
-                break;
-            case FluentOptimizationStrategy::AdaptiveFrameRate:
-                applyAdaptiveFrameRateStrategy();
-                break;
-            default:
-                break;
+    // Only optimize if performance is below threshold
+    if (metrics.frameTime > 16.67) {  // 60 FPS threshold
+        // Apply enabled optimization strategies
+        for (auto strategy : m_enabledStrategies) {
+            switch (strategy) {
+                case FluentOptimizationStrategy::ReduceQuality:
+                    applyReduceQualityStrategy();
+                    break;
+                case FluentOptimizationStrategy::SkipFrames:
+                    applySkipFramesStrategy();
+                    break;
+                case FluentOptimizationStrategy::SimplifyEffects:
+                    applySimplifyEffectsStrategy();
+                    break;
+                case FluentOptimizationStrategy::BatchAnimations:
+                    applyBatchAnimationsStrategy();
+                    break;
+                case FluentOptimizationStrategy::ReduceDuration:
+                    applyReduceDurationStrategy();
+                    break;
+                case FluentOptimizationStrategy::PrioritizeVisible:
+                    applyPrioritizeVisibleStrategy();
+                    break;
+                case FluentOptimizationStrategy::AdaptiveFrameRate:
+                    applyAdaptiveFrameRateStrategy();
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
     emit performanceOptimized(FluentOptimizationStrategy::None);
 }
 
-void FluentAnimationPerformanceManager::setCulturalAnimationStyle(FluentCulturalAnimationStyle style) {
+void FluentAnimationPerformanceManager::setCulturalAnimationStyle(
+    FluentCulturalAnimationStyle style) {
     m_culturalStyle = style;
     applyCulturalAnimationStyle();
     emit culturalStyleChanged(style);
 }
 
-void FluentAnimationPerformanceManager::setAccessibilityAnimationMode(FluentAccessibilityAnimationMode mode) {
+void FluentAnimationPerformanceManager::setAccessibilityAnimationMode(
+    FluentAccessibilityAnimationMode mode) {
     m_accessibilityMode = mode;
     applyAccessibilityAnimationMode();
     emit accessibilityModeChanged(mode);
 }
 
-void FluentAnimationPerformanceManager::adaptAnimationsForCulture(const QLocale& locale) {
+void FluentAnimationPerformanceManager::adaptAnimationsForCulture(
+    const QLocale& locale) {
     // Adapt animation style based on cultural preferences
-    if (locale.language() == QLocale::Chinese || locale.language() == QLocale::Japanese) {
+    if (locale.language() == QLocale::Chinese ||
+        locale.language() == QLocale::Japanese) {
         setCulturalAnimationStyle(FluentCulturalAnimationStyle::Eastern);
-    } else if (locale.language() == QLocale::German || locale.language() == QLocale::English) {
+    } else if (locale.language() == QLocale::German ||
+               locale.language() == QLocale::English) {
         setCulturalAnimationStyle(FluentCulturalAnimationStyle::Western);
     } else {
         setCulturalAnimationStyle(FluentCulturalAnimationStyle::Adaptive);
@@ -253,7 +270,8 @@ void FluentAnimationPerformanceManager::adaptAnimationsForCulture(const QLocale&
 void FluentAnimationPerformanceManager::adaptAnimationsForAccessibility() {
     // Check system accessibility preferences
     if (isReducedMotionPreferred()) {
-        setAccessibilityAnimationMode(FluentAccessibilityAnimationMode::Reduced);
+        setAccessibilityAnimationMode(
+            FluentAccessibilityAnimationMode::Reduced);
     } else {
         setAccessibilityAnimationMode(FluentAccessibilityAnimationMode::Full);
     }
@@ -263,14 +281,18 @@ double FluentAnimationPerformanceManager::calculatePerformanceScore() const {
     auto metrics = getCurrentMetrics();
 
     // Calculate score based on FPS, frame time, and dropped frames
-    double fpsScore = std::min(100.0, (metrics.averageFPS / m_config.targetFPS) * 100.0);
-    double frameTimeScore = std::max(0.0, 100.0 - (metrics.frameTime - 16.67) * 2.0);
-    double droppedFrameScore = std::max(0.0, 100.0 - (metrics.droppedFrames * 5.0));
+    double fpsScore =
+        std::min(100.0, (metrics.averageFPS / m_config.targetFPS) * 100.0);
+    double frameTimeScore =
+        std::max(0.0, 100.0 - (metrics.frameTime - 16.67) * 2.0);
+    double droppedFrameScore =
+        std::max(0.0, 100.0 - (metrics.droppedFrames * 5.0));
 
     return (fpsScore + frameTimeScore + droppedFrameScore) / 3.0;
 }
 
-QStringList FluentAnimationPerformanceManager::getPerformanceRecommendations() const {
+QStringList FluentAnimationPerformanceManager::getPerformanceRecommendations()
+    const {
     QStringList recommendations;
     auto metrics = getCurrentMetrics();
 
@@ -329,7 +351,7 @@ void FluentAnimationPerformanceManager::updateMetrics() {
 
     // Add to history
     m_metricsHistory.enqueue(m_currentMetrics);
-    if (m_metricsHistory.size() > 100) { // Keep last 100 entries
+    if (m_metricsHistory.size() > 100) {  // Keep last 100 entries
         m_metricsHistory.dequeue();
     }
 
@@ -340,10 +362,11 @@ void FluentAnimationPerformanceManager::calculateFrameRate() {
     m_frameCount++;
 
     qint64 elapsed = m_frameTimer.elapsed();
-    if (elapsed >= 1000) { // Calculate FPS every second
+    if (elapsed >= 1000) {  // Calculate FPS every second
         m_currentFPS = (m_frameCount * 1000.0) / elapsed;
         m_currentMetrics.averageFPS = m_currentFPS;
-        m_currentMetrics.frameTime = elapsed / static_cast<double>(m_frameCount);
+        m_currentMetrics.frameTime =
+            elapsed / static_cast<double>(m_frameCount);
         m_currentMetrics.totalFrames += m_frameCount;
 
         m_frameCount = 0;
@@ -354,18 +377,20 @@ void FluentAnimationPerformanceManager::calculateFrameRate() {
 void FluentAnimationPerformanceManager::monitorSystemResources() {
     // This would involve platform-specific code to monitor CPU and memory usage
     // For now, we'll use placeholder values
-    m_currentMetrics.cpuUsage = 50.0; // Placeholder
-    m_currentMetrics.memoryUsage = 75.0; // Placeholder
+    m_currentMetrics.cpuUsage = 50.0;     // Placeholder
+    m_currentMetrics.memoryUsage = 75.0;  // Placeholder
 }
 
-bool FluentAnimationPerformanceManager::shouldSkipAnimation(const FluentAnimationRequest& request) const {
+bool FluentAnimationPerformanceManager::shouldSkipAnimation(
+    const FluentAnimationRequest& request) const {
     // Skip if performance is too low and animation can be skipped
     if (request.canBeSkipped && m_currentMetrics.performanceScore < 50.0) {
         return true;
     }
 
     // Skip if in power saving mode and animation is not critical
-    if (m_powerSavingEnabled && request.priority < FluentAnimationPriority::High) {
+    if (m_powerSavingEnabled &&
+        request.priority < FluentAnimationPriority::High) {
         return true;
     }
 
@@ -377,7 +402,8 @@ bool FluentAnimationPerformanceManager::shouldSkipAnimation(const FluentAnimatio
     return false;
 }
 
-void FluentAnimationPerformanceManager::executeAnimation(const FluentAnimationRequest& request) {
+void FluentAnimationPerformanceManager::executeAnimation(
+    const FluentAnimationRequest& request) {
     // This would create and start the actual animation
     // For now, we'll just simulate execution
     if (request.onComplete) {
@@ -388,7 +414,8 @@ void FluentAnimationPerformanceManager::executeAnimation(const FluentAnimationRe
 void FluentAnimationPerformanceManager::processAnimationQueue() {
     QMutexLocker locker(&m_queueMutex);
 
-    while (!m_animationQueue.isEmpty() && m_activeAnimations.size() < m_config.maxConcurrentAnimations) {
+    while (!m_animationQueue.isEmpty() &&
+           m_activeAnimations.size() < m_config.maxConcurrentAnimations) {
         int requestId = m_animationQueue.dequeue();
         auto it = m_animationRequests.find(requestId);
         if (it != m_animationRequests.end()) {
@@ -410,7 +437,7 @@ void FluentAnimationPerformanceManager::applyAccessibilityAnimationMode() {
 
 void FluentAnimationPerformanceManager::detectHardwareCapabilities() {
     // Detect hardware acceleration support
-    m_hardwareAccelerationSupported = true; // Placeholder
+    m_hardwareAccelerationSupported = true;  // Placeholder
 }
 
 void FluentAnimationPerformanceManager::connectToSystemSignals() {
@@ -437,25 +464,30 @@ void FluentAnimationPerformanceManager::applySimplifyEffectsStrategy() {
 }
 
 void FluentAnimationPerformanceManager::applyBatchAnimationsStrategy() {
-    FLUENT_PROFILE("FluentAnimationPerformanceManager::applyBatchAnimationsStrategy");
+    FLUENT_PROFILE(
+        "FluentAnimationPerformanceManager::applyBatchAnimationsStrategy");
 
     QMutexLocker locker(&m_queueMutex);
 
     // Group animations by type and target for batching
     QMap<QString, QList<int>> animationGroups;
 
-    for (auto it = m_animationRequests.begin(); it != m_animationRequests.end(); ++it) {
+    for (auto it = m_animationRequests.begin(); it != m_animationRequests.end();
+         ++it) {
         const auto& request = it.value();
-        QString groupKey = QString("%1_%2_%3")
-            .arg(request.animationType) // fixed field name
-            .arg(reinterpret_cast<quintptr>(request.target))
-            .arg(static_cast<int>(request.duration.count() / 100)); // Group by 100ms intervals
+        QString groupKey =
+            QString("%1_%2_%3")
+                .arg(request.animationType)  // fixed field name
+                .arg(reinterpret_cast<quintptr>(request.target))
+                .arg(static_cast<int>(request.duration.count() /
+                                      100));  // Group by 100ms intervals
 
         animationGroups[groupKey].append(it.key());
     }
 
     // Process batched animations
-    for (auto groupIt = animationGroups.begin(); groupIt != animationGroups.end(); ++groupIt) {
+    for (auto groupIt = animationGroups.begin();
+         groupIt != animationGroups.end(); ++groupIt) {
         const auto& requestIds = groupIt.value();
 
         if (requestIds.size() > 1) {
@@ -463,7 +495,8 @@ void FluentAnimationPerformanceManager::applyBatchAnimationsStrategy() {
             auto batchedGroup = createBatchedAnimationGroup(requestIds);
             if (batchedGroup) {
                 // Execute batched group instead of individual animations
-                executeBatchedAnimation(std::move(batchedGroup)); // ensure move
+                executeBatchedAnimation(
+                    std::move(batchedGroup));  // ensure move
 
                 // Remove individual requests from queue
                 for (int requestId : requestIds) {
@@ -479,20 +512,23 @@ void FluentAnimationPerformanceManager::applyReduceDurationStrategy() {
     // Reduce animation durations based on performance
     QMutexLocker locker(&m_queueMutex);
 
-    const double performanceRatio = m_currentMetrics.performanceScore / 100.0; // fixed member name
-    const double durationMultiplier = qMax(0.3, performanceRatio); // Minimum 30% of original duration
+    const double performanceRatio =
+        m_currentMetrics.performanceScore / 100.0;  // fixed member name
+    const double durationMultiplier =
+        qMax(0.3, performanceRatio);  // Minimum 30% of original duration
 
     for (auto& request : m_animationRequests) {
         auto originalDuration = request.duration;
         request.duration = std::chrono::milliseconds(
-            static_cast<int>(originalDuration.count() * durationMultiplier)
-        );
+            static_cast<int>(originalDuration.count() * durationMultiplier));
     }
 }
 
 std::unique_ptr<FluentAnimationPerformanceManager::BatchedAnimationGroup>
-FluentAnimationPerformanceManager::createBatchedAnimationGroup(const QList<int>& requestIds) {
-    if (requestIds.isEmpty()) return nullptr;
+FluentAnimationPerformanceManager::createBatchedAnimationGroup(
+    const QList<int>& requestIds) {
+    if (requestIds.isEmpty())
+        return nullptr;
 
     auto batchedGroup = std::make_unique<BatchedAnimationGroup>();
     batchedGroup->requestIds = requestIds;
@@ -529,22 +565,26 @@ FluentAnimationPerformanceManager::createBatchedAnimationGroup(const QList<int>&
 
 void FluentAnimationPerformanceManager::executeBatchedAnimation(
     std::unique_ptr<BatchedAnimationGroup> batchedGroup) {
+    if (!batchedGroup || !batchedGroup->animationGroup)
+        return;
 
-    if (!batchedGroup || !batchedGroup->animationGroup) return;
-
-    FLUENT_PROFILE("FluentAnimationPerformanceManager::executeBatchedAnimation");
+    FLUENT_PROFILE(
+        "FluentAnimationPerformanceManager::executeBatchedAnimation");
 
     // Execute the batched animation group
     batchedGroup->animationGroup->start();
 
     // Track batched animation performance
-    m_currentMetrics.activeAnimations += batchedGroup->requestIds.size(); // fixed member name
+    m_currentMetrics.activeAnimations +=
+        batchedGroup->requestIds.size();  // fixed member name
 
     // Connect completion signal
-    connect(batchedGroup->animationGroup.get(), &QParallelAnimationGroup::finished,
+    connect(batchedGroup->animationGroup.get(),
+            &QParallelAnimationGroup::finished,
             [this, requestIds = batchedGroup->requestIds]() {
                 // Update metrics when batch completes
-                m_currentMetrics.activeAnimations -= requestIds.size(); // fixed member name
+                m_currentMetrics.activeAnimations -=
+                    requestIds.size();  // fixed member name
 
                 // Execute completion callbacks
                 for (int requestId : requestIds) {
@@ -623,4 +663,4 @@ void FluentAnimationPerformanceManager::updatePerformanceBasedOnMetrics() {
     }
 }
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

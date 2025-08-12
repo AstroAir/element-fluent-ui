@@ -1,53 +1,50 @@
 // src/Components/FluentChartView.cpp
 #include "FluentQt/Components/FluentChartView.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QVBoxLayout>
-#include <QPainter>
-#include <QMouseEvent>
-#include <QWheelEvent>
-#include <QContextMenuEvent>
-#include <QMenu>
 #include <QAction>
-#include <QFileDialog>
-#include <QPdfWriter>
 #include <QApplication>
-#include <QPixmap>
+#include <QAreaSeries>
+#include <QBarSeries>
+#include <QCategoryAxis>
 #include <QChart>
 #include <QChartView>
-#include <QLineSeries>
-#include <QBarSeries>
-#include <QAreaSeries>
-#include <QPieSeries>
-#include <QScatterSeries>
-#include <QValueAxis>
-#include <QCategoryAxis>
+#include <QContextMenuEvent>
 #include <QDateTimeAxis>
-#include <QLegend>
+#include <QFileDialog>
 #include <QGraphicsLayout>
+#include <QLegend>
+#include <QLineSeries>
+#include <QMenu>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPdfWriter>
+#include <QPieSeries>
+#include <QPixmap>
+#include <QScatterSeries>
+#include <QVBoxLayout>
+#include <QValueAxis>
+#include <QWheelEvent>
+#include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt::Components;
 using namespace FluentQt::Core;
 
 FluentChartView::FluentChartView(QWidget* parent)
-    : FluentComponent(parent)
-    , m_layout(new QVBoxLayout(this))
-    , m_chart(new QChart())
-    , m_chartView(new QChartView(m_chart))
-{
+    : FluentComponent(parent),
+      m_layout(new QVBoxLayout(this)),
+      m_chart(new QChart()),
+      m_chartView(new QChartView(m_chart)) {
     setupChart();
     setupChartView();
     setupContextMenu();
-    
+
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->addWidget(m_chartView);
-    
+
     updateChartTheme();
     updateLegend();
 }
 
-QString FluentChartView::title() const {
-    return m_chart->title();
-}
+QString FluentChartView::title() const { return m_chart->title(); }
 
 void FluentChartView::setTitle(const QString& title) {
     if (m_chart->title() != title) {
@@ -56,9 +53,7 @@ void FluentChartView::setTitle(const QString& title) {
     }
 }
 
-FluentChartTheme FluentChartView::theme() const {
-    return m_theme;
-}
+FluentChartTheme FluentChartView::theme() const { return m_theme; }
 
 void FluentChartView::setTheme(FluentChartTheme theme) {
     if (m_theme != theme) {
@@ -79,37 +74,29 @@ void FluentChartView::setLegendPosition(FluentLegendPosition position) {
     }
 }
 
-bool FluentChartView::animationEnabled() const {
-    return m_animationEnabled;
-}
+bool FluentChartView::animationEnabled() const { return m_animationEnabled; }
 
 void FluentChartView::setAnimationEnabled(bool enabled) {
     if (m_animationEnabled != enabled) {
         m_animationEnabled = enabled;
-        m_chart->setAnimationOptions(enabled ? QChart::SeriesAnimations : QChart::NoAnimation);
+        m_chart->setAnimationOptions(enabled ? QChart::SeriesAnimations
+                                             : QChart::NoAnimation);
     }
 }
 
-bool FluentChartView::zoomEnabled() const {
-    return m_zoomEnabled;
-}
+bool FluentChartView::zoomEnabled() const { return m_zoomEnabled; }
 
 void FluentChartView::setZoomEnabled(bool enabled) {
     m_zoomEnabled = enabled;
-    m_chartView->setRubberBand(enabled ? QChartView::RectangleRubberBand : QChartView::NoRubberBand);
+    m_chartView->setRubberBand(enabled ? QChartView::RectangleRubberBand
+                                       : QChartView::NoRubberBand);
 }
 
-bool FluentChartView::panEnabled() const {
-    return m_panEnabled;
-}
+bool FluentChartView::panEnabled() const { return m_panEnabled; }
 
-void FluentChartView::setPanEnabled(bool enabled) {
-    m_panEnabled = enabled;
-}
+void FluentChartView::setPanEnabled(bool enabled) { m_panEnabled = enabled; }
 
-bool FluentChartView::antialiasing() const {
-    return m_antialiasing;
-}
+bool FluentChartView::antialiasing() const { return m_antialiasing; }
 
 void FluentChartView::setAntialiasing(bool enabled) {
     if (m_antialiasing != enabled) {
@@ -121,20 +108,22 @@ void FluentChartView::setAntialiasing(bool enabled) {
 int FluentChartView::addSeries(const FluentChartSeries& series) {
     int index = m_seriesData.size();
     m_seriesData.append(series);
-    
+
     QAbstractSeries* qtSeries = createSeries(series);
     if (qtSeries) {
         m_series[index] = qtSeries;
         m_chart->addSeries(qtSeries);
-        
+
         // Connect signals based on series type
         if (auto* lineSeries = qobject_cast<QLineSeries*>(qtSeries)) {
-            connect(lineSeries, &QLineSeries::clicked, this, &FluentChartView::onSeriesClicked);
-            connect(lineSeries, &QLineSeries::hovered, this, &FluentChartView::onSeriesHovered);
+            connect(lineSeries, &QLineSeries::clicked, this,
+                    &FluentChartView::onSeriesClicked);
+            connect(lineSeries, &QLineSeries::hovered, this,
+                    &FluentChartView::onSeriesHovered);
         }
         // Note: Other series types have different signal signatures
     }
-    
+
     return index;
 }
 
@@ -165,9 +154,7 @@ void FluentChartView::clearSeries() {
     m_seriesData.clear();
 }
 
-int FluentChartView::seriesCount() const {
-    return m_seriesData.size();
-}
+int FluentChartView::seriesCount() const { return m_seriesData.size(); }
 
 FluentChartSeries FluentChartView::getSeriesData(int index) const {
     if (index >= 0 && index < m_seriesData.size()) {
@@ -200,7 +187,8 @@ void FluentChartView::setSeriesColor(int index, const QColor& color) {
             auto* series = m_series[index];
             if (auto* lineSeries = qobject_cast<QLineSeries*>(series)) {
                 lineSeries->setColor(color);
-            } else if (auto* scatterSeries = qobject_cast<QScatterSeries*>(series)) {
+            } else if (auto* scatterSeries =
+                           qobject_cast<QScatterSeries*>(series)) {
                 scatterSeries->setColor(color);
             }
             // Add more series types as needed
@@ -299,21 +287,25 @@ void FluentChartView::addDataPoint(int seriesIndex, const QPointF& point) {
     if (seriesIndex >= 0 && seriesIndex < m_seriesData.size()) {
         m_seriesData[seriesIndex].data.append(point);
         if (m_series.contains(seriesIndex)) {
-            updateSeriesData(m_series[seriesIndex], m_seriesData[seriesIndex].data);
+            updateSeriesData(m_series[seriesIndex],
+                             m_seriesData[seriesIndex].data);
         }
     }
 }
 
-void FluentChartView::addDataPoints(int seriesIndex, const QList<QPointF>& points) {
+void FluentChartView::addDataPoints(int seriesIndex,
+                                    const QList<QPointF>& points) {
     if (seriesIndex >= 0 && seriesIndex < m_seriesData.size()) {
         m_seriesData[seriesIndex].data.append(points);
         if (m_series.contains(seriesIndex)) {
-            updateSeriesData(m_series[seriesIndex], m_seriesData[seriesIndex].data);
+            updateSeriesData(m_series[seriesIndex],
+                             m_seriesData[seriesIndex].data);
         }
     }
 }
 
-void FluentChartView::setSeriesData(int seriesIndex, const QList<QPointF>& data) {
+void FluentChartView::setSeriesData(int seriesIndex,
+                                    const QList<QPointF>& data) {
     if (seriesIndex >= 0 && seriesIndex < m_seriesData.size()) {
         m_seriesData[seriesIndex].data = data;
         if (m_series.contains(seriesIndex)) {
@@ -342,39 +334,33 @@ void FluentChartView::animateSeriesOut(int index) {
     // Animation implementation would go here
 }
 
-void FluentChartView::animateToNewData(int index, const QList<QPointF>& newData) {
+void FluentChartView::animateToNewData(int index,
+                                       const QList<QPointF>& newData) {
     Q_UNUSED(index)
     Q_UNUSED(newData)
     // Animation implementation would go here
 }
 
 // Zoom and pan methods
-void FluentChartView::zoomIn() {
-    m_chartView->chart()->zoomIn();
-}
+void FluentChartView::zoomIn() { m_chartView->chart()->zoomIn(); }
 
-void FluentChartView::zoomOut() {
-    m_chartView->chart()->zoomOut();
-}
+void FluentChartView::zoomOut() { m_chartView->chart()->zoomOut(); }
 
 void FluentChartView::zoomIn(const QRectF& rect) {
     m_chartView->chart()->zoomIn(rect);
 }
 
-void FluentChartView::zoomReset() {
-    m_chartView->chart()->zoomReset();
-}
+void FluentChartView::zoomReset() { m_chartView->chart()->zoomReset(); }
 
 void FluentChartView::pan(const QPointF& offset) {
     m_chartView->chart()->scroll(offset.x(), offset.y());
 }
 
-void FluentChartView::resetPan() {
-    m_chartView->chart()->zoomReset();
-}
+void FluentChartView::resetPan() { m_chartView->chart()->zoomReset(); }
 
 // Export methods
-bool FluentChartView::exportToImage(const QString& fileName, const QSize& size) {
+bool FluentChartView::exportToImage(const QString& fileName,
+                                    const QSize& size) {
     QSize exportSize = size.isValid() ? size : QSize(800, 600);
     QPixmap pixmap(exportSize);
     pixmap.fill(Qt::white);
@@ -409,18 +395,14 @@ void FluentChartView::setToolTipEnabled(bool enabled) {
     m_toolTipEnabled = enabled;
 }
 
-bool FluentChartView::isToolTipEnabled() const {
-    return m_toolTipEnabled;
-}
+bool FluentChartView::isToolTipEnabled() const { return m_toolTipEnabled; }
 
 void FluentChartView::setCrosshairEnabled(bool enabled) {
     m_crosshairEnabled = enabled;
     QWidget::update();
 }
 
-bool FluentChartView::isCrosshairEnabled() const {
-    return m_crosshairEnabled;
-}
+bool FluentChartView::isCrosshairEnabled() const { return m_crosshairEnabled; }
 
 // Event handlers
 void FluentChartView::paintEvent(QPaintEvent* event) {
@@ -513,9 +495,7 @@ void FluentChartView::onAxisRangeChanged(qreal min, qreal max) {
     }
 }
 
-void FluentChartView::updateTheme() {
-    updateChartTheme();
-}
+void FluentChartView::updateTheme() { updateChartTheme(); }
 
 void FluentChartView::updateCrosshair(const QPointF& point) {
     m_crosshairPoint = point;
@@ -548,11 +528,15 @@ void FluentChartView::setupContextMenu() {
     m_contextMenu->addSeparator();
     QAction* exportAction = m_contextMenu->addAction("Export...");
 
-    connect(zoomInAction, &QAction::triggered, this, QOverload<>::of(&FluentChartView::zoomIn));
-    connect(zoomOutAction, &QAction::triggered, this, &FluentChartView::zoomOut);
-    connect(zoomResetAction, &QAction::triggered, this, &FluentChartView::zoomReset);
+    connect(zoomInAction, &QAction::triggered, this,
+            QOverload<>::of(&FluentChartView::zoomIn));
+    connect(zoomOutAction, &QAction::triggered, this,
+            &FluentChartView::zoomOut);
+    connect(zoomResetAction, &QAction::triggered, this,
+            &FluentChartView::zoomReset);
     connect(exportAction, &QAction::triggered, [this]() {
-        QString fileName = QFileDialog::getSaveFileName(this, "Export Chart", "", "PNG Files (*.png)");
+        QString fileName = QFileDialog::getSaveFileName(
+            this, "Export Chart", "", "PNG Files (*.png)");
         if (!fileName.isEmpty()) {
             exportToImage(fileName);
         }
@@ -561,16 +545,16 @@ void FluentChartView::setupContextMenu() {
 
 void FluentChartView::updateChartTheme() {
     switch (m_theme) {
-    case FluentChartTheme::Light:
-        m_chart->setTheme(QChart::ChartThemeLight);
-        break;
-    case FluentChartTheme::Dark:
-        m_chart->setTheme(QChart::ChartThemeDark);
-        break;
-    case FluentChartTheme::Auto:
-        // Use system theme
-        m_chart->setTheme(QChart::ChartThemeLight);
-        break;
+        case FluentChartTheme::Light:
+            m_chart->setTheme(QChart::ChartThemeLight);
+            break;
+        case FluentChartTheme::Dark:
+            m_chart->setTheme(QChart::ChartThemeDark);
+            break;
+        case FluentChartTheme::Auto:
+            // Use system theme
+            m_chart->setTheme(QChart::ChartThemeLight);
+            break;
     }
 }
 
@@ -578,25 +562,25 @@ void FluentChartView::updateLegend() {
     QLegend* legend = m_chart->legend();
 
     switch (m_legendPosition) {
-    case FluentLegendPosition::Top:
-        legend->setAlignment(Qt::AlignTop);
-        legend->setVisible(true);
-        break;
-    case FluentLegendPosition::Bottom:
-        legend->setAlignment(Qt::AlignBottom);
-        legend->setVisible(true);
-        break;
-    case FluentLegendPosition::Left:
-        legend->setAlignment(Qt::AlignLeft);
-        legend->setVisible(true);
-        break;
-    case FluentLegendPosition::Right:
-        legend->setAlignment(Qt::AlignRight);
-        legend->setVisible(true);
-        break;
-    case FluentLegendPosition::Hidden:
-        legend->setVisible(false);
-        break;
+        case FluentLegendPosition::Top:
+            legend->setAlignment(Qt::AlignTop);
+            legend->setVisible(true);
+            break;
+        case FluentLegendPosition::Bottom:
+            legend->setAlignment(Qt::AlignBottom);
+            legend->setVisible(true);
+            break;
+        case FluentLegendPosition::Left:
+            legend->setAlignment(Qt::AlignLeft);
+            legend->setVisible(true);
+            break;
+        case FluentLegendPosition::Right:
+            legend->setAlignment(Qt::AlignRight);
+            legend->setVisible(true);
+            break;
+        case FluentLegendPosition::Hidden:
+            legend->setVisible(false);
+            break;
     }
 }
 
@@ -604,46 +588,47 @@ void FluentChartView::updateAxes() {
     // Update axis properties based on current settings
 }
 
-QAbstractSeries* FluentChartView::createSeries(const FluentChartSeries& seriesData) {
+QAbstractSeries* FluentChartView::createSeries(
+    const FluentChartSeries& seriesData) {
     QAbstractSeries* series = nullptr;
 
     switch (seriesData.type) {
-    case FluentChartType::Line: {
-        auto* lineSeries = new QLineSeries();
-        for (const QPointF& point : seriesData.data) {
-            lineSeries->append(point);
+        case FluentChartType::Line: {
+            auto* lineSeries = new QLineSeries();
+            for (const QPointF& point : seriesData.data) {
+                lineSeries->append(point);
+            }
+            series = lineSeries;
+            break;
         }
-        series = lineSeries;
-        break;
-    }
-    case FluentChartType::Bar: {
-        auto* barSeries = new QBarSeries();
-        // Bar series implementation would go here
-        series = barSeries;
-        break;
-    }
-    case FluentChartType::Scatter: {
-        auto* scatterSeries = new QScatterSeries();
-        for (const QPointF& point : seriesData.data) {
-            scatterSeries->append(point);
+        case FluentChartType::Bar: {
+            auto* barSeries = new QBarSeries();
+            // Bar series implementation would go here
+            series = barSeries;
+            break;
         }
-        series = scatterSeries;
-        break;
-    }
-    case FluentChartType::Area: {
-        auto* areaSeries = new QAreaSeries();
-        // Area series implementation would go here
-        series = areaSeries;
-        break;
-    }
-    case FluentChartType::Pie: {
-        auto* pieSeries = new QPieSeries();
-        // Pie series implementation would go here
-        series = pieSeries;
-        break;
-    }
-    default:
-        break;
+        case FluentChartType::Scatter: {
+            auto* scatterSeries = new QScatterSeries();
+            for (const QPointF& point : seriesData.data) {
+                scatterSeries->append(point);
+            }
+            series = scatterSeries;
+            break;
+        }
+        case FluentChartType::Area: {
+            auto* areaSeries = new QAreaSeries();
+            // Area series implementation would go here
+            series = areaSeries;
+            break;
+        }
+        case FluentChartType::Pie: {
+            auto* pieSeries = new QPieSeries();
+            // Pie series implementation would go here
+            series = pieSeries;
+            break;
+        }
+        default:
+            break;
     }
 
     if (series) {
@@ -651,7 +636,8 @@ QAbstractSeries* FluentChartView::createSeries(const FluentChartSeries& seriesDa
         // Set color based on series type
         if (auto* lineSeries = qobject_cast<QLineSeries*>(series)) {
             lineSeries->setColor(seriesData.color);
-        } else if (auto* scatterSeries = qobject_cast<QScatterSeries*>(series)) {
+        } else if (auto* scatterSeries =
+                       qobject_cast<QScatterSeries*>(series)) {
             scatterSeries->setColor(seriesData.color);
         }
         series->setOpacity(seriesData.opacity);
@@ -661,7 +647,8 @@ QAbstractSeries* FluentChartView::createSeries(const FluentChartSeries& seriesDa
     return series;
 }
 
-void FluentChartView::updateSeriesData(QAbstractSeries* series, const QList<QPointF>& data) {
+void FluentChartView::updateSeriesData(QAbstractSeries* series,
+                                       const QList<QPointF>& data) {
     if (auto* lineSeries = qobject_cast<QLineSeries*>(series)) {
         lineSeries->clear();
         for (const QPointF& point : data) {
@@ -687,7 +674,8 @@ void FluentChartView::paintCrosshair(QPainter& painter) {
     // Crosshair painting implementation would go here
 }
 
-void FluentChartView::paintToolTip(QPainter& painter, const QPointF& pos, const QString& text) {
+void FluentChartView::paintToolTip(QPainter& painter, const QPointF& pos,
+                                   const QString& text) {
     Q_UNUSED(painter)
     Q_UNUSED(pos)
     Q_UNUSED(text)
@@ -701,5 +689,3 @@ QPointF FluentChartView::mapToChart(const QPointF& point) const {
 QPointF FluentChartView::mapFromChart(const QPointF& point) const {
     return m_chartView->chart()->mapToPosition(point);
 }
-
-

@@ -1,9 +1,9 @@
 // include/FluentQt/Core/FluentBenchmark.h
 #pragma once
 
-#include <QObject>
 #include <QElapsedTimer>
 #include <QList>
+#include <QObject>
 #include <QString>
 #include <QVariant>
 #include <chrono>
@@ -41,30 +41,35 @@ class FluentBenchmarkSuite : public QObject {
     Q_OBJECT
 
 public:
-    explicit FluentBenchmarkSuite(const QString& suiteName, QObject* parent = nullptr);
-    
+    explicit FluentBenchmarkSuite(const QString& suiteName,
+                                  QObject* parent = nullptr);
+
     // Test case management
     void addTestCase(const BenchmarkTestCase& testCase);
-    void addTestCase(const QString& name, std::function<void()> testFunction, 
+    void addTestCase(const QString& name, std::function<void()> testFunction,
                      int iterations = 1000, const QString& description = "");
     void removeTestCase(const QString& name);
     void clearTestCases();
-    
+
     // Execution
     void runAllTests();
     void runTest(const QString& testName);
     void runTestsMatching(const QString& pattern);
-    
+
     // Results
     QList<BenchmarkTestResult> getResults() const { return m_results; }
     BenchmarkTestResult getResult(const QString& testName) const;
     void clearResults();
-    
+
     // Configuration
-    void setDefaultIterations(int iterations) { m_defaultIterations = iterations; }
-    void setDefaultTimeout(std::chrono::milliseconds timeout) { m_defaultTimeout = timeout; }
+    void setDefaultIterations(int iterations) {
+        m_defaultIterations = iterations;
+    }
+    void setDefaultTimeout(std::chrono::milliseconds timeout) {
+        m_defaultTimeout = timeout;
+    }
     void setWarmupIterations(int warmup) { m_warmupIterations = warmup; }
-    
+
     // Reporting
     QString generateReport() const;
     QString generateCsvReport() const;
@@ -72,7 +77,8 @@ public:
 
 signals:
     void testStarted(const QString& testName);
-    void testCompleted(const QString& testName, const BenchmarkTestResult& result);
+    void testCompleted(const QString& testName,
+                       const BenchmarkTestResult& result);
     void suiteCompleted(const QList<BenchmarkTestResult>& results);
     void progressUpdated(int current, int total);
 
@@ -85,7 +91,7 @@ private:
     QString m_suiteName;
     QList<BenchmarkTestCase> m_testCases;
     QList<BenchmarkTestResult> m_results;
-    
+
     int m_defaultIterations{1000};
     std::chrono::milliseconds m_defaultTimeout{5000};
     int m_warmupIterations{100};
@@ -95,25 +101,25 @@ private:
 class FluentComponentBenchmark {
 public:
     // Widget creation benchmarks
-    static BenchmarkTestCase createWidgetCreationTest(const QString& componentName,
-                                                      std::function<QWidget*()> factory);
-    
+    static BenchmarkTestCase createWidgetCreationTest(
+        const QString& componentName, std::function<QWidget*()> factory);
+
     // Rendering benchmarks
     static BenchmarkTestCase createRenderingTest(const QString& componentName,
                                                  QWidget* widget);
-    
+
     // Animation benchmarks
-    static BenchmarkTestCase createAnimationTest(const QString& componentName,
-                                                 std::function<void()> animationTrigger);
-    
+    static BenchmarkTestCase createAnimationTest(
+        const QString& componentName, std::function<void()> animationTrigger);
+
     // Memory usage benchmarks
     static BenchmarkTestCase createMemoryTest(const QString& componentName,
                                               std::function<void()> operation);
-    
+
     // Event handling benchmarks
-    static BenchmarkTestCase createEventTest(const QString& componentName,
-                                             QWidget* widget,
-                                             std::function<void()> eventTrigger);
+    static BenchmarkTestCase createEventTest(
+        const QString& componentName, QWidget* widget,
+        std::function<void()> eventTrigger);
 };
 
 // Global benchmark registry
@@ -122,28 +128,30 @@ class FluentBenchmarkRegistry : public QObject {
 
 public:
     static FluentBenchmarkRegistry& instance();
-    
+
     // Suite management
     void registerSuite(std::shared_ptr<FluentBenchmarkSuite> suite);
     void unregisterSuite(const QString& suiteName);
-    std::shared_ptr<FluentBenchmarkSuite> getSuite(const QString& suiteName) const;
+    std::shared_ptr<FluentBenchmarkSuite> getSuite(
+        const QString& suiteName) const;
     QStringList getSuiteNames() const;
-    
+
     // Global execution
     void runAllSuites();
     void runSuite(const QString& suiteName);
     void runSuitesMatching(const QString& pattern);
-    
+
     // Global reporting
     QString generateGlobalReport() const;
     void saveGlobalReport(const QString& filename) const;
-    
+
     // Built-in benchmark suites
     void registerBuiltInSuites();
 
 signals:
     void suiteStarted(const QString& suiteName);
-    void suiteCompleted(const QString& suiteName, const QList<BenchmarkTestResult>& results);
+    void suiteCompleted(const QString& suiteName,
+                        const QList<BenchmarkTestResult>& results);
     void allSuitesCompleted();
 
 private:
@@ -158,8 +166,9 @@ private:
 };
 
 // Convenience macros for benchmark creation
-#define FLUENT_BENCHMARK_SUITE(suiteName) \
-    auto suite = std::make_shared<FluentQt::Core::FluentBenchmarkSuite>(suiteName); \
+#define FLUENT_BENCHMARK_SUITE(suiteName)                                  \
+    auto suite =                                                           \
+        std::make_shared<FluentQt::Core::FluentBenchmarkSuite>(suiteName); \
     FluentQt::Core::FluentBenchmarkRegistry::instance().registerSuite(suite)
 
 #define FLUENT_BENCHMARK_TEST(suite, testName, iterations, code) \
@@ -168,4 +177,4 @@ private:
 #define FLUENT_BENCHMARK_SIMPLE(suite, testName, code) \
     suite->addTestCase(testName, [=]() { code; })
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

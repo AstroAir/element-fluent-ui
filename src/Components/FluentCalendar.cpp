@@ -3,48 +3,48 @@
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
+#include <QGraphicsDropShadowEffect>
+#include <QKeyEvent>
+#include <QLocale>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QWheelEvent>
-#include <QApplication>
-#include <QLocale>
+#include <QScreen>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QGraphicsDropShadowEffect>
-#include <QScreen>
+#include <QWheelEvent>
 
 namespace FluentQt::Components {
 
-FluentCalendar::FluentCalendar(QWidget* parent) 
-    : Core::FluentComponent(parent)
-    , m_selectedDate(QDate::currentDate())
-    , m_currentMonth(QDate::currentDate().month())
-    , m_currentYear(QDate::currentDate().year()) {
-    
+FluentCalendar::FluentCalendar(QWidget* parent)
+    : Core::FluentComponent(parent),
+      m_selectedDate(QDate::currentDate()),
+      m_currentMonth(QDate::currentDate().month()),
+      m_currentYear(QDate::currentDate().year()) {
     setupHeader();
     setupCalendarGrid();
     setupNavigation();
-    
+
     setFocusPolicy(Qt::StrongFocus);
     setMinimumSize(300, 250);
-    
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, &FluentCalendar::updateCalendarView);
-    
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this,
+            &FluentCalendar::updateCalendarView);
+
     updateCalendarView();
 }
 
 void FluentCalendar::setSelectedDate(const QDate& date) {
     if (date.isValid() && isDateSelectable(date) && m_selectedDate != date) {
         m_selectedDate = date;
-        
+
         if (m_selectionMode == FluentCalendarSelectionMode::SingleSelection) {
             m_selectedDates.clear();
             m_selectedDates.append(date);
         }
-        
+
         update();
         emit selectedDateChanged(date);
         emit selectedDatesChanged(m_selectedDates);
@@ -58,24 +58,25 @@ void FluentCalendar::setSelectedDates(const QList<QDate>& dates) {
             validDates.append(date);
         }
     }
-    
+
     if (validDates != m_selectedDates) {
         m_selectedDates = validDates;
-        
+
         if (!validDates.isEmpty()) {
             m_selectedDate = validDates.first();
             emit selectedDateChanged(m_selectedDate);
         }
-        
+
         update();
         emit selectedDatesChanged(m_selectedDates);
     }
 }
 
 void FluentCalendar::setSelectedRange(const FluentDateRange& range) {
-    if (range.isValid() && m_selectedRange.start != range.start && m_selectedRange.end != range.end) {
+    if (range.isValid() && m_selectedRange.start != range.start &&
+        m_selectedRange.end != range.end) {
         m_selectedRange = range;
-        
+
         // Update selected dates list
         m_selectedDates.clear();
         QDate current = range.start;
@@ -85,12 +86,12 @@ void FluentCalendar::setSelectedRange(const FluentDateRange& range) {
             }
             current = current.addDays(1);
         }
-        
+
         if (!m_selectedDates.isEmpty()) {
             m_selectedDate = m_selectedDates.first();
             emit selectedDateChanged(m_selectedDate);
         }
-        
+
         update();
         emit selectedRangeChanged(range);
         emit selectedDatesChanged(m_selectedDates);
@@ -100,7 +101,7 @@ void FluentCalendar::setSelectedRange(const FluentDateRange& range) {
 void FluentCalendar::setSelectionMode(FluentCalendarSelectionMode mode) {
     if (m_selectionMode != mode) {
         m_selectionMode = mode;
-        
+
         // Clear current selection if mode changed
         clearSelection();
     }
@@ -110,30 +111,30 @@ void FluentCalendar::setViewMode(FluentCalendarViewMode mode) {
     if (m_viewMode != mode) {
         FluentCalendarViewMode oldMode = m_viewMode;
         m_viewMode = mode;
-        
+
         if (isAnimated()) {
             animateViewChange(oldMode, mode);
         } else {
             update();
         }
-        
+
         emit viewModeChanged(mode);
     }
 }
 
 void FluentCalendar::setCurrentPage(int year, int month) {
     bool changed = false;
-    
+
     if (m_currentYear != year) {
         m_currentYear = year;
         changed = true;
     }
-    
+
     if (m_currentMonth != month) {
         m_currentMonth = month;
         changed = true;
     }
-    
+
     if (changed) {
         updateCalendarView();
         emit currentPageChanged(year, month);
@@ -187,7 +188,7 @@ void FluentCalendar::clearSelection() {
         m_selectedDate = QDate();
         m_selectedDates.clear();
         m_selectedRange = FluentDateRange();
-        
+
         update();
         emit selectedDatesChanged(m_selectedDates);
         emit selectedRangeChanged(m_selectedRange);
@@ -197,9 +198,9 @@ void FluentCalendar::clearSelection() {
 void FluentCalendar::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    
+
     const QRect calendarRect = m_calendarWidget->geometry();
-    
+
     switch (m_viewMode) {
         case FluentCalendarViewMode::Month:
             paintMonthView(painter, calendarRect);
@@ -211,7 +212,7 @@ void FluentCalendar::paintEvent(QPaintEvent* event) {
             paintDecadeView(painter, calendarRect);
             break;
     }
-    
+
     Core::FluentComponent::paintEvent(event);
 }
 
@@ -221,40 +222,40 @@ void FluentCalendar::mousePressEvent(QMouseEvent* event) {
         if (clickedDate.isValid() && isDateSelectable(clickedDate)) {
             m_selecting = true;
             m_selectionStart = clickedDate;
-            
+
             updateSelection(clickedDate);
             emit dateClicked(clickedDate);
         }
     }
-    
+
     Core::FluentComponent::mousePressEvent(event);
 }
 
 void FluentCalendar::mouseMoveEvent(QMouseEvent* event) {
-    if (m_selecting && m_selectionMode == FluentCalendarSelectionMode::RangeSelection) {
+    if (m_selecting &&
+        m_selectionMode == FluentCalendarSelectionMode::RangeSelection) {
         QDate hoverDate = getDateFromPos(event->pos());
         if (hoverDate.isValid() && isDateSelectable(hoverDate)) {
             updateRangeSelection(hoverDate);
         }
     }
-    
+
     Core::FluentComponent::mouseMoveEvent(event);
 }
 
 void FluentCalendar::mouseReleaseEvent(QMouseEvent* event) {
     if (m_selecting) {
         m_selecting = false;
-        
-        if (m_selectionMode == FluentCalendarSelectionMode::RangeSelection && 
+
+        if (m_selectionMode == FluentCalendarSelectionMode::RangeSelection &&
             m_selectionStart.isValid() && m_selectionEnd.isValid()) {
-            
             FluentDateRange range;
             range.start = qMin(m_selectionStart, m_selectionEnd);
             range.end = qMax(m_selectionStart, m_selectionEnd);
             setSelectedRange(range);
         }
     }
-    
+
     Core::FluentComponent::mouseReleaseEvent(event);
 }
 
@@ -262,7 +263,7 @@ void FluentCalendar::mouseDoubleClickEvent(QMouseEvent* event) {
     QDate clickedDate = getDateFromPos(event->pos());
     if (clickedDate.isValid()) {
         emit dateDoubleClicked(clickedDate);
-        
+
         // Switch view mode on double-click
         if (m_viewMode == FluentCalendarViewMode::Year) {
             setViewMode(FluentCalendarViewMode::Month);
@@ -270,7 +271,7 @@ void FluentCalendar::mouseDoubleClickEvent(QMouseEvent* event) {
             setViewMode(FluentCalendarViewMode::Year);
         }
     }
-    
+
     Core::FluentComponent::mouseDoubleClickEvent(event);
 }
 
@@ -342,58 +343,62 @@ void FluentCalendar::setupHeader() {
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(8, 8, 8, 8);
     m_layout->setSpacing(8);
-    
+
     m_headerLayout = new QHBoxLayout();
-    
+
     m_prevButton = new FluentButton("‹", this);
     m_prevButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_prevButton->setFixedSize(32, 32);
-    connect(m_prevButton, &FluentButton::clicked, this, &FluentCalendar::showPreviousMonth);
-    
+    connect(m_prevButton, &FluentButton::clicked, this,
+            &FluentCalendar::showPreviousMonth);
+
     m_titleLabel = new QLabel(this);
     m_titleLabel->setAlignment(Qt::AlignCenter);
     m_titleLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    
+
     // Make title clickable to switch view modes
     m_titleLabel->setCursor(Qt::PointingHandCursor);
     m_titleLabel->installEventFilter(this);
-    
+
     m_nextButton = new FluentButton("›", this);
     m_nextButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_nextButton->setFixedSize(32, 32);
-    connect(m_nextButton, &FluentButton::clicked, this, &FluentCalendar::showNextMonth);
-    
+    connect(m_nextButton, &FluentButton::clicked, this,
+            &FluentCalendar::showNextMonth);
+
     if (m_showToday) {
         m_todayButton = new FluentButton("Today", this);
         m_todayButton->setButtonStyle(FluentButtonStyle::Primary);
-        connect(m_todayButton, &FluentButton::clicked, this, &FluentCalendar::goToToday);
+        connect(m_todayButton, &FluentButton::clicked, this,
+                &FluentCalendar::goToToday);
     }
-    
+
     m_headerLayout->addWidget(m_prevButton);
     m_headerLayout->addWidget(m_titleLabel);
     m_headerLayout->addWidget(m_nextButton);
-    
+
     if (m_todayButton) {
         m_headerLayout->addWidget(m_todayButton);
     }
-    
+
     m_layout->addLayout(m_headerLayout);
 }
 
 void FluentCalendar::setupCalendarGrid() {
     m_calendarWidget = new QWidget(this);
-    m_calendarWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_calendarWidget->setSizePolicy(QSizePolicy::Expanding,
+                                    QSizePolicy::Expanding);
     m_layout->addWidget(m_calendarWidget);
 }
 
 void FluentCalendar::paintMonthView(QPainter& painter, const QRect& rect) {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     // Calculate cell dimensions
     int cellWidth = rect.width() / 7;
-    int cellHeight = (rect.height() - 30) / 7; // Reserve space for day headers
-    
+    int cellHeight = (rect.height() - 30) / 7;  // Reserve space for day headers
+
     // Paint day headers
     QStringList dayNames;
     QLocale locale;
@@ -401,45 +406,48 @@ void FluentCalendar::paintMonthView(QPainter& painter, const QRect& rect) {
         int dayOfWeek = (static_cast<int>(m_firstDayOfWeek) + i - 1) % 7 + 1;
         dayNames << locale.dayName(dayOfWeek, QLocale::ShortFormat);
     }
-    
-    painter.setFont(QFont(font().family(), font().pointSize() - 1, QFont::Bold));
+
+    painter.setFont(
+        QFont(font().family(), font().pointSize() - 1, QFont::Bold));
     painter.setPen(palette.neutralSecondary);
-    
+
     for (int i = 0; i < 7; ++i) {
         QRect headerRect(rect.x() + i * cellWidth, rect.y(), cellWidth, 30);
         painter.drawText(headerRect, Qt::AlignCenter, dayNames[i]);
     }
-    
+
     // Calculate first day of month
     QDate firstDay(m_currentYear, m_currentMonth, 1);
-    int startDayOfWeek = (firstDay.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) % 7;
-    
+    int startDayOfWeek =
+        (firstDay.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) % 7;
+
     // Paint calendar cells
     QDate currentDate = firstDay.addDays(-startDayOfWeek);
-    
+
     for (int row = 0; row < 6; ++row) {
         for (int col = 0; col < 7; ++col) {
             QRect cellRect(rect.x() + col * cellWidth,
-                          rect.y() + 30 + row * cellHeight,
-                          cellWidth, cellHeight);
-            
+                           rect.y() + 30 + row * cellHeight, cellWidth,
+                           cellHeight);
+
             paintDateCell(painter, cellRect, currentDate);
             currentDate = currentDate.addDays(1);
         }
     }
 }
 
-void FluentCalendar::paintDateCell(QPainter& painter, const QRect& rect, const QDate& date) {
+void FluentCalendar::paintDateCell(QPainter& painter, const QRect& rect,
+                                   const QDate& date) {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     bool isCurrentMonth = (date.month() == m_currentMonth);
     bool isToday = (date == QDate::currentDate());
     bool isSelected = m_selectedDates.contains(date);
     bool isInRange = m_selectedRange.contains(date);
     bool isHoliday = m_holidays.contains(date);
     bool isSpecial = m_specialDates.contains(date);
-    
+
     // Background
     QColor backgroundColor = Qt::transparent;
     if (isSelected || isInRange) {
@@ -449,13 +457,13 @@ void FluentCalendar::paintDateCell(QPainter& painter, const QRect& rect, const Q
     } else if (isSpecial) {
         backgroundColor = palette.infoLight;
     }
-    
+
     if (backgroundColor != Qt::transparent) {
         QPainterPath path;
         path.addRoundedRect(rect.adjusted(2, 2, -2, -2), 4, 4);
         painter.fillPath(path, backgroundColor);
     }
-    
+
     // Text
     QColor textColor;
     if (isSelected || isInRange) {
@@ -469,23 +477,27 @@ void FluentCalendar::paintDateCell(QPainter& painter, const QRect& rect, const Q
     } else {
         textColor = palette.neutralPrimary;
     }
-    
+
     painter.setPen(textColor);
-    painter.setFont(isToday ? QFont(font().family(), font().pointSize(), QFont::Bold) : font());
+    painter.setFont(
+        isToday ? QFont(font().family(), font().pointSize(), QFont::Bold)
+                : font());
     painter.drawText(rect, Qt::AlignCenter, QString::number(date.day()));
-    
+
     // Special indicators
     if (isHoliday || isSpecial) {
         QRect indicatorRect(rect.right() - 8, rect.top() + 2, 4, 4);
-        painter.fillRect(indicatorRect, isHoliday ? palette.error : palette.info);
+        painter.fillRect(indicatorRect,
+                         isHoliday ? palette.error : palette.info);
     }
-    
+
     // Week numbers
     if (m_showWeekNumbers && rect.x() == m_calendarWidget->geometry().x()) {
         painter.setPen(palette.neutralTertiary);
         painter.setFont(QFont(font().family(), font().pointSize() - 2));
         QRect weekRect(rect.x() - 20, rect.y(), 18, rect.height());
-        painter.drawText(weekRect, Qt::AlignCenter, QString::number(date.weekNumber()));
+        painter.drawText(weekRect, Qt::AlignCenter,
+                         QString::number(date.weekNumber()));
     }
 }
 
@@ -494,30 +506,29 @@ QDate FluentCalendar::getDateFromPos(const QPoint& pos) const {
     if (!calendarRect.contains(pos)) {
         return QDate();
     }
-    
+
     if (m_viewMode != FluentCalendarViewMode::Month) {
-        return QDate(); // Only handle month view for now
+        return QDate();  // Only handle month view for now
     }
-    
+
     int cellWidth = calendarRect.width() / 7;
     int cellHeight = (calendarRect.height() - 30) / 7;
-    
+
     int col = (pos.x() - calendarRect.x()) / cellWidth;
     int row = (pos.y() - calendarRect.y() - 30) / cellHeight;
-    
+
     if (col >= 0 && col < 7 && row >= 0 && row < 6) {
         QDate firstDay(m_currentYear, m_currentMonth, 1);
-        int startDayOfWeek = (firstDay.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) % 7;
+        int startDayOfWeek =
+            (firstDay.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) % 7;
         return firstDay.addDays(-startDayOfWeek + row * 7 + col);
     }
-    
+
     return QDate();
 }
 
 bool FluentCalendar::isDateSelectable(const QDate& date) const {
-    return date.isValid() && 
-           date >= m_minimumDate && 
-           date <= m_maximumDate;
+    return date.isValid() && date >= m_minimumDate && date <= m_maximumDate;
 }
 
 void FluentCalendar::updateSelection(const QDate& date) {
@@ -533,7 +544,9 @@ void FluentCalendar::updateSelection(const QDate& date) {
             break;
         case FluentCalendarSelectionMode::WeekSelection: {
             // Select entire week
-            QDate weekStart = date.addDays(-(date.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) % 7);
+            QDate weekStart = date.addDays(
+                -(date.dayOfWeek() - static_cast<int>(m_firstDayOfWeek) + 7) %
+                7);
             QList<QDate> weekDates;
             for (int i = 0; i < 7; ++i) {
                 weekDates.append(weekStart.addDays(i));
@@ -562,8 +575,8 @@ void FluentCalendar::updateCalendarView() {
     QString title;
     switch (m_viewMode) {
         case FluentCalendarViewMode::Month:
-            title = QLocale().monthName(m_currentMonth, QLocale::LongFormat) + 
-                   " " + QString::number(m_currentYear);
+            title = QLocale().monthName(m_currentMonth, QLocale::LongFormat) +
+                    " " + QString::number(m_currentYear);
             break;
         case FluentCalendarViewMode::Year:
             title = QString::number(m_currentYear);
@@ -575,23 +588,23 @@ void FluentCalendar::updateCalendarView() {
         }
     }
     m_titleLabel->setText(title);
-    
+
     update();
 }
 
-void FluentCalendar::animateViewChange(FluentCalendarViewMode from, FluentCalendarViewMode to) {
+void FluentCalendar::animateViewChange(FluentCalendarViewMode from,
+                                       FluentCalendarViewMode to) {
     Q_UNUSED(from)
     Q_UNUSED(to)
-    
+
     // Create smooth transition animation
     m_viewAnimation = std::make_unique<QPropertyAnimation>(this, "geometry");
     m_viewAnimation->setDuration(300);
     m_viewAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    
-    connect(m_viewAnimation.get(), &QPropertyAnimation::finished, [this]() {
-        update();
-    });
-    
+
+    connect(m_viewAnimation.get(), &QPropertyAnimation::finished,
+            [this]() { update(); });
+
     m_viewAnimation->start();
 }
 
@@ -600,18 +613,21 @@ void FluentCalendar::setupNavigation() {
     if (!m_prevButton) {
         m_prevButton = new FluentButton("<", this);
         m_prevButton->setFixedSize(32, 32);
-        connect(m_prevButton, &FluentButton::clicked, this, &FluentCalendar::showPreviousMonth);
+        connect(m_prevButton, &FluentButton::clicked, this,
+                &FluentCalendar::showPreviousMonth);
     }
 
     if (!m_nextButton) {
         m_nextButton = new FluentButton(">", this);
         m_nextButton->setFixedSize(32, 32);
-        connect(m_nextButton, &FluentButton::clicked, this, &FluentCalendar::showNextMonth);
+        connect(m_nextButton, &FluentButton::clicked, this,
+                &FluentCalendar::showNextMonth);
     }
 
     if (!m_todayButton) {
         m_todayButton = new FluentButton("Today", this);
-        connect(m_todayButton, &FluentButton::clicked, this, &FluentCalendar::goToToday);
+        connect(m_todayButton, &FluentButton::clicked, this,
+                &FluentCalendar::goToToday);
     }
 }
 
@@ -630,8 +646,8 @@ void FluentCalendar::paintYearView(QPainter& painter, const QRect& rect) {
         int row = (month - 1) / 4;
         int col = (month - 1) % 4;
 
-        QRect monthRect(rect.x() + col * monthWidth, rect.y() + row * monthHeight,
-                       monthWidth, monthHeight);
+        QRect monthRect(rect.x() + col * monthWidth,
+                        rect.y() + row * monthHeight, monthWidth, monthHeight);
 
         QString monthName = QLocale().monthName(month, QLocale::LongFormat);
         painter.drawText(monthRect, Qt::AlignCenter, monthName);
@@ -656,14 +672,15 @@ void FluentCalendar::paintDecadeView(QPainter& painter, const QRect& rect) {
         int col = i % 4;
 
         QRect yearRect(rect.x() + col * yearWidth, rect.y() + row * yearHeight,
-                      yearWidth, yearHeight);
+                       yearWidth, yearHeight);
 
         painter.drawText(yearRect, Qt::AlignCenter, QString::number(year));
     }
 }
 
 void FluentCalendar::updateMultiSelection(const QDate& date) {
-    if (!date.isValid() || !isDateSelectable(date)) return;
+    if (!date.isValid() || !isDateSelectable(date))
+        return;
 
     if (m_selectedDates.contains(date)) {
         m_selectedDates.removeOne(date);
@@ -676,7 +693,8 @@ void FluentCalendar::updateMultiSelection(const QDate& date) {
 }
 
 void FluentCalendar::updateRangeSelection(const QDate& date) {
-    if (!date.isValid() || !isDateSelectable(date)) return;
+    if (!date.isValid() || !isDateSelectable(date))
+        return;
 
     if (m_selectedRange.start.isValid()) {
         if (date < m_selectedRange.start) {
@@ -702,9 +720,7 @@ void FluentCalendar::updateRangeSelection(const QDate& date) {
     }
 }
 
-void FluentCalendar::onTodayClicked() {
-    goToToday();
-}
+void FluentCalendar::onTodayClicked() { goToToday(); }
 
 void FluentCalendar::onNavigationClicked() {
     // Handle navigation button clicks - this is a generic handler
@@ -763,10 +779,9 @@ void FluentCalendar::setMinimumDate(const QDate& date) {
 
 // FluentDatePicker implementation
 FluentDatePicker::FluentDatePicker(QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_date(QDate::currentDate())
-    , m_calendar(new FluentCalendar(this))
-{
+    : Core::FluentComponent(parent),
+      m_date(QDate::currentDate()),
+      m_calendar(new FluentCalendar(this)) {
     setFocusPolicy(Qt::StrongFocus);
     setMinimumSize(200, 32);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -774,12 +789,11 @@ FluentDatePicker::FluentDatePicker(QWidget* parent)
     setupCalendarPopup();
     updateDisplayText();
 
-    connect(m_calendar, &FluentCalendar::selectedDateChanged, this, &FluentDatePicker::onDateSelected);
+    connect(m_calendar, &FluentCalendar::selectedDateChanged, this,
+            &FluentDatePicker::onDateSelected);
 }
 
-QDate FluentDatePicker::date() const {
-    return m_date;
-}
+QDate FluentDatePicker::date() const { return m_date; }
 
 void FluentDatePicker::setDate(const QDate& date) {
     if (m_date != date && date.isValid()) {
@@ -791,9 +805,7 @@ void FluentDatePicker::setDate(const QDate& date) {
     }
 }
 
-QString FluentDatePicker::placeholderText() const {
-    return m_placeholderText;
-}
+QString FluentDatePicker::placeholderText() const { return m_placeholderText; }
 
 void FluentDatePicker::setPlaceholderText(const QString& text) {
     if (m_placeholderText != text) {
@@ -803,9 +815,7 @@ void FluentDatePicker::setPlaceholderText(const QString& text) {
     }
 }
 
-QString FluentDatePicker::dateFormat() const {
-    return m_dateFormat;
-}
+QString FluentDatePicker::dateFormat() const { return m_dateFormat; }
 
 void FluentDatePicker::setDateFormat(const QString& format) {
     if (m_dateFormat != format) {
@@ -815,9 +825,7 @@ void FluentDatePicker::setDateFormat(const QString& format) {
     }
 }
 
-bool FluentDatePicker::calendarPopup() const {
-    return m_calendarPopup;
-}
+bool FluentDatePicker::calendarPopup() const { return m_calendarPopup; }
 
 void FluentDatePicker::setCalendarPopup(bool popup) {
     if (m_calendarPopup != popup) {
@@ -897,7 +905,8 @@ void FluentDatePicker::paintEvent(QPaintEvent* /*event*/) {
     painter.drawRoundedRect(calendarRect, 2, 2);
 
     // Calendar header
-    QRect headerRect = calendarRect.adjusted(0, 0, 0, -calendarRect.height() * 0.7);
+    QRect headerRect =
+        calendarRect.adjusted(0, 0, 0, -calendarRect.height() * 0.7);
     painter.fillRect(headerRect, iconColor);
 
     // Calendar grid lines
@@ -926,7 +935,8 @@ void FluentDatePicker::mousePressEvent(QMouseEvent* event) {
 }
 
 void FluentDatePicker::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+    if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return ||
+        event->key() == Qt::Key_Enter) {
         if (m_calendarPopup) {
             if (m_showingCalendar) {
                 hideCalendar();
@@ -954,7 +964,8 @@ void FluentDatePicker::focusOutEvent(QFocusEvent* event) {
     Core::FluentComponent::focusOutEvent(event);
 
     // Hide calendar when focus is lost (unless focus went to the calendar)
-    if (m_showingCalendar && m_popup && !m_popup->isAncestorOf(QApplication::focusWidget())) {
+    if (m_showingCalendar && m_popup &&
+        !m_popup->isAncestorOf(QApplication::focusWidget())) {
         hideCalendar();
     }
 
@@ -962,7 +973,8 @@ void FluentDatePicker::focusOutEvent(QFocusEvent* event) {
 }
 
 void FluentDatePicker::showCalendar() {
-    if (!m_calendarPopup || m_showingCalendar) return;
+    if (!m_calendarPopup || m_showingCalendar)
+        return;
 
     m_showingCalendar = true;
 
@@ -979,7 +991,8 @@ void FluentDatePicker::showCalendar() {
 }
 
 void FluentDatePicker::hideCalendar() {
-    if (!m_showingCalendar) return;
+    if (!m_showingCalendar)
+        return;
 
     m_showingCalendar = false;
 
@@ -1026,7 +1039,8 @@ void FluentDatePicker::updateDisplayText() {
 }
 
 void FluentDatePicker::positionCalendar() {
-    if (!m_popup) return;
+    if (!m_popup)
+        return;
 
     QPoint globalPos = mapToGlobal(QPoint(0, height()));
     QSize popupSize = m_popup->size();
@@ -1051,4 +1065,4 @@ void FluentDatePicker::positionCalendar() {
     m_popup->move(globalPos);
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

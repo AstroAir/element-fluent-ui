@@ -1,41 +1,36 @@
 // include/FluentQt/Accessibility/FluentAccessibilityCompliance.h
 #pragma once
 
-#include <QObject>
-#include <QWidget>
 #include <QColor>
 #include <QFont>
+#include <QHash>
+#include <QList>
+#include <QMutex>
+#include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QTimer>
-#include <QMutex>
-#include <QHash>
-#include <QList>
+#include <QWidget>
 #include <memory>
 
 namespace FluentQt::Accessibility {
 
 // WCAG 2.1 compliance levels
 enum class FluentWCAGLevel {
-    A,      // Level A (minimum)
-    AA,     // Level AA (standard)
-    AAA     // Level AAA (enhanced)
+    A,   // Level A (minimum)
+    AA,  // Level AA (standard)
+    AAA  // Level AAA (enhanced)
 };
 
 // Accessibility audit result
-enum class FluentAccessibilityResult {
-    Pass,
-    Fail,
-    Warning,
-    NotApplicable
-};
+enum class FluentAccessibilityResult { Pass, Fail, Warning, NotApplicable };
 
 // Color contrast requirements
 struct FluentContrastRequirement {
-    double minimumRatio{4.5};           // WCAG AA standard
-    double enhancedRatio{7.0};          // WCAG AAA standard
+    double minimumRatio{4.5};   // WCAG AA standard
+    double enhancedRatio{7.0};  // WCAG AAA standard
     bool requiresEnhanced{false};
-    QString context;                    // "normal text", "large text", "UI component"
+    QString context;  // "normal text", "large text", "UI component"
 };
 
 // Accessibility audit finding
@@ -47,7 +42,7 @@ struct FluentAccessibilityFinding {
     QString description;
     QString recommendation;
     FluentWCAGLevel level;
-    int severity{1};                    // 1-5 scale
+    int severity{1};  // 1-5 scale
     QStringList affectedElements;
 };
 
@@ -60,23 +55,23 @@ struct FluentAccessibilityConfig {
     bool enableScreenReaderSupport{true};
     bool enableHighContrastMode{false};
     bool enableReducedMotion{false};
-    double minimumTouchTargetSize{44.0}; // 44x44 pixels minimum
-    int focusIndicatorWidth{2};          // Focus ring width in pixels
-    QColor focusIndicatorColor{0, 120, 215}; // Default focus color
+    double minimumTouchTargetSize{44.0};      // 44x44 pixels minimum
+    int focusIndicatorWidth{2};               // Focus ring width in pixels
+    QColor focusIndicatorColor{0, 120, 215};  // Default focus color
 };
 
 // Component accessibility metadata
 struct FluentComponentAccessibility {
-    QString role;                       // ARIA role
-    QString label;                      // Accessible name
-    QString description;                // Accessible description
-    QStringList states;                 // ARIA states (expanded, checked, etc.)
-    QStringList properties;             // ARIA properties (readonly, required, etc.)
-    QString keyboardShortcut;           // Keyboard shortcut
+    QString role;              // ARIA role
+    QString label;             // Accessible name
+    QString description;       // Accessible description
+    QStringList states;        // ARIA states (expanded, checked, etc.)
+    QStringList properties;    // ARIA properties (readonly, required, etc.)
+    QString keyboardShortcut;  // Keyboard shortcut
     bool isFocusable{true};
     bool isLandmark{false};
     int tabIndex{0};
-    QString liveRegion;                 // ARIA live region type
+    QString liveRegion;  // ARIA live region type
 };
 
 // Accessibility compliance manager
@@ -91,9 +86,11 @@ public:
     FluentAccessibilityConfig getConfiguration() const;
 
     // Component registration and validation
-    void registerComponent(QWidget* component, const FluentComponentAccessibility& metadata);
+    void registerComponent(QWidget* component,
+                           const FluentComponentAccessibility& metadata);
     void unregisterComponent(QWidget* component);
-    void updateComponentMetadata(QWidget* component, const FluentComponentAccessibility& metadata);
+    void updateComponentMetadata(QWidget* component,
+                                 const FluentComponentAccessibility& metadata);
 
     // Accessibility auditing
     QList<FluentAccessibilityFinding> auditComponent(QWidget* component);
@@ -103,11 +100,14 @@ public:
     QList<FluentAccessibilityFinding> auditScreenReaderSupport();
 
     // Color contrast validation
-    double calculateContrastRatio(const QColor& foreground, const QColor& background);
-    bool validateContrastRatio(const QColor& foreground, const QColor& background,
-                              const FluentContrastRequirement& requirement);
-    QColor suggestAccessibleColor(const QColor& original, const QColor& background,
-                                 const FluentContrastRequirement& requirement);
+    double calculateContrastRatio(const QColor& foreground,
+                                  const QColor& background);
+    bool validateContrastRatio(const QColor& foreground,
+                               const QColor& background,
+                               const FluentContrastRequirement& requirement);
+    QColor suggestAccessibleColor(const QColor& original,
+                                  const QColor& background,
+                                  const FluentContrastRequirement& requirement);
 
     // Automatic accessibility fixes
     void applyAutomaticFixes(QWidget* component);
@@ -120,8 +120,10 @@ public:
     void setAriaRole(QWidget* component, const QString& role);
     void setAriaLabel(QWidget* component, const QString& label);
     void setAriaDescription(QWidget* component, const QString& description);
-    void setAriaState(QWidget* component, const QString& state, const QString& value);
-    void setAriaProperty(QWidget* component, const QString& property, const QString& value);
+    void setAriaState(QWidget* component, const QString& state,
+                      const QString& value);
+    void setAriaProperty(QWidget* component, const QString& property,
+                         const QString& value);
 
     // Keyboard navigation
     void enableKeyboardNavigation(QWidget* component);
@@ -129,7 +131,8 @@ public:
     void setKeyboardShortcut(QWidget* component, const QString& shortcut);
 
     // Screen reader support
-    void announceToScreenReader(const QString& message, const QString& priority = "polite");
+    void announceToScreenReader(const QString& message,
+                                const QString& priority = "polite");
     void setLiveRegion(QWidget* component, const QString& type);
 
     // High contrast mode
@@ -151,7 +154,8 @@ public:
     QSize getMinimumTouchTargetSize() const;
 
     // Validation and reporting
-    bool validateComponent(QWidget* component, FluentWCAGLevel level = FluentWCAGLevel::AA);
+    bool validateComponent(QWidget* component,
+                           FluentWCAGLevel level = FluentWCAGLevel::AA);
     QString generateAccessibilityReport();
     void exportAuditResults(const QString& filePath);
 
@@ -182,7 +186,7 @@ private:
     // Color utilities
     double getLuminance(const QColor& color);
     QColor adjustColorForContrast(const QColor& color, const QColor& background,
-                                 double targetRatio, bool lighten);
+                                  double targetRatio, bool lighten);
 
     // System integration
     void detectSystemAccessibilitySettings();
@@ -223,13 +227,17 @@ class FluentAccessibilityUtils {
 public:
     // Color contrast calculations
     static double calculateLuminance(const QColor& color);
-    static double calculateContrastRatio(const QColor& color1, const QColor& color2);
-    static bool meetsWCAGContrast(const QColor& foreground, const QColor& background,
-                                 FluentWCAGLevel level, bool isLargeText = false);
+    static double calculateContrastRatio(const QColor& color1,
+                                         const QColor& color2);
+    static bool meetsWCAGContrast(const QColor& foreground,
+                                  const QColor& background,
+                                  FluentWCAGLevel level,
+                                  bool isLargeText = false);
 
     // Text size classification
     static bool isLargeText(const QFont& font);
-    static bool isLargeText(int pixelSize, QFont::Weight weight = QFont::Normal);
+    static bool isLargeText(int pixelSize,
+                            QFont::Weight weight = QFont::Normal);
 
     // ARIA utilities
     static QString generateAriaLabel(QWidget* widget);
@@ -243,7 +251,8 @@ public:
 
     // Touch target utilities
     static QSize getEffectiveTouchTargetSize(QWidget* widget);
-    static bool meetsTouchTargetRequirements(QWidget* widget, double minimumSize = 44.0);
+    static bool meetsTouchTargetRequirements(QWidget* widget,
+                                             double minimumSize = 44.0);
 
     // Screen reader utilities
     static QString getAccessibleText(QWidget* widget);
@@ -258,8 +267,9 @@ void initializeFluentAccessibility();
 #define FLUENT_SET_ACCESSIBLE_NAME(widget, name) \
     FluentAccessibilityComplianceManager::instance().setAriaLabel(widget, name)
 
-#define FLUENT_SET_ACCESSIBLE_DESCRIPTION(widget, desc) \
-    FluentAccessibilityComplianceManager::instance().setAriaDescription(widget, desc)
+#define FLUENT_SET_ACCESSIBLE_DESCRIPTION(widget, desc)                  \
+    FluentAccessibilityComplianceManager::instance().setAriaDescription( \
+        widget, desc)
 
 #define FLUENT_SET_ACCESSIBLE_ROLE(widget, role) \
     FluentAccessibilityComplianceManager::instance().setAriaRole(widget, role)
@@ -267,7 +277,8 @@ void initializeFluentAccessibility();
 #define FLUENT_VALIDATE_ACCESSIBILITY(widget) \
     FluentAccessibilityComplianceManager::instance().validateComponent(widget)
 
-#define FLUENT_ANNOUNCE_TO_SCREEN_READER(message) \
-    FluentAccessibilityComplianceManager::instance().announceToScreenReader(message)
+#define FLUENT_ANNOUNCE_TO_SCREEN_READER(message)                            \
+    FluentAccessibilityComplianceManager::instance().announceToScreenReader( \
+        message)
 
-} // namespace FluentQt::Accessibility
+}  // namespace FluentQt::Accessibility

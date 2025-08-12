@@ -1,42 +1,42 @@
 // examples/AdvancedAnimationShowcase.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
-#include <QComboBox>
-#include <QSpinBox>
-#include <QSlider>
-#include <QPushButton>
-#include <QCheckBox>
+#include <QMainWindow>
+#include <QParallelAnimationGroup>
 #include <QProgressBar>
-#include <QTimer>
+#include <QPropertyAnimation>
+#include <QPushButton>
 #include <QRandomGenerator>
 #include <QScrollArea>
+#include <QSequentialAnimationGroup>
+#include <QSlider>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QTextEdit>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
 #include <QTime>
+#include <QTimer>
+#include <QVBoxLayout>
 #include <chrono>
 
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
-#include "FluentQt/Components/FluentPanel.h"
 #include "FluentQt/Components/FluentCheckBox.h"
-#include "FluentQt/Styling/FluentTheme.h"
+#include "FluentQt/Components/FluentPanel.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt;
 using namespace std::chrono_literals;
 
 /**
  * @brief Comprehensive showcase of FluentAnimator capabilities
- * 
+ *
  * This example demonstrates:
  * - All 36 easing functions with visual comparisons
  * - All 28 animation types with interactive controls
@@ -95,13 +95,13 @@ private:
     QSplitter* m_mainSplitter{nullptr};
     QScrollArea* m_controlsArea{nullptr};
     QWidget* m_animationArea{nullptr};
-    
+
     // Control Panels
     QGroupBox* m_easingGroup{nullptr};
     QGroupBox* m_animationGroup{nullptr};
     QGroupBox* m_performanceGroup{nullptr};
     QGroupBox* m_microInteractionGroup{nullptr};
-    
+
     // Controls
     QComboBox* m_easingCombo{nullptr};
     QComboBox* m_animationTypeCombo{nullptr};
@@ -111,7 +111,7 @@ private:
     Components::FluentCheckBox* m_reverseCheck{nullptr};
     Components::FluentCheckBox* m_hardwareAccelCheck{nullptr};
     Components::FluentCheckBox* m_reducedMotionCheck{nullptr};
-    
+
     // Action Buttons
     Components::FluentButton* m_playButton{nullptr};
     Components::FluentButton* m_playAllButton{nullptr};
@@ -121,34 +121,34 @@ private:
     Components::FluentButton* m_resetButton{nullptr};
     Components::FluentButton* m_exportButton{nullptr};
     Components::FluentButton* m_performanceButton{nullptr};
-    
+
     // Performance Monitoring
     QLabel* m_fpsLabel{nullptr};
     QLabel* m_memoryLabel{nullptr};
     QLabel* m_animationCountLabel{nullptr};
     QProgressBar* m_performanceBar{nullptr};
     QTextEdit* m_logDisplay{nullptr};
-    
+
     // Animation Targets
     QList<QWidget*> m_animationTargets;
     QList<Components::FluentCard*> m_easingCards;
     Components::FluentCard* m_primaryTarget{nullptr};
-    
+
     // Animation System
     Animation::FluentAnimator* m_animator{nullptr};
     QTimer* m_performanceTimer{nullptr};
     QTimer* m_demoTimer{nullptr};
-    
+
     // Performance Tracking
     int m_activeAnimations{0};
     qint64 m_totalAnimations{0};
     QList<qreal> m_frameTimes;
-    
+
     // Configuration
     Animation::FluentAnimationConfig m_currentConfig;
     bool m_performanceMode{false};
     bool m_demoRunning{false};
-    
+
     // Easing and Animation Type Lists
     QStringList m_easingNames;
     QStringList m_animationTypeNames;
@@ -159,48 +159,49 @@ private:
 void AdvancedAnimationShowcase::setupUI() {
     setWindowTitle("FluentQt Advanced Animation Showcase");
     setMinimumSize(1200, 800);
-    
+
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-    
+
     // Create main splitter
     m_mainSplitter = new QSplitter(Qt::Horizontal, this);
     auto* mainLayout = new QHBoxLayout(m_centralWidget);
     mainLayout->addWidget(m_mainSplitter);
-    
+
     // Create controls area (left side)
     m_controlsArea = new QScrollArea(this);
     m_controlsArea->setWidgetResizable(true);
     m_controlsArea->setMinimumWidth(350);
     m_controlsArea->setMaximumWidth(400);
-    
+
     auto* controlsWidget = new QWidget();
     auto* controlsLayout = new QVBoxLayout(controlsWidget);
-    
+
     createEasingDemonstration();
     createAnimationControls();
     createPerformancePanel();
-    
+
     controlsLayout->addWidget(m_easingGroup);
     controlsLayout->addWidget(m_animationGroup);
     controlsLayout->addWidget(m_microInteractionGroup);
     controlsLayout->addWidget(m_performanceGroup);
     controlsLayout->addStretch();
-    
+
     m_controlsArea->setWidget(controlsWidget);
     m_mainSplitter->addWidget(m_controlsArea);
-    
+
     // Create animation area (right side)
     m_animationArea = new QWidget(this);
     m_animationArea->setMinimumWidth(600);
-    m_animationArea->setStyleSheet("QWidget { background-color: #f5f5f5; border-radius: 8px; }");
-    
+    m_animationArea->setStyleSheet(
+        "QWidget { background-color: #f5f5f5; border-radius: 8px; }");
+
     createAnimationTargets();
     m_mainSplitter->addWidget(m_animationArea);
-    
+
     // Set splitter proportions
     m_mainSplitter->setSizes({350, 850});
-    
+
     // Initialize animator
     m_animator = new Animation::FluentAnimator(this);
 }
@@ -208,54 +209,68 @@ void AdvancedAnimationShowcase::setupUI() {
 void AdvancedAnimationShowcase::createEasingDemonstration() {
     m_easingGroup = new QGroupBox("Easing Functions (36 Types)", this);
     auto* layout = new QVBoxLayout(m_easingGroup);
-    
+
     // Easing selection
     auto* easingLayout = new QHBoxLayout();
     easingLayout->addWidget(new QLabel("Easing:"));
-    
+
     m_easingCombo = new QComboBox(this);
     m_easingNames = {
-        "Linear", "EaseOut", "EaseIn", "EaseInOut",
-        "EaseOutQuad", "EaseInQuad", "EaseInOutQuad",
-        "EaseOutCubic", "EaseInCubic", "EaseInOutCubic",
-        "EaseOutQuart", "EaseInQuart", "EaseInOutQuart",
-        "EaseOutQuint", "EaseInQuint", "EaseInOutQuint",
-        "EaseOutSine", "EaseInSine", "EaseInOutSine",
-        "EaseOutExpo", "EaseInExpo", "EaseInOutExpo",
-        "EaseOutCirc", "EaseInCirc", "EaseInOutCirc",
-        "Bounce", "BounceOut", "BounceIn", "BounceInOut",
-        "Elastic", "ElasticOut", "ElasticIn", "ElasticInOut",
-        "Back", "BackOut", "BackIn", "BackInOut"
-    };
-    
-    m_easingTypes = {
-        Animation::FluentEasing::Linear, Animation::FluentEasing::EaseOut,
-        Animation::FluentEasing::EaseIn, Animation::FluentEasing::EaseInOut,
-        Animation::FluentEasing::EaseOutQuad, Animation::FluentEasing::EaseInQuad,
-        Animation::FluentEasing::EaseInOutQuad, Animation::FluentEasing::EaseOutCubic,
-        Animation::FluentEasing::EaseInCubic, Animation::FluentEasing::EaseInOutCubic,
-        Animation::FluentEasing::EaseOutQuart, Animation::FluentEasing::EaseInQuart,
-        Animation::FluentEasing::EaseInOutQuart, Animation::FluentEasing::EaseOutQuint,
-        Animation::FluentEasing::EaseInQuint, Animation::FluentEasing::EaseInOutQuint,
-        Animation::FluentEasing::EaseOutSine, Animation::FluentEasing::EaseInSine,
-        Animation::FluentEasing::EaseInOutSine, Animation::FluentEasing::EaseOutExpo,
-        Animation::FluentEasing::EaseInExpo, Animation::FluentEasing::EaseInOutExpo,
-        Animation::FluentEasing::EaseOutCirc, Animation::FluentEasing::EaseInCirc,
-        Animation::FluentEasing::EaseInOutCirc, Animation::FluentEasing::Bounce,
-        Animation::FluentEasing::BounceOut, Animation::FluentEasing::BounceIn,
-        Animation::FluentEasing::BounceInOut, Animation::FluentEasing::Elastic,
-        Animation::FluentEasing::ElasticOut, Animation::FluentEasing::ElasticIn,
-        Animation::FluentEasing::ElasticInOut, Animation::FluentEasing::Back,
-        Animation::FluentEasing::BackOut, Animation::FluentEasing::BackIn,
-        Animation::FluentEasing::BackInOut
-    };
-    
+        "Linear",         "EaseOut",        "EaseIn",        "EaseInOut",
+        "EaseOutQuad",    "EaseInQuad",     "EaseInOutQuad", "EaseOutCubic",
+        "EaseInCubic",    "EaseInOutCubic", "EaseOutQuart",  "EaseInQuart",
+        "EaseInOutQuart", "EaseOutQuint",   "EaseInQuint",   "EaseInOutQuint",
+        "EaseOutSine",    "EaseInSine",     "EaseInOutSine", "EaseOutExpo",
+        "EaseInExpo",     "EaseInOutExpo",  "EaseOutCirc",   "EaseInCirc",
+        "EaseInOutCirc",  "Bounce",         "BounceOut",     "BounceIn",
+        "BounceInOut",    "Elastic",        "ElasticOut",    "ElasticIn",
+        "ElasticInOut",   "Back",           "BackOut",       "BackIn",
+        "BackInOut"};
+
+    m_easingTypes = {Animation::FluentEasing::Linear,
+                     Animation::FluentEasing::EaseOut,
+                     Animation::FluentEasing::EaseIn,
+                     Animation::FluentEasing::EaseInOut,
+                     Animation::FluentEasing::EaseOutQuad,
+                     Animation::FluentEasing::EaseInQuad,
+                     Animation::FluentEasing::EaseInOutQuad,
+                     Animation::FluentEasing::EaseOutCubic,
+                     Animation::FluentEasing::EaseInCubic,
+                     Animation::FluentEasing::EaseInOutCubic,
+                     Animation::FluentEasing::EaseOutQuart,
+                     Animation::FluentEasing::EaseInQuart,
+                     Animation::FluentEasing::EaseInOutQuart,
+                     Animation::FluentEasing::EaseOutQuint,
+                     Animation::FluentEasing::EaseInQuint,
+                     Animation::FluentEasing::EaseInOutQuint,
+                     Animation::FluentEasing::EaseOutSine,
+                     Animation::FluentEasing::EaseInSine,
+                     Animation::FluentEasing::EaseInOutSine,
+                     Animation::FluentEasing::EaseOutExpo,
+                     Animation::FluentEasing::EaseInExpo,
+                     Animation::FluentEasing::EaseInOutExpo,
+                     Animation::FluentEasing::EaseOutCirc,
+                     Animation::FluentEasing::EaseInCirc,
+                     Animation::FluentEasing::EaseInOutCirc,
+                     Animation::FluentEasing::Bounce,
+                     Animation::FluentEasing::BounceOut,
+                     Animation::FluentEasing::BounceIn,
+                     Animation::FluentEasing::BounceInOut,
+                     Animation::FluentEasing::Elastic,
+                     Animation::FluentEasing::ElasticOut,
+                     Animation::FluentEasing::ElasticIn,
+                     Animation::FluentEasing::ElasticInOut,
+                     Animation::FluentEasing::Back,
+                     Animation::FluentEasing::BackOut,
+                     Animation::FluentEasing::BackIn,
+                     Animation::FluentEasing::BackInOut};
+
     m_easingCombo->addItems(m_easingNames);
-    m_easingCombo->setCurrentIndex(1); // EaseOut default
+    m_easingCombo->setCurrentIndex(1);  // EaseOut default
     easingLayout->addWidget(m_easingCombo);
-    
+
     layout->addLayout(easingLayout);
-    
+
     // Play all easings button
     m_playAllButton = new Components::FluentButton("Compare All Easings", this);
     m_playAllButton->setButtonStyle(Components::FluentButtonStyle::Accent);
@@ -271,33 +286,45 @@ void AdvancedAnimationShowcase::createAnimationControls() {
     typeLayout->addWidget(new QLabel("Type:"));
 
     m_animationTypeCombo = new QComboBox(this);
-    m_animationTypeNames = {
-        "Fade", "FadeIn", "FadeOut", "Scale", "ScaleIn", "ScaleOut",
-        "Slide", "SlideUp", "SlideDown", "SlideLeft", "SlideRight",
-        "Rotate", "RotateIn", "RotateOut", "Flip", "FlipX", "FlipY",
-        "Zoom", "ZoomIn", "ZoomOut", "Color", "Geometry", "Morph",
-        "Reveal", "Connected", "Stagger", "Parallax", "Custom"
-    };
+    m_animationTypeNames = {"Fade",      "FadeIn",    "FadeOut",    "Scale",
+                            "ScaleIn",   "ScaleOut",  "Slide",      "SlideUp",
+                            "SlideDown", "SlideLeft", "SlideRight", "Rotate",
+                            "RotateIn",  "RotateOut", "Flip",       "FlipX",
+                            "FlipY",     "Zoom",      "ZoomIn",     "ZoomOut",
+                            "Color",     "Geometry",  "Morph",      "Reveal",
+                            "Connected", "Stagger",   "Parallax",   "Custom"};
 
-    m_animationTypes = {
-        Animation::FluentAnimationType::Fade, Animation::FluentAnimationType::FadeIn,
-        Animation::FluentAnimationType::FadeOut, Animation::FluentAnimationType::Scale,
-        Animation::FluentAnimationType::ScaleIn, Animation::FluentAnimationType::ScaleOut,
-        Animation::FluentAnimationType::Slide, Animation::FluentAnimationType::SlideUp,
-        Animation::FluentAnimationType::SlideDown, Animation::FluentAnimationType::SlideLeft,
-        Animation::FluentAnimationType::SlideRight, Animation::FluentAnimationType::Rotate,
-        Animation::FluentAnimationType::RotateIn, Animation::FluentAnimationType::RotateOut,
-        Animation::FluentAnimationType::Flip, Animation::FluentAnimationType::FlipX,
-        Animation::FluentAnimationType::FlipY, Animation::FluentAnimationType::Zoom,
-        Animation::FluentAnimationType::ZoomIn, Animation::FluentAnimationType::ZoomOut,
-        Animation::FluentAnimationType::Color, Animation::FluentAnimationType::Geometry,
-        Animation::FluentAnimationType::Morph, Animation::FluentAnimationType::Reveal,
-        Animation::FluentAnimationType::Connected, Animation::FluentAnimationType::Stagger,
-        Animation::FluentAnimationType::Parallax, Animation::FluentAnimationType::Custom
-    };
+    m_animationTypes = {Animation::FluentAnimationType::Fade,
+                        Animation::FluentAnimationType::FadeIn,
+                        Animation::FluentAnimationType::FadeOut,
+                        Animation::FluentAnimationType::Scale,
+                        Animation::FluentAnimationType::ScaleIn,
+                        Animation::FluentAnimationType::ScaleOut,
+                        Animation::FluentAnimationType::Slide,
+                        Animation::FluentAnimationType::SlideUp,
+                        Animation::FluentAnimationType::SlideDown,
+                        Animation::FluentAnimationType::SlideLeft,
+                        Animation::FluentAnimationType::SlideRight,
+                        Animation::FluentAnimationType::Rotate,
+                        Animation::FluentAnimationType::RotateIn,
+                        Animation::FluentAnimationType::RotateOut,
+                        Animation::FluentAnimationType::Flip,
+                        Animation::FluentAnimationType::FlipX,
+                        Animation::FluentAnimationType::FlipY,
+                        Animation::FluentAnimationType::Zoom,
+                        Animation::FluentAnimationType::ZoomIn,
+                        Animation::FluentAnimationType::ZoomOut,
+                        Animation::FluentAnimationType::Color,
+                        Animation::FluentAnimationType::Geometry,
+                        Animation::FluentAnimationType::Morph,
+                        Animation::FluentAnimationType::Reveal,
+                        Animation::FluentAnimationType::Connected,
+                        Animation::FluentAnimationType::Stagger,
+                        Animation::FluentAnimationType::Parallax,
+                        Animation::FluentAnimationType::Custom};
 
     m_animationTypeCombo->addItems(m_animationTypeNames);
-    m_animationTypeCombo->setCurrentIndex(1); // FadeIn default
+    m_animationTypeCombo->setCurrentIndex(1);  // FadeIn default
     typeLayout->addWidget(m_animationTypeCombo);
 
     layout->addLayout(typeLayout);
@@ -329,16 +356,20 @@ void AdvancedAnimationShowcase::createAnimationControls() {
     m_loopsSlider->setRange(1, 10);
     m_loopsSlider->setValue(1);
     auto* loopsLabel = new QLabel("1", this);
-    connect(m_loopsSlider, &QSlider::valueChanged, loopsLabel, QOverload<int>::of(&QLabel::setNum));
+    connect(m_loopsSlider, &QSlider::valueChanged, loopsLabel,
+            QOverload<int>::of(&QLabel::setNum));
     loopsLayout->addWidget(m_loopsSlider);
     loopsLayout->addWidget(loopsLabel);
     layout->addLayout(loopsLayout);
 
     // Options
-    m_reverseCheck = new Components::FluentCheckBox("Reverse on Complete", this);
-    m_hardwareAccelCheck = new Components::FluentCheckBox("Hardware Acceleration", this);
+    m_reverseCheck =
+        new Components::FluentCheckBox("Reverse on Complete", this);
+    m_hardwareAccelCheck =
+        new Components::FluentCheckBox("Hardware Acceleration", this);
     m_hardwareAccelCheck->setChecked(true);
-    m_reducedMotionCheck = new Components::FluentCheckBox("Respect Reduced Motion", this);
+    m_reducedMotionCheck =
+        new Components::FluentCheckBox("Respect Reduced Motion", this);
     m_reducedMotionCheck->setChecked(true);
 
     layout->addWidget(m_reverseCheck);
@@ -371,11 +402,13 @@ void AdvancedAnimationShowcase::createAnimationControls() {
     m_microInteractionGroup = new QGroupBox("Micro-Interactions", this);
     auto* microLayout = new QVBoxLayout(m_microInteractionGroup);
 
-    m_microButton = new Components::FluentButton("Demo Micro-Interactions", this);
+    m_microButton =
+        new Components::FluentButton("Demo Micro-Interactions", this);
     m_microButton->setButtonStyle(Components::FluentButtonStyle::Accent);
     microLayout->addWidget(m_microButton);
 
-    auto* microInfo = new QLabel("Hover, press, and focus effects\nwith performance optimization", this);
+    auto* microInfo = new QLabel(
+        "Hover, press, and focus effects\nwith performance optimization", this);
     microInfo->setStyleSheet("color: #666; font-size: 11px;");
     microInfo->setWordWrap(true);
     microLayout->addWidget(microInfo);
@@ -413,7 +446,8 @@ void AdvancedAnimationShowcase::createPerformancePanel() {
     layout->addWidget(m_performanceBar);
 
     // Performance mode toggle
-    m_performanceButton = new Components::FluentButton("Enable Performance Mode", this);
+    m_performanceButton =
+        new Components::FluentButton("Enable Performance Mode", this);
     m_performanceButton->setButtonStyle(Components::FluentButtonStyle::Toggle);
     layout->addWidget(m_performanceButton);
 
@@ -426,7 +460,8 @@ void AdvancedAnimationShowcase::createPerformancePanel() {
     m_logDisplay = new QTextEdit(this);
     m_logDisplay->setMaximumHeight(100);
     m_logDisplay->setPlaceholderText("Animation events will appear here...");
-    m_logDisplay->setStyleSheet("font-family: 'Consolas', monospace; font-size: 10px;");
+    m_logDisplay->setStyleSheet(
+        "font-family: 'Consolas', monospace; font-size: 10px;");
     layout->addWidget(m_logDisplay);
 }
 
@@ -440,23 +475,30 @@ void AdvancedAnimationShowcase::createAnimationTargets() {
     m_primaryTarget->setFixedSize(200, 150);
     m_primaryTarget->setTitle("Primary Target");
     m_primaryTarget->setSubtitle("Main animation target for single animations");
-    m_primaryTarget->setStyleSheet("background-color: #0078d4; color: white; border-radius: 12px;");
+    m_primaryTarget->setStyleSheet(
+        "background-color: #0078d4; color: white; border-radius: 12px;");
     layout->addWidget(m_primaryTarget, 1, 1, 1, 2);
 
     // Create grid of smaller targets for stagger animations
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 4; ++col) {
-            if (row == 1 && (col == 1 || col == 2)) continue; // Skip center for primary target
+            if (row == 1 && (col == 1 || col == 2))
+                continue;  // Skip center for primary target
 
             auto* card = new Components::FluentCard(this);
             card->setFixedSize(120, 80);
-            card->setTitle(QString("Target %1").arg(m_animationTargets.size() + 1));
+            card->setTitle(
+                QString("Target %1").arg(m_animationTargets.size() + 1));
             card->setSubtitle("Stagger demo");
 
             // Color coding for different animation types
-            QStringList colors = {"#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4", "#feca57", "#ff9ff3", "#54a0ff", "#5f27cd"};
+            QStringList colors = {"#ff6b6b", "#4ecdc4", "#45b7d1", "#96ceb4",
+                                  "#feca57", "#ff9ff3", "#54a0ff", "#5f27cd"};
             QString color = colors[m_animationTargets.size() % colors.size()];
-            card->setStyleSheet(QString("background-color: %1; color: white; border-radius: 8px;").arg(color));
+            card->setStyleSheet(
+                QString(
+                    "background-color: %1; color: white; border-radius: 8px;")
+                    .arg(color));
 
             layout->addWidget(card, row, col);
             m_animationTargets.append(card);
@@ -473,8 +515,10 @@ void AdvancedAnimationShowcase::createAnimationTargets() {
         auto* easingCard = new Components::FluentCard(this);
         easingCard->setFixedSize(80, 50);
         easingCard->setTitle(QString("E%1").arg(i + 1));
-        easingCard->setStyleSheet("background-color: #6c5ce7; color: white; border-radius: 6px; font-size: 10px;");
-        easingCard->hide(); // Initially hidden
+        easingCard->setStyleSheet(
+            "background-color: #6c5ce7; color: white; border-radius: 6px; "
+            "font-size: 10px;");
+        easingCard->hide();  // Initially hidden
 
         easingLayout->addWidget(easingCard);
         m_easingCards.append(easingCard);
@@ -512,39 +556,40 @@ void AdvancedAnimationShowcase::setupConnections() {
     connect(m_easingCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &AdvancedAnimationShowcase::onEasingChanged);
 
-    connect(m_animationTypeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &AdvancedAnimationShowcase::onAnimationTypeChanged);
+    connect(m_animationTypeCombo,
+            QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &AdvancedAnimationShowcase::onAnimationTypeChanged);
 
-    connect(m_durationSpin, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &AdvancedAnimationShowcase::onDurationChanged);
+    connect(m_durationSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &AdvancedAnimationShowcase::onDurationChanged);
 
-    connect(m_delaySpin, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &AdvancedAnimationShowcase::onDelayChanged);
+    connect(m_delaySpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &AdvancedAnimationShowcase::onDelayChanged);
 
     // Button connections
-    connect(m_playButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::playSelectedAnimation);
+    connect(m_playButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::playSelectedAnimation);
 
-    connect(m_playAllButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::playAllEasings);
+    connect(m_playAllButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::playAllEasings);
 
-    connect(m_staggerButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::playStaggerAnimation);
+    connect(m_staggerButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::playStaggerAnimation);
 
-    connect(m_microButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::playMicroInteractions);
+    connect(m_microButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::playMicroInteractions);
 
-    connect(m_sequenceButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::playComplexSequence);
+    connect(m_sequenceButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::playComplexSequence);
 
-    connect(m_resetButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::resetAllAnimations);
+    connect(m_resetButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::resetAllAnimations);
 
-    connect(m_exportButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::exportAnimationSettings);
+    connect(m_exportButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::exportAnimationSettings);
 
-    connect(m_performanceButton, &Components::FluentButton::clicked,
-            this, &AdvancedAnimationShowcase::togglePerformanceMode);
+    connect(m_performanceButton, &Components::FluentButton::clicked, this,
+            &AdvancedAnimationShowcase::togglePerformanceMode);
 
     // Configuration change connections
     connect(m_loopsSlider, &QSlider::valueChanged, [this](int value) {
@@ -552,20 +597,26 @@ void AdvancedAnimationShowcase::setupConnections() {
         logAnimationEvent(QString("Loops changed to: %1").arg(value));
     });
 
-    connect(m_reverseCheck, &Components::FluentCheckBox::toggled, [this](bool checked) {
-        m_currentConfig.reverseOnComplete = checked;
-        logAnimationEvent(QString("Reverse on complete: %1").arg(checked ? "enabled" : "disabled"));
-    });
+    connect(m_reverseCheck, &Components::FluentCheckBox::toggled,
+            [this](bool checked) {
+                m_currentConfig.reverseOnComplete = checked;
+                logAnimationEvent(QString("Reverse on complete: %1")
+                                      .arg(checked ? "enabled" : "disabled"));
+            });
 
-    connect(m_hardwareAccelCheck, &Components::FluentCheckBox::toggled, [this](bool checked) {
-        m_currentConfig.useHardwareAcceleration = checked;
-        logAnimationEvent(QString("Hardware acceleration: %1").arg(checked ? "enabled" : "disabled"));
-    });
+    connect(m_hardwareAccelCheck, &Components::FluentCheckBox::toggled,
+            [this](bool checked) {
+                m_currentConfig.useHardwareAcceleration = checked;
+                logAnimationEvent(QString("Hardware acceleration: %1")
+                                      .arg(checked ? "enabled" : "disabled"));
+            });
 
-    connect(m_reducedMotionCheck, &Components::FluentCheckBox::toggled, [this](bool checked) {
-        m_currentConfig.respectReducedMotion = checked;
-        logAnimationEvent(QString("Reduced motion respect: %1").arg(checked ? "enabled" : "disabled"));
-    });
+    connect(m_reducedMotionCheck, &Components::FluentCheckBox::toggled,
+            [this](bool checked) {
+                m_currentConfig.respectReducedMotion = checked;
+                logAnimationEvent(QString("Reduced motion respect: %1")
+                                      .arg(checked ? "enabled" : "disabled"));
+            });
 }
 
 void AdvancedAnimationShowcase::setupTheme() {
@@ -576,9 +627,9 @@ void AdvancedAnimationShowcase::setupTheme() {
 
 void AdvancedAnimationShowcase::setupPerformanceMonitoring() {
     m_performanceTimer = new QTimer(this);
-    m_performanceTimer->setInterval(100); // Update every 100ms
-    connect(m_performanceTimer, &QTimer::timeout,
-            this, &AdvancedAnimationShowcase::onPerformanceUpdate);
+    m_performanceTimer->setInterval(100);  // Update every 100ms
+    connect(m_performanceTimer, &QTimer::timeout, this,
+            &AdvancedAnimationShowcase::onPerformanceUpdate);
     m_performanceTimer->start();
 
     logAnimationEvent("Performance monitoring started");
@@ -587,15 +638,15 @@ void AdvancedAnimationShowcase::setupPerformanceMonitoring() {
 void AdvancedAnimationShowcase::startDemoSequence() {
     m_demoTimer = new QTimer(this);
     connect(m_demoTimer, &QTimer::timeout, [this]() {
-        if (!m_demoRunning) return;
+        if (!m_demoRunning)
+            return;
 
         // Cycle through different animations automatically
         static int demoIndex = 0;
         const QList<std::function<void()>> demoSequence = {
             [this]() { playSelectedAnimation(); },
             [this]() { playStaggerAnimation(); },
-            [this]() { playMicroInteractions(); }
-        };
+            [this]() { playMicroInteractions(); }};
 
         if (demoIndex < demoSequence.size()) {
             demoSequence[demoIndex]();
@@ -606,7 +657,7 @@ void AdvancedAnimationShowcase::startDemoSequence() {
     // Start demo after 2 seconds
     QTimer::singleShot(2000, [this]() {
         m_demoRunning = true;
-        m_demoTimer->start(5000); // Change animation every 5 seconds
+        m_demoTimer->start(5000);  // Change animation every 5 seconds
         logAnimationEvent("Auto-demo sequence started");
     });
 }
@@ -615,13 +666,15 @@ void AdvancedAnimationShowcase::startDemoSequence() {
 void AdvancedAnimationShowcase::onEasingChanged(int index) {
     if (index >= 0 && index < m_easingTypes.size()) {
         m_currentConfig.easing = m_easingTypes[index];
-        logAnimationEvent(QString("Easing changed to: %1").arg(m_easingNames[index]));
+        logAnimationEvent(
+            QString("Easing changed to: %1").arg(m_easingNames[index]));
     }
 }
 
 void AdvancedAnimationShowcase::onAnimationTypeChanged(int index) {
     if (index >= 0 && index < m_animationTypes.size()) {
-        logAnimationEvent(QString("Animation type changed to: %1").arg(m_animationTypeNames[index]));
+        logAnimationEvent(QString("Animation type changed to: %1")
+                              .arg(m_animationTypeNames[index]));
     }
 }
 
@@ -636,10 +689,12 @@ void AdvancedAnimationShowcase::onDelayChanged(int value) {
 }
 
 void AdvancedAnimationShowcase::playSelectedAnimation() {
-    if (!m_primaryTarget) return;
+    if (!m_primaryTarget)
+        return;
 
     int typeIndex = m_animationTypeCombo->currentIndex();
-    if (typeIndex < 0 || typeIndex >= m_animationTypes.size()) return;
+    if (typeIndex < 0 || typeIndex >= m_animationTypes.size())
+        return;
 
     Animation::FluentAnimationType type = m_animationTypes[typeIndex];
     m_activeAnimations++;
@@ -650,38 +705,49 @@ void AdvancedAnimationShowcase::playSelectedAnimation() {
     // Create animation based on selected type
     switch (type) {
         case Animation::FluentAnimationType::FadeIn:
-            animation = Animation::FluentAnimator::fadeIn(m_primaryTarget, m_currentConfig);
+            animation = Animation::FluentAnimator::fadeIn(m_primaryTarget,
+                                                          m_currentConfig);
             break;
         case Animation::FluentAnimationType::FadeOut:
-            animation = Animation::FluentAnimator::fadeOut(m_primaryTarget, m_currentConfig);
+            animation = Animation::FluentAnimator::fadeOut(m_primaryTarget,
+                                                           m_currentConfig);
             break;
         case Animation::FluentAnimationType::ScaleIn:
-            animation = Animation::FluentAnimator::scaleIn(m_primaryTarget, m_currentConfig);
+            animation = Animation::FluentAnimator::scaleIn(m_primaryTarget,
+                                                           m_currentConfig);
             break;
         case Animation::FluentAnimationType::ScaleOut:
-            animation = Animation::FluentAnimator::scaleOut(m_primaryTarget, m_currentConfig);
+            animation = Animation::FluentAnimator::scaleOut(m_primaryTarget,
+                                                            m_currentConfig);
             break;
         case Animation::FluentAnimationType::SlideUp:
-            animation = Animation::FluentAnimator::slideUp(m_primaryTarget, 50, m_currentConfig);
+            animation = Animation::FluentAnimator::slideUp(m_primaryTarget, 50,
+                                                           m_currentConfig);
             break;
         case Animation::FluentAnimationType::SlideDown:
-            animation = Animation::FluentAnimator::slideDown(m_primaryTarget, 50, m_currentConfig);
+            animation = Animation::FluentAnimator::slideDown(
+                m_primaryTarget, 50, m_currentConfig);
             break;
         case Animation::FluentAnimationType::SlideLeft:
-            animation = Animation::FluentAnimator::slideLeft(m_primaryTarget, 50, m_currentConfig);
+            animation = Animation::FluentAnimator::slideLeft(
+                m_primaryTarget, 50, m_currentConfig);
             break;
         case Animation::FluentAnimationType::SlideRight:
-            animation = Animation::FluentAnimator::slideRight(m_primaryTarget, 50, m_currentConfig);
+            animation = Animation::FluentAnimator::slideRight(
+                m_primaryTarget, 50, m_currentConfig);
             break;
         case Animation::FluentAnimationType::ZoomIn:
-            animation = Animation::FluentAnimator::zoomIn(m_primaryTarget, QPoint(), m_currentConfig);
+            animation = Animation::FluentAnimator::zoomIn(
+                m_primaryTarget, QPoint(), m_currentConfig);
             break;
         case Animation::FluentAnimationType::ZoomOut:
-            animation = Animation::FluentAnimator::zoomOut(m_primaryTarget, QPoint(), m_currentConfig);
+            animation = Animation::FluentAnimator::zoomOut(
+                m_primaryTarget, QPoint(), m_currentConfig);
             break;
         default:
             // Default to fade in for unsupported types
-            animation = Animation::FluentAnimator::fadeIn(m_primaryTarget, m_currentConfig);
+            animation = Animation::FluentAnimator::fadeIn(m_primaryTarget,
+                                                          m_currentConfig);
             break;
     }
 
@@ -692,9 +758,10 @@ void AdvancedAnimationShowcase::playSelectedAnimation() {
         });
 
         animation->start();
-        animation.release(); // Let Qt manage the animation lifecycle
+        animation.release();  // Let Qt manage the animation lifecycle
 
-        logAnimationEvent(QString("Started %1 animation").arg(m_animationTypeNames[typeIndex]));
+        logAnimationEvent(QString("Started %1 animation")
+                              .arg(m_animationTypeNames[typeIndex]));
     }
 }
 
@@ -709,7 +776,8 @@ void AdvancedAnimationShowcase::playAllEasings() {
         auto* card = m_easingCards[i];
         Animation::FluentAnimationConfig config = m_currentConfig;
         config.easing = m_easingTypes[i];
-        config.delay = std::chrono::milliseconds(i * 100); // Stagger start times
+        config.delay =
+            std::chrono::milliseconds(i * 100);  // Stagger start times
 
         // Update card title to show easing name
         card->setTitle(m_easingNames[i]);
@@ -717,7 +785,7 @@ void AdvancedAnimationShowcase::playAllEasings() {
         auto animation = Animation::FluentAnimator::slideUp(card, 100, config);
         connect(animation.get(), &QPropertyAnimation::finished, [this, i]() {
             m_activeAnimations--;
-            if (i == 0) { // First animation finished
+            if (i == 0) {  // First animation finished
                 logAnimationEvent("Easing comparison completed");
             }
         });
@@ -732,27 +800,28 @@ void AdvancedAnimationShowcase::playAllEasings() {
 }
 
 void AdvancedAnimationShowcase::playStaggerAnimation() {
-    if (m_animationTargets.isEmpty()) return;
+    if (m_animationTargets.isEmpty())
+        return;
 
     // Create stagger animation for all targets
     auto staggerAnimation = Animation::FluentAnimator::staggerAnimation(
-        m_animationTargets,
-        Animation::FluentAnimationType::SlideUp,
-        50ms, // 50ms stagger delay
-        m_currentConfig
-    );
+        m_animationTargets, Animation::FluentAnimationType::SlideUp,
+        50ms,  // 50ms stagger delay
+        m_currentConfig);
 
-    connect(staggerAnimation.get(), &QSequentialAnimationGroup::finished, [this]() {
-        m_activeAnimations--;
-        logAnimationEvent("Stagger animation sequence completed");
-    });
+    connect(staggerAnimation.get(), &QSequentialAnimationGroup::finished,
+            [this]() {
+                m_activeAnimations--;
+                logAnimationEvent("Stagger animation sequence completed");
+            });
 
     m_activeAnimations++;
     m_totalAnimations += m_animationTargets.size();
     staggerAnimation->start();
     staggerAnimation.release();
 
-    logAnimationEvent(QString("Started stagger animation with %1 targets").arg(m_animationTargets.size()));
+    logAnimationEvent(QString("Started stagger animation with %1 targets")
+                          .arg(m_animationTargets.size()));
 }
 
 void AdvancedAnimationShowcase::playMicroInteractions() {
@@ -762,10 +831,10 @@ void AdvancedAnimationShowcase::playMicroInteractions() {
 
     for (auto* target : allTargets) {
         // Hover effect
-        auto hoverAnimation = Animation::FluentAnimator::hoverEffect(target, m_currentConfig);
-        connect(hoverAnimation.get(), &QPropertyAnimation::finished, [this]() {
-            m_activeAnimations--;
-        });
+        auto hoverAnimation =
+            Animation::FluentAnimator::hoverEffect(target, m_currentConfig);
+        connect(hoverAnimation.get(), &QPropertyAnimation::finished,
+                [this]() { m_activeAnimations--; });
 
         m_activeAnimations++;
         hoverAnimation->start();
@@ -773,10 +842,10 @@ void AdvancedAnimationShowcase::playMicroInteractions() {
 
         // Pulse effect with delay
         QTimer::singleShot(500, [this, target]() {
-            auto pulseAnimation = Animation::FluentAnimator::pulseEffect(target, m_currentConfig);
-            connect(pulseAnimation.get(), &QPropertyAnimation::finished, [this]() {
-                m_activeAnimations--;
-            });
+            auto pulseAnimation =
+                Animation::FluentAnimator::pulseEffect(target, m_currentConfig);
+            connect(pulseAnimation.get(), &QPropertyAnimation::finished,
+                    [this]() { m_activeAnimations--; });
 
             m_activeAnimations++;
             pulseAnimation->start();
@@ -806,7 +875,8 @@ void AdvancedAnimationShowcase::playComplexSequence() {
     Animation::FluentAnimationConfig scaleConfig;
     scaleConfig.duration = 400ms;
     scaleConfig.easing = Animation::FluentEasing::ElasticOut;
-    auto scaleAnimation = Animation::FluentAnimator::scaleIn(m_primaryTarget, scaleConfig);
+    auto scaleAnimation =
+        Animation::FluentAnimator::scaleIn(m_primaryTarget, scaleConfig);
     sequenceGroup->addAnimation(scaleAnimation.release());
 
     // Phase 3: Stagger fade in all targets
@@ -814,17 +884,15 @@ void AdvancedAnimationShowcase::playComplexSequence() {
     staggerConfig.duration = 300ms;
     staggerConfig.easing = Animation::FluentEasing::BackOut;
     auto staggerGroup = Animation::FluentAnimator::staggerAnimation(
-        m_animationTargets,
-        Animation::FluentAnimationType::FadeIn,
-        75ms,
-        staggerConfig
-    );
+        m_animationTargets, Animation::FluentAnimationType::FadeIn, 75ms,
+        staggerConfig);
     sequenceGroup->addAnimation(staggerGroup.release());
 
-    connect(sequenceGroup.get(), &QSequentialAnimationGroup::finished, [this]() {
-        m_activeAnimations--;
-        logAnimationEvent("Complex animation sequence completed");
-    });
+    connect(sequenceGroup.get(), &QSequentialAnimationGroup::finished,
+            [this]() {
+                m_activeAnimations--;
+                logAnimationEvent("Complex animation sequence completed");
+            });
 
     m_activeAnimations++;
     m_totalAnimations += m_animationTargets.size() + 2;
@@ -869,8 +937,8 @@ void AdvancedAnimationShowcase::resetAllAnimations() {
     // Reset all targets to visible and default position
     for (auto* target : m_animationTargets) {
         target->setVisible(true);
-        target->move(target->pos()); // Reset position
-        target->setStyleSheet(target->styleSheet()); // Reset any style changes
+        target->move(target->pos());                  // Reset position
+        target->setStyleSheet(target->styleSheet());  // Reset any style changes
     }
 
     if (m_primaryTarget) {
@@ -886,8 +954,8 @@ void AdvancedAnimationShowcase::resetAllAnimations() {
     m_activeAnimations = 0;
 
     // Reset controls to defaults
-    m_easingCombo->setCurrentIndex(1); // EaseOut
-    m_animationTypeCombo->setCurrentIndex(1); // FadeIn
+    m_easingCombo->setCurrentIndex(1);         // EaseOut
+    m_animationTypeCombo->setCurrentIndex(1);  // FadeIn
     m_durationSpin->setValue(300);
     m_delaySpin->setValue(0);
     m_loopsSlider->setValue(1);
@@ -902,33 +970,34 @@ void AdvancedAnimationShowcase::resetAllAnimations() {
 }
 
 void AdvancedAnimationShowcase::exportAnimationSettings() {
-    QString settings = QString(
-        "=== ANIMATION SETTINGS EXPORT ===\n\n"
-        "Easing: %1\n"
-        "Animation Type: %2\n"
-        "Duration: %3ms\n"
-        "Delay: %4ms\n"
-        "Loops: %5\n"
-        "Reverse on Complete: %6\n"
-        "Hardware Acceleration: %7\n"
-        "Respect Reduced Motion: %8\n"
-        "Performance Mode: %9\n\n"
-        "Statistics:\n"
-        "Active Animations: %10\n"
-        "Total Animations: %11\n"
-        "Current FPS: %12\n"
-    ).arg(m_easingCombo->currentText())
-     .arg(m_animationTypeCombo->currentText())
-     .arg(m_durationSpin->value())
-     .arg(m_delaySpin->value())
-     .arg(m_loopsSlider->value())
-     .arg(m_reverseCheck->isChecked() ? "Yes" : "No")
-     .arg(m_hardwareAccelCheck->isChecked() ? "Yes" : "No")
-     .arg(m_reducedMotionCheck->isChecked() ? "Yes" : "No")
-     .arg(m_performanceMode ? "Enabled" : "Disabled")
-     .arg(m_activeAnimations)
-     .arg(m_totalAnimations)
-     .arg(m_fpsLabel->text());
+    QString settings =
+        QString(
+            "=== ANIMATION SETTINGS EXPORT ===\n\n"
+            "Easing: %1\n"
+            "Animation Type: %2\n"
+            "Duration: %3ms\n"
+            "Delay: %4ms\n"
+            "Loops: %5\n"
+            "Reverse on Complete: %6\n"
+            "Hardware Acceleration: %7\n"
+            "Respect Reduced Motion: %8\n"
+            "Performance Mode: %9\n\n"
+            "Statistics:\n"
+            "Active Animations: %10\n"
+            "Total Animations: %11\n"
+            "Current FPS: %12\n")
+            .arg(m_easingCombo->currentText())
+            .arg(m_animationTypeCombo->currentText())
+            .arg(m_durationSpin->value())
+            .arg(m_delaySpin->value())
+            .arg(m_loopsSlider->value())
+            .arg(m_reverseCheck->isChecked() ? "Yes" : "No")
+            .arg(m_hardwareAccelCheck->isChecked() ? "Yes" : "No")
+            .arg(m_reducedMotionCheck->isChecked() ? "Yes" : "No")
+            .arg(m_performanceMode ? "Enabled" : "Disabled")
+            .arg(m_activeAnimations)
+            .arg(m_totalAnimations)
+            .arg(m_fpsLabel->text());
 
     m_logDisplay->setPlainText(settings);
     logAnimationEvent("Animation settings exported");
@@ -949,9 +1018,9 @@ void AdvancedAnimationShowcase::updatePerformanceDisplay() {
     }
 
     m_fpsLabel->setText(QString::number(fps));
-    m_fpsLabel->setStyleSheet(fps >= 50 ? "color: green; font-weight: bold;" :
-                             fps >= 30 ? "color: orange; font-weight: bold;" :
-                                        "color: red; font-weight: bold;");
+    m_fpsLabel->setStyleSheet(fps >= 50   ? "color: green; font-weight: bold;"
+                              : fps >= 30 ? "color: orange; font-weight: bold;"
+                                          : "color: red; font-weight: bold;");
 
     // Update performance bar
     int performance = qMax(0, qMin(100, fps * 100 / 60));

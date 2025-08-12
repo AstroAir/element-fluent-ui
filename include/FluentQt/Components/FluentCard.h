@@ -1,17 +1,17 @@
 // include/FluentQt/Components/FluentCard.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
 #include <QFrame>
-#include <QVBoxLayout>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QToolButton>
 #include <QPropertyAnimation>
-#include <QGraphicsDropShadowEffect>
 #include <QScrollArea>
+#include <QToolButton>
+#include <QVBoxLayout>
 #include <memory>
 #include <vector>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -23,13 +23,7 @@ enum class FluentCardElevation {
     VeryHigh = 32
 };
 
-enum class FluentCardStyle {
-    Default,
-    Outlined,
-    Elevated,
-    Filled,
-    Subtle
-};
+enum class FluentCardStyle { Default, Outlined, Elevated, Filled, Subtle };
 
 class FluentCardHeader;
 class FluentCardContent;
@@ -38,23 +32,31 @@ class FluentCardFooter;
 class FluentCard : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
-    Q_PROPERTY(QString subtitle READ subtitle WRITE setSubtitle NOTIFY subtitleChanged)
-    Q_PROPERTY(QIcon headerIcon READ headerIcon WRITE setHeaderIcon NOTIFY headerIconChanged)
-    Q_PROPERTY(FluentCardElevation elevation READ elevation WRITE setElevation NOTIFY elevationChanged)
-    Q_PROPERTY(FluentCardStyle cardStyle READ cardStyle WRITE setCardStyle NOTIFY cardStyleChanged)
+    Q_PROPERTY(
+        QString subtitle READ subtitle WRITE setSubtitle NOTIFY subtitleChanged)
+    Q_PROPERTY(QIcon headerIcon READ headerIcon WRITE setHeaderIcon NOTIFY
+                   headerIconChanged)
+    Q_PROPERTY(FluentCardElevation elevation READ elevation WRITE setElevation
+                   NOTIFY elevationChanged)
+    Q_PROPERTY(FluentCardStyle cardStyle READ cardStyle WRITE setCardStyle
+                   NOTIFY cardStyleChanged)
     Q_PROPERTY(bool selectable READ isSelectable WRITE setSelectable)
-    Q_PROPERTY(bool selected READ isSelected WRITE setSelected NOTIFY selectedChanged)
+    Q_PROPERTY(
+        bool selected READ isSelected WRITE setSelected NOTIFY selectedChanged)
     Q_PROPERTY(bool expandable READ isExpandable WRITE setExpandable)
-    Q_PROPERTY(bool expanded READ isExpanded WRITE setExpanded NOTIFY expandedChanged)
+    Q_PROPERTY(
+        bool expanded READ isExpanded WRITE setExpanded NOTIFY expandedChanged)
     Q_PROPERTY(bool headerVisible READ isHeaderVisible WRITE setHeaderVisible)
     Q_PROPERTY(bool footerVisible READ isFooterVisible WRITE setFooterVisible)
     Q_PROPERTY(qreal shadowOpacity READ shadowOpacity WRITE setShadowOpacity)
-    Q_PROPERTY(qreal expansionProgress READ expansionProgress WRITE setExpansionProgress)
+    Q_PROPERTY(qreal expansionProgress READ expansionProgress WRITE
+                   setExpansionProgress)
 
 public:
     explicit FluentCard(QWidget* parent = nullptr);
     explicit FluentCard(const QString& title, QWidget* parent = nullptr);
-    explicit FluentCard(const QString& title, const QString& subtitle, QWidget* parent = nullptr);
+    explicit FluentCard(const QString& title, const QString& subtitle,
+                        QWidget* parent = nullptr);
     ~FluentCard() override;
 
     // Header properties
@@ -156,7 +158,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onExpansionAnimationValueChanged(const QVariant& value);
@@ -278,7 +281,7 @@ private:
     QLabel* m_titleLabel;
     QLabel* m_subtitleLabel;
     QHBoxLayout* m_actionsLayout;
-    
+
     std::vector<QToolButton*> m_actionButtons;
     bool m_pressed{false};
 };
@@ -324,4 +327,4 @@ private:
     QHBoxLayout* m_layout;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

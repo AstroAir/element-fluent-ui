@@ -1,36 +1,33 @@
 // src/Components/FluentComboBox.cpp
 #include "FluentQt/Components/FluentComboBox.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QPainter>
-#include <QStyleOption>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QWheelEvent>
 #include <QApplication>
+#include <QDebug>
+#include <QHBoxLayout>
+#include <QHeaderView>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QScreen>
 #include <QScrollBar>
-#include <QHeaderView>
-#include <QStyledItemDelegate>
 #include <QSortFilterProxyModel>
-#include <QDebug>
+#include <QStyleOption>
+#include <QStyledItemDelegate>
+#include <QVBoxLayout>
+#include <QWheelEvent>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentComboBox::FluentComboBox(QWidget* parent)
-    : FluentComboBox(FluentComboBoxStyle::Standard, parent)
-{
-}
+    : FluentComboBox(FluentComboBoxStyle::Standard, parent) {}
 
 FluentComboBox::FluentComboBox(FluentComboBoxStyle style, QWidget* parent)
-    : Core::FluentComponent(parent)
-    , m_style(style)
-    , m_model(new QStandardItemModel(this))
-    , m_filteredModel(new QStandardItemModel(this))
-    , m_animator(std::make_unique<Animation::FluentAnimator>(this))
-    , m_searchTimer(new QTimer(this))
-{
+    : Core::FluentComponent(parent),
+      m_style(style),
+      m_model(new QStandardItemModel(this)),
+      m_filteredModel(new QStandardItemModel(this)),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)),
+      m_searchTimer(new QTimer(this)) {
     setupUI();
     setupDropdown();
     setupAnimations();
@@ -41,7 +38,8 @@ FluentComboBox::FluentComboBox(FluentComboBoxStyle style, QWidget* parent)
 
     // Connect theme changes
     auto& theme = Styling::FluentTheme::instance();
-    connect(&theme, &Styling::FluentTheme::themeChanged, this, &FluentComboBox::updateColors);
+    connect(&theme, &Styling::FluentTheme::themeChanged, this,
+            &FluentComboBox::updateColors);
 }
 
 FluentComboBox::~FluentComboBox() = default;
@@ -52,15 +50,17 @@ void FluentComboBox::setupUI() {
 
     // Setup search timer
     m_searchTimer->setSingleShot(true);
-    m_searchTimer->setInterval(300); // 300ms delay for search
-    connect(m_searchTimer, &QTimer::timeout, this, &FluentComboBox::filterItems);
+    m_searchTimer->setInterval(300);  // 300ms delay for search
+    connect(m_searchTimer, &QTimer::timeout, this,
+            &FluentComboBox::filterItems);
 
     if (m_style == FluentComboBoxStyle::Editable) {
         m_searchEdit = new QLineEdit(this);
         m_searchEdit->setPlaceholderText(m_placeholderText);
-        m_searchEdit->hide(); // Initially hidden
+        m_searchEdit->hide();  // Initially hidden
 
-        connect(m_searchEdit, &QLineEdit::textChanged, this, &FluentComboBox::onSearchTextChanged);
+        connect(m_searchEdit, &QLineEdit::textChanged, this,
+                &FluentComboBox::onSearchTextChanged);
     }
 }
 
@@ -75,16 +75,17 @@ void FluentComboBox::setupDropdown() {
 
     m_listView = new QListView(m_dropdown);
     m_listView->setModel(m_filteredModel);
-    m_listView->setSelectionMode(m_multiSelectEnabled ?
-                                QAbstractItemView::MultiSelection :
-                                QAbstractItemView::SingleSelection);
+    m_listView->setSelectionMode(m_multiSelectEnabled
+                                     ? QAbstractItemView::MultiSelection
+                                     : QAbstractItemView::SingleSelection);
     m_listView->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_listView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_listView->setFrameStyle(QFrame::NoFrame);
     m_listView->setUniformItemSizes(true);
     m_listView->setMouseTracking(true);
 
-    connect(m_listView, &QListView::clicked, this, &FluentComboBox::onDropdownItemClicked);
+    connect(m_listView, &QListView::clicked, this,
+            &FluentComboBox::onDropdownItemClicked);
 
     dropdownLayout->addWidget(m_listView);
 
@@ -96,14 +97,12 @@ void FluentComboBox::setupAnimations() {
     m_dropdownAnimation->setDuration(200);
     m_dropdownAnimation->setEasingCurve(QEasingCurve::OutCubic);
 
-    connect(m_dropdownAnimation, &QPropertyAnimation::finished,
-            this, &FluentComboBox::onDropdownAnimationFinished);
+    connect(m_dropdownAnimation, &QPropertyAnimation::finished, this,
+            &FluentComboBox::onDropdownAnimationFinished);
 }
 
 // Style and behavior
-FluentComboBoxStyle FluentComboBox::style() const {
-    return m_style;
-}
+FluentComboBoxStyle FluentComboBox::style() const { return m_style; }
 
 void FluentComboBox::setStyle(FluentComboBoxStyle style) {
     if (m_style != style) {
@@ -112,7 +111,8 @@ void FluentComboBox::setStyle(FluentComboBoxStyle style) {
         if (style == FluentComboBoxStyle::Editable && !m_searchEdit) {
             m_searchEdit = new QLineEdit(this);
             m_searchEdit->setPlaceholderText(m_placeholderText);
-            connect(m_searchEdit, &QLineEdit::textChanged, this, &FluentComboBox::onSearchTextChanged);
+            connect(m_searchEdit, &QLineEdit::textChanged, this,
+                    &FluentComboBox::onSearchTextChanged);
         } else if (style != FluentComboBoxStyle::Editable && m_searchEdit) {
             m_searchEdit->deleteLater();
             m_searchEdit = nullptr;
@@ -123,9 +123,7 @@ void FluentComboBox::setStyle(FluentComboBoxStyle style) {
     }
 }
 
-QString FluentComboBox::placeholderText() const {
-    return m_placeholderText;
-}
+QString FluentComboBox::placeholderText() const { return m_placeholderText; }
 
 void FluentComboBox::setPlaceholderText(const QString& text) {
     if (m_placeholderText != text) {
@@ -138,9 +136,7 @@ void FluentComboBox::setPlaceholderText(const QString& text) {
     }
 }
 
-bool FluentComboBox::isSearchEnabled() const {
-    return m_searchEnabled;
-}
+bool FluentComboBox::isSearchEnabled() const { return m_searchEnabled; }
 
 void FluentComboBox::setSearchEnabled(bool enabled) {
     if (m_searchEnabled != enabled) {
@@ -158,9 +154,9 @@ void FluentComboBox::setMultiSelectEnabled(bool enabled) {
         m_multiSelectEnabled = enabled;
 
         if (m_listView) {
-            m_listView->setSelectionMode(enabled ?
-                                        QAbstractItemView::MultiSelection :
-                                        QAbstractItemView::SingleSelection);
+            m_listView->setSelectionMode(
+                enabled ? QAbstractItemView::MultiSelection
+                        : QAbstractItemView::SingleSelection);
         }
 
         emit multiSelectEnabledChanged(enabled);
@@ -168,9 +164,7 @@ void FluentComboBox::setMultiSelectEnabled(bool enabled) {
 }
 
 // Current selection
-int FluentComboBox::currentIndex() const {
-    return m_currentIndex;
-}
+int FluentComboBox::currentIndex() const { return m_currentIndex; }
 
 void FluentComboBox::setCurrentIndex(int index) {
     if (index >= 0 && index < m_model->rowCount() && m_currentIndex != index) {
@@ -204,9 +198,7 @@ QVariant FluentComboBox::currentData() const {
     return QVariant();
 }
 
-QList<int> FluentComboBox::selectedIndexes() const {
-    return m_selectedIndexes;
-}
+QList<int> FluentComboBox::selectedIndexes() const { return m_selectedIndexes; }
 
 void FluentComboBox::setSelectedIndexes(const QList<int>& indexes) {
     m_selectedIndexes = indexes;
@@ -235,19 +227,16 @@ QList<QVariant> FluentComboBox::selectedData() const {
 }
 
 // Items management
-int FluentComboBox::count() const {
-    return m_model->rowCount();
-}
+int FluentComboBox::count() const { return m_model->rowCount(); }
 
-void FluentComboBox::addItem(const QString& text) {
-    addItem(text, QVariant());
-}
+void FluentComboBox::addItem(const QString& text) { addItem(text, QVariant()); }
 
 void FluentComboBox::addItem(const QString& text, const QVariant& data) {
     addItem(text, QIcon(), data);
 }
 
-void FluentComboBox::addItem(const QString& text, const QIcon& icon, const QVariant& data) {
+void FluentComboBox::addItem(const QString& text, const QIcon& icon,
+                             const QVariant& data) {
     FluentComboBoxItem item(text, icon, data);
     addItem(item);
 }
@@ -258,7 +247,7 @@ void FluentComboBox::addItem(const FluentComboBoxItem& item) {
     standardItem->setEnabled(item.enabled);
 
     if (item.separator) {
-        standardItem->setData(true, Qt::UserRole + 1); // Mark as separator
+        standardItem->setData(true, Qt::UserRole + 1);  // Mark as separator
     }
 
     m_model->appendRow(standardItem);
@@ -281,11 +270,13 @@ void FluentComboBox::insertItem(int index, const QString& text) {
     insertItem(index, text, QVariant());
 }
 
-void FluentComboBox::insertItem(int index, const QString& text, const QVariant& data) {
+void FluentComboBox::insertItem(int index, const QString& text,
+                                const QVariant& data) {
     insertItem(index, text, QIcon(), data);
 }
 
-void FluentComboBox::insertItem(int index, const QString& text, const QIcon& icon, const QVariant& data) {
+void FluentComboBox::insertItem(int index, const QString& text,
+                                const QIcon& icon, const QVariant& data) {
     FluentComboBoxItem item(text, icon, data);
     insertItem(index, item);
 }
@@ -296,7 +287,7 @@ void FluentComboBox::insertItem(int index, const FluentComboBoxItem& item) {
     standardItem->setEnabled(item.enabled);
 
     if (item.separator) {
-        standardItem->setData(true, Qt::UserRole + 1); // Mark as separator
+        standardItem->setData(true, Qt::UserRole + 1);  // Mark as separator
     }
 
     m_model->insertRow(index, standardItem);
@@ -400,9 +391,7 @@ void FluentComboBox::insertSeparator(int index) {
 }
 
 // Model support
-QAbstractItemModel* FluentComboBox::model() const {
-    return m_model;
-}
+QAbstractItemModel* FluentComboBox::model() const { return m_model; }
 
 void FluentComboBox::setModel(QAbstractItemModel* model) {
     if (m_model != model) {
@@ -420,9 +409,7 @@ void FluentComboBox::setModel(QAbstractItemModel* model) {
 }
 
 // Dropdown configuration
-int FluentComboBox::maxVisibleItems() const {
-    return m_maxVisibleItems;
-}
+int FluentComboBox::maxVisibleItems() const { return m_maxVisibleItems; }
 
 void FluentComboBox::setMaxVisibleItems(int count) {
     if (m_maxVisibleItems != count) {
@@ -443,9 +430,7 @@ void FluentComboBox::setDropDirection(FluentComboBoxDropDirection direction) {
     }
 }
 
-bool FluentComboBox::isAnimated() const {
-    return m_animated;
-}
+bool FluentComboBox::isAnimated() const { return m_animated; }
 
 void FluentComboBox::setAnimated(bool animated) {
     if (m_animated != animated) {
@@ -455,9 +440,7 @@ void FluentComboBox::setAnimated(bool animated) {
 }
 
 // Search functionality
-QString FluentComboBox::searchText() const {
-    return m_searchText;
-}
+QString FluentComboBox::searchText() const { return m_searchText; }
 
 void FluentComboBox::setSearchText(const QString& text) {
     if (m_searchText != text) {
@@ -470,9 +453,7 @@ void FluentComboBox::setSearchText(const QString& text) {
     }
 }
 
-void FluentComboBox::clearSearch() {
-    setSearchText(QString());
-}
+void FluentComboBox::clearSearch() { setSearchText(QString()); }
 
 bool FluentComboBox::isCaseSensitiveSearch() const {
     return m_caseSensitiveSearch;
@@ -493,13 +474,18 @@ int FluentComboBox::findText(const QString& text, Qt::MatchFlags flags) const {
         QString itemText = m_model->item(i)->text();
 
         if (flags & Qt::MatchExactly) {
-            if (itemText == text) return i;
+            if (itemText == text)
+                return i;
         } else if (flags & Qt::MatchStartsWith) {
-            if (itemText.startsWith(text, flags & Qt::MatchCaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive)) {
+            if (itemText.startsWith(text, flags & Qt::MatchCaseSensitive
+                                              ? Qt::CaseSensitive
+                                              : Qt::CaseInsensitive)) {
                 return i;
             }
         } else if (flags & Qt::MatchContains) {
-            if (itemText.contains(text, flags & Qt::MatchCaseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive)) {
+            if (itemText.contains(text, flags & Qt::MatchCaseSensitive
+                                            ? Qt::CaseSensitive
+                                            : Qt::CaseInsensitive)) {
                 return i;
             }
         }
@@ -516,9 +502,7 @@ int FluentComboBox::findData(const QVariant& data) const {
     return -1;
 }
 
-bool FluentComboBox::isDropdownVisible() const {
-    return m_dropdownVisible;
-}
+bool FluentComboBox::isDropdownVisible() const { return m_dropdownVisible; }
 
 void FluentComboBox::showDropdown() {
     if (!m_dropdownVisible && m_model->rowCount() > 0) {
@@ -557,23 +541,17 @@ QSize FluentComboBox::sizeHint() const {
     }
 
     // Add padding and arrow space
-    maxWidth += 60; // 20px padding + 40px arrow area
+    maxWidth += 60;  // 20px padding + 40px arrow area
 
     return QSize(qMax(maxWidth, 120), 32);
 }
 
-QSize FluentComboBox::minimumSizeHint() const {
-    return QSize(80, 32);
-}
+QSize FluentComboBox::minimumSizeHint() const { return QSize(80, 32); }
 
 // Public slots
-void FluentComboBox::showPopup() {
-    showDropdown();
-}
+void FluentComboBox::showPopup() { showDropdown(); }
 
-void FluentComboBox::hidePopup() {
-    hideDropdown();
-}
+void FluentComboBox::hidePopup() { hideDropdown(); }
 
 // Protected methods - Event handling
 void FluentComboBox::paintEvent(QPaintEvent* event) {
@@ -614,11 +592,13 @@ void FluentComboBox::paintEvent(QPaintEvent* event) {
     }
 
     if (m_multiSelectEnabled && m_selectedIndexes.size() > 1) {
-        displayText = QString("%1 items selected").arg(m_selectedIndexes.size());
+        displayText =
+            QString("%1 items selected").arg(m_selectedIndexes.size());
     }
 
     painter.drawText(contentRect, Qt::AlignLeft | Qt::AlignVCenter,
-                    painter.fontMetrics().elidedText(displayText, Qt::ElideRight, contentRect.width()));
+                     painter.fontMetrics().elidedText(
+                         displayText, Qt::ElideRight, contentRect.width()));
 
     // Draw dropdown arrow
     QRect arrowRect(width() - 28, (height() - 16) / 2, 16, 16);
@@ -649,39 +629,39 @@ void FluentComboBox::mousePressEvent(QMouseEvent* event) {
 
 void FluentComboBox::keyPressEvent(QKeyEvent* event) {
     switch (event->key()) {
-    case Qt::Key_Space:
-    case Qt::Key_Return:
-    case Qt::Key_Enter:
-        if (!m_dropdownVisible) {
-            showDropdown();
-        }
-        event->accept();
-        break;
+        case Qt::Key_Space:
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            if (!m_dropdownVisible) {
+                showDropdown();
+            }
+            event->accept();
+            break;
 
-    case Qt::Key_Escape:
-        if (m_dropdownVisible) {
-            hideDropdown();
-        }
-        event->accept();
-        break;
+        case Qt::Key_Escape:
+            if (m_dropdownVisible) {
+                hideDropdown();
+            }
+            event->accept();
+            break;
 
-    case Qt::Key_Up:
-        if (m_currentIndex > 0) {
-            setCurrentIndex(m_currentIndex - 1);
-        }
-        event->accept();
-        break;
+        case Qt::Key_Up:
+            if (m_currentIndex > 0) {
+                setCurrentIndex(m_currentIndex - 1);
+            }
+            event->accept();
+            break;
 
-    case Qt::Key_Down:
-        if (m_currentIndex < count() - 1) {
-            setCurrentIndex(m_currentIndex + 1);
-        }
-        event->accept();
-        break;
+        case Qt::Key_Down:
+            if (m_currentIndex < count() - 1) {
+                setCurrentIndex(m_currentIndex + 1);
+            }
+            event->accept();
+            break;
 
-    default:
-        Core::FluentComponent::keyPressEvent(event);
-        break;
+        default:
+            Core::FluentComponent::keyPressEvent(event);
+            break;
     }
 }
 
@@ -731,7 +711,8 @@ void FluentComboBox::resizeEvent(QResizeEvent* event) {
 
 // Private slots
 void FluentComboBox::onDropdownItemClicked(const QModelIndex& index) {
-    if (!index.isValid()) return;
+    if (!index.isValid())
+        return;
 
     int sourceIndex = index.row();
 
@@ -808,7 +789,8 @@ void FluentComboBox::filterItems() {
         bool matches = true;
 
         if (!m_searchText.isEmpty()) {
-            Qt::CaseSensitivity cs = m_caseSensitiveSearch ? Qt::CaseSensitive : Qt::CaseInsensitive;
+            Qt::CaseSensitivity cs =
+                m_caseSensitiveSearch ? Qt::CaseSensitive : Qt::CaseInsensitive;
             matches = item->text().contains(m_searchText, cs);
         }
 
@@ -825,13 +807,15 @@ void FluentComboBox::filterItems() {
 }
 
 void FluentComboBox::positionDropdown() {
-    if (!m_dropdown) return;
+    if (!m_dropdown)
+        return;
 
     QPoint globalPos = mapToGlobal(QPoint(0, 0));
     QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
 
     int dropdownHeight = calculateDropdownHeight();
-    QRect dropdownRect(globalPos.x(), globalPos.y() + height(), width(), dropdownHeight);
+    QRect dropdownRect(globalPos.x(), globalPos.y() + height(), width(),
+                       dropdownHeight);
 
     // Check if dropdown fits below
     if (m_dropDirection == FluentComboBoxDropDirection::Auto) {
@@ -857,7 +841,8 @@ void FluentComboBox::positionDropdown() {
 }
 
 void FluentComboBox::animateDropdown(bool show) {
-    if (!m_dropdownAnimation) return;
+    if (!m_dropdownAnimation)
+        return;
 
     QRect finalGeometry = m_dropdown->geometry();
 
@@ -884,11 +869,12 @@ void FluentComboBox::animateDropdown(bool show) {
 }
 
 void FluentComboBox::updateDropdownSize() {
-    if (!m_dropdown || !m_listView) return;
+    if (!m_dropdown || !m_listView)
+        return;
 
     int itemHeight = 32;
     int visibleItems = qMin(m_maxVisibleItems, m_filteredModel->rowCount());
-    int dropdownHeight = visibleItems * itemHeight + 16; // 16px for padding
+    int dropdownHeight = visibleItems * itemHeight + 16;  // 16px for padding
 
     m_dropdown->setFixedHeight(dropdownHeight);
     m_listView->setFixedHeight(dropdownHeight - 16);
@@ -897,7 +883,7 @@ void FluentComboBox::updateDropdownSize() {
 int FluentComboBox::calculateDropdownHeight() const {
     int itemHeight = 32;
     int visibleItems = qMin(m_maxVisibleItems, m_filteredModel->rowCount());
-    return visibleItems * itemHeight + 16; // 16px for padding
+    return visibleItems * itemHeight + 16;  // 16px for padding
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

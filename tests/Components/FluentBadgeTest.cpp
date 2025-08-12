@@ -1,8 +1,8 @@
 // tests/Components/FluentBadgeTest.cpp
-#include <QtTest/QtTest>
-#include <QtTest/QSignalSpy>
 #include <QLabel>
 #include <QPushButton>
+#include <QtTest/QSignalSpy>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentBadge.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -113,7 +113,7 @@ void FluentBadgeTest::cleanup() {
 void FluentBadgeTest::testDefaultConstructor() {
     // Test default constructor
     FluentBadge* badge = new FluentBadge();
-    
+
     // Verify default properties
     QVERIFY(badge->text().isEmpty());
     QCOMPARE(badge->count(), 0);
@@ -129,7 +129,7 @@ void FluentBadgeTest::testDefaultConstructor() {
     QVERIFY(!badge->showZero());
     QVERIFY(!badge->isPulsing());
     QVERIFY(badge->isEmpty());
-    
+
     delete badge;
 }
 
@@ -137,11 +137,11 @@ void FluentBadgeTest::testTextConstructor() {
     // Test constructor with text
     const QString badgeText = "NEW";
     FluentBadge* badge = new FluentBadge(badgeText);
-    
+
     QCOMPARE(badge->text(), badgeText);
     QCOMPARE(badge->badgeType(), FluentBadgeType::Text);
     QVERIFY(!badge->isEmpty());
-    
+
     delete badge;
 }
 
@@ -149,11 +149,11 @@ void FluentBadgeTest::testCountConstructor() {
     // Test constructor with count
     const int badgeCount = 5;
     FluentBadge* badge = new FluentBadge(badgeCount);
-    
+
     QCOMPARE(badge->count(), badgeCount);
     QCOMPARE(badge->badgeType(), FluentBadgeType::Count);
     QVERIFY(!badge->isEmpty());
-    
+
     delete badge;
 }
 
@@ -162,13 +162,13 @@ void FluentBadgeTest::testIconConstructor() {
     QPixmap pixmap(16, 16);
     pixmap.fill(Qt::red);
     QIcon badgeIcon(pixmap);
-    
+
     FluentBadge* badge = new FluentBadge(badgeIcon);
-    
+
     QVERIFY(!badge->icon().isNull());
     QCOMPARE(badge->badgeType(), FluentBadgeType::Icon);
     QVERIFY(!badge->isEmpty());
-    
+
     delete badge;
 }
 
@@ -177,7 +177,7 @@ void FluentBadgeTest::testTypeConstructor() {
     FluentBadge* dotBadge = new FluentBadge(FluentBadgeType::Dot);
     QCOMPARE(dotBadge->badgeType(), FluentBadgeType::Dot);
     delete dotBadge;
-    
+
     FluentBadge* statusBadge = new FluentBadge(FluentBadgeType::Status);
     QCOMPARE(statusBadge->badgeType(), FluentBadgeType::Status);
     delete statusBadge;
@@ -187,19 +187,19 @@ void FluentBadgeTest::testText() {
     // Test setting and getting text
     const QString text1 = "NEW";
     const QString text2 = "HOT";
-    
+
     QSignalSpy textChangedSpy(m_badge, &FluentBadge::textChanged);
-    
+
     m_badge->setText(text1);
     QCOMPARE(m_badge->text(), text1);
     QCOMPARE(textChangedSpy.count(), 1);
     QCOMPARE(textChangedSpy.first().first().toString(), text1);
-    
+
     m_badge->setText(text2);
     QCOMPARE(m_badge->text(), text2);
     QCOMPARE(textChangedSpy.count(), 2);
     QCOMPARE(textChangedSpy.last().first().toString(), text2);
-    
+
     // Setting the same text should not emit the signal
     m_badge->setText(text2);
     QCOMPARE(textChangedSpy.count(), 2);
@@ -208,46 +208,46 @@ void FluentBadgeTest::testText() {
 void FluentBadgeTest::testCount() {
     // Test setting and getting count
     QSignalSpy countChangedSpy(m_badge, &FluentBadge::countChanged);
-    
-    QCOMPARE(m_badge->count(), 0); // Default count
-    
+
+    QCOMPARE(m_badge->count(), 0);  // Default count
+
     m_badge->setCount(5);
     QCOMPARE(m_badge->count(), 5);
     QCOMPARE(countChangedSpy.count(), 1);
     QCOMPARE(countChangedSpy.first().first().toInt(), 5);
-    
+
     m_badge->setCount(10);
     QCOMPARE(m_badge->count(), 10);
     QCOMPARE(countChangedSpy.count(), 2);
     QCOMPARE(countChangedSpy.last().first().toInt(), 10);
-    
+
     // Setting the same count should not emit the signal
     m_badge->setCount(10);
     QCOMPARE(countChangedSpy.count(), 2);
-    
+
     // Test count above max count
     m_badge->setMaxCount(99);
     m_badge->setCount(150);
     QCOMPARE(m_badge->count(), 150);
-    QCOMPARE(m_badge->displayText(), QString("99+")); // Should show "99+"
+    QCOMPARE(m_badge->displayText(), QString("99+"));  // Should show "99+"
 }
 
 void FluentBadgeTest::testMaxCount() {
     // Test setting and getting max count
     QSignalSpy maxCountChangedSpy(m_badge, &FluentBadge::maxCountChanged);
-    
-    QCOMPARE(m_badge->maxCount(), 99); // Default max count
-    
+
+    QCOMPARE(m_badge->maxCount(), 99);  // Default max count
+
     m_badge->setMaxCount(50);
     QCOMPARE(m_badge->maxCount(), 50);
     QCOMPARE(maxCountChangedSpy.count(), 1);
     QCOMPARE(maxCountChangedSpy.first().first().toInt(), 50);
-    
+
     m_badge->setMaxCount(200);
     QCOMPARE(m_badge->maxCount(), 200);
     QCOMPARE(maxCountChangedSpy.count(), 2);
     QCOMPARE(maxCountChangedSpy.last().first().toInt(), 200);
-    
+
     // Setting the same max count should not emit the signal
     m_badge->setMaxCount(200);
     QCOMPARE(maxCountChangedSpy.count(), 2);
@@ -256,19 +256,19 @@ void FluentBadgeTest::testMaxCount() {
 void FluentBadgeTest::testIcon() {
     // Test setting and getting icon
     QSignalSpy iconChangedSpy(m_badge, &FluentBadge::iconChanged);
-    
+
     QPixmap pixmap1(16, 16);
     pixmap1.fill(Qt::red);
     QIcon icon1(pixmap1);
-    
+
     m_badge->setIcon(icon1);
     QVERIFY(!m_badge->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 1);
-    
+
     QPixmap pixmap2(16, 16);
     pixmap2.fill(Qt::green);
     QIcon icon2(pixmap2);
-    
+
     m_badge->setIcon(icon2);
     QVERIFY(!m_badge->icon().isNull());
     QCOMPARE(iconChangedSpy.count(), 2);
@@ -277,26 +277,27 @@ void FluentBadgeTest::testIcon() {
 void FluentBadgeTest::testBadgeType() {
     // Test setting and getting badge type
     QSignalSpy badgeTypeChangedSpy(m_badge, &FluentBadge::badgeTypeChanged);
-    
-    QCOMPARE(m_badge->badgeType(), FluentBadgeType::Count); // Default type
-    
+
+    QCOMPARE(m_badge->badgeType(), FluentBadgeType::Count);  // Default type
+
     m_badge->setBadgeType(FluentBadgeType::Dot);
     QCOMPARE(m_badge->badgeType(), FluentBadgeType::Dot);
     QCOMPARE(badgeTypeChangedSpy.count(), 1);
-    QCOMPARE(badgeTypeChangedSpy.first().first().value<FluentBadgeType>(), FluentBadgeType::Dot);
-    
+    QCOMPARE(badgeTypeChangedSpy.first().first().value<FluentBadgeType>(),
+             FluentBadgeType::Dot);
+
     m_badge->setBadgeType(FluentBadgeType::Text);
     QCOMPARE(m_badge->badgeType(), FluentBadgeType::Text);
     QCOMPARE(badgeTypeChangedSpy.count(), 2);
-    
+
     m_badge->setBadgeType(FluentBadgeType::Icon);
     QCOMPARE(m_badge->badgeType(), FluentBadgeType::Icon);
     QCOMPARE(badgeTypeChangedSpy.count(), 3);
-    
+
     m_badge->setBadgeType(FluentBadgeType::Status);
     QCOMPARE(m_badge->badgeType(), FluentBadgeType::Status);
     QCOMPARE(badgeTypeChangedSpy.count(), 4);
-    
+
     // Setting the same type should not emit the signal
     m_badge->setBadgeType(FluentBadgeType::Status);
     QCOMPARE(badgeTypeChangedSpy.count(), 4);
@@ -306,12 +307,13 @@ void FluentBadgeTest::testBadgeSize() {
     // Test setting and getting badge size
     QSignalSpy badgeSizeChangedSpy(m_badge, &FluentBadge::badgeSizeChanged);
 
-    QCOMPARE(m_badge->badgeSize(), FluentBadgeSize::Medium); // Default size
+    QCOMPARE(m_badge->badgeSize(), FluentBadgeSize::Medium);  // Default size
 
     m_badge->setBadgeSize(FluentBadgeSize::Small);
     QCOMPARE(m_badge->badgeSize(), FluentBadgeSize::Small);
     QCOMPARE(badgeSizeChangedSpy.count(), 1);
-    QCOMPARE(badgeSizeChangedSpy.first().first().value<FluentBadgeSize>(), FluentBadgeSize::Small);
+    QCOMPARE(badgeSizeChangedSpy.first().first().value<FluentBadgeSize>(),
+             FluentBadgeSize::Small);
 
     m_badge->setBadgeSize(FluentBadgeSize::Large);
     QCOMPARE(m_badge->badgeSize(), FluentBadgeSize::Large);
@@ -326,12 +328,13 @@ void FluentBadgeTest::testBadgeStyle() {
     // Test setting and getting badge style
     QSignalSpy badgeStyleChangedSpy(m_badge, &FluentBadge::badgeStyleChanged);
 
-    QCOMPARE(m_badge->badgeStyle(), FluentBadgeStyle::Filled); // Default style
+    QCOMPARE(m_badge->badgeStyle(), FluentBadgeStyle::Filled);  // Default style
 
     m_badge->setBadgeStyle(FluentBadgeStyle::Outline);
     QCOMPARE(m_badge->badgeStyle(), FluentBadgeStyle::Outline);
     QCOMPARE(badgeStyleChangedSpy.count(), 1);
-    QCOMPARE(badgeStyleChangedSpy.first().first().value<FluentBadgeStyle>(), FluentBadgeStyle::Outline);
+    QCOMPARE(badgeStyleChangedSpy.first().first().value<FluentBadgeStyle>(),
+             FluentBadgeStyle::Outline);
 
     m_badge->setBadgeStyle(FluentBadgeStyle::Subtle);
     QCOMPARE(m_badge->badgeStyle(), FluentBadgeStyle::Subtle);
@@ -346,12 +349,14 @@ void FluentBadgeTest::testPosition() {
     // Test setting and getting position
     QSignalSpy positionChangedSpy(m_badge, &FluentBadge::positionChanged);
 
-    QCOMPARE(m_badge->position(), FluentBadgePosition::TopRight); // Default position
+    QCOMPARE(m_badge->position(),
+             FluentBadgePosition::TopRight);  // Default position
 
     m_badge->setPosition(FluentBadgePosition::TopLeft);
     QCOMPARE(m_badge->position(), FluentBadgePosition::TopLeft);
     QCOMPARE(positionChangedSpy.count(), 1);
-    QCOMPARE(positionChangedSpy.first().first().value<FluentBadgePosition>(), FluentBadgePosition::TopLeft);
+    QCOMPARE(positionChangedSpy.first().first().value<FluentBadgePosition>(),
+             FluentBadgePosition::TopLeft);
 
     m_badge->setPosition(FluentBadgePosition::BottomRight);
     QCOMPARE(m_badge->position(), FluentBadgePosition::BottomRight);
@@ -370,12 +375,13 @@ void FluentBadgeTest::testStatus() {
     // Test setting and getting status
     QSignalSpy statusChangedSpy(m_badge, &FluentBadge::statusChanged);
 
-    QCOMPARE(m_badge->status(), FluentBadgeStatus::None); // Default status
+    QCOMPARE(m_badge->status(), FluentBadgeStatus::None);  // Default status
 
     m_badge->setStatus(FluentBadgeStatus::Success);
     QCOMPARE(m_badge->status(), FluentBadgeStatus::Success);
     QCOMPARE(statusChangedSpy.count(), 1);
-    QCOMPARE(statusChangedSpy.first().first().value<FluentBadgeStatus>(), FluentBadgeStatus::Success);
+    QCOMPARE(statusChangedSpy.first().first().value<FluentBadgeStatus>(),
+             FluentBadgeStatus::Success);
 
     m_badge->setStatus(FluentBadgeStatus::Warning);
     QCOMPARE(m_badge->status(), FluentBadgeStatus::Warning);
@@ -398,13 +404,13 @@ void FluentBadgeTest::testCustomColor() {
     // Test setting and getting custom color
     QSignalSpy customColorChangedSpy(m_badge, &FluentBadge::customColorChanged);
 
-    QColor color1(255, 0, 0); // Red
+    QColor color1(255, 0, 0);  // Red
     m_badge->setCustomColor(color1);
     QCOMPARE(m_badge->customColor(), color1);
     QCOMPARE(customColorChangedSpy.count(), 1);
     QCOMPARE(customColorChangedSpy.first().first().value<QColor>(), color1);
 
-    QColor color2(0, 255, 0); // Green
+    QColor color2(0, 255, 0);  // Green
     m_badge->setCustomColor(color2);
     QCOMPARE(m_badge->customColor(), color2);
     QCOMPARE(customColorChangedSpy.count(), 2);
@@ -419,7 +425,7 @@ void FluentBadgeTest::testVisible() {
     // Test visibility
     QSignalSpy visibilityChangedSpy(m_badge, &FluentBadge::visibilityChanged);
 
-    QVERIFY(!m_badge->isVisible()); // Default should be false
+    QVERIFY(!m_badge->isVisible());  // Default should be false
 
     m_badge->setVisible(true);
     QVERIFY(m_badge->isVisible());
@@ -440,7 +446,7 @@ void FluentBadgeTest::testAnimated() {
     // Test animated property
     QSignalSpy animatedChangedSpy(m_badge, &FluentBadge::animatedChanged);
 
-    QVERIFY(m_badge->isAnimated()); // Default should be true
+    QVERIFY(m_badge->isAnimated());  // Default should be true
 
     m_badge->setAnimated(false);
     QVERIFY(!m_badge->isAnimated());
@@ -461,7 +467,7 @@ void FluentBadgeTest::testShowZero() {
     // Test show zero property
     QSignalSpy showZeroChangedSpy(m_badge, &FluentBadge::showZeroChanged);
 
-    QVERIFY(!m_badge->showZero()); // Default should be false
+    QVERIFY(!m_badge->showZero());  // Default should be false
 
     m_badge->setShowZero(true);
     QVERIFY(m_badge->showZero());
@@ -479,17 +485,17 @@ void FluentBadgeTest::testShowZero() {
 
     // Test behavior with count = 0
     m_badge->setCount(0);
-    QVERIFY(m_badge->isEmpty()); // Should be empty when showZero is false
+    QVERIFY(m_badge->isEmpty());  // Should be empty when showZero is false
 
     m_badge->setShowZero(true);
-    QVERIFY(!m_badge->isEmpty()); // Should not be empty when showZero is true
+    QVERIFY(!m_badge->isEmpty());  // Should not be empty when showZero is true
 }
 
 void FluentBadgeTest::testPulsing() {
     // Test pulsing property
     QSignalSpy pulsingChangedSpy(m_badge, &FluentBadge::pulsingChanged);
 
-    QVERIFY(!m_badge->isPulsing()); // Default should be false
+    QVERIFY(!m_badge->isPulsing());  // Default should be false
 
     m_badge->setPulsing(true);
     QVERIFY(m_badge->isPulsing());
@@ -540,7 +546,7 @@ void FluentBadgeTest::testDisplayText() {
 
 void FluentBadgeTest::testIsEmpty() {
     // Test isEmpty functionality
-    QVERIFY(m_badge->isEmpty()); // Default should be empty
+    QVERIFY(m_badge->isEmpty());  // Default should be empty
 
     // Count badge with count > 0
     m_badge->setBadgeType(FluentBadgeType::Count);
@@ -598,7 +604,7 @@ void FluentBadgeTest::testBadgeRect() {
 
 void FluentBadgeTest::testAttachTo() {
     // Test attaching badge to widget
-    QVERIFY(m_badge->attachedWidget() == nullptr); // Initially not attached
+    QVERIFY(m_badge->attachedWidget() == nullptr);  // Initially not attached
 
     m_badge->attachTo(m_parentWidget);
     QCOMPARE(m_badge->attachedWidget(), m_parentWidget);
@@ -646,7 +652,8 @@ void FluentBadgeTest::testCreateCountBadge() {
 
 void FluentBadgeTest::testCreateStatusBadge() {
     // Test status badge factory method
-    FluentBadge* statusBadge = FluentBadge::createStatusBadge(FluentBadgeStatus::Success);
+    FluentBadge* statusBadge =
+        FluentBadge::createStatusBadge(FluentBadgeStatus::Success);
 
     QCOMPARE(statusBadge->badgeType(), FluentBadgeType::Status);
     QCOMPARE(statusBadge->status(), FluentBadgeStatus::Success);
@@ -706,7 +713,7 @@ void FluentBadgeTest::testPulseAnimation() {
 
     // Test single pulse
     m_badge->pulse();
-    QVERIFY(true); // Animation should start
+    QVERIFY(true);  // Animation should start
 
     // Test continuous pulsing
     m_badge->setPulsing(true);
@@ -752,7 +759,7 @@ void FluentBadgeTest::testDecrement() {
 
     m_badge->decrement();
     QCOMPARE(m_badge->count(), 0);
-    QCOMPARE(countChangedSpy.count(), 0); // Should not emit signal
+    QCOMPARE(countChangedSpy.count(), 0);  // Should not emit signal
 }
 
 void FluentBadgeTest::testReset() {
@@ -848,7 +855,8 @@ void FluentBadgeTest::testAccessibility() {
     m_badge->setCount(5);
     m_badge->setText("Notification badge");
 
-    // Test that badge can be created and used without accessibility-related crashes
+    // Test that badge can be created and used without accessibility-related
+    // crashes
     m_badge->setVisible(true);
     m_badge->attachTo(m_parentWidget);
 
@@ -864,13 +872,13 @@ void FluentBadgeTest::testThemeIntegration() {
     auto originalMode = theme.mode();
 
     // Change theme mode
-    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light) ?
-                   FluentQt::Styling::FluentThemeMode::Dark :
-                   FluentQt::Styling::FluentThemeMode::Light;
+    auto newMode = (originalMode == FluentQt::Styling::FluentThemeMode::Light)
+                       ? FluentQt::Styling::FluentThemeMode::Dark
+                       : FluentQt::Styling::FluentThemeMode::Light;
     theme.setMode(newMode);
 
-    // Badge should update its appearance (this would require checking internal styling)
-    // For now, just verify the badge still functions correctly
+    // Badge should update its appearance (this would require checking internal
+    // styling) For now, just verify the badge still functions correctly
     QSignalSpy countChangedSpy(m_badge, &FluentBadge::countChanged);
     m_badge->setCount(42);
     QCOMPARE(m_badge->count(), 42);

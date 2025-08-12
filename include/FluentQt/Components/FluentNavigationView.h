@@ -1,33 +1,25 @@
 // include/FluentQt/Components/FluentNavigationView.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QWidget>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QStackedWidget>
+#include <QIcon>
+#include <QLabel>
 #include <QListWidget>
 #include <QListWidgetItem>
-#include <QLabel>
-#include <QToolButton>
 #include <QPropertyAnimation>
-#include <QIcon>
 #include <QSplitter>
+#include <QStackedWidget>
+#include <QToolButton>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <functional>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentNavigationDisplayMode {
-    Auto,
-    Expanded,
-    Compact,
-    Minimal
-};
+enum class FluentNavigationDisplayMode { Auto, Expanded, Compact, Minimal };
 
-enum class FluentNavigationSelectionFollowsFocus {
-    Disabled,
-    Enabled
-};
+enum class FluentNavigationSelectionFollowsFocus { Disabled, Enabled };
 
 struct FluentNavigationItem {
     QString text;
@@ -39,17 +31,22 @@ struct FluentNavigationItem {
     QVariant userData;
 
     FluentNavigationItem() = default;
-    FluentNavigationItem(const QString& text, const QIcon& icon = QIcon(), QWidget* content = nullptr)
+    FluentNavigationItem(const QString& text, const QIcon& icon = QIcon(),
+                         QWidget* content = nullptr)
         : text(text), icon(icon), tag(text), content(content) {}
 };
 
 class FluentNavigationView : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentNavigationDisplayMode displayMode READ displayMode WRITE setDisplayMode NOTIFY displayModeChanged)
-    Q_PROPERTY(bool isPaneOpen READ isPaneOpen WRITE setPaneOpen NOTIFY paneOpenChanged)
+    Q_PROPERTY(FluentNavigationDisplayMode displayMode READ displayMode WRITE
+                   setDisplayMode NOTIFY displayModeChanged)
+    Q_PROPERTY(bool isPaneOpen READ isPaneOpen WRITE setPaneOpen NOTIFY
+                   paneOpenChanged)
     Q_PROPERTY(QString header READ header WRITE setHeader NOTIFY headerChanged)
-    Q_PROPERTY(bool isBackButtonVisible READ isBackButtonVisible WRITE setBackButtonVisible)
-    Q_PROPERTY(bool isSettingsVisible READ isSettingsVisible WRITE setSettingsVisible)
+    Q_PROPERTY(bool isBackButtonVisible READ isBackButtonVisible WRITE
+                   setBackButtonVisible)
+    Q_PROPERTY(
+        bool isSettingsVisible READ isSettingsVisible WRITE setSettingsVisible)
 
 public:
     explicit FluentNavigationView(QWidget* parent = nullptr);
@@ -143,7 +140,8 @@ private:
     void animateItemSelection(QWidget* item, bool selected);
 
 private:
-    FluentNavigationDisplayMode m_displayMode{FluentNavigationDisplayMode::Auto};
+    FluentNavigationDisplayMode m_displayMode{
+        FluentNavigationDisplayMode::Auto};
     bool m_isPaneOpen{true};
     QString m_header;
     bool m_backButtonVisible{false};
@@ -182,4 +180,4 @@ private:
     int m_expandedModeThreshold{1008};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

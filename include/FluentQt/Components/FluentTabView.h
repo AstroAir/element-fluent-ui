@@ -1,40 +1,25 @@
 // include/FluentQt/Components/FluentTabView.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Components/FluentButton.h"
-#include <QTabWidget>
-#include <QTabBar>
-#include <QStackedWidget>
-#include <QMenu>
-#include <QPropertyAnimation>
 #include <QBoxLayout>
 #include <QHBoxLayout>
-#include <QVBoxLayout>
+#include <QMenu>
+#include <QPropertyAnimation>
 #include <QScrollArea>
+#include <QStackedWidget>
+#include <QTabBar>
+#include <QTabWidget>
+#include <QVBoxLayout>
+#include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentTabPosition {
-    Top,
-    Bottom,
-    Left,
-    Right
-};
+enum class FluentTabPosition { Top, Bottom, Left, Right };
 
-enum class FluentTabStyle {
-    Standard,
-    Pill,
-    Underline,
-    Compact
-};
+enum class FluentTabStyle { Standard, Pill, Underline, Compact };
 
-enum class FluentTabCloseMode {
-    Never,
-    Always,
-    OnHover,
-    OnSelection
-};
+enum class FluentTabCloseMode { Never, Always, OnHover, OnSelection };
 
 struct FluentTabData {
     QString text;
@@ -50,14 +35,15 @@ class FluentTabButton : public FluentButton {
     Q_OBJECT
 
 public:
-    explicit FluentTabButton(const FluentTabData& data, QWidget* parent = nullptr);
-    
+    explicit FluentTabButton(const FluentTabData& data,
+                             QWidget* parent = nullptr);
+
     void setTabData(const FluentTabData& data);
     FluentTabData tabData() const { return m_tabData; }
-    
+
     void setSelected(bool selected);
     bool isSelected() const { return m_selected; }
-    
+
     void setPinned(bool pinned);
     bool isPinned() const { return m_tabData.pinned; }
 
@@ -82,10 +68,13 @@ private:
 
 class FluentTabView : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentTabPosition tabPosition READ tabPosition WRITE setTabPosition NOTIFY tabPositionChanged)
-    Q_PROPERTY(FluentTabStyle tabStyle READ tabStyle WRITE setTabStyle NOTIFY tabStyleChanged)
+    Q_PROPERTY(FluentTabPosition tabPosition READ tabPosition WRITE
+                   setTabPosition NOTIFY tabPositionChanged)
+    Q_PROPERTY(FluentTabStyle tabStyle READ tabStyle WRITE setTabStyle NOTIFY
+                   tabStyleChanged)
     Q_PROPERTY(FluentTabCloseMode closeMode READ closeMode WRITE setCloseMode)
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentChanged)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY
+                   currentChanged)
     Q_PROPERTY(bool tabsClosable READ tabsClosable WRITE setTabsClosable)
     Q_PROPERTY(bool tabsMovable READ tabsMovable WRITE setTabsMovable)
     Q_PROPERTY(bool scrollable READ scrollable WRITE setScrollable)
@@ -126,35 +115,36 @@ public:
 
     // Tab operations
     int addTab(const QString& text, QWidget* widget = nullptr);
-    int addTab(const QIcon& icon, const QString& text, QWidget* widget = nullptr);
+    int addTab(const QIcon& icon, const QString& text,
+               QWidget* widget = nullptr);
     int addTab(const FluentTabData& data);
-    
+
     int insertTab(int index, const QString& text, QWidget* widget = nullptr);
     int insertTab(int index, const FluentTabData& data);
-    
+
     void removeTab(int index);
     void moveTab(int from, int to);
-    
+
     // Tab properties
     int count() const;
     QString tabText(int index) const;
     void setTabText(int index, const QString& text);
-    
+
     QIcon tabIcon(int index) const;
     void setTabIcon(int index, const QIcon& icon);
-    
+
     QString tabToolTip(int index) const;
     void setTabToolTip(int index, const QString& tooltip);
-    
+
     bool isTabClosable(int index) const;
     void setTabClosable(int index, bool closable);
-    
+
     bool isTabPinned(int index) const;
     void setTabPinned(int index, bool pinned);
-    
+
     QWidget* widget(int index) const;
     void setWidget(int index, QWidget* widget);
-    
+
     // Tab finding
     int indexOf(QWidget* widget) const;
     int findTab(const QString& text) const;
@@ -213,18 +203,18 @@ private:
     FluentTabPosition m_tabPosition{FluentTabPosition::Top};
     FluentTabStyle m_tabStyle{FluentTabStyle::Standard};
     FluentTabCloseMode m_closeMode{FluentTabCloseMode::OnHover};
-    
+
     int m_currentIndex{-1};
     bool m_tabsClosable{true};
     bool m_tabsMovable{true};
     bool m_scrollable{true};
     bool m_showAddButton{false};
-    
+
     std::vector<FluentTabData> m_tabData;
     std::vector<FluentTabButton*> m_tabButtons;
-    
+
     std::unique_ptr<QPropertyAnimation> m_scrollAnimation;
     std::unique_ptr<QPropertyAnimation> m_transitionAnimation;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

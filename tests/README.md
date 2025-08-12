@@ -113,17 +113,17 @@ Accessibility tests verify:
 ```cpp
 void FluentComponentTest::testBasicFunctionality() {
     auto* component = new FluentComponent();
-    
+
     // Test initial state
     QCOMPARE(component->state(), FluentState::Normal);
-    
+
     // Test state changes
     QSignalSpy stateSpy(component, &FluentComponent::stateChanged);
     component->setState(FluentState::Hovered);
-    
+
     QCOMPARE(component->state(), FluentState::Hovered);
     QCOMPARE(stateSpy.count(), 1);
-    
+
     delete component;
 }
 ```
@@ -134,16 +134,16 @@ void FluentComponentTest::testBasicFunctionality() {
 void FluentAnimatorTest::testFadeAnimation() {
     auto* widget = new QWidget();
     auto* animator = new FluentAnimator();
-    
+
     auto* animation = animator->fadeIn(widget, 300);
     QVERIFY(animation != nullptr);
-    
+
     QSignalSpy finishedSpy(animation, &QPropertyAnimation::finished);
     animation->start();
-    
+
     QVERIFY(finishedSpy.wait(1000));
     QCOMPARE(finishedSpy.count(), 1);
-    
+
     delete animation;
     delete animator;
     delete widget;
@@ -155,17 +155,17 @@ void FluentAnimatorTest::testFadeAnimation() {
 ```cpp
 void FluentThemeTest::testColorSystem() {
     auto& theme = FluentTheme::instance();
-    
+
     // Test color retrieval
     QColor primary = theme.color("backgroundPrimary");
     QVERIFY(primary.isValid());
-    
+
     // Test theme changes
     QSignalSpy themeSpy(&theme, &FluentTheme::themeChanged);
     theme.setDarkMode(true);
-    
+
     QCOMPARE(themeSpy.count(), 1);
-    
+
     QColor darkPrimary = theme.color("backgroundPrimary");
     QVERIFY(darkPrimary != primary);
 }
@@ -217,7 +217,7 @@ private slots:
     void init();           // Run before each test
     void cleanup();        // Run after each test
     void cleanupTestCase(); // Run once after all tests
-    
+
     // Your test methods
     void testBasicFunctionality();
     void testEdgeCases();

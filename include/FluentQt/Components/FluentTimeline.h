@@ -1,17 +1,17 @@
 // include/FluentQt/Components/FluentTimeline.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QScrollArea>
-#include <QVBoxLayout>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
-#include <QPropertyAnimation>
 #include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QScrollArea>
 #include <QSequentialAnimationGroup>
 #include <QTimer>
-#include <QGraphicsDropShadowEffect>
+#include <QVBoxLayout>
 #include <memory>
 #include <vector>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -21,38 +21,21 @@ class FluentTimelineItem;
 // Forward declare enums from FluentTimelineItem.h
 enum class FluentTimelineItemState;
 
-enum class FluentTimelineOrientation {
-    Vertical,
-    Horizontal
-};
+enum class FluentTimelineOrientation { Vertical, Horizontal };
 
-enum class FluentTimelineAlignment {
-    Left,
-    Right,
-    Center,
-    Alternate
-};
+enum class FluentTimelineAlignment { Left, Right, Center, Alternate };
 
-enum class FluentTimelineStyle {
-    Default,
-    Compact,
-    Detailed,
-    Minimal
-};
+enum class FluentTimelineStyle { Default, Compact, Detailed, Minimal };
 
-enum class FluentTimelineConnectorStyle {
-    Solid,
-    Dashed,
-    Dotted,
-    None
-};
+enum class FluentTimelineConnectorStyle { Solid, Dashed, Dotted, None };
 
 struct FluentTimelineConfig {
     FluentTimelineOrientation orientation{FluentTimelineOrientation::Vertical};
     FluentTimelineAlignment alignment{FluentTimelineAlignment::Left};
     FluentTimelineStyle style{FluentTimelineStyle::Default};
-    FluentTimelineConnectorStyle connectorStyle{FluentTimelineConnectorStyle::Solid};
-    
+    FluentTimelineConnectorStyle connectorStyle{
+        FluentTimelineConnectorStyle::Solid};
+
     int itemSpacing{16};
     int connectorWidth{2};
     int indicatorSize{12};
@@ -61,47 +44,69 @@ struct FluentTimelineConfig {
     bool interactive{true};
     bool showConnectors{true};
     bool showIndicators{true};
-    
+
     QColor connectorColor;
     QColor indicatorColor;
     QColor backgroundColor;
-    
+
     // Auto-calculated if not set
     bool autoCalculateColors{true};
 };
 
 class FluentTimeline : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentTimelineOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
-    Q_PROPERTY(FluentTimelineAlignment alignment READ alignment WRITE setAlignment NOTIFY alignmentChanged)
-    Q_PROPERTY(FluentTimelineStyle timelineStyle READ timelineStyle WRITE setTimelineStyle NOTIFY styleChanged)
-    Q_PROPERTY(FluentTimelineConnectorStyle connectorStyle READ connectorStyle WRITE setConnectorStyle NOTIFY connectorStyleChanged)
-    Q_PROPERTY(int itemSpacing READ itemSpacing WRITE setItemSpacing NOTIFY itemSpacingChanged)
-    Q_PROPERTY(int connectorWidth READ connectorWidth WRITE setConnectorWidth NOTIFY connectorWidthChanged)
-    Q_PROPERTY(int indicatorSize READ indicatorSize WRITE setIndicatorSize NOTIFY indicatorSizeChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(bool scrollable READ isScrollable WRITE setScrollable NOTIFY scrollableChanged)
-    Q_PROPERTY(bool interactive READ isInteractive WRITE setInteractive NOTIFY interactiveChanged)
-    Q_PROPERTY(bool showConnectors READ showConnectors WRITE setShowConnectors NOTIFY showConnectorsChanged)
-    Q_PROPERTY(bool showIndicators READ showIndicators WRITE setShowIndicators NOTIFY showIndicatorsChanged)
+    Q_PROPERTY(FluentTimelineOrientation orientation READ orientation WRITE
+                   setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(FluentTimelineAlignment alignment READ alignment WRITE
+                   setAlignment NOTIFY alignmentChanged)
+    Q_PROPERTY(FluentTimelineStyle timelineStyle READ timelineStyle WRITE
+                   setTimelineStyle NOTIFY styleChanged)
+    Q_PROPERTY(FluentTimelineConnectorStyle connectorStyle READ connectorStyle
+                   WRITE setConnectorStyle NOTIFY connectorStyleChanged)
+    Q_PROPERTY(int itemSpacing READ itemSpacing WRITE setItemSpacing NOTIFY
+                   itemSpacingChanged)
+    Q_PROPERTY(int connectorWidth READ connectorWidth WRITE setConnectorWidth
+                   NOTIFY connectorWidthChanged)
+    Q_PROPERTY(int indicatorSize READ indicatorSize WRITE setIndicatorSize
+                   NOTIFY indicatorSizeChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(bool scrollable READ isScrollable WRITE setScrollable NOTIFY
+                   scrollableChanged)
+    Q_PROPERTY(bool interactive READ isInteractive WRITE setInteractive NOTIFY
+                   interactiveChanged)
+    Q_PROPERTY(bool showConnectors READ showConnectors WRITE setShowConnectors
+                   NOTIFY showConnectorsChanged)
+    Q_PROPERTY(bool showIndicators READ showIndicators WRITE setShowIndicators
+                   NOTIFY showIndicatorsChanged)
 
 public:
     explicit FluentTimeline(QWidget* parent = nullptr);
-    explicit FluentTimeline(FluentTimelineOrientation orientation, QWidget* parent = nullptr);
-    explicit FluentTimeline(const FluentTimelineConfig& config, QWidget* parent = nullptr);
+    explicit FluentTimeline(FluentTimelineOrientation orientation,
+                            QWidget* parent = nullptr);
+    explicit FluentTimeline(const FluentTimelineConfig& config,
+                            QWidget* parent = nullptr);
     ~FluentTimeline() override;
 
     // Configuration properties
-    FluentTimelineOrientation orientation() const noexcept { return m_config.orientation; }
+    FluentTimelineOrientation orientation() const noexcept {
+        return m_config.orientation;
+    }
     void setOrientation(FluentTimelineOrientation orientation);
 
-    FluentTimelineAlignment alignment() const noexcept { return m_config.alignment; }
+    FluentTimelineAlignment alignment() const noexcept {
+        return m_config.alignment;
+    }
     void setAlignment(FluentTimelineAlignment alignment);
 
-    FluentTimelineStyle timelineStyle() const noexcept { return m_config.style; }
+    FluentTimelineStyle timelineStyle() const noexcept {
+        return m_config.style;
+    }
     void setTimelineStyle(FluentTimelineStyle style);
 
-    FluentTimelineConnectorStyle connectorStyle() const noexcept { return m_config.connectorStyle; }
+    FluentTimelineConnectorStyle connectorStyle() const noexcept {
+        return m_config.connectorStyle;
+    }
     void setConnectorStyle(FluentTimelineConnectorStyle style);
 
     // Spacing and sizing
@@ -154,9 +159,13 @@ public:
     void setCurrentIndex(int index);
 
     // Convenience methods for creating items
-    FluentTimelineItem* addTextItem(const QString& title, const QString& description = QString());
-    FluentTimelineItem* addIconItem(const QIcon& icon, const QString& title, const QString& description = QString());
-    FluentTimelineItem* addDateTimeItem(const QDateTime& dateTime, const QString& title, const QString& description = QString());
+    FluentTimelineItem* addTextItem(const QString& title,
+                                    const QString& description = QString());
+    FluentTimelineItem* addIconItem(const QIcon& icon, const QString& title,
+                                    const QString& description = QString());
+    FluentTimelineItem* addDateTimeItem(const QDateTime& dateTime,
+                                        const QString& title,
+                                        const QString& description = QString());
 
     // Animation control
     void animateToItem(FluentTimelineItem* item);
@@ -188,12 +197,13 @@ signals:
     void interactiveChanged(bool interactive);
     void showConnectorsChanged(bool show);
     void showIndicatorsChanged(bool show);
-    
+
     void itemAdded(FluentTimelineItem* item, int index);
     void itemRemoved(FluentTimelineItem* item, int index);
     void itemClicked(FluentTimelineItem* item, int index);
     void itemDoubleClicked(FluentTimelineItem* item, int index);
-    void currentItemChanged(FluentTimelineItem* current, FluentTimelineItem* previous);
+    void currentItemChanged(FluentTimelineItem* current,
+                            FluentTimelineItem* previous);
     void currentIndexChanged(int index);
 
 protected:
@@ -205,7 +215,8 @@ protected:
     void focusOutEvent(QFocusEvent* event) override;
 
     virtual void updateStateStyle() override;
-    virtual void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    virtual void performStateTransition(Core::FluentState from,
+                                        Core::FluentState to) override;
 
 private slots:
     void onItemClicked();
@@ -223,24 +234,24 @@ private:
     void updateConnectors();
     void updateColors();
     void updateAccessibility();
-    
+
     void paintConnectors(QPainter& painter);
     void paintIndicators(QPainter& painter);
     void paintBackground(QPainter& painter);
-    
+
     QRect getItemRect(int index) const;
     QPoint getItemPosition(int index) const;
     QPoint getConnectorStart(int index) const;
     QPoint getConnectorEnd(int index) const;
-    
+
     void ensureItemVisible(FluentTimelineItem* item);
     void updateItemStates();
-    
+
     // Layout helpers
     void layoutVertical();
     void layoutHorizontal();
     void calculateItemPositions();
-    
+
     // Animation helpers
     void animateItemAppearance(FluentTimelineItem* item);
     void animateItemRemoval(FluentTimelineItem* item);
@@ -248,29 +259,29 @@ private:
 
 private:
     FluentTimelineConfig m_config;
-    
+
     // Layout and containers
     QVBoxLayout* m_mainLayout{nullptr};
     QScrollArea* m_scrollArea{nullptr};
     QWidget* m_contentWidget{nullptr};
     QLayout* m_contentLayout{nullptr};
-    
+
     // Items and state
     QList<FluentTimelineItem*> m_items;
     FluentTimelineItem* m_currentItem{nullptr};
     int m_hoveredIndex{-1};
-    
+
     // Animation
     std::unique_ptr<QPropertyAnimation> m_scrollAnimation;
     std::unique_ptr<QParallelAnimationGroup> m_layoutAnimation;
     std::unique_ptr<QSequentialAnimationGroup> m_itemAnimation;
-    
+
     // Cached values
     QList<QPoint> m_itemPositions;
     QList<QRect> m_itemRects;
     bool m_layoutDirty{true};
     QSize m_lastSize;
-    
+
     // Colors (cached from theme)
     QColor m_connectorColor;
     QColor m_indicatorColor;
@@ -278,4 +289,4 @@ private:
     QColor m_focusColor;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

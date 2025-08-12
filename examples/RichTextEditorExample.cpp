@@ -1,35 +1,35 @@
 // examples/RichTextEditorExample.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
-#include <QSpinBox>
-#include <QSlider>
-#include <QPushButton>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QSplitter>
-#include <QTextEdit>
-#include <QStatusBar>
+#include <QMainWindow>
 #include <QMenuBar>
-#include <QToolBar>
+#include <QMessageBox>
 #include <QProgressBar>
-#include <QTimer>
-#include <QTextDocumentWriter>
-#include <QTextStream>
-#include <QStandardPaths>
+#include <QPushButton>
 #include <QRegularExpression>
+#include <QSlider>
+#include <QSpinBox>
+#include <QSplitter>
+#include <QStandardPaths>
+#include <QStatusBar>
+#include <QTextDocumentWriter>
+#include <QTextEdit>
+#include <QTextStream>
+#include <QTimer>
+#include <QToolBar>
+#include <QVBoxLayout>
 
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentComboBox.h"
 #include "FluentQt/Components/FluentPanel.h"
 #include "FluentQt/Components/FluentRichTextEditor.h"
-#include "FluentQt/Components/FluentComboBox.h"
 #include "FluentQt/Styling/FluentTheme.h"
-#include "FluentQt/Animation/FluentAnimator.h"
 
 using namespace FluentQt;
 
@@ -89,7 +89,7 @@ private:
     QWidget* m_centralWidget{nullptr};
     QSplitter* m_mainSplitter{nullptr};
     QSplitter* m_editorSplitter{nullptr};
-    
+
     // Control Panel
     QGroupBox* m_controlGroup{nullptr};
     Components::FluentButton* m_newButton{nullptr};
@@ -100,39 +100,39 @@ private:
     Components::FluentButton* m_readOnlyButton{nullptr};
     Components::FluentButton* m_formatBarButton{nullptr};
     Components::FluentButton* m_themeButton{nullptr};
-    
+
     // Zoom controls
     QSlider* m_zoomSlider{nullptr};
     QLabel* m_zoomLabel{nullptr};
     Components::FluentButton* m_zoomInButton{nullptr};
     Components::FluentButton* m_zoomOutButton{nullptr};
     Components::FluentButton* m_resetZoomButton{nullptr};
-    
+
     // Insert controls
     Components::FluentButton* m_insertTableButton{nullptr};
     Components::FluentButton* m_insertImageButton{nullptr};
     Components::FluentButton* m_insertLinkButton{nullptr};
-    
+
     // Editor Area
     Components::FluentPanel* m_editorPanel{nullptr};
     Components::FluentRichTextEditor* m_editor{nullptr};
-    
+
     // Preview Area
     Components::FluentPanel* m_previewPanel{nullptr};
     QTextEdit* m_htmlPreview{nullptr};
-    
+
     // Status and Statistics
     QLabel* m_wordCountLabel{nullptr};
     QLabel* m_charCountLabel{nullptr};
     QLabel* m_lineCountLabel{nullptr};
     QLabel* m_statusLabel{nullptr};
     QProgressBar* m_saveProgress{nullptr};
-    
+
     // Menu and Toolbar
     QMenuBar* m_menuBar{nullptr};
     QToolBar* m_toolBar{nullptr};
     QStatusBar* m_statusBar{nullptr};
-    
+
     // Data and Animation
     Animation::FluentAnimator* m_animator{nullptr};
     QTimer* m_statsUpdateTimer{nullptr};
@@ -145,144 +145,145 @@ void RichTextEditorExample::setupUI() {
     setWindowTitle("FluentQt Rich Text Editor Example");
     setMinimumSize(1200, 800);
     resize(1400, 900);
-    
+
     // Create central widget and main layout
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
-    
+
     // Create main splitter
     m_mainSplitter = new QSplitter(Qt::Horizontal, m_centralWidget);
     auto* mainLayout = new QHBoxLayout(m_centralWidget);
     mainLayout->addWidget(m_mainSplitter);
-    
+
     // Create control panel, editor area, and preview area
     createControlPanel();
     createEditorArea();
     createPreviewArea();
-    
+
     // Set splitter proportions
     m_mainSplitter->setSizes({300, 700, 400});
     m_mainSplitter->setCollapsible(0, false);
     m_mainSplitter->setCollapsible(1, false);
     m_mainSplitter->setCollapsible(2, true);
-    
+
     // Initialize animator
     m_animator = new Animation::FluentAnimator(this);
-    
+
     // Setup update timer
     m_statsUpdateTimer = new QTimer(this);
     m_statsUpdateTimer->setSingleShot(true);
-    m_statsUpdateTimer->setInterval(500); // Update stats 500ms after text changes
+    m_statsUpdateTimer->setInterval(
+        500);  // Update stats 500ms after text changes
 }
 
 void RichTextEditorExample::createControlPanel() {
     m_controlGroup = new QGroupBox("Document Controls", this);
     auto* layout = new QVBoxLayout(m_controlGroup);
-    
+
     // File operations
     auto* fileGroup = new QGroupBox("File Operations", this);
     auto* fileLayout = new QGridLayout(fileGroup);
-    
+
     m_newButton = new Components::FluentButton("New", this);
     m_newButton->setIcon(QIcon(":/icons/new.png"));
     fileLayout->addWidget(m_newButton, 0, 0);
-    
+
     m_openButton = new Components::FluentButton("Open", this);
     m_openButton->setIcon(QIcon(":/icons/open.png"));
     fileLayout->addWidget(m_openButton, 0, 1);
-    
+
     m_saveButton = new Components::FluentButton("Save", this);
     m_saveButton->setIcon(QIcon(":/icons/save.png"));
     fileLayout->addWidget(m_saveButton, 1, 0);
-    
+
     m_exportPdfButton = new Components::FluentButton("Export PDF", this);
     m_exportPdfButton->setIcon(QIcon(":/icons/pdf.png"));
     fileLayout->addWidget(m_exportPdfButton, 1, 1);
-    
+
     m_exportHtmlButton = new Components::FluentButton("Export HTML", this);
     m_exportHtmlButton->setIcon(QIcon(":/icons/html.png"));
     fileLayout->addWidget(m_exportHtmlButton, 2, 0, 1, 2);
-    
+
     layout->addWidget(fileGroup);
-    
+
     // View controls
     auto* viewGroup = new QGroupBox("View Controls", this);
     auto* viewLayout = new QGridLayout(viewGroup);
-    
+
     m_readOnlyButton = new Components::FluentButton("Read Only", this);
     m_readOnlyButton->setCheckable(true);
     viewLayout->addWidget(m_readOnlyButton, 0, 0);
-    
+
     m_formatBarButton = new Components::FluentButton("Format Bar", this);
     m_formatBarButton->setCheckable(true);
     m_formatBarButton->setChecked(true);
     viewLayout->addWidget(m_formatBarButton, 0, 1);
-    
+
     m_themeButton = new Components::FluentButton("Dark Theme", this);
     m_themeButton->setCheckable(true);
     viewLayout->addWidget(m_themeButton, 1, 0, 1, 2);
-    
+
     layout->addWidget(viewGroup);
-    
+
     // Zoom controls
     auto* zoomGroup = new QGroupBox("Zoom Controls", this);
     auto* zoomLayout = new QVBoxLayout(zoomGroup);
-    
+
     m_zoomLabel = new QLabel("Zoom: 100%", this);
     m_zoomLabel->setAlignment(Qt::AlignCenter);
     zoomLayout->addWidget(m_zoomLabel);
-    
+
     m_zoomSlider = new QSlider(Qt::Horizontal, this);
     m_zoomSlider->setRange(50, 200);
     m_zoomSlider->setValue(100);
     m_zoomSlider->setTickPosition(QSlider::TicksBelow);
     m_zoomSlider->setTickInterval(25);
     zoomLayout->addWidget(m_zoomSlider);
-    
+
     auto* zoomButtonLayout = new QHBoxLayout();
     m_zoomInButton = new Components::FluentButton("+", this);
     m_zoomOutButton = new Components::FluentButton("-", this);
     m_resetZoomButton = new Components::FluentButton("Reset", this);
-    
+
     zoomButtonLayout->addWidget(m_zoomOutButton);
     zoomButtonLayout->addWidget(m_resetZoomButton);
     zoomButtonLayout->addWidget(m_zoomInButton);
     zoomLayout->addLayout(zoomButtonLayout);
-    
+
     layout->addWidget(zoomGroup);
-    
+
     // Insert controls
     auto* insertGroup = new QGroupBox("Insert Elements", this);
     auto* insertLayout = new QGridLayout(insertGroup);
-    
+
     m_insertTableButton = new Components::FluentButton("Table", this);
     m_insertTableButton->setIcon(QIcon(":/icons/table.png"));
     insertLayout->addWidget(m_insertTableButton, 0, 0);
-    
+
     m_insertImageButton = new Components::FluentButton("Image", this);
     m_insertImageButton->setIcon(QIcon(":/icons/image.png"));
     insertLayout->addWidget(m_insertImageButton, 0, 1);
-    
+
     m_insertLinkButton = new Components::FluentButton("Link", this);
     m_insertLinkButton->setIcon(QIcon(":/icons/link.png"));
     insertLayout->addWidget(m_insertLinkButton, 1, 0, 1, 2);
-    
+
     layout->addWidget(insertGroup);
-    
+
     // Document statistics
     auto* statsGroup = new QGroupBox("Document Statistics", this);
     auto* statsLayout = new QVBoxLayout(statsGroup);
-    
+
     m_wordCountLabel = new QLabel("Words: 0", this);
     m_charCountLabel = new QLabel("Characters: 0", this);
     m_lineCountLabel = new QLabel("Lines: 0", this);
-    
+
     statsLayout->addWidget(m_wordCountLabel);
     statsLayout->addWidget(m_charCountLabel);
     statsLayout->addWidget(m_lineCountLabel);
-    
+
     layout->addWidget(statsGroup);
-    
+
     layout->addStretch();
     m_mainSplitter->addWidget(m_controlGroup);
 }
@@ -324,47 +325,77 @@ void RichTextEditorExample::setupMenuBar() {
 
     // File menu
     auto* fileMenu = m_menuBar->addMenu("&File");
-    fileMenu->addAction("&New", this, &RichTextEditorExample::newDocument, QKeySequence::New);
-    fileMenu->addAction("&Open", this, &RichTextEditorExample::openDocument, QKeySequence::Open);
-    fileMenu->addAction("&Save", this, &RichTextEditorExample::saveDocument, QKeySequence::Save);
-    fileMenu->addAction("Save &As", this, &RichTextEditorExample::saveAsDocument, QKeySequence::SaveAs);
+    fileMenu->addAction("&New", this, &RichTextEditorExample::newDocument,
+                        QKeySequence::New);
+    fileMenu->addAction("&Open", this, &RichTextEditorExample::openDocument,
+                        QKeySequence::Open);
+    fileMenu->addAction("&Save", this, &RichTextEditorExample::saveDocument,
+                        QKeySequence::Save);
+    fileMenu->addAction("Save &As", this,
+                        &RichTextEditorExample::saveAsDocument,
+                        QKeySequence::SaveAs);
     fileMenu->addSeparator();
-    fileMenu->addAction("Export to &PDF", this, &RichTextEditorExample::exportToPdf);
-    fileMenu->addAction("Export to &HTML", this, &RichTextEditorExample::exportToHtml);
+    fileMenu->addAction("Export to &PDF", this,
+                        &RichTextEditorExample::exportToPdf);
+    fileMenu->addAction("Export to &HTML", this,
+                        &RichTextEditorExample::exportToHtml);
     fileMenu->addSeparator();
     fileMenu->addAction("E&xit", this, &QWidget::close, QKeySequence::Quit);
 
     // Edit menu
     auto* editMenu = m_menuBar->addMenu("&Edit");
-    editMenu->addAction("&Undo", m_editor, &Components::FluentRichTextEditor::undo, QKeySequence::Undo);
-    editMenu->addAction("&Redo", m_editor, &Components::FluentRichTextEditor::redo, QKeySequence::Redo);
+    editMenu->addAction("&Undo", m_editor,
+                        &Components::FluentRichTextEditor::undo,
+                        QKeySequence::Undo);
+    editMenu->addAction("&Redo", m_editor,
+                        &Components::FluentRichTextEditor::redo,
+                        QKeySequence::Redo);
     editMenu->addSeparator();
-    editMenu->addAction("Cu&t", m_editor, &Components::FluentRichTextEditor::cut, QKeySequence::Cut);
-    editMenu->addAction("&Copy", m_editor, &Components::FluentRichTextEditor::copy, QKeySequence::Copy);
-    editMenu->addAction("&Paste", m_editor, &Components::FluentRichTextEditor::paste, QKeySequence::Paste);
+    editMenu->addAction("Cu&t", m_editor,
+                        &Components::FluentRichTextEditor::cut,
+                        QKeySequence::Cut);
+    editMenu->addAction("&Copy", m_editor,
+                        &Components::FluentRichTextEditor::copy,
+                        QKeySequence::Copy);
+    editMenu->addAction("&Paste", m_editor,
+                        &Components::FluentRichTextEditor::paste,
+                        QKeySequence::Paste);
     editMenu->addSeparator();
-    editMenu->addAction("Select &All", m_editor, &Components::FluentRichTextEditor::selectAll, QKeySequence::SelectAll);
-    editMenu->addAction("&Find/Replace", this, &RichTextEditorExample::showFindReplace, QKeySequence::Find);
+    editMenu->addAction("Select &All", m_editor,
+                        &Components::FluentRichTextEditor::selectAll,
+                        QKeySequence::SelectAll);
+    editMenu->addAction("&Find/Replace", this,
+                        &RichTextEditorExample::showFindReplace,
+                        QKeySequence::Find);
 
     // View menu
     auto* viewMenu = m_menuBar->addMenu("&View");
-    viewMenu->addAction("Zoom &In", this, &RichTextEditorExample::zoomIn, QKeySequence::ZoomIn);
-    viewMenu->addAction("Zoom &Out", this, &RichTextEditorExample::zoomOut, QKeySequence::ZoomOut);
+    viewMenu->addAction("Zoom &In", this, &RichTextEditorExample::zoomIn,
+                        QKeySequence::ZoomIn);
+    viewMenu->addAction("Zoom &Out", this, &RichTextEditorExample::zoomOut,
+                        QKeySequence::ZoomOut);
     viewMenu->addAction("&Reset Zoom", this, &RichTextEditorExample::resetZoom);
     viewMenu->addSeparator();
-    viewMenu->addAction("Toggle &Read Only", this, &RichTextEditorExample::toggleReadOnly);
-    viewMenu->addAction("Toggle &Format Bar", this, &RichTextEditorExample::toggleFormatBar);
-    viewMenu->addAction("Toggle &Theme", this, &RichTextEditorExample::toggleTheme);
+    viewMenu->addAction("Toggle &Read Only", this,
+                        &RichTextEditorExample::toggleReadOnly);
+    viewMenu->addAction("Toggle &Format Bar", this,
+                        &RichTextEditorExample::toggleFormatBar);
+    viewMenu->addAction("Toggle &Theme", this,
+                        &RichTextEditorExample::toggleTheme);
 
     // Insert menu
     auto* insertMenu = m_menuBar->addMenu("&Insert");
-    insertMenu->addAction("&Table", this, &RichTextEditorExample::insertSampleTable);
-    insertMenu->addAction("&Image", this, &RichTextEditorExample::insertSampleImage);
-    insertMenu->addAction("&Link", this, &RichTextEditorExample::insertSampleLink);
+    insertMenu->addAction("&Table", this,
+                          &RichTextEditorExample::insertSampleTable);
+    insertMenu->addAction("&Image", this,
+                          &RichTextEditorExample::insertSampleImage);
+    insertMenu->addAction("&Link", this,
+                          &RichTextEditorExample::insertSampleLink);
 
     // Tools menu
     auto* toolsMenu = m_menuBar->addMenu("&Tools");
-    toolsMenu->addAction("Document &Statistics", this, &RichTextEditorExample::showDocumentStats);
+    toolsMenu->addAction("Document &Statistics", this,
+                         &RichTextEditorExample::showDocumentStats);
 }
 
 void RichTextEditorExample::setupToolBar() {
@@ -372,20 +403,28 @@ void RichTextEditorExample::setupToolBar() {
     m_toolBar->setMovable(false);
 
     // File operations
-    m_toolBar->addAction(QIcon(":/icons/new.png"), "New", this, &RichTextEditorExample::newDocument);
-    m_toolBar->addAction(QIcon(":/icons/open.png"), "Open", this, &RichTextEditorExample::openDocument);
-    m_toolBar->addAction(QIcon(":/icons/save.png"), "Save", this, &RichTextEditorExample::saveDocument);
+    m_toolBar->addAction(QIcon(":/icons/new.png"), "New", this,
+                         &RichTextEditorExample::newDocument);
+    m_toolBar->addAction(QIcon(":/icons/open.png"), "Open", this,
+                         &RichTextEditorExample::openDocument);
+    m_toolBar->addAction(QIcon(":/icons/save.png"), "Save", this,
+                         &RichTextEditorExample::saveDocument);
     m_toolBar->addSeparator();
 
     // Edit operations
-    m_toolBar->addAction(QIcon(":/icons/undo.png"), "Undo", m_editor, &Components::FluentRichTextEditor::undo);
-    m_toolBar->addAction(QIcon(":/icons/redo.png"), "Redo", m_editor, &Components::FluentRichTextEditor::redo);
+    m_toolBar->addAction(QIcon(":/icons/undo.png"), "Undo", m_editor,
+                         &Components::FluentRichTextEditor::undo);
+    m_toolBar->addAction(QIcon(":/icons/redo.png"), "Redo", m_editor,
+                         &Components::FluentRichTextEditor::redo);
     m_toolBar->addSeparator();
 
     // Zoom operations
-    m_toolBar->addAction(QIcon(":/icons/zoom-in.png"), "Zoom In", this, &RichTextEditorExample::zoomIn);
-    m_toolBar->addAction(QIcon(":/icons/zoom-out.png"), "Zoom Out", this, &RichTextEditorExample::zoomOut);
-    m_toolBar->addAction(QIcon(":/icons/zoom-reset.png"), "Reset Zoom", this, &RichTextEditorExample::resetZoom);
+    m_toolBar->addAction(QIcon(":/icons/zoom-in.png"), "Zoom In", this,
+                         &RichTextEditorExample::zoomIn);
+    m_toolBar->addAction(QIcon(":/icons/zoom-out.png"), "Zoom Out", this,
+                         &RichTextEditorExample::zoomOut);
+    m_toolBar->addAction(QIcon(":/icons/zoom-reset.png"), "Reset Zoom", this,
+                         &RichTextEditorExample::resetZoom);
 }
 
 void RichTextEditorExample::setupStatusBar() {
@@ -415,16 +454,24 @@ void RichTextEditorExample::setupStatusBar() {
 
 void RichTextEditorExample::setupConnections() {
     // File operations
-    connect(m_newButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::newDocument);
-    connect(m_openButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::openDocument);
-    connect(m_saveButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::saveDocument);
-    connect(m_exportPdfButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::exportToPdf);
-    connect(m_exportHtmlButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::exportToHtml);
+    connect(m_newButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::newDocument);
+    connect(m_openButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::openDocument);
+    connect(m_saveButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::saveDocument);
+    connect(m_exportPdfButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::exportToPdf);
+    connect(m_exportHtmlButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::exportToHtml);
 
     // View controls
-    connect(m_readOnlyButton, &Components::FluentButton::toggled, this, &RichTextEditorExample::toggleReadOnly);
-    connect(m_formatBarButton, &Components::FluentButton::toggled, this, &RichTextEditorExample::toggleFormatBar);
-    connect(m_themeButton, &Components::FluentButton::toggled, this, &RichTextEditorExample::toggleTheme);
+    connect(m_readOnlyButton, &Components::FluentButton::toggled, this,
+            &RichTextEditorExample::toggleReadOnly);
+    connect(m_formatBarButton, &Components::FluentButton::toggled, this,
+            &RichTextEditorExample::toggleFormatBar);
+    connect(m_themeButton, &Components::FluentButton::toggled, this,
+            &RichTextEditorExample::toggleTheme);
 
     // Zoom controls
     connect(m_zoomSlider, &QSlider::valueChanged, this, [this](int value) {
@@ -432,22 +479,32 @@ void RichTextEditorExample::setupConnections() {
         m_currentZoom = value;
         m_zoomLabel->setText(QString("Zoom: %1%").arg(value));
     });
-    connect(m_zoomInButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::zoomIn);
-    connect(m_zoomOutButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::zoomOut);
-    connect(m_resetZoomButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::resetZoom);
+    connect(m_zoomInButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::zoomIn);
+    connect(m_zoomOutButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::zoomOut);
+    connect(m_resetZoomButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::resetZoom);
 
     // Insert controls
-    connect(m_insertTableButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::insertSampleTable);
-    connect(m_insertImageButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::insertSampleImage);
-    connect(m_insertLinkButton, &Components::FluentButton::clicked, this, &RichTextEditorExample::insertSampleLink);
+    connect(m_insertTableButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::insertSampleTable);
+    connect(m_insertImageButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::insertSampleImage);
+    connect(m_insertLinkButton, &Components::FluentButton::clicked, this,
+            &RichTextEditorExample::insertSampleLink);
 
     // Editor events
-    connect(m_editor, &Components::FluentRichTextEditor::textChanged, this, &RichTextEditorExample::onTextChanged);
-    connect(m_editor, &Components::FluentRichTextEditor::selectionChanged, this, &RichTextEditorExample::onSelectionChanged);
-    connect(m_editor, &Components::FluentRichTextEditor::zoomChanged, this, &RichTextEditorExample::onZoomChanged);
+    connect(m_editor, &Components::FluentRichTextEditor::textChanged, this,
+            &RichTextEditorExample::onTextChanged);
+    connect(m_editor, &Components::FluentRichTextEditor::selectionChanged, this,
+            &RichTextEditorExample::onSelectionChanged);
+    connect(m_editor, &Components::FluentRichTextEditor::zoomChanged, this,
+            &RichTextEditorExample::onZoomChanged);
 
     // Stats update timer
-    connect(m_statsUpdateTimer, &QTimer::timeout, this, &RichTextEditorExample::updateWordCount);
+    connect(m_statsUpdateTimer, &QTimer::timeout, this,
+            &RichTextEditorExample::updateWordCount);
 }
 
 void RichTextEditorExample::setupTheme() {
@@ -521,8 +578,10 @@ void RichTextEditorExample::loadSampleContent() {
 // Slot implementations
 void RichTextEditorExample::newDocument() {
     if (m_documentModified) {
-        auto reply = QMessageBox::question(this, "New Document",
-            "The current document has unsaved changes. Do you want to save it first?",
+        auto reply = QMessageBox::question(
+            this, "New Document",
+            "The current document has unsaved changes. Do you want to save it "
+            "first?",
             QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
 
         if (reply == QMessageBox::Save) {
@@ -546,8 +605,8 @@ void RichTextEditorExample::newDocument() {
 }
 
 void RichTextEditorExample::openDocument() {
-    QString fileName = QFileDialog::getOpenFileName(this,
-        "Open Document",
+    QString fileName = QFileDialog::getOpenFileName(
+        this, "Open Document",
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
         "HTML Files (*.html *.htm);;Text Files (*.txt);;All Files (*)");
 
@@ -565,12 +624,15 @@ void RichTextEditorExample::openDocument() {
 
             m_currentFileName = fileName;
             m_documentModified = false;
-            setWindowTitle(QString("FluentQt Rich Text Editor Example - %1").arg(QFileInfo(fileName).fileName()));
-            m_statusLabel->setText(QString("Opened: %1").arg(QFileInfo(fileName).fileName()));
+            setWindowTitle(QString("FluentQt Rich Text Editor Example - %1")
+                               .arg(QFileInfo(fileName).fileName()));
+            m_statusLabel->setText(
+                QString("Opened: %1").arg(QFileInfo(fileName).fileName()));
 
             animateStatusUpdate();
         } else {
-            QMessageBox::warning(this, "Error", "Could not open file: " + fileName);
+            QMessageBox::warning(this, "Error",
+                                 "Could not open file: " + fileName);
         }
     }
 }
@@ -587,29 +649,32 @@ void RichTextEditorExample::saveDocument() {
         out << m_editor->toHtml();
 
         m_documentModified = false;
-        m_statusLabel->setText(QString("Saved: %1").arg(QFileInfo(m_currentFileName).fileName()));
+        m_statusLabel->setText(
+            QString("Saved: %1").arg(QFileInfo(m_currentFileName).fileName()));
         animateStatusUpdate();
     } else {
-        QMessageBox::warning(this, "Error", "Could not save file: " + m_currentFileName);
+        QMessageBox::warning(this, "Error",
+                             "Could not save file: " + m_currentFileName);
     }
 }
 
 void RichTextEditorExample::saveAsDocument() {
-    QString fileName = QFileDialog::getSaveFileName(this,
-        "Save Document",
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "Save Document",
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
         "HTML Files (*.html);;Text Files (*.txt);;All Files (*)");
 
     if (!fileName.isEmpty()) {
         m_currentFileName = fileName;
         saveDocument();
-        setWindowTitle(QString("FluentQt Rich Text Editor Example - %1").arg(QFileInfo(fileName).fileName()));
+        setWindowTitle(QString("FluentQt Rich Text Editor Example - %1")
+                           .arg(QFileInfo(fileName).fileName()));
     }
 }
 
 void RichTextEditorExample::exportToPdf() {
-    QString fileName = QFileDialog::getSaveFileName(this,
-        "Export to PDF",
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "Export to PDF",
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
         "PDF Files (*.pdf)");
 
@@ -624,8 +689,8 @@ void RichTextEditorExample::exportToPdf() {
 }
 
 void RichTextEditorExample::exportToHtml() {
-    QString fileName = QFileDialog::getSaveFileName(this,
-        "Export to HTML",
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "Export to HTML",
         QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
         "HTML Files (*.html)");
 
@@ -641,22 +706,26 @@ void RichTextEditorExample::exportToHtml() {
 
 void RichTextEditorExample::showFindReplace() {
     // This would show a find/replace dialog
-    m_statusLabel->setText("Find/Replace functionality would be implemented here");
+    m_statusLabel->setText(
+        "Find/Replace functionality would be implemented here");
 }
 
 void RichTextEditorExample::showDocumentStats() {
-    QString stats = QString(
-        "Document Statistics:\n\n"
-        "Words: %1\n"
-        "Characters: %2\n"
-        "Characters (no spaces): %3\n"
-        "Lines: %4\n"
-        "Paragraphs: %5"
-    ).arg(m_editor->toPlainText().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).count())
-     .arg(m_editor->toPlainText().length())
-     .arg(m_editor->toPlainText().remove(' ').length())
-     .arg(m_editor->toPlainText().split('\n').count())
-     .arg(m_editor->document()->blockCount());
+    QString stats =
+        QString(
+            "Document Statistics:\n\n"
+            "Words: %1\n"
+            "Characters: %2\n"
+            "Characters (no spaces): %3\n"
+            "Lines: %4\n"
+            "Paragraphs: %5")
+            .arg(m_editor->toPlainText()
+                     .split(QRegularExpression("\\s+"), Qt::SkipEmptyParts)
+                     .count())
+            .arg(m_editor->toPlainText().length())
+            .arg(m_editor->toPlainText().remove(' ').length())
+            .arg(m_editor->toPlainText().split('\n').count())
+            .arg(m_editor->document()->blockCount());
 
     QMessageBox::information(this, "Document Statistics", stats);
 }
@@ -664,14 +733,16 @@ void RichTextEditorExample::showDocumentStats() {
 void RichTextEditorExample::toggleReadOnly() {
     bool readOnly = m_readOnlyButton->isChecked();
     m_editor->setReadOnly(readOnly);
-    m_statusLabel->setText(readOnly ? "Document is now read-only" : "Document is now editable");
+    m_statusLabel->setText(readOnly ? "Document is now read-only"
+                                    : "Document is now editable");
     animateStatusUpdate();
 }
 
 void RichTextEditorExample::toggleFormatBar() {
     bool showFormatBar = m_formatBarButton->isChecked();
     m_editor->setShowFormatBar(showFormatBar);
-    m_statusLabel->setText(showFormatBar ? "Format bar shown" : "Format bar hidden");
+    m_statusLabel->setText(showFormatBar ? "Format bar shown"
+                                         : "Format bar hidden");
 }
 
 void RichTextEditorExample::zoomIn() {
@@ -684,9 +755,7 @@ void RichTextEditorExample::zoomOut() {
     m_zoomSlider->setValue(newZoom);
 }
 
-void RichTextEditorExample::resetZoom() {
-    m_zoomSlider->setValue(100);
-}
+void RichTextEditorExample::resetZoom() { m_zoomSlider->setValue(100); }
 
 void RichTextEditorExample::toggleTheme() {
     auto& theme = Styling::FluentTheme::instance();
@@ -694,7 +763,8 @@ void RichTextEditorExample::toggleTheme() {
 
     // Theme switching would be implemented here
     m_themeButton->setText(isDark ? "Light Theme" : "Dark Theme");
-    m_statusLabel->setText(isDark ? "Switched to dark theme" : "Switched to light theme");
+    m_statusLabel->setText(isDark ? "Switched to dark theme"
+                                  : "Switched to light theme");
     animateStatusUpdate();
 }
 
@@ -711,7 +781,8 @@ void RichTextEditorExample::onTextChanged() {
 void RichTextEditorExample::onSelectionChanged() {
     QString selectedText = m_editor->selectedText();
     if (!selectedText.isEmpty()) {
-        m_statusLabel->setText(QString("Selected: %1 characters").arg(selectedText.length()));
+        m_statusLabel->setText(
+            QString("Selected: %1 characters").arg(selectedText.length()));
     } else {
         m_statusLabel->setText("Ready");
     }
@@ -725,7 +796,8 @@ void RichTextEditorExample::onZoomChanged(int percent) {
 
 void RichTextEditorExample::updateWordCount() {
     QString text = m_editor->toPlainText();
-    int wordCount = text.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).count();
+    int wordCount =
+        text.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts).count();
     int charCount = text.length();
     int lineCount = text.split('\n').count();
 
@@ -751,9 +823,7 @@ void RichTextEditorExample::insertSampleLink() {
     animateStatusUpdate();
 }
 
-void RichTextEditorExample::updateDocumentStats() {
-    updateWordCount();
-}
+void RichTextEditorExample::updateDocumentStats() { updateWordCount(); }
 
 void RichTextEditorExample::animateStatusUpdate() {
     // Animate the status label to draw attention to updates
@@ -761,12 +831,13 @@ void RichTextEditorExample::animateStatusUpdate() {
     config.duration = std::chrono::milliseconds(200);
     config.easing = Animation::FluentEasing::EaseOutQuad;
 
-    auto scaleAnimation = Animation::FluentAnimator::scaleIn(m_statusLabel, config);
+    auto scaleAnimation =
+        Animation::FluentAnimator::scaleIn(m_statusLabel, config);
     scaleAnimation->start();
 }
 
 // Main function
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("FluentQt Rich Text Editor Example");
     app.setApplicationVersion("1.0");

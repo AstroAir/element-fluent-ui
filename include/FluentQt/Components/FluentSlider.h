@@ -1,83 +1,96 @@
 // include/FluentQt/Components/FluentSlider.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QWidget>
-#include <QPropertyAnimation>
-#include <QTimer>
 #include <QList>
 #include <QPair>
+#include <QPropertyAnimation>
+#include <QTimer>
+#include <QWidget>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
-enum class FluentSliderOrientation {
-    Horizontal,
-    Vertical
-};
+enum class FluentSliderOrientation { Horizontal, Vertical };
 
 enum class FluentSliderMode {
-    Single,         // Single handle
-    Range          // Dual handles for range selection
+    Single,  // Single handle
+    Range    // Dual handles for range selection
 };
 
 enum class FluentSliderTickPosition {
     NoTicks,
-    Above,         // Above horizontal slider, left of vertical
-    Below,         // Below horizontal slider, right of vertical
-    Both           // Both sides
+    Above,  // Above horizontal slider, left of vertical
+    Below,  // Below horizontal slider, right of vertical
+    Both    // Both sides
 };
 
 struct FluentSliderTick {
     qreal value;
     QString label;
-    bool major{true};       // Major or minor tick
-    
+    bool major{true};  // Major or minor tick
+
     FluentSliderTick() = default;
     FluentSliderTick(qreal v) : value(v) {}
     FluentSliderTick(qreal v, const QString& l) : value(v), label(l) {}
-    FluentSliderTick(qreal v, const QString& l, bool m) : value(v), label(l), major(m) {}
+    FluentSliderTick(qreal v, const QString& l, bool m)
+        : value(v), label(l), major(m) {}
 };
 
 class FluentSlider : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(FluentSliderOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(FluentSliderOrientation orientation READ orientation WRITE
+                   setOrientation NOTIFY orientationChanged)
     Q_PROPERTY(FluentSliderMode mode READ mode WRITE setMode NOTIFY modeChanged)
-    Q_PROPERTY(qreal minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
-    Q_PROPERTY(qreal maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
+    Q_PROPERTY(
+        qreal minimum READ minimum WRITE setMinimum NOTIFY minimumChanged)
+    Q_PROPERTY(
+        qreal maximum READ maximum WRITE setMaximum NOTIFY maximumChanged)
     Q_PROPERTY(qreal value READ value WRITE setValue NOTIFY valueChanged)
-    Q_PROPERTY(qreal lowerValue READ lowerValue WRITE setLowerValue NOTIFY lowerValueChanged)
-    Q_PROPERTY(qreal upperValue READ upperValue WRITE setUpperValue NOTIFY upperValueChanged)
+    Q_PROPERTY(qreal lowerValue READ lowerValue WRITE setLowerValue NOTIFY
+                   lowerValueChanged)
+    Q_PROPERTY(qreal upperValue READ upperValue WRITE setUpperValue NOTIFY
+                   upperValueChanged)
     Q_PROPERTY(qreal step READ step WRITE setStep NOTIFY stepChanged)
-    Q_PROPERTY(qreal pageStep READ pageStep WRITE setPageStep NOTIFY pageStepChanged)
-    Q_PROPERTY(FluentSliderTickPosition tickPosition READ tickPosition WRITE setTickPosition NOTIFY tickPositionChanged)
-    Q_PROPERTY(int tickInterval READ tickInterval WRITE setTickInterval NOTIFY tickIntervalChanged)
-    Q_PROPERTY(bool showLabels READ showLabels WRITE setShowLabels NOTIFY showLabelsChanged)
-    Q_PROPERTY(bool showTooltip READ showTooltip WRITE setShowTooltip NOTIFY showTooltipChanged)
-    Q_PROPERTY(bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
-    Q_PROPERTY(bool snapToTicks READ snapToTicks WRITE setSnapToTicks NOTIFY snapToTicksChanged)
+    Q_PROPERTY(
+        qreal pageStep READ pageStep WRITE setPageStep NOTIFY pageStepChanged)
+    Q_PROPERTY(FluentSliderTickPosition tickPosition READ tickPosition WRITE
+                   setTickPosition NOTIFY tickPositionChanged)
+    Q_PROPERTY(int tickInterval READ tickInterval WRITE setTickInterval NOTIFY
+                   tickIntervalChanged)
+    Q_PROPERTY(bool showLabels READ showLabels WRITE setShowLabels NOTIFY
+                   showLabelsChanged)
+    Q_PROPERTY(bool showTooltip READ showTooltip WRITE setShowTooltip NOTIFY
+                   showTooltipChanged)
+    Q_PROPERTY(
+        bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(bool snapToTicks READ snapToTicks WRITE setSnapToTicks NOTIFY
+                   snapToTicksChanged)
 
 public:
     explicit FluentSlider(QWidget* parent = nullptr);
-    explicit FluentSlider(FluentSliderOrientation orientation, QWidget* parent = nullptr);
-    explicit FluentSlider(qreal minimum, qreal maximum, QWidget* parent = nullptr);
-    explicit FluentSlider(qreal minimum, qreal maximum, qreal value, QWidget* parent = nullptr);
+    explicit FluentSlider(FluentSliderOrientation orientation,
+                          QWidget* parent = nullptr);
+    explicit FluentSlider(qreal minimum, qreal maximum,
+                          QWidget* parent = nullptr);
+    explicit FluentSlider(qreal minimum, qreal maximum, qreal value,
+                          QWidget* parent = nullptr);
     ~FluentSlider() override;
 
     // Orientation and mode
     FluentSliderOrientation orientation() const;
     void setOrientation(FluentSliderOrientation orientation);
-    
+
     FluentSliderMode mode() const;
     void setMode(FluentSliderMode mode);
 
     // Value range
     qreal minimum() const;
     void setMinimum(qreal minimum);
-    
+
     qreal maximum() const;
     void setMaximum(qreal maximum);
-    
+
     void setRange(qreal minimum, qreal maximum);
 
     // Single value mode
@@ -87,50 +100,50 @@ public:
     // Range mode values
     qreal lowerValue() const;
     void setLowerValue(qreal value);
-    
+
     qreal upperValue() const;
     void setUpperValue(qreal value);
-    
+
     void setValues(qreal lower, qreal upper);
     QPair<qreal, qreal> values() const;
 
     // Step configuration
     qreal step() const;
     void setStep(qreal step);
-    
+
     qreal pageStep() const;
     void setPageStep(qreal pageStep);
 
     // Tick marks
     FluentSliderTickPosition tickPosition() const;
     void setTickPosition(FluentSliderTickPosition position);
-    
+
     int tickInterval() const;
     void setTickInterval(int interval);
-    
+
     void addTick(qreal value);
     void addTick(qreal value, const QString& label);
     void addTick(const FluentSliderTick& tick);
     void removeTick(qreal value);
     void clearTicks();
-    
+
     QList<FluentSliderTick> ticks() const;
     void setTicks(const QList<FluentSliderTick>& ticks);
 
     // Labels and tooltips
     bool showLabels() const;
     void setShowLabels(bool show);
-    
+
     bool showTooltip() const;
     void setShowTooltip(bool show);
-    
+
     QString formatValue(qreal value) const;
     void setValueFormatter(std::function<QString(qreal)> formatter);
 
     // Animation and interaction
     bool isAnimated() const;
     void setAnimated(bool animated);
-    
+
     bool snapToTicks() const;
     void setSnapToTicks(bool snap);
 
@@ -139,7 +152,7 @@ public:
     QPoint positionFromValue(qreal value) const;
     QRect handleRect(bool isUpper = false) const;
     QRect trackRect() const;
-    
+
     bool isValidValue(qreal value) const;
     qreal constrainValue(qreal value) const;
     qreal snapValue(qreal value) const;
@@ -169,7 +182,7 @@ signals:
     void showTooltipChanged(bool show);
     void animatedChanged(bool animated);
     void snapToTicksChanged(bool snap);
-    
+
     void sliderPressed();
     void sliderMoved(qreal value);
     void sliderReleased();
@@ -197,7 +210,7 @@ private:
     void setupAnimations();
     void updateLayout();
     void updateHandlePositions();
-    
+
     // Painting methods
     void paintTrack(QPainter* painter);
     void paintProgress(QPainter* painter);
@@ -244,7 +257,7 @@ private:
     qreal m_upperValue{100.0};
     qreal m_step{1.0};
     qreal m_pageStep{10.0};
-    
+
     // Ticks and labels
     FluentSliderTickPosition m_tickPosition{FluentSliderTickPosition::NoTicks};
     qreal m_tickInterval{10.0};
@@ -253,30 +266,30 @@ private:
     bool m_showLabels{false};
     bool m_showTooltip{true};
     std::function<QString(qreal)> m_valueFormatter;
-    
+
     // Interaction and animation
     bool m_animated{true};
     bool m_snapToTicks{false};
-    
+
     // State
-    int m_activeHandle{-1};         // -1: none, 0: lower/single, 1: upper
+    int m_activeHandle{-1};  // -1: none, 0: lower/single, 1: upper
     int m_hoveredHandle{-1};
     bool m_dragging{false};
     QPoint m_dragStartPosition;
     qreal m_dragStartValue{0.0};
     qreal m_dragStartLowerValue{0.0};
     qreal m_dragStartUpperValue{0.0};
-    
+
     // Animation
     std::unique_ptr<Animation::FluentAnimator> m_animator;
     QPropertyAnimation* m_valueAnimation{nullptr};
     QPropertyAnimation* m_lowerValueAnimation{nullptr};
     QPropertyAnimation* m_upperValueAnimation{nullptr};
-    
+
     // Tooltip
     QTimer* m_tooltipTimer{nullptr};
     QWidget* m_tooltipWidget{nullptr};
-    
+
     // Layout cache
     QRect m_trackRect;
     QRect m_lowerHandleRect;
@@ -286,4 +299,4 @@ private:
     bool m_layoutDirty{true};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

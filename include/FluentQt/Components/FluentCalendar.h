@@ -1,15 +1,15 @@
 // include/FluentQt/Components/FluentCalendar.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
+#include <QButtonGroup>
 #include <QCalendarWidget>
+#include <QComboBox>
 #include <QDate>
 #include <QDateEdit>
-#include <QComboBox>
-#include <QLabel>
 #include <QGridLayout>
-#include <QButtonGroup>
+#include <QLabel>
 #include <QPropertyAnimation>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -27,11 +27,7 @@ enum class FluentCalendarSelectionMode {
     NoSelection = WeekSelection
 };
 
-enum class FluentCalendarViewMode {
-    Month,
-    Year,
-    Decade
-};
+enum class FluentCalendarViewMode { Month, Year, Decade };
 
 struct FluentDateRange {
     QDate start;
@@ -54,14 +50,19 @@ struct FluentDateRange {
 
 class FluentCalendar : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(QDate selectedDate READ selectedDate WRITE setSelectedDate NOTIFY selectedDateChanged)
+    Q_PROPERTY(QDate selectedDate READ selectedDate WRITE setSelectedDate NOTIFY
+                   selectedDateChanged)
     Q_PROPERTY(QDate minimumDate READ minimumDate WRITE setMinimumDate)
     Q_PROPERTY(QDate maximumDate READ maximumDate WRITE setMaximumDate)
-    Q_PROPERTY(FluentCalendarSelectionMode selectionMode READ selectionMode WRITE setSelectionMode)
-    Q_PROPERTY(FluentCalendarViewMode viewMode READ viewMode WRITE setViewMode NOTIFY viewModeChanged)
+    Q_PROPERTY(FluentCalendarSelectionMode selectionMode READ selectionMode
+                   WRITE setSelectionMode)
+    Q_PROPERTY(FluentCalendarViewMode viewMode READ viewMode WRITE setViewMode
+                   NOTIFY viewModeChanged)
     Q_PROPERTY(bool showToday READ showToday WRITE setShowToday)
-    Q_PROPERTY(bool showWeekNumbers READ showWeekNumbers WRITE setShowWeekNumbers)
-    Q_PROPERTY(Qt::DayOfWeek firstDayOfWeek READ firstDayOfWeek WRITE setFirstDayOfWeek)
+    Q_PROPERTY(
+        bool showWeekNumbers READ showWeekNumbers WRITE setShowWeekNumbers)
+    Q_PROPERTY(Qt::DayOfWeek firstDayOfWeek READ firstDayOfWeek WRITE
+                   setFirstDayOfWeek)
 
 public:
     explicit FluentCalendar(QWidget* parent = nullptr);
@@ -86,7 +87,9 @@ public:
     void setDateRange(const QDate& min, const QDate& max);
 
     // Selection mode
-    FluentCalendarSelectionMode selectionMode() const noexcept { return m_selectionMode; }
+    FluentCalendarSelectionMode selectionMode() const noexcept {
+        return m_selectionMode;
+    }
     void setSelectionMode(FluentCalendarSelectionMode mode);
 
     // View mode
@@ -169,17 +172,18 @@ private:
     void paintDateCell(QPainter& painter, const QRect& rect, const QDate& date);
     void paintMonthCell(QPainter& painter, const QRect& rect, int month);
     void paintYearCell(QPainter& painter, const QRect& rect, int year);
-    
+
     QRect getCellRect(int row, int col) const;
     QDate getDateFromPos(const QPoint& pos) const;
     QRect getDateRect(const QDate& date) const;
-    
+
     bool isDateSelectable(const QDate& date) const;
     void updateSelection(const QDate& date);
     void updateRangeSelection(const QDate& date);
     void updateMultiSelection(const QDate& date);
-    
-    void animateViewChange(FluentCalendarViewMode from, FluentCalendarViewMode to);
+
+    void animateViewChange(FluentCalendarViewMode from,
+                           FluentCalendarViewMode to);
 
 private:
     QVBoxLayout* m_layout;
@@ -193,35 +197,37 @@ private:
     QDate m_selectedDate;
     QList<QDate> m_selectedDates;
     FluentDateRange m_selectedRange;
-    
+
     QDate m_minimumDate{QDate(1900, 1, 1)};
     QDate m_maximumDate{QDate(2100, 12, 31)};
-    
-    FluentCalendarSelectionMode m_selectionMode{FluentCalendarSelectionMode::SingleSelection};
+
+    FluentCalendarSelectionMode m_selectionMode{
+        FluentCalendarSelectionMode::SingleSelection};
     FluentCalendarViewMode m_viewMode{FluentCalendarViewMode::Month};
-    
+
     bool m_showToday{true};
     bool m_showWeekNumbers{false};
     Qt::DayOfWeek m_firstDayOfWeek{Qt::Monday};
-    
+
     int m_currentMonth;
     int m_currentYear;
-    
+
     QMap<QDate, QString> m_specialDates;
     QMap<QDate, QString> m_holidays;
-    
+
     // Selection state
     bool m_selecting{false};
     QDate m_selectionStart;
     QDate m_selectionEnd;
-    
+
     std::unique_ptr<QPropertyAnimation> m_viewAnimation;
 };
 
 class FluentDatePicker : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QDate date READ date WRITE setDate NOTIFY dateChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText)
+    Q_PROPERTY(
+        QString placeholderText READ placeholderText WRITE setPlaceholderText)
     Q_PROPERTY(QString dateFormat READ dateFormat WRITE setDateFormat)
     Q_PROPERTY(bool calendarPopup READ calendarPopup WRITE setCalendarPopup)
 
@@ -270,9 +276,9 @@ private:
     QString m_dateFormat{"yyyy-MM-dd"};
     bool m_calendarPopup{true};
     bool m_showingCalendar{false};
-    
+
     FluentCalendar* m_calendar;
     QWidget* m_popup{nullptr};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

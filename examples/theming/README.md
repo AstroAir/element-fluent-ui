@@ -218,49 +218,49 @@ public:
 private:
     void setupUI() {
         auto* layout = new QVBoxLayout(this);
-        
+
         // Theme mode buttons
         auto* lightButton = new FluentButton("Light");
         auto* darkButton = new FluentButton("Dark");
         auto* autoButton = new FluentButton("Auto");
-        
+
         connect(lightButton, &FluentButton::clicked, []() {
             FluentTheme::instance().setMode(FluentThemeMode::Light);
         });
-        
+
         connect(darkButton, &FluentButton::clicked, []() {
             FluentTheme::instance().setMode(FluentThemeMode::Dark);
         });
-        
+
         connect(autoButton, &FluentButton::clicked, []() {
             FluentTheme::instance().setMode(FluentThemeMode::Auto);
         });
-        
+
         layout->addWidget(lightButton);
         layout->addWidget(darkButton);
         layout->addWidget(autoButton);
     }
-    
+
     void connectThemeSignals() {
         auto& theme = FluentTheme::instance();
-        
+
         connect(&theme, &FluentTheme::themeChanged, [this]() {
             updateComponentAppearance();
         });
-        
+
         connect(&theme, &FluentTheme::modeChanged, [this](FluentThemeMode mode) {
             handleModeChange(mode);
         });
     }
-    
+
     void updateComponentAppearance() {
         // Update custom styling based on new theme
         updateCustomStyles();
-        
+
         // Refresh component states
         refreshComponents();
     }
-    
+
     void handleModeChange(FluentThemeMode mode) {
         QString modeText;
         switch (mode) {
@@ -274,7 +274,7 @@ private:
             modeText = "Auto";
             break;
         }
-        
+
         qDebug() << "Theme mode changed to:" << modeText;
     }
 };

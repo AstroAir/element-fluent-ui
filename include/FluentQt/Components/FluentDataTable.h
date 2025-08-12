@@ -1,22 +1,22 @@
 #pragma once
 
-#include <QWidget>
-#include <QTableWidget>
-#include <QHeaderView>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QToolBar>
-#include <QLabel>
-#include <QPushButton>
-#include <QComboBox>
-#include <QSpinBox>
-#include <QCheckBox>
-#include <QMenu>
 #include <QAction>
-#include <QSortFilterProxyModel>
-#include <QStandardItemModel>
+#include <QCheckBox>
+#include <QComboBox>
+#include <QHBoxLayout>
+#include <QHeaderView>
 #include <QItemDelegate>
+#include <QLabel>
+#include <QMenu>
 #include <QPropertyAnimation>
+#include <QPushButton>
+#include <QSortFilterProxyModel>
+#include <QSpinBox>
+#include <QStandardItemModel>
+#include <QTableWidget>
+#include <QToolBar>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <functional>
 
 namespace FluentQt::Components {
@@ -25,42 +25,43 @@ namespace FluentQt::Components {
  * @brief Column configuration for data table
  */
 struct FluentTableColumn {
-    QString id;                             // Unique identifier
-    QString title;                          // Display title
-    QString field;                          // Data field name
-    int width = -1;                         // Column width (-1 for auto)
-    bool sortable = true;                   // Whether column is sortable
-    bool filterable = true;                 // Whether column is filterable
-    bool resizable = true;                  // Whether column is resizable
-    bool visible = true;                    // Whether column is visible
-    Qt::Alignment alignment = Qt::AlignLeft; // Text alignment
-    QString format;                         // Format string for data
-    std::function<QString(const QVariant&)> formatter; // Custom formatter
-    std::function<QWidget*(const QVariant&, QWidget*)> cellRenderer; // Custom cell renderer
+    QString id;                               // Unique identifier
+    QString title;                            // Display title
+    QString field;                            // Data field name
+    int width = -1;                           // Column width (-1 for auto)
+    bool sortable = true;                     // Whether column is sortable
+    bool filterable = true;                   // Whether column is filterable
+    bool resizable = true;                    // Whether column is resizable
+    bool visible = true;                      // Whether column is visible
+    Qt::Alignment alignment = Qt::AlignLeft;  // Text alignment
+    QString format;                           // Format string for data
+    std::function<QString(const QVariant&)> formatter;  // Custom formatter
+    std::function<QWidget*(const QVariant&, QWidget*)>
+        cellRenderer;  // Custom cell renderer
 };
 
 /**
  * @brief Row data for data table
  */
 struct FluentTableRow {
-    QVariantMap data;                       // Row data
-    bool selected = false;                  // Selection state
-    bool enabled = true;                    // Whether row is enabled
-    QVariantMap metadata;                   // Additional metadata
-    QColor backgroundColor;                 // Custom background color
-    QColor textColor;                       // Custom text color
+    QVariantMap data;        // Row data
+    bool selected = false;   // Selection state
+    bool enabled = true;     // Whether row is enabled
+    QVariantMap metadata;    // Additional metadata
+    QColor backgroundColor;  // Custom background color
+    QColor textColor;        // Custom text color
 };
 
 /**
  * @brief Pagination configuration
  */
 struct FluentTablePagination {
-    int currentPage = 1;                    // Current page (1-based)
-    int pageSize = 25;                      // Items per page
-    int totalItems = 0;                     // Total number of items
-    QList<int> pageSizeOptions = {10, 25, 50, 100}; // Page size options
-    bool showPageInfo = true;               // Show page information
-    bool showPageSizeSelector = true;       // Show page size selector
+    int currentPage = 1;                             // Current page (1-based)
+    int pageSize = 25;                               // Items per page
+    int totalItems = 0;                              // Total number of items
+    QList<int> pageSizeOptions = {10, 25, 50, 100};  // Page size options
+    bool showPageInfo = true;                        // Show page information
+    bool showPageSizeSelector = true;                // Show page size selector
 };
 
 /**
@@ -68,16 +69,20 @@ struct FluentTablePagination {
  */
 class FluentDataTable : public QWidget {
     Q_OBJECT
-    Q_PROPERTY(bool sortingEnabled READ isSortingEnabled WRITE setSortingEnabled)
-    Q_PROPERTY(bool filteringEnabled READ isFilteringEnabled WRITE setFilteringEnabled)
-    Q_PROPERTY(bool paginationEnabled READ isPaginationEnabled WRITE setPaginationEnabled)
-    Q_PROPERTY(bool selectionEnabled READ isSelectionEnabled WRITE setSelectionEnabled)
+    Q_PROPERTY(
+        bool sortingEnabled READ isSortingEnabled WRITE setSortingEnabled)
+    Q_PROPERTY(
+        bool filteringEnabled READ isFilteringEnabled WRITE setFilteringEnabled)
+    Q_PROPERTY(bool paginationEnabled READ isPaginationEnabled WRITE
+                   setPaginationEnabled)
+    Q_PROPERTY(
+        bool selectionEnabled READ isSelectionEnabled WRITE setSelectionEnabled)
 
 public:
     enum class SelectionMode {
-        None,           // No selection
-        Single,         // Single row selection
-        Multiple        // Multiple row selection
+        None,     // No selection
+        Single,   // Single row selection
+        Multiple  // Multiple row selection
     };
 
     explicit FluentDataTable(QWidget* parent = nullptr);
@@ -102,7 +107,7 @@ public:
     // Selection
     SelectionMode selectionMode() const { return m_selectionMode; }
     void setSelectionMode(SelectionMode mode);
-    
+
     QList<int> selectedRows() const;
     void selectRow(int index, bool selected = true);
     void selectAll();
@@ -111,14 +116,15 @@ public:
     // Sorting
     bool isSortingEnabled() const { return m_sortingEnabled; }
     void setSortingEnabled(bool enabled);
-    
-    void sortByColumn(const QString& columnId, Qt::SortOrder order = Qt::AscendingOrder);
+
+    void sortByColumn(const QString& columnId,
+                      Qt::SortOrder order = Qt::AscendingOrder);
     void clearSorting();
 
     // Filtering
     bool isFilteringEnabled() const { return m_filteringEnabled; }
     void setFilteringEnabled(bool enabled);
-    
+
     void setFilter(const QString& columnId, const QString& filter);
     void setGlobalFilter(const QString& filter);
     void clearFilters();
@@ -126,7 +132,7 @@ public:
     // Pagination
     bool isPaginationEnabled() const { return m_paginationEnabled; }
     void setPaginationEnabled(bool enabled);
-    
+
     FluentTablePagination pagination() const { return m_pagination; }
     void setPagination(const FluentTablePagination& pagination);
 
@@ -192,7 +198,7 @@ private:
     QTableWidget* m_table = nullptr;
     QWidget* m_paginationWidget = nullptr;
     QHBoxLayout* m_paginationLayout = nullptr;
-    
+
     // Pagination controls
     QPushButton* m_firstPageButton = nullptr;
     QPushButton* m_previousPageButton = nullptr;
@@ -200,12 +206,12 @@ private:
     QPushButton* m_lastPageButton = nullptr;
     QLabel* m_pageInfoLabel = nullptr;
     QComboBox* m_pageSizeCombo = nullptr;
-    
+
     // Data
     QList<FluentTableColumn> m_columns;
     QList<FluentTableRow> m_rows;
     QList<FluentTableRow> m_filteredRows;
-    
+
     // Configuration
     SelectionMode m_selectionMode = SelectionMode::Single;
     bool m_sortingEnabled = true;
@@ -213,7 +219,7 @@ private:
     bool m_paginationEnabled = true;
     bool m_selectionEnabled = true;
     FluentTablePagination m_pagination;
-    
+
     // State
     QString m_currentSortColumn;
     Qt::SortOrder m_currentSortOrder = Qt::AscendingOrder;
@@ -233,19 +239,20 @@ public:
 
     void paint(QPainter* painter, const QStyleOptionViewItem& option,
                const QModelIndex& index) const override;
-    
+
     QSize sizeHint(const QStyleOptionViewItem& option,
                    const QModelIndex& index) const override;
-    
+
     QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option,
-                         const QModelIndex& index) const override;
+                          const QModelIndex& index) const override;
 
 private:
     void paintBackground(QPainter* painter, const QStyleOptionViewItem& option,
-                        const QModelIndex& index) const;
+                         const QModelIndex& index) const;
     void paintText(QPainter* painter, const QStyleOptionViewItem& option,
                    const QModelIndex& index) const;
-    void paintSelection(QPainter* painter, const QStyleOptionViewItem& option) const;
+    void paintSelection(QPainter* painter,
+                        const QStyleOptionViewItem& option) const;
 };
 
 /**
@@ -260,7 +267,7 @@ public:
     // Virtual data source
     void setDataSource(std::function<FluentTableRow(int)> dataSource);
     void setRowCount(int count);
-    
+
     // Performance
     void setVisibleRowCount(int count);
     void setBufferSize(int size);
@@ -275,7 +282,7 @@ private slots:
 private:
     void setupVirtualScrolling();
     void loadVisibleData();
-    
+
     std::function<FluentTableRow(int)> m_dataSource;
     int m_totalRowCount = 0;
     int m_visibleRowCount = 50;
@@ -284,4 +291,4 @@ private:
     QHash<int, FluentTableRow> m_cachedRows;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

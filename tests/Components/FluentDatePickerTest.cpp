@@ -1,9 +1,9 @@
 // tests/Components/FluentDatePickerTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
 #include <QApplication>
-#include <QMouseEvent>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QSignalSpy>
+#include <QtTest/QtTest>
 #include "FluentQt/Components/FluentCalendar.h"
 
 using namespace FluentQt::Components;
@@ -142,66 +142,72 @@ void FluentDatePickerTest::testCalendarPopupProperty() {
 void FluentDatePickerTest::testCalendarAccess() {
     FluentCalendar* calendar = m_datePicker->calendar();
     QVERIFY(calendar != nullptr);
-    
+
     // Test that calendar is properly configured
     QCOMPARE(calendar->selectedDate(), m_datePicker->date());
 }
 
 void FluentDatePickerTest::testCalendarPopupShow() {
     QSignalSpy shownSpy(m_datePicker, &FluentDatePicker::calendarShown);
-    
+
     // Show the date picker first
     m_datePicker->show();
-    
+
     // Simulate mouse click to show calendar
-    QMouseEvent clickEvent(QEvent::MouseButtonPress, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent clickEvent(QEvent::MouseButtonPress, QPoint(10, 10),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &clickEvent);
-    
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &releaseEvent);
-    
+
     // Process events
     QApplication::processEvents();
-    
+
     // Verify signal was emitted
-    QVERIFY(shownSpy.count() >= 0); // May or may not emit depending on implementation details
+    QVERIFY(shownSpy.count() >=
+            0);  // May or may not emit depending on implementation details
 }
 
 void FluentDatePickerTest::testCalendarPopupHide() {
     QSignalSpy hiddenSpy(m_datePicker, &FluentDatePicker::calendarHidden);
-    
+
     m_datePicker->show();
-    
+
     // First show the calendar
-    QMouseEvent clickEvent(QEvent::MouseButtonPress, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent clickEvent(QEvent::MouseButtonPress, QPoint(10, 10),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &clickEvent);
-    
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &releaseEvent);
-    
+
     QApplication::processEvents();
-    
+
     // Then hide it
     QApplication::sendEvent(m_datePicker, &clickEvent);
     QApplication::sendEvent(m_datePicker, &releaseEvent);
-    
+
     QApplication::processEvents();
-    
+
     // Verify signal was emitted
     QVERIFY(hiddenSpy.count() >= 0);
 }
 
 void FluentDatePickerTest::testDateSelection() {
     QSignalSpy dateChangedSpy(m_datePicker, &FluentDatePicker::dateChanged);
-    
+
     // Test date selection through calendar
     QDate testDate(2023, 6, 15);
     m_datePicker->calendar()->setSelectedDate(testDate);
-    
-    // Simulate date selection (this would normally happen through calendar interaction)
-    // For testing, we directly call the slot
-    QMetaObject::invokeMethod(m_datePicker, "onDateSelected", Q_ARG(QDate, testDate));
-    
+
+    // Simulate date selection (this would normally happen through calendar
+    // interaction) For testing, we directly call the slot
+    QMetaObject::invokeMethod(m_datePicker, "onDateSelected",
+                              Q_ARG(QDate, testDate));
+
     QCOMPARE(m_datePicker->date(), testDate);
     QVERIFY(dateChangedSpy.count() >= 1);
 }
@@ -210,11 +216,11 @@ void FluentDatePickerTest::testDateSelection() {
 void FluentDatePickerTest::testPaintEvent() {
     m_datePicker->setDate(QDate(2023, 12, 25));
     m_datePicker->show();
-    
+
     // Force a paint event
     m_datePicker->update();
     QApplication::processEvents();
-    
+
     // If we get here without crashing, painting works
     QVERIFY(true);
 }
@@ -233,12 +239,12 @@ void FluentDatePickerTest::testSizeHints() {
 
 void FluentDatePickerTest::testFocusStates() {
     m_datePicker->show();
-    
+
     // Test focus in
     m_datePicker->setFocus();
     QApplication::processEvents();
     QVERIFY(m_datePicker->hasFocus());
-    
+
     // Test focus out
     m_datePicker->clearFocus();
     QApplication::processEvents();
@@ -248,14 +254,16 @@ void FluentDatePickerTest::testFocusStates() {
 // Interaction tests
 void FluentDatePickerTest::testMouseInteraction() {
     m_datePicker->show();
-    
+
     // Test mouse press/release events
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, QPoint(10, 10),
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &pressEvent);
-    
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, QPoint(10, 10),
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &releaseEvent);
-    
+
     // If we get here without crashing, mouse interaction works
     QVERIFY(true);
 }
@@ -263,33 +271,33 @@ void FluentDatePickerTest::testMouseInteraction() {
 void FluentDatePickerTest::testKeyboardInteraction() {
     m_datePicker->show();
     m_datePicker->setFocus();
-    
+
     // Test space key
     QKeyEvent spaceEvent(QEvent::KeyPress, Qt::Key_Space, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &spaceEvent);
-    
+
     // Test return key
     QKeyEvent returnEvent(QEvent::KeyPress, Qt::Key_Return, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &returnEvent);
-    
+
     // Test escape key
     QKeyEvent escapeEvent(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
     QApplication::sendEvent(m_datePicker, &escapeEvent);
-    
+
     // If we get here without crashing, keyboard interaction works
     QVERIFY(true);
 }
 
 void FluentDatePickerTest::testFocusHandling() {
     m_datePicker->show();
-    
+
     // Test focus events
     QFocusEvent focusInEvent(QEvent::FocusIn);
     QApplication::sendEvent(m_datePicker, &focusInEvent);
-    
+
     QFocusEvent focusOutEvent(QEvent::FocusOut);
     QApplication::sendEvent(m_datePicker, &focusOutEvent);
-    
+
     // If we get here without crashing, focus handling works
     QVERIFY(true);
 }
@@ -297,14 +305,14 @@ void FluentDatePickerTest::testFocusHandling() {
 // Edge cases
 void FluentDatePickerTest::testInvalidDates() {
     QDate originalDate = m_datePicker->date();
-    
+
     // Test setting invalid date
     m_datePicker->setDate(QDate());
-    QCOMPARE(m_datePicker->date(), originalDate); // Should not change
-    
+    QCOMPARE(m_datePicker->date(), originalDate);  // Should not change
+
     // Test setting date with invalid components
-    m_datePicker->setDate(QDate(2023, 13, 32)); // Invalid month and day
-    QCOMPARE(m_datePicker->date(), originalDate); // Should not change
+    m_datePicker->setDate(QDate(2023, 13, 32));    // Invalid month and day
+    QCOMPARE(m_datePicker->date(), originalDate);  // Should not change
 }
 
 void FluentDatePickerTest::testDateRanges() {
@@ -312,28 +320,29 @@ void FluentDatePickerTest::testDateRanges() {
     QDate minDate(1900, 1, 1);
     QDate maxDate(2100, 12, 31);
     QDate testDate(2023, 6, 15);
-    
+
     m_datePicker->setDate(minDate);
     QCOMPARE(m_datePicker->date(), minDate);
-    
+
     m_datePicker->setDate(maxDate);
     QCOMPARE(m_datePicker->date(), maxDate);
-    
+
     m_datePicker->setDate(testDate);
     QCOMPARE(m_datePicker->date(), testDate);
 }
 
 void FluentDatePickerTest::testLocalization() {
     // Test different date formats
-    QStringList formats = {"yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy", "dd.MM.yyyy"};
-    
+    QStringList formats = {"yyyy-MM-dd", "dd/MM/yyyy", "MM/dd/yyyy",
+                           "dd.MM.yyyy"};
+
     QDate testDate(2023, 12, 25);
     m_datePicker->setDate(testDate);
-    
+
     for (const QString& format : formats) {
         m_datePicker->setDateFormat(format);
         QCOMPARE(m_datePicker->dateFormat(), format);
-        
+
         // Force repaint to test format rendering
         m_datePicker->update();
         QApplication::processEvents();

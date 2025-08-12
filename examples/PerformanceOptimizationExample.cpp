@@ -1,46 +1,46 @@
 // examples/PerformanceOptimizationExample.cpp
 #include <QApplication>
-#include <QMainWindow>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+#include <QCheckBox>
+#include <QClipboard>
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QElapsedTimer>
+#include <QFileDialog>
 #include <QGridLayout>
-#include <QSplitter>
-#include <QTabWidget>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QListWidget>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QMutex>
+#include <QProcess>
 #include <QProgressBar>
+#include <QPushButton>
+#include <QRandomGenerator>
+#include <QRunnable>
+#include <QScrollArea>
 #include <QSlider>
 #include <QSpinBox>
-#include <QCheckBox>
-#include <QPushButton>
-#include <QListWidget>
+#include <QSplitter>
+#include <QStandardItemModel>
+#include <QTabWidget>
 #include <QTableWidget>
 #include <QTextEdit>
-#include <QTimer>
-#include <QElapsedTimer>
 #include <QThread>
 #include <QThreadPool>
-#include <QRunnable>
-#include <QMutex>
-#include <QRandomGenerator>
-#include <QStandardItemModel>
-#include <QScrollArea>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QClipboard>
-#include <QDateTime>
-#include <QProcess>
-#include <QCoreApplication>
+#include <QTimer>
+#include <QVBoxLayout>
 
-#include "FluentQt/Styling/FluentTheme.h"
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
-#include "FluentQt/Components/FluentTreeView.h"
+#include "FluentQt/Components/FluentChartView.h"
 #include "FluentQt/Components/FluentComboBox.h"
 #include "FluentQt/Components/FluentTextInput.h"
-#include "FluentQt/Components/FluentChartView.h"
-#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Components/FluentTreeView.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
 using namespace FluentQt;
 
@@ -56,34 +56,34 @@ private slots:
     void onPerformanceWarning(const QString& message);
     void updatePerformanceMetrics();
     void togglePerformanceMonitoring(bool enabled);
-    
+
     // Memory management
     void runMemoryStressTest();
     void runGarbageCollection();
     void analyzeMemoryUsage();
     void toggleMemoryOptimization(bool enabled);
-    
+
     // Large dataset handling
     void generateLargeDataset();
     void enableVirtualScrolling(bool enabled);
     void toggleLazyLoading(bool enabled);
     void benchmarkDataOperations();
-    
+
     // Animation optimization
     void toggleAnimationOptimization(bool enabled);
     void adjustAnimationQuality(int quality);
     void runAnimationBenchmark();
-    
+
     // Rendering optimization
     void toggleHardwareAcceleration(bool enabled);
     void adjustRenderingQuality(int quality);
     void runRenderingBenchmark();
-    
+
     // Threading and concurrency
     void runMultithreadedOperation();
     void adjustThreadPoolSize(int size);
     void runConcurrencyBenchmark();
-    
+
     // Profiling and debugging
     void startProfiling();
     void stopProfiling();
@@ -108,7 +108,7 @@ private:
     void setupDatasetTab(QWidget* tab);
     void setupOptimizationTab(QWidget* tab);
     void setupProfilingTab(QWidget* tab);
-    
+
     // Helper methods
     void createPerformanceMetricsPanel();
     void createMemoryManagementPanel();
@@ -129,7 +129,7 @@ private:
     QWidget* m_centralWidget{nullptr};
     QTabWidget* m_mainTabs{nullptr};
     QSplitter* m_mainSplitter{nullptr};
-    
+
     // Performance monitoring
     QGroupBox* m_performanceGroup{nullptr};
     QLabel* m_fpsLabel{nullptr};
@@ -138,7 +138,7 @@ private:
     QProgressBar* m_performanceBar{nullptr};
     QCheckBox* m_monitoringEnabled{nullptr};
     Components::FluentChartView* m_performanceChart{nullptr};
-    
+
     // Memory management
     QGroupBox* m_memoryGroup{nullptr};
     QLabel* m_heapSizeLabel{nullptr};
@@ -148,7 +148,7 @@ private:
     Components::FluentButton* m_gcButton{nullptr};
     Components::FluentButton* m_memoryTestButton{nullptr};
     QCheckBox* m_memoryOptimization{nullptr};
-    
+
     // Large dataset handling
     QGroupBox* m_datasetGroup{nullptr};
     Components::FluentTreeView* m_largeTreeView{nullptr};
@@ -159,7 +159,7 @@ private:
     QCheckBox* m_lazyLoading{nullptr};
     Components::FluentButton* m_generateDataButton{nullptr};
     Components::FluentButton* m_benchmarkButton{nullptr};
-    
+
     // Animation optimization
     QGroupBox* m_animationGroup{nullptr};
     QSlider* m_animationQualitySlider{nullptr};
@@ -167,7 +167,7 @@ private:
     QCheckBox* m_hardwareAcceleration{nullptr};
     Components::FluentButton* m_animationBenchmarkButton{nullptr};
     QLabel* m_animationQualityLabel{nullptr};
-    
+
     // Rendering optimization
     QGroupBox* m_renderingGroup{nullptr};
     QSlider* m_renderingQualitySlider{nullptr};
@@ -175,7 +175,7 @@ private:
     QCheckBox* m_textureOptimization{nullptr};
     Components::FluentButton* m_renderingBenchmarkButton{nullptr};
     QLabel* m_renderingQualityLabel{nullptr};
-    
+
     // Threading and concurrency
     QGroupBox* m_threadingGroup{nullptr};
     QSpinBox* m_threadPoolSizeSpinBox{nullptr};
@@ -183,7 +183,7 @@ private:
     Components::FluentButton* m_multithreadTestButton{nullptr};
     Components::FluentButton* m_concurrencyBenchmarkButton{nullptr};
     QProgressBar* m_threadingProgressBar{nullptr};
-    
+
     // Profiling and debugging
     QGroupBox* m_profilingGroup{nullptr};
     Components::FluentButton* m_startProfilingButton{nullptr};
@@ -192,16 +192,16 @@ private:
     Components::FluentButton* m_clearProfilingButton{nullptr};
     QTextEdit* m_profilingLog{nullptr};
     QListWidget* m_performanceEvents{nullptr};
-    
+
     // Performance monitoring system
     Core::FluentPerformanceMonitor* m_performanceMonitor{nullptr};
     QTimer* m_metricsUpdateTimer{nullptr};
     QElapsedTimer m_operationTimer;
-    
+
     // Data management
     QStandardItemModel* m_largeDataModel{nullptr};
     QList<QVariantMap> m_largeDataset;
-    
+
     // State variables
     bool m_performanceMonitoringEnabled{true};
     bool m_memoryOptimizationEnabled{false};
@@ -213,29 +213,28 @@ private:
     int m_animationQuality{100};
     int m_renderingQuality{100};
     int m_threadPoolSize{4};
-    
+
     // Performance metrics
     double m_currentFPS{60.0};
     size_t m_memoryUsage{0};
     double m_cpuUsage{0.0};
     QStringList m_performanceLog;
     QMap<QString, qint64> m_profilingResults;
-    
+
     // Threading
     QThreadPool* m_threadPool{nullptr};
     QMutex m_dataMutex;
-    
+
     // Clipboard for data export
     QClipboard* m_clipboard{nullptr};
 };
 
 // Constructor implementation
 PerformanceOptimizationExample::PerformanceOptimizationExample(QWidget* parent)
-    : QMainWindow(parent)
-    , m_performanceMonitor(&Core::FluentPerformanceMonitor::instance())
-    , m_threadPool(QThreadPool::globalInstance())
-    , m_clipboard(QApplication::clipboard())
-{
+    : QMainWindow(parent),
+      m_performanceMonitor(&Core::FluentPerformanceMonitor::instance()),
+      m_threadPool(QThreadPool::globalInstance()),
+      m_clipboard(QApplication::clipboard()) {
     setWindowTitle("FluentQt Performance and Optimization Example");
     setMinimumSize(1200, 800);
     resize(1400, 900);
@@ -256,7 +255,7 @@ PerformanceOptimizationExample::PerformanceOptimizationExample(QWidget* parent)
 
     // Start metrics update timer
     m_metricsUpdateTimer = new QTimer(this);
-    m_metricsUpdateTimer->setInterval(1000); // Update every second
+    m_metricsUpdateTimer->setInterval(1000);  // Update every second
     m_metricsUpdateTimer->start();
 
     logPerformanceEvent("Performance optimization example initialized");
@@ -322,7 +321,8 @@ void PerformanceOptimizationExample::setupPerformanceTab(QWidget* tab) {
     controlsLayout->addWidget(m_monitoringEnabled);
 
     auto* optimizeButton = new Components::FluentButton("Auto-Optimize");
-    optimizeButton->setToolTip("Automatically optimize settings based on current performance");
+    optimizeButton->setToolTip(
+        "Automatically optimize settings based on current performance");
     controlsLayout->addWidget(optimizeButton);
 
     controlsLayout->addStretch();
@@ -348,7 +348,8 @@ void PerformanceOptimizationExample::setupMemoryTab(QWidget* tab) {
     controlsLayout->addWidget(m_gcButton);
 
     m_memoryTestButton = new Components::FluentButton("Run Memory Stress Test");
-    m_memoryTestButton->setToolTip("Test memory allocation and deallocation performance");
+    m_memoryTestButton->setToolTip(
+        "Test memory allocation and deallocation performance");
     controlsLayout->addWidget(m_memoryTestButton);
 
     m_memoryOptimization = new QCheckBox("Enable Memory Optimization");
@@ -513,13 +514,15 @@ void PerformanceOptimizationExample::createDatasetPanel() {
     // Virtual scrolling
     m_virtualScrolling = new QCheckBox("Enable Virtual Scrolling");
     m_virtualScrolling->setChecked(m_virtualScrollingEnabled);
-    m_virtualScrolling->setToolTip("Use virtual scrolling for better performance with large datasets");
+    m_virtualScrolling->setToolTip(
+        "Use virtual scrolling for better performance with large datasets");
     layout->addWidget(m_virtualScrolling, 1, 0, 1, 2);
 
     // Lazy loading
     m_lazyLoading = new QCheckBox("Enable Lazy Loading");
     m_lazyLoading->setChecked(m_lazyLoadingEnabled);
-    m_lazyLoading->setToolTip("Load data on-demand to reduce initial load time");
+    m_lazyLoading->setToolTip(
+        "Load data on-demand to reduce initial load time");
     layout->addWidget(m_lazyLoading, 2, 0, 1, 2);
 
     // Control buttons
@@ -563,7 +566,8 @@ void PerformanceOptimizationExample::createOptimizationPanel() {
     animLayout->addWidget(m_hardwareAcceleration, 2, 0, 1, 3);
 
     // Animation benchmark button
-    m_animationBenchmarkButton = new Components::FluentButton("Run Animation Benchmark");
+    m_animationBenchmarkButton =
+        new Components::FluentButton("Run Animation Benchmark");
     animLayout->addWidget(m_animationBenchmarkButton, 3, 0, 1, 3);
 
     // Rendering optimization
@@ -591,7 +595,8 @@ void PerformanceOptimizationExample::createOptimizationPanel() {
     renderLayout->addWidget(m_textureOptimization, 2, 0, 1, 3);
 
     // Rendering benchmark button
-    m_renderingBenchmarkButton = new Components::FluentButton("Run Rendering Benchmark");
+    m_renderingBenchmarkButton =
+        new Components::FluentButton("Run Rendering Benchmark");
     renderLayout->addWidget(m_renderingBenchmarkButton, 3, 0, 1, 3);
 
     // Threading controls
@@ -623,7 +628,8 @@ void PerformanceOptimizationExample::createOptimizationPanel() {
     m_multithreadTestButton = new Components::FluentButton("Multithread Test");
     threadButtonLayout->addWidget(m_multithreadTestButton);
 
-    m_concurrencyBenchmarkButton = new Components::FluentButton("Concurrency Benchmark");
+    m_concurrencyBenchmarkButton =
+        new Components::FluentButton("Concurrency Benchmark");
     threadButtonLayout->addWidget(m_concurrencyBenchmarkButton);
 
     threadLayout->addLayout(threadButtonLayout, 3, 0, 1, 2);
@@ -674,13 +680,15 @@ void PerformanceOptimizationExample::onFrameRateChanged(double fps) {
     }
 }
 
-void PerformanceOptimizationExample::onPerformanceWarning(const QString& message) {
+void PerformanceOptimizationExample::onPerformanceWarning(
+    const QString& message) {
     logPerformanceEvent(QString("WARNING: %1").arg(message));
 
     // Add to performance events list
-    auto* item = new QListWidgetItem(QString("[%1] %2")
-                                    .arg(QTime::currentTime().toString("hh:mm:ss"))
-                                    .arg(message));
+    auto* item =
+        new QListWidgetItem(QString("[%1] %2")
+                                .arg(QTime::currentTime().toString("hh:mm:ss"))
+                                .arg(message));
     item->setIcon(QIcon(":/icons/warning.png"));
     m_performanceEvents->addItem(item);
 
@@ -701,7 +709,8 @@ void PerformanceOptimizationExample::updatePerformanceMetrics() {
     m_cpuLabel->setText(QString("%1%").arg(m_cpuUsage, 0, 'f', 1));
 
     // Update active threads count
-    m_activeThreadsLabel->setText(QString::number(m_threadPool->activeThreadCount()));
+    m_activeThreadsLabel->setText(
+        QString::number(m_threadPool->activeThreadCount()));
 }
 
 void PerformanceOptimizationExample::togglePerformanceMonitoring(bool enabled) {
@@ -783,19 +792,23 @@ void PerformanceOptimizationExample::analyzeMemoryUsage() {
 
         // Estimate model memory usage
         if (m_largeDataModel) {
-            estimatedUsage += m_largeDataModel->rowCount() * m_largeDataModel->columnCount() * 64; // Rough estimate
+            estimatedUsage += m_largeDataModel->rowCount() *
+                              m_largeDataModel->columnCount() *
+                              64;  // Rough estimate
         }
 
         m_memoryUsage = estimatedUsage;
         updateMemoryDisplay();
 
-        QString analysis = QString("Memory analysis complete:\n"
-                                 "Estimated usage: %1 MB\n"
-                                 "Dataset items: %2\n"
-                                 "Model rows: %3")
-                          .arg(m_memoryUsage / (1024 * 1024))
-                          .arg(m_largeDataset.size())
-                          .arg(m_largeDataModel ? m_largeDataModel->rowCount() : 0);
+        QString analysis =
+            QString(
+                "Memory analysis complete:\n"
+                "Estimated usage: %1 MB\n"
+                "Dataset items: %2\n"
+                "Model rows: %3")
+                .arg(m_memoryUsage / (1024 * 1024))
+                .arg(m_largeDataset.size())
+                .arg(m_largeDataModel ? m_largeDataModel->rowCount() : 0);
 
         m_profilingLog->append(analysis);
         logPerformanceEvent("Memory analysis completed");
@@ -820,11 +833,13 @@ void PerformanceOptimizationExample::generateLargeDataset() {
     int itemCount = m_datasetSizeSpinBox->value();
 
     profileOperation("Dataset Generation", [this, itemCount]() {
-        logPerformanceEvent(QString("Generating dataset with %1 items...").arg(itemCount));
+        logPerformanceEvent(
+            QString("Generating dataset with %1 items...").arg(itemCount));
 
         populateLargeDataset(itemCount);
 
-        logPerformanceEvent(QString("Dataset generation completed: %1 items").arg(itemCount));
+        logPerformanceEvent(
+            QString("Dataset generation completed: %1 items").arg(itemCount));
     });
 }
 
@@ -834,12 +849,16 @@ void PerformanceOptimizationExample::enableVirtualScrolling(bool enabled) {
     if (enabled) {
         logPerformanceEvent("Virtual scrolling enabled");
         // Configure widgets for virtual scrolling
-        m_largeTableWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-        m_largeListWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        m_largeTableWidget->setVerticalScrollMode(
+            QAbstractItemView::ScrollPerPixel);
+        m_largeListWidget->setVerticalScrollMode(
+            QAbstractItemView::ScrollPerPixel);
     } else {
         logPerformanceEvent("Virtual scrolling disabled");
-        m_largeTableWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerItem);
-        m_largeListWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerItem);
+        m_largeTableWidget->setVerticalScrollMode(
+            QAbstractItemView::ScrollPerItem);
+        m_largeListWidget->setVerticalScrollMode(
+            QAbstractItemView::ScrollPerItem);
     }
 }
 
@@ -876,9 +895,11 @@ void PerformanceOptimizationExample::benchmarkDataOperations() {
         // Test data access
         timer.restart();
         for (int i = 0; i < 1000; ++i) {
-            auto* item = m_largeListWidget->item(QRandomGenerator::global()->bounded(m_largeListWidget->count()));
+            auto* item =
+                m_largeListWidget->item(QRandomGenerator::global()->bounded(
+                    m_largeListWidget->count()));
             if (item) {
-                QString text = item->text(); // Access data
+                QString text = item->text();  // Access data
                 Q_UNUSED(text)
             }
         }
@@ -894,11 +915,14 @@ void PerformanceOptimizationExample::benchmarkDataOperations() {
         }
         qint64 removeTime = timer.elapsed();
 
-        QString results = QString("Data Operations Benchmark Results:\n"
-                                "Insert 10,000 items: %1ms\n"
-                                "Access 1,000 items: %2ms\n"
-                                "Remove 5,000 items: %3ms")
-                         .arg(insertTime).arg(accessTime).arg(removeTime);
+        QString results = QString(
+                              "Data Operations Benchmark Results:\n"
+                              "Insert 10,000 items: %1ms\n"
+                              "Access 1,000 items: %2ms\n"
+                              "Remove 5,000 items: %3ms")
+                              .arg(insertTime)
+                              .arg(accessTime)
+                              .arg(removeTime);
 
         m_profilingLog->append(results);
         logPerformanceEvent("Data operations benchmark completed");
@@ -941,10 +965,13 @@ void PerformanceOptimizationExample::runAnimationBenchmark() {
         QList<QPropertyAnimation*> animations;
 
         for (int i = 0; i < 50; ++i) {
-            auto* animation = new QPropertyAnimation(m_animationBenchmarkButton, "geometry");
+            auto* animation =
+                new QPropertyAnimation(m_animationBenchmarkButton, "geometry");
             animation->setDuration(1000);
             animation->setStartValue(m_animationBenchmarkButton->geometry());
-            animation->setEndValue(m_animationBenchmarkButton->geometry().adjusted(10, 10, 10, 10));
+            animation->setEndValue(
+                m_animationBenchmarkButton->geometry().adjusted(10, 10, 10,
+                                                                10));
             animations.append(animation);
         }
 
@@ -966,10 +993,12 @@ void PerformanceOptimizationExample::runAnimationBenchmark() {
         // Clean up
         qDeleteAll(animations);
 
-        QString results = QString("Animation Benchmark Results:\n"
-                                "50 concurrent animations: %1ms\n"
-                                "Average FPS during test: %2")
-                         .arg(animationTime).arg(m_currentFPS, 0, 'f', 1);
+        QString results = QString(
+                              "Animation Benchmark Results:\n"
+                              "50 concurrent animations: %1ms\n"
+                              "Average FPS during test: %2")
+                              .arg(animationTime)
+                              .arg(m_currentFPS, 0, 'f', 1);
 
         m_profilingLog->append(results);
         logPerformanceEvent("Animation benchmark completed");
@@ -1025,10 +1054,12 @@ void PerformanceOptimizationExample::runRenderingBenchmark() {
 
         qint64 renderTime = timer.elapsed();
 
-        QString results = QString("Rendering Benchmark Results:\n"
-                                "100 forced repaints: %1ms\n"
-                                "Average render time: %2ms")
-                         .arg(renderTime).arg(renderTime / 100.0, 0, 'f', 2);
+        QString results = QString(
+                              "Rendering Benchmark Results:\n"
+                              "100 forced repaints: %1ms\n"
+                              "Average render time: %2ms")
+                              .arg(renderTime)
+                              .arg(renderTime / 100.0, 0, 'f', 2);
 
         m_profilingLog->append(results);
         logPerformanceEvent("Rendering benchmark completed");
@@ -1051,14 +1082,18 @@ void PerformanceOptimizationExample::runMultithreadedOperation() {
             }
 
             // Update progress on main thread
-            QMetaObject::invokeMethod(this, [this]() {
-                int currentValue = m_threadingProgressBar->value();
-                m_threadingProgressBar->setValue(currentValue + 10);
+            QMetaObject::invokeMethod(
+                this,
+                [this]() {
+                    int currentValue = m_threadingProgressBar->value();
+                    m_threadingProgressBar->setValue(currentValue + 10);
 
-                if (m_threadingProgressBar->value() >= 100) {
-                    logPerformanceEvent("Multithreaded operation completed");
-                }
-            }, Qt::QueuedConnection);
+                    if (m_threadingProgressBar->value() >= 100) {
+                        logPerformanceEvent(
+                            "Multithreaded operation completed");
+                    }
+                },
+                Qt::QueuedConnection);
         });
 
         m_threadPool->start(task);
@@ -1114,13 +1149,15 @@ void PerformanceOptimizationExample::runConcurrencyBenchmark() {
             qint64 threadTime = threadTimer.elapsed();
 
             QString result = QString("Threads: %1, Time: %2ms")
-                           .arg(threadCount).arg(threadTime);
+                                 .arg(threadCount)
+                                 .arg(threadTime);
             m_profilingLog->append(result);
         }
 
         qint64 totalTime = timer.elapsed();
 
-        QString results = QString("Concurrency Benchmark completed in %1ms").arg(totalTime);
+        QString results =
+            QString("Concurrency Benchmark completed in %1ms").arg(totalTime);
         m_profilingLog->append(results);
         logPerformanceEvent("Concurrency benchmark completed");
     });
@@ -1148,17 +1185,17 @@ void PerformanceOptimizationExample::stopProfiling() {
 
     // Display profiling summary
     QString summary = "Profiling Summary:\n";
-    for (auto it = m_profilingResults.begin(); it != m_profilingResults.end(); ++it) {
+    for (auto it = m_profilingResults.begin(); it != m_profilingResults.end();
+         ++it) {
         summary += QString("%1: %2ms\n").arg(it.key()).arg(it.value());
     }
     m_profilingLog->append(summary);
 }
 
 void PerformanceOptimizationExample::exportProfilingData() {
-    QString fileName = QFileDialog::getSaveFileName(this,
-                                                   "Export Profiling Data",
-                                                   "profiling_data.txt",
-                                                   "Text Files (*.txt)");
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "Export Profiling Data", "profiling_data.txt",
+        "Text Files (*.txt)");
 
     if (!fileName.isEmpty()) {
         QFile file(fileName);
@@ -1166,9 +1203,11 @@ void PerformanceOptimizationExample::exportProfilingData() {
             QTextStream stream(&file);
             stream << m_profilingLog->toPlainText();
 
-            logPerformanceEvent(QString("Profiling data exported to %1").arg(fileName));
+            logPerformanceEvent(
+                QString("Profiling data exported to %1").arg(fileName));
         } else {
-            QMessageBox::warning(this, "Export Error", "Failed to save profiling data.");
+            QMessageBox::warning(this, "Export Error",
+                                 "Failed to save profiling data.");
         }
     }
 }
@@ -1185,10 +1224,12 @@ void PerformanceOptimizationExample::clearProfilingData() {
 // Helper method implementations
 void PerformanceOptimizationExample::setupPerformanceMonitoring() {
     // Connect performance monitor signals
-    connect(m_performanceMonitor, &Core::FluentPerformanceMonitor::frameRateChanged,
-            this, &PerformanceOptimizationExample::onFrameRateChanged);
-    connect(m_performanceMonitor, &Core::FluentPerformanceMonitor::performanceWarning,
-            this, &PerformanceOptimizationExample::onPerformanceWarning);
+    connect(m_performanceMonitor,
+            &Core::FluentPerformanceMonitor::frameRateChanged, this,
+            &PerformanceOptimizationExample::onFrameRateChanged);
+    connect(m_performanceMonitor,
+            &Core::FluentPerformanceMonitor::performanceWarning, this,
+            &PerformanceOptimizationExample::onPerformanceWarning);
 }
 
 void PerformanceOptimizationExample::setupMemoryManagement() {
@@ -1202,8 +1243,7 @@ void PerformanceOptimizationExample::setupDatasetHandling() {
         {"Name", 200, true, true, Qt::AlignLeft},
         {"Type", 100, true, true, Qt::AlignLeft},
         {"Size", 80, true, true, Qt::AlignRight},
-        {"Modified", 150, true, true, Qt::AlignLeft}
-    };
+        {"Modified", 150, true, true, Qt::AlignLeft}};
     m_largeTreeView->setColumns(columns);
 
     // Configure table widget
@@ -1231,62 +1271,63 @@ void PerformanceOptimizationExample::setupProfilingTools() {
 
 void PerformanceOptimizationExample::setupConnections() {
     // Performance monitoring connections
-    connect(m_monitoringEnabled, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::togglePerformanceMonitoring);
-    connect(m_metricsUpdateTimer, &QTimer::timeout,
-            this, &PerformanceOptimizationExample::updatePerformanceMetrics);
+    connect(m_monitoringEnabled, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::togglePerformanceMonitoring);
+    connect(m_metricsUpdateTimer, &QTimer::timeout, this,
+            &PerformanceOptimizationExample::updatePerformanceMetrics);
 
     // Memory management connections
-    connect(m_gcButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::runGarbageCollection);
-    connect(m_memoryTestButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::runMemoryStressTest);
-    connect(m_memoryOptimization, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::toggleMemoryOptimization);
+    connect(m_gcButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::runGarbageCollection);
+    connect(m_memoryTestButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::runMemoryStressTest);
+    connect(m_memoryOptimization, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::toggleMemoryOptimization);
 
     // Dataset handling connections
-    connect(m_generateDataButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::generateLargeDataset);
-    connect(m_benchmarkButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::benchmarkDataOperations);
-    connect(m_virtualScrolling, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::enableVirtualScrolling);
-    connect(m_lazyLoading, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::toggleLazyLoading);
+    connect(m_generateDataButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::generateLargeDataset);
+    connect(m_benchmarkButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::benchmarkDataOperations);
+    connect(m_virtualScrolling, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::enableVirtualScrolling);
+    connect(m_lazyLoading, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::toggleLazyLoading);
 
     // Animation optimization connections
-    connect(m_animationOptimization, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::toggleAnimationOptimization);
-    connect(m_animationQualitySlider, &QSlider::valueChanged,
-            this, &PerformanceOptimizationExample::adjustAnimationQuality);
+    connect(m_animationOptimization, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::toggleAnimationOptimization);
+    connect(m_animationQualitySlider, &QSlider::valueChanged, this,
+            &PerformanceOptimizationExample::adjustAnimationQuality);
     connect(m_animationBenchmarkButton, &Components::FluentButton::clicked,
             this, &PerformanceOptimizationExample::runAnimationBenchmark);
 
     // Rendering optimization connections
-    connect(m_hardwareAcceleration, &QCheckBox::toggled,
-            this, &PerformanceOptimizationExample::toggleHardwareAcceleration);
-    connect(m_renderingQualitySlider, &QSlider::valueChanged,
-            this, &PerformanceOptimizationExample::adjustRenderingQuality);
+    connect(m_hardwareAcceleration, &QCheckBox::toggled, this,
+            &PerformanceOptimizationExample::toggleHardwareAcceleration);
+    connect(m_renderingQualitySlider, &QSlider::valueChanged, this,
+            &PerformanceOptimizationExample::adjustRenderingQuality);
     connect(m_renderingBenchmarkButton, &Components::FluentButton::clicked,
             this, &PerformanceOptimizationExample::runRenderingBenchmark);
 
     // Threading connections
-    connect(m_threadPoolSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
-            this, &PerformanceOptimizationExample::adjustThreadPoolSize);
-    connect(m_multithreadTestButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::runMultithreadedOperation);
+    connect(m_threadPoolSizeSpinBox,
+            QOverload<int>::of(&QSpinBox::valueChanged), this,
+            &PerformanceOptimizationExample::adjustThreadPoolSize);
+    connect(m_multithreadTestButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::runMultithreadedOperation);
     connect(m_concurrencyBenchmarkButton, &Components::FluentButton::clicked,
             this, &PerformanceOptimizationExample::runConcurrencyBenchmark);
 
     // Profiling connections
-    connect(m_startProfilingButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::startProfiling);
-    connect(m_stopProfilingButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::stopProfiling);
-    connect(m_exportProfilingButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::exportProfilingData);
-    connect(m_clearProfilingButton, &Components::FluentButton::clicked,
-            this, &PerformanceOptimizationExample::clearProfilingData);
+    connect(m_startProfilingButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::startProfiling);
+    connect(m_stopProfilingButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::stopProfiling);
+    connect(m_exportProfilingButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::exportProfilingData);
+    connect(m_clearProfilingButton, &Components::FluentButton::clicked, this,
+            &PerformanceOptimizationExample::clearProfilingData);
 }
 
 void PerformanceOptimizationExample::setupTheme() {
@@ -1307,31 +1348,44 @@ void PerformanceOptimizationExample::populateLargeDataset(int itemCount) {
         item["name"] = QString("Item %1").arg(i + 1);
         item["type"] = (i % 3 == 0) ? "Folder" : "File";
         item["size"] = QRandomGenerator::global()->bounded(1024, 1024 * 1024);
-        item["modified"] = QDateTime::currentDateTime().addDays(-QRandomGenerator::global()->bounded(365));
+        item["modified"] = QDateTime::currentDateTime().addDays(
+            -QRandomGenerator::global()->bounded(365));
 
         m_largeDataset.append(item);
 
         // Add to tree view (with lazy loading consideration)
         if (!m_lazyLoadingEnabled || i < 1000) {
-            auto* treeItem = m_largeTreeView->addTopLevelItem(item["name"].toString());
+            auto* treeItem =
+                m_largeTreeView->addTopLevelItem(item["name"].toString());
             treeItem->setText(1, item["type"].toString());
-            treeItem->setText(2, QString("%1 KB").arg(item["size"].toInt() / 1024));
-            treeItem->setText(3, item["modified"].toDateTime().toString("yyyy-MM-dd"));
+            treeItem->setText(
+                2, QString("%1 KB").arg(item["size"].toInt() / 1024));
+            treeItem->setText(
+                3, item["modified"].toDateTime().toString("yyyy-MM-dd"));
         }
 
         // Add to table widget (with virtual scrolling consideration)
         if (!m_virtualScrollingEnabled || i < 1000) {
             int row = m_largeTableWidget->rowCount();
             m_largeTableWidget->insertRow(row);
-            m_largeTableWidget->setItem(row, 0, new QTableWidgetItem(item["name"].toString()));
-            m_largeTableWidget->setItem(row, 1, new QTableWidgetItem(item["type"].toString()));
-            m_largeTableWidget->setItem(row, 2, new QTableWidgetItem(QString("%1 KB").arg(item["size"].toInt() / 1024)));
-            m_largeTableWidget->setItem(row, 3, new QTableWidgetItem(item["modified"].toDateTime().toString("yyyy-MM-dd")));
+            m_largeTableWidget->setItem(
+                row, 0, new QTableWidgetItem(item["name"].toString()));
+            m_largeTableWidget->setItem(
+                row, 1, new QTableWidgetItem(item["type"].toString()));
+            m_largeTableWidget->setItem(
+                row, 2,
+                new QTableWidgetItem(
+                    QString("%1 KB").arg(item["size"].toInt() / 1024)));
+            m_largeTableWidget->setItem(
+                row, 3,
+                new QTableWidgetItem(
+                    item["modified"].toDateTime().toString("yyyy-MM-dd")));
         }
 
         // Add to list widget
         if (!m_virtualScrollingEnabled || i < 1000) {
-            m_largeListWidget->addItem(QString("%1 (%2)").arg(item["name"].toString(), item["type"].toString()));
+            m_largeListWidget->addItem(QString("%1 (%2)").arg(
+                item["name"].toString(), item["type"].toString()));
         }
 
         // Process events periodically to keep UI responsive
@@ -1341,7 +1395,8 @@ void PerformanceOptimizationExample::populateLargeDataset(int itemCount) {
     }
 }
 
-void PerformanceOptimizationExample::profileOperation(const QString& operation, std::function<void()> func) {
+void PerformanceOptimizationExample::profileOperation(
+    const QString& operation, std::function<void()> func) {
     if (m_profilingActive) {
         m_performanceMonitor->beginProfile(operation);
     }
@@ -1357,10 +1412,11 @@ void PerformanceOptimizationExample::profileOperation(const QString& operation, 
         m_performanceMonitor->endProfile(operation);
         m_profilingResults[operation] = elapsed;
 
-        QString profileEntry = QString("[%1] %2: %3ms")
-                              .arg(QTime::currentTime().toString("hh:mm:ss"))
-                              .arg(operation)
-                              .arg(elapsed);
+        QString profileEntry =
+            QString("[%1] %2: %3ms")
+                .arg(QTime::currentTime().toString("hh:mm:ss"))
+                .arg(operation)
+                .arg(elapsed);
         m_profilingLog->append(profileEntry);
     }
 }
@@ -1390,19 +1446,25 @@ void PerformanceOptimizationExample::logPerformanceEvent(const QString& event) {
 
 void PerformanceOptimizationExample::updateMemoryDisplay() {
     // Simulate memory usage (in a real app, this would use actual memory APIs)
-    size_t simulatedUsage = m_largeDataset.size() * 64 + // Dataset memory
-                           (m_largeDataModel ? m_largeDataModel->rowCount() * 256 : 0) + // Model memory
-                           1024 * 1024 * 50; // Base application memory (50MB)
+    size_t simulatedUsage =
+        m_largeDataset.size() * 64 +  // Dataset memory
+        (m_largeDataModel ? m_largeDataModel->rowCount() * 256
+                          : 0) +  // Model memory
+        1024 * 1024 * 50;         // Base application memory (50MB)
 
     m_memoryUsage = simulatedUsage;
 
     m_memoryLabel->setText(QString("%1 MB").arg(m_memoryUsage / (1024 * 1024)));
-    m_heapSizeLabel->setText(QString("%1 MB").arg((m_memoryUsage * 1.5) / (1024 * 1024)));
-    m_allocatedLabel->setText(QString("%1 MB").arg(m_memoryUsage / (1024 * 1024)));
-    m_availableLabel->setText(QString("%1 MB").arg((m_memoryUsage * 0.3) / (1024 * 1024)));
+    m_heapSizeLabel->setText(
+        QString("%1 MB").arg((m_memoryUsage * 1.5) / (1024 * 1024)));
+    m_allocatedLabel->setText(
+        QString("%1 MB").arg(m_memoryUsage / (1024 * 1024)));
+    m_availableLabel->setText(
+        QString("%1 MB").arg((m_memoryUsage * 0.3) / (1024 * 1024)));
 
     // Update memory usage bar (assuming 500MB as maximum)
-    int percentage = static_cast<int>((m_memoryUsage / (500.0 * 1024 * 1024)) * 100);
+    int percentage =
+        static_cast<int>((m_memoryUsage / (500.0 * 1024 * 1024)) * 100);
     m_memoryUsageBar->setValue(qMin(100, percentage));
 }
 
@@ -1410,16 +1472,17 @@ void PerformanceOptimizationExample::updateFPSDisplay() {
     m_fpsLabel->setText(QString("%1 FPS").arg(m_currentFPS, 0, 'f', 1));
 
     // Update FPS color based on performance
-    QString color = "#0078d4"; // Blue (good)
+    QString color = "#0078d4";  // Blue (good)
     if (m_currentFPS < 30) {
-        color = "#d13438"; // Red (poor)
+        color = "#d13438";  // Red (poor)
     } else if (m_currentFPS < 45) {
-        color = "#ff8c00"; // Orange (fair)
+        color = "#ff8c00";  // Orange (fair)
     } else if (m_currentFPS < 55) {
-        color = "#107c10"; // Green (good)
+        color = "#107c10";  // Green (good)
     }
 
-    m_fpsLabel->setStyleSheet(QString("font-weight: bold; color: %1;").arg(color));
+    m_fpsLabel->setStyleSheet(
+        QString("font-weight: bold; color: %1;").arg(color));
 }
 
 void PerformanceOptimizationExample::optimizeForLowEndDevice() {

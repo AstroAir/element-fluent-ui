@@ -1,19 +1,19 @@
 // include/FluentQt/Animation/FluentAnimationPerformanceManager.h
 #pragma once
 
-#include <QObject>
-#include <QWidget>
-#include <QTimer>
-#include <QElapsedTimer>
-#include <QMutex>
-#include <QMap>
-#include <QQueue>
-#include <QLocale>
-#include <QScreen>
 #include <QApplication>
+#include <QElapsedTimer>
+#include <QLocale>
+#include <QMap>
+#include <QMutex>
+#include <QObject>
+#include <QQueue>
+#include <QScreen>
+#include <QTimer>
+#include <QWidget>
+#include <atomic>
 #include <chrono>
 #include <memory>
-#include <atomic>
 
 #include "FluentAdvancedAnimator.h"
 
@@ -22,7 +22,7 @@ namespace FluentQt::Animation {
 // Performance metrics
 struct FluentAnimationMetrics {
     double averageFPS{60.0};
-    double frameTime{16.67}; // milliseconds
+    double frameTime{16.67};  // milliseconds
     int droppedFrames{0};
     int totalFrames{0};
     double cpuUsage{0.0};
@@ -39,25 +39,26 @@ struct FluentAnimationMetrics {
 
 // Performance optimization strategies
 enum class FluentOptimizationStrategy {
-    None,                   // No optimization
-    ReduceQuality,          // Reduce animation quality
-    SkipFrames,             // Skip intermediate frames
-    SimplifyEffects,        // Use simpler effects
-    BatchAnimations,        // Batch similar animations
-    UseHardwareAccel,       // Enable hardware acceleration
-    ReduceDuration,         // Shorten animation durations
-    PrioritizeVisible,      // Prioritize visible animations
-    AdaptiveFrameRate,      // Adapt frame rate to performance
-    Custom                  // Custom optimization strategy
+    None,               // No optimization
+    ReduceQuality,      // Reduce animation quality
+    SkipFrames,         // Skip intermediate frames
+    SimplifyEffects,    // Use simpler effects
+    BatchAnimations,    // Batch similar animations
+    UseHardwareAccel,   // Enable hardware acceleration
+    ReduceDuration,     // Shorten animation durations
+    PrioritizeVisible,  // Prioritize visible animations
+    AdaptiveFrameRate,  // Adapt frame rate to performance
+    Custom              // Custom optimization strategy
 };
 
 // Performance configuration
 struct FluentPerformanceConfig {
-    FluentAnimationPerformance targetPerformance{FluentAnimationPerformance::Adaptive};
+    FluentAnimationPerformance targetPerformance{
+        FluentAnimationPerformance::Adaptive};
     double targetFPS{60.0};
     double minFPS{30.0};
     double maxCPUUsage{70.0};
-    double maxMemoryUsage{100.0}; // MB
+    double maxMemoryUsage{100.0};  // MB
     int maxConcurrentAnimations{20};
     bool enableHardwareAcceleration{true};
     bool enablePerformanceMonitoring{true};
@@ -70,11 +71,11 @@ struct FluentPerformanceConfig {
 
 // Animation priority levels
 enum class FluentAnimationPriority {
-    Critical,               // Must not be skipped (accessibility feedback)
-    High,                   // Important user feedback
-    Normal,                 // Standard animations
-    Low,                    // Nice-to-have animations
-    Background              // Background/ambient animations
+    Critical,   // Must not be skipped (accessibility feedback)
+    High,       // Important user feedback
+    Normal,     // Standard animations
+    Low,        // Nice-to-have animations
+    Background  // Background/ambient animations
 };
 
 // Performance-aware animation request
@@ -86,7 +87,8 @@ struct FluentAnimationRequest {
     QVariant startValue;
     QVariant endValue;
     QString property;
-    FluentAnimationPerformance requiredPerformance{FluentAnimationPerformance::Medium};
+    FluentAnimationPerformance requiredPerformance{
+        FluentAnimationPerformance::Medium};
     bool canBeSkipped{true};
     bool canBeSimplified{true};
     QMap<QString, QVariant> parameters;
@@ -105,14 +107,19 @@ public:
     void setPerformanceConfig(const FluentPerformanceConfig& config);
     FluentPerformanceConfig getPerformanceConfig() const { return m_config; }
     void setTargetPerformance(FluentAnimationPerformance performance);
-    FluentAnimationPerformance getTargetPerformance() const { return m_config.targetPerformance; }
+    FluentAnimationPerformance getTargetPerformance() const {
+        return m_config.targetPerformance;
+    }
 
     // Performance monitoring
     void startPerformanceMonitoring();
     void stopPerformanceMonitoring();
-    bool isPerformanceMonitoringEnabled() const { return m_performanceMonitoringEnabled; }
+    bool isPerformanceMonitoringEnabled() const {
+        return m_performanceMonitoringEnabled;
+    }
     FluentAnimationMetrics getCurrentMetrics() const;
-    FluentAnimationMetrics getAverageMetrics(std::chrono::seconds duration = std::chrono::seconds(10)) const;
+    FluentAnimationMetrics getAverageMetrics(
+        std::chrono::seconds duration = std::chrono::seconds(10)) const;
 
     // Animation management
     int requestAnimation(const FluentAnimationRequest& request);
@@ -123,9 +130,12 @@ public:
 
     // Performance optimization
     void optimizePerformance();
-    void enableOptimizationStrategy(FluentOptimizationStrategy strategy, bool enabled = true);
-    bool isOptimizationStrategyEnabled(FluentOptimizationStrategy strategy) const;
-    void setCustomOptimizationFunction(std::function<void(const FluentAnimationMetrics&)> optimizer);
+    void enableOptimizationStrategy(FluentOptimizationStrategy strategy,
+                                    bool enabled = true);
+    bool isOptimizationStrategyEnabled(
+        FluentOptimizationStrategy strategy) const;
+    void setCustomOptimizationFunction(
+        std::function<void(const FluentAnimationMetrics&)> optimizer);
 
     // Hardware acceleration
     void enableHardwareAcceleration(QWidget* widget, bool enabled = true);
@@ -135,15 +145,21 @@ public:
 
     // Adaptive performance
     void enableAdaptivePerformance(bool enabled = true);
-    bool isAdaptivePerformanceEnabled() const { return m_adaptivePerformanceEnabled; }
+    bool isAdaptivePerformanceEnabled() const {
+        return m_adaptivePerformanceEnabled;
+    }
     void updatePerformanceBasedOnMetrics();
     void adaptToSystemPerformance();
 
     // Cultural and accessibility integration
     void setCulturalAnimationStyle(FluentCulturalAnimationStyle style);
-    FluentCulturalAnimationStyle getCulturalAnimationStyle() const { return m_culturalStyle; }
+    FluentCulturalAnimationStyle getCulturalAnimationStyle() const {
+        return m_culturalStyle;
+    }
     void setAccessibilityAnimationMode(FluentAccessibilityAnimationMode mode);
-    FluentAccessibilityAnimationMode getAccessibilityAnimationMode() const { return m_accessibilityMode; }
+    FluentAccessibilityAnimationMode getAccessibilityAnimationMode() const {
+        return m_accessibilityMode;
+    }
     void adaptAnimationsForCulture(const QLocale& locale);
     void adaptAnimationsForAccessibility();
 
@@ -156,7 +172,9 @@ public:
 
     // Animation queue management
     void setMaxConcurrentAnimations(int maxAnimations);
-    int getMaxConcurrentAnimations() const { return m_config.maxConcurrentAnimations; }
+    int getMaxConcurrentAnimations() const {
+        return m_config.maxConcurrentAnimations;
+    }
     int getActiveAnimationCount() const;
     int getQueuedAnimationCount() const;
     void clearAnimationQueue();
@@ -204,7 +222,8 @@ private:
     // Animation processing
     void processAnimationQueue();
     bool shouldSkipAnimation(const FluentAnimationRequest& request) const;
-    FluentAnimationRequest simplifyAnimation(const FluentAnimationRequest& request) const;
+    FluentAnimationRequest simplifyAnimation(
+        const FluentAnimationRequest& request) const;
     void executeAnimation(const FluentAnimationRequest& request);
 
     // Advanced batching system
@@ -216,14 +235,17 @@ private:
         std::unique_ptr<QParallelAnimationGroup> animationGroup;
     };
 
-    std::unique_ptr<BatchedAnimationGroup> createBatchedAnimationGroup(const QList<int>& requestIds);
-    void executeBatchedAnimation(std::unique_ptr<BatchedAnimationGroup> batchedGroup);
+    std::unique_ptr<BatchedAnimationGroup> createBatchedAnimationGroup(
+        const QList<int>& requestIds);
+    void executeBatchedAnimation(
+        std::unique_ptr<BatchedAnimationGroup> batchedGroup);
     void optimizeBatchedAnimations();
 
     // Cultural and accessibility adaptation
     void applyCulturalAnimationStyle();
     void applyAccessibilityAnimationMode();
-    std::chrono::milliseconds getCulturalDuration(std::chrono::milliseconds baseDuration) const;
+    std::chrono::milliseconds getCulturalDuration(
+        std::chrono::milliseconds baseDuration) const;
     QEasingCurve getCulturalEasing(const QEasingCurve& baseEasing) const;
 
     // Hardware acceleration helpers
@@ -262,8 +284,10 @@ private:
     std::function<void(const FluentAnimationMetrics&)> m_customOptimizer;
 
     // Cultural and accessibility
-    FluentCulturalAnimationStyle m_culturalStyle{FluentCulturalAnimationStyle::Adaptive};
-    FluentAccessibilityAnimationMode m_accessibilityMode{FluentAccessibilityAnimationMode::Full};
+    FluentCulturalAnimationStyle m_culturalStyle{
+        FluentCulturalAnimationStyle::Adaptive};
+    FluentAccessibilityAnimationMode m_accessibilityMode{
+        FluentAccessibilityAnimationMode::Full};
 
     // Hardware acceleration
     QSet<QWidget*> m_hardwareAcceleratedWidgets;
@@ -288,32 +312,44 @@ private:
 
 // Performance utility functions
 namespace FluentAnimationPerformanceUtils {
-    // Performance analysis
-    bool isPerformanceAcceptable(const FluentAnimationMetrics& metrics);
-    FluentAnimationPerformance recommendPerformanceLevel(const FluentAnimationMetrics& metrics);
-    QStringList analyzePerformanceBottlenecks(const FluentAnimationMetrics& metrics);
+// Performance analysis
+bool isPerformanceAcceptable(const FluentAnimationMetrics& metrics);
+FluentAnimationPerformance recommendPerformanceLevel(
+    const FluentAnimationMetrics& metrics);
+QStringList analyzePerformanceBottlenecks(
+    const FluentAnimationMetrics& metrics);
 
-    // Optimization helpers
-    std::chrono::milliseconds optimizeDuration(std::chrono::milliseconds duration, FluentAnimationPerformance performance);
-    QEasingCurve optimizeEasing(const QEasingCurve& easing, FluentAnimationPerformance performance);
-    bool shouldUseHardwareAcceleration(QWidget* widget, FluentAnimationPerformance performance);
+// Optimization helpers
+std::chrono::milliseconds optimizeDuration(
+    std::chrono::milliseconds duration, FluentAnimationPerformance performance);
+QEasingCurve optimizeEasing(const QEasingCurve& easing,
+                            FluentAnimationPerformance performance);
+bool shouldUseHardwareAcceleration(QWidget* widget,
+                                   FluentAnimationPerformance performance);
 
-    // Cultural adaptation helpers
-    std::chrono::milliseconds getCulturalDuration(std::chrono::milliseconds baseDuration, FluentCulturalAnimationStyle style);
-    QEasingCurve getCulturalEasing(const QEasingCurve& baseEasing, FluentCulturalAnimationStyle style);
-    double getCulturalIntensity(double baseIntensity, FluentCulturalAnimationStyle style);
+// Cultural adaptation helpers
+std::chrono::milliseconds getCulturalDuration(
+    std::chrono::milliseconds baseDuration, FluentCulturalAnimationStyle style);
+QEasingCurve getCulturalEasing(const QEasingCurve& baseEasing,
+                               FluentCulturalAnimationStyle style);
+double getCulturalIntensity(double baseIntensity,
+                            FluentCulturalAnimationStyle style);
 
-    // Accessibility helpers
-    bool shouldSkipForAccessibility(FluentAccessibilityAnimationMode mode, FluentAnimationPriority priority);
-    std::chrono::milliseconds getAccessibleDuration(std::chrono::milliseconds baseDuration, FluentAccessibilityAnimationMode mode);
-    QEasingCurve getAccessibleEasing(const QEasingCurve& baseEasing, FluentAccessibilityAnimationMode mode);
+// Accessibility helpers
+bool shouldSkipForAccessibility(FluentAccessibilityAnimationMode mode,
+                                FluentAnimationPriority priority);
+std::chrono::milliseconds getAccessibleDuration(
+    std::chrono::milliseconds baseDuration,
+    FluentAccessibilityAnimationMode mode);
+QEasingCurve getAccessibleEasing(const QEasingCurve& baseEasing,
+                                 FluentAccessibilityAnimationMode mode);
 
-    // System integration helpers
-    bool isReducedMotionPreferred();
-    bool isPowerSavingActive();
-    int getBatteryLevel();
-    int getThermalState();
-    double getSystemPerformanceScore();
-}
+// System integration helpers
+bool isReducedMotionPreferred();
+bool isPowerSavingActive();
+int getBatteryLevel();
+int getThermalState();
+double getSystemPerformanceScore();
+}  // namespace FluentAnimationPerformanceUtils
 
-} // namespace FluentQt::Animation
+}  // namespace FluentQt::Animation

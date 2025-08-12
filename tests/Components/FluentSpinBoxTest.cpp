@@ -1,9 +1,9 @@
 // tests/Components/FluentSpinBoxTest.cpp
-#include <QtTest/QtTest>
-#include <QSignalSpy>
-#include <QMouseEvent>
 #include <QKeyEvent>
+#include <QMouseEvent>
+#include <QSignalSpy>
 #include <QWheelEvent>
+#include <QtTest/QtTest>
 
 #include "FluentQt/Components/FluentSpinBox.h"
 #include "FluentQt/Styling/FluentTheme.h"
@@ -110,7 +110,7 @@ void FluentSpinBoxTest::cleanup() {
 void FluentSpinBoxTest::testDefaultConstructor() {
     // Test default constructor
     FluentSpinBox* spinBox = new FluentSpinBox();
-    
+
     // Verify default properties
     QCOMPARE(spinBox->value(), 0.0);
     QCOMPARE(spinBox->minimum(), 0.0);
@@ -129,21 +129,24 @@ void FluentSpinBoxTest::testDefaultConstructor() {
     QVERIFY(spinBox->showButtons());
     QVERIFY(spinBox->isAnimated());
     QVERIFY(spinBox->isEnabled());
-    
+
     delete spinBox;
 }
 
 void FluentSpinBoxTest::testTypeConstructor() {
     // Test constructor with type
-    FluentSpinBox* integerSpinBox = new FluentSpinBox(FluentSpinBoxType::Integer);
+    FluentSpinBox* integerSpinBox =
+        new FluentSpinBox(FluentSpinBoxType::Integer);
     QCOMPARE(integerSpinBox->spinBoxType(), FluentSpinBoxType::Integer);
     delete integerSpinBox;
-    
-    FluentSpinBox* currencySpinBox = new FluentSpinBox(FluentSpinBoxType::Currency);
+
+    FluentSpinBox* currencySpinBox =
+        new FluentSpinBox(FluentSpinBoxType::Currency);
     QCOMPARE(currencySpinBox->spinBoxType(), FluentSpinBoxType::Currency);
     delete currencySpinBox;
-    
-    FluentSpinBox* percentageSpinBox = new FluentSpinBox(FluentSpinBoxType::Percentage);
+
+    FluentSpinBox* percentageSpinBox =
+        new FluentSpinBox(FluentSpinBoxType::Percentage);
     QCOMPARE(percentageSpinBox->spinBoxType(), FluentSpinBoxType::Percentage);
     delete percentageSpinBox;
 }
@@ -155,23 +158,25 @@ void FluentSpinBoxTest::testFactoryMethods() {
     QCOMPARE(integerSpinBox->minimum(), 0.0);
     QCOMPARE(integerSpinBox->maximum(), 100.0);
     delete integerSpinBox;
-    
+
     // Test double spin box factory method
-    FluentSpinBox* doubleSpinBox = FluentSpinBox::createDoubleSpinBox(0.0, 10.0, 3);
+    FluentSpinBox* doubleSpinBox =
+        FluentSpinBox::createDoubleSpinBox(0.0, 10.0, 3);
     QCOMPARE(doubleSpinBox->spinBoxType(), FluentSpinBoxType::Double);
     QCOMPARE(doubleSpinBox->minimum(), 0.0);
     QCOMPARE(doubleSpinBox->maximum(), 10.0);
     QCOMPARE(doubleSpinBox->decimals(), 3);
     delete doubleSpinBox;
-    
+
     // Test currency spin box factory method
-    FluentSpinBox* currencySpinBox = FluentSpinBox::createCurrencySpinBox(0.0, 1000.0);
+    FluentSpinBox* currencySpinBox =
+        FluentSpinBox::createCurrencySpinBox(0.0, 1000.0);
     QCOMPARE(currencySpinBox->spinBoxType(), FluentSpinBoxType::Currency);
     QCOMPARE(currencySpinBox->minimum(), 0.0);
     QCOMPARE(currencySpinBox->maximum(), 1000.0);
     QCOMPARE(currencySpinBox->decimals(), 2);
     delete currencySpinBox;
-    
+
     // Test percentage spin box factory method
     FluentSpinBox* percentageSpinBox = FluentSpinBox::createPercentageSpinBox();
     QCOMPARE(percentageSpinBox->spinBoxType(), FluentSpinBoxType::Percentage);
@@ -185,47 +190,47 @@ void FluentSpinBoxTest::testFactoryMethods() {
 void FluentSpinBoxTest::testValue() {
     // Test setting and getting value
     QSignalSpy valueChangedSpy(m_spinBox, &FluentSpinBox::valueChanged);
-    
-    QCOMPARE(m_spinBox->value(), 0.0); // Default value
-    
+
+    QCOMPARE(m_spinBox->value(), 0.0);  // Default value
+
     m_spinBox->setValue(25.5);
     QCOMPARE(m_spinBox->value(), 25.5);
     QCOMPARE(valueChangedSpy.count(), 1);
     QCOMPARE(valueChangedSpy.first().first().toDouble(), 25.5);
-    
+
     m_spinBox->setValue(50.75);
     QCOMPARE(m_spinBox->value(), 50.75);
     QCOMPARE(valueChangedSpy.count(), 2);
     QCOMPARE(valueChangedSpy.last().first().toDouble(), 50.75);
-    
+
     // Setting the same value should not emit the signal
     m_spinBox->setValue(50.75);
     QCOMPARE(valueChangedSpy.count(), 2);
-    
+
     // Test value bounds
-    m_spinBox->setValue(-10.0); // Below minimum
+    m_spinBox->setValue(-10.0);  // Below minimum
     QCOMPARE(m_spinBox->value(), m_spinBox->minimum());
-    
-    m_spinBox->setValue(200.0); // Above maximum
+
+    m_spinBox->setValue(200.0);  // Above maximum
     QCOMPARE(m_spinBox->value(), m_spinBox->maximum());
 }
 
 void FluentSpinBoxTest::testMinimum() {
     // Test setting and getting minimum
     QSignalSpy minimumChangedSpy(m_spinBox, &FluentSpinBox::minimumChanged);
-    
-    QCOMPARE(m_spinBox->minimum(), 0.0); // Default minimum
-    
+
+    QCOMPARE(m_spinBox->minimum(), 0.0);  // Default minimum
+
     m_spinBox->setMinimum(-50.0);
     QCOMPARE(m_spinBox->minimum(), -50.0);
     QCOMPARE(minimumChangedSpy.count(), 1);
     QCOMPARE(minimumChangedSpy.first().first().toDouble(), -50.0);
-    
+
     m_spinBox->setMinimum(10.0);
     QCOMPARE(m_spinBox->minimum(), 10.0);
     QCOMPARE(minimumChangedSpy.count(), 2);
     QCOMPARE(minimumChangedSpy.last().first().toDouble(), 10.0);
-    
+
     // Setting the same minimum should not emit the signal
     m_spinBox->setMinimum(10.0);
     QCOMPARE(minimumChangedSpy.count(), 2);
@@ -234,19 +239,19 @@ void FluentSpinBoxTest::testMinimum() {
 void FluentSpinBoxTest::testMaximum() {
     // Test setting and getting maximum
     QSignalSpy maximumChangedSpy(m_spinBox, &FluentSpinBox::maximumChanged);
-    
-    QCOMPARE(m_spinBox->maximum(), 99.99); // Default maximum
-    
+
+    QCOMPARE(m_spinBox->maximum(), 99.99);  // Default maximum
+
     m_spinBox->setMaximum(200.0);
     QCOMPARE(m_spinBox->maximum(), 200.0);
     QCOMPARE(maximumChangedSpy.count(), 1);
     QCOMPARE(maximumChangedSpy.first().first().toDouble(), 200.0);
-    
+
     m_spinBox->setMaximum(150.0);
     QCOMPARE(m_spinBox->maximum(), 150.0);
     QCOMPARE(maximumChangedSpy.count(), 2);
     QCOMPARE(maximumChangedSpy.last().first().toDouble(), 150.0);
-    
+
     // Setting the same maximum should not emit the signal
     m_spinBox->setMaximum(150.0);
     QCOMPARE(maximumChangedSpy.count(), 2);
@@ -256,7 +261,7 @@ void FluentSpinBoxTest::testRange() {
     // Test setting range
     QSignalSpy minimumChangedSpy(m_spinBox, &FluentSpinBox::minimumChanged);
     QSignalSpy maximumChangedSpy(m_spinBox, &FluentSpinBox::maximumChanged);
-    
+
     m_spinBox->setRange(-100.0, 100.0);
     QCOMPARE(m_spinBox->minimum(), -100.0);
     QCOMPARE(m_spinBox->maximum(), 100.0);
@@ -266,31 +271,32 @@ void FluentSpinBoxTest::testRange() {
 
 void FluentSpinBoxTest::testSingleStep() {
     // Test setting and getting single step
-    QSignalSpy singleStepChangedSpy(m_spinBox, &FluentSpinBox::singleStepChanged);
-    
-    QCOMPARE(m_spinBox->singleStep(), 1.0); // Default step
-    
+    QSignalSpy singleStepChangedSpy(m_spinBox,
+                                    &FluentSpinBox::singleStepChanged);
+
+    QCOMPARE(m_spinBox->singleStep(), 1.0);  // Default step
+
     m_spinBox->setSingleStep(0.5);
     QCOMPARE(m_spinBox->singleStep(), 0.5);
     QCOMPARE(singleStepChangedSpy.count(), 1);
     QCOMPARE(singleStepChangedSpy.first().first().toDouble(), 0.5);
-    
+
     m_spinBox->setSingleStep(2.0);
     QCOMPARE(m_spinBox->singleStep(), 2.0);
     QCOMPARE(singleStepChangedSpy.count(), 2);
     QCOMPARE(singleStepChangedSpy.last().first().toDouble(), 2.0);
-    
+
     // Setting the same step should not emit the signal
     m_spinBox->setSingleStep(2.0);
     QCOMPARE(singleStepChangedSpy.count(), 2);
-    
+
     // Test invalid step (should be ignored)
     m_spinBox->setSingleStep(0.0);
-    QCOMPARE(m_spinBox->singleStep(), 2.0); // Should remain unchanged
+    QCOMPARE(m_spinBox->singleStep(), 2.0);  // Should remain unchanged
     QCOMPARE(singleStepChangedSpy.count(), 2);
-    
+
     m_spinBox->setSingleStep(-1.0);
-    QCOMPARE(m_spinBox->singleStep(), 2.0); // Should remain unchanged
+    QCOMPARE(m_spinBox->singleStep(), 2.0);  // Should remain unchanged
     QCOMPARE(singleStepChangedSpy.count(), 2);
 }
 
@@ -298,7 +304,7 @@ void FluentSpinBoxTest::testDecimals() {
     // Test setting and getting decimals
     QSignalSpy decimalsChangedSpy(m_spinBox, &FluentSpinBox::decimalsChanged);
 
-    QCOMPARE(m_spinBox->decimals(), 2); // Default decimals
+    QCOMPARE(m_spinBox->decimals(), 2);  // Default decimals
 
     m_spinBox->setDecimals(3);
     QCOMPARE(m_spinBox->decimals(), 3);
@@ -316,17 +322,17 @@ void FluentSpinBoxTest::testDecimals() {
 
     // Test bounds (should be clamped to 0-10)
     m_spinBox->setDecimals(-1);
-    QCOMPARE(m_spinBox->decimals(), 0); // Should be clamped to 0
+    QCOMPARE(m_spinBox->decimals(), 0);  // Should be clamped to 0
 
     m_spinBox->setDecimals(15);
-    QCOMPARE(m_spinBox->decimals(), 10); // Should be clamped to 10
+    QCOMPARE(m_spinBox->decimals(), 10);  // Should be clamped to 10
 }
 
 void FluentSpinBoxTest::testPrefix() {
     // Test setting and getting prefix
     QSignalSpy prefixChangedSpy(m_spinBox, &FluentSpinBox::prefixChanged);
 
-    QVERIFY(m_spinBox->prefix().isEmpty()); // Default prefix
+    QVERIFY(m_spinBox->prefix().isEmpty());  // Default prefix
 
     const QString prefix1 = "$";
     m_spinBox->setPrefix(prefix1);
@@ -349,7 +355,7 @@ void FluentSpinBoxTest::testSuffix() {
     // Test setting and getting suffix
     QSignalSpy suffixChangedSpy(m_spinBox, &FluentSpinBox::suffixChanged);
 
-    QVERIFY(m_spinBox->suffix().isEmpty()); // Default suffix
+    QVERIFY(m_spinBox->suffix().isEmpty());  // Default suffix
 
     const QString suffix1 = "%";
     m_spinBox->setSuffix(suffix1);
@@ -370,15 +376,17 @@ void FluentSpinBoxTest::testSuffix() {
 
 void FluentSpinBoxTest::testPlaceholderText() {
     // Test setting and getting placeholder text
-    QSignalSpy placeholderTextChangedSpy(m_spinBox, &FluentSpinBox::placeholderTextChanged);
+    QSignalSpy placeholderTextChangedSpy(
+        m_spinBox, &FluentSpinBox::placeholderTextChanged);
 
-    QVERIFY(m_spinBox->placeholderText().isEmpty()); // Default placeholder
+    QVERIFY(m_spinBox->placeholderText().isEmpty());  // Default placeholder
 
     const QString placeholder1 = "Enter value...";
     m_spinBox->setPlaceholderText(placeholder1);
     QCOMPARE(m_spinBox->placeholderText(), placeholder1);
     QCOMPARE(placeholderTextChangedSpy.count(), 1);
-    QCOMPARE(placeholderTextChangedSpy.first().first().toString(), placeholder1);
+    QCOMPARE(placeholderTextChangedSpy.first().first().toString(),
+             placeholder1);
 
     const QString placeholder2 = "Type a number";
     m_spinBox->setPlaceholderText(placeholder2);
@@ -398,9 +406,9 @@ void FluentSpinBoxTest::testText() {
     m_spinBox->setSuffix(" USD");
 
     QString text = m_spinBox->text();
-    QVERIFY(text.contains("25.50")); // Should contain the formatted value
-    QVERIFY(text.contains("$")); // Should contain prefix
-    QVERIFY(text.contains("USD")); // Should contain suffix
+    QVERIFY(text.contains("25.50"));  // Should contain the formatted value
+    QVERIFY(text.contains("$"));      // Should contain prefix
+    QVERIFY(text.contains("USD"));    // Should contain suffix
 }
 
 void FluentSpinBoxTest::testCleanText() {
@@ -410,21 +418,24 @@ void FluentSpinBoxTest::testCleanText() {
     m_spinBox->setSuffix(" USD");
 
     QString cleanText = m_spinBox->cleanText();
-    QVERIFY(cleanText.contains("25.50")); // Should contain the formatted value
-    QVERIFY(!cleanText.contains("$")); // Should not contain prefix
-    QVERIFY(!cleanText.contains("USD")); // Should not contain suffix
+    QVERIFY(cleanText.contains("25.50"));  // Should contain the formatted value
+    QVERIFY(!cleanText.contains("$"));     // Should not contain prefix
+    QVERIFY(!cleanText.contains("USD"));   // Should not contain suffix
 }
 
 void FluentSpinBoxTest::testSpinBoxType() {
     // Test setting and getting spin box type
-    QSignalSpy spinBoxTypeChangedSpy(m_spinBox, &FluentSpinBox::spinBoxTypeChanged);
+    QSignalSpy spinBoxTypeChangedSpy(m_spinBox,
+                                     &FluentSpinBox::spinBoxTypeChanged);
 
-    QCOMPARE(m_spinBox->spinBoxType(), FluentSpinBoxType::Double); // Default type
+    QCOMPARE(m_spinBox->spinBoxType(),
+             FluentSpinBoxType::Double);  // Default type
 
     m_spinBox->setSpinBoxType(FluentSpinBoxType::Integer);
     QCOMPARE(m_spinBox->spinBoxType(), FluentSpinBoxType::Integer);
     QCOMPARE(spinBoxTypeChangedSpy.count(), 1);
-    QCOMPARE(spinBoxTypeChangedSpy.first().first().value<FluentSpinBoxType>(), FluentSpinBoxType::Integer);
+    QCOMPARE(spinBoxTypeChangedSpy.first().first().value<FluentSpinBoxType>(),
+             FluentSpinBoxType::Integer);
 
     m_spinBox->setSpinBoxType(FluentSpinBoxType::Currency);
     QCOMPARE(m_spinBox->spinBoxType(), FluentSpinBoxType::Currency);
@@ -441,14 +452,17 @@ void FluentSpinBoxTest::testSpinBoxType() {
 
 void FluentSpinBoxTest::testSpinBoxSize() {
     // Test setting and getting spin box size
-    QSignalSpy spinBoxSizeChangedSpy(m_spinBox, &FluentSpinBox::spinBoxSizeChanged);
+    QSignalSpy spinBoxSizeChangedSpy(m_spinBox,
+                                     &FluentSpinBox::spinBoxSizeChanged);
 
-    QCOMPARE(m_spinBox->spinBoxSize(), FluentSpinBoxSize::Medium); // Default size
+    QCOMPARE(m_spinBox->spinBoxSize(),
+             FluentSpinBoxSize::Medium);  // Default size
 
     m_spinBox->setSpinBoxSize(FluentSpinBoxSize::Small);
     QCOMPARE(m_spinBox->spinBoxSize(), FluentSpinBoxSize::Small);
     QCOMPARE(spinBoxSizeChangedSpy.count(), 1);
-    QCOMPARE(spinBoxSizeChangedSpy.first().first().value<FluentSpinBoxSize>(), FluentSpinBoxSize::Small);
+    QCOMPARE(spinBoxSizeChangedSpy.first().first().value<FluentSpinBoxSize>(),
+             FluentSpinBoxSize::Small);
 
     m_spinBox->setSpinBoxSize(FluentSpinBoxSize::Large);
     QCOMPARE(m_spinBox->spinBoxSize(), FluentSpinBoxSize::Large);
@@ -461,14 +475,19 @@ void FluentSpinBoxTest::testSpinBoxSize() {
 
 void FluentSpinBoxTest::testButtonLayout() {
     // Test setting and getting button layout
-    QSignalSpy buttonLayoutChangedSpy(m_spinBox, &FluentSpinBox::buttonLayoutChanged);
+    QSignalSpy buttonLayoutChangedSpy(m_spinBox,
+                                      &FluentSpinBox::buttonLayoutChanged);
 
-    QCOMPARE(m_spinBox->buttonLayout(), FluentSpinBoxButtonLayout::Vertical); // Default layout
+    QCOMPARE(m_spinBox->buttonLayout(),
+             FluentSpinBoxButtonLayout::Vertical);  // Default layout
 
     m_spinBox->setButtonLayout(FluentSpinBoxButtonLayout::Horizontal);
     QCOMPARE(m_spinBox->buttonLayout(), FluentSpinBoxButtonLayout::Horizontal);
     QCOMPARE(buttonLayoutChangedSpy.count(), 1);
-    QCOMPARE(buttonLayoutChangedSpy.first().first().value<FluentSpinBoxButtonLayout>(), FluentSpinBoxButtonLayout::Horizontal);
+    QCOMPARE(buttonLayoutChangedSpy.first()
+                 .first()
+                 .value<FluentSpinBoxButtonLayout>(),
+             FluentSpinBoxButtonLayout::Horizontal);
 
     m_spinBox->setButtonLayout(FluentSpinBoxButtonLayout::Sides);
     QCOMPARE(m_spinBox->buttonLayout(), FluentSpinBoxButtonLayout::Sides);
@@ -487,7 +506,7 @@ void FluentSpinBoxTest::testReadOnly() {
     // Test read-only property
     QSignalSpy readOnlyChangedSpy(m_spinBox, &FluentSpinBox::readOnlyChanged);
 
-    QVERIFY(!m_spinBox->isReadOnly()); // Default should be false
+    QVERIFY(!m_spinBox->isReadOnly());  // Default should be false
 
     m_spinBox->setReadOnly(true);
     QVERIFY(m_spinBox->isReadOnly());
@@ -508,7 +527,7 @@ void FluentSpinBoxTest::testWrapping() {
     // Test wrapping property
     QSignalSpy wrappingChangedSpy(m_spinBox, &FluentSpinBox::wrappingChanged);
 
-    QVERIFY(!m_spinBox->wrapping()); // Default should be false
+    QVERIFY(!m_spinBox->wrapping());  // Default should be false
 
     m_spinBox->setWrapping(true);
     QVERIFY(m_spinBox->wrapping());
@@ -527,9 +546,10 @@ void FluentSpinBoxTest::testWrapping() {
 
 void FluentSpinBoxTest::testAccelerated() {
     // Test accelerated property
-    QSignalSpy acceleratedChangedSpy(m_spinBox, &FluentSpinBox::acceleratedChanged);
+    QSignalSpy acceleratedChangedSpy(m_spinBox,
+                                     &FluentSpinBox::acceleratedChanged);
 
-    QVERIFY(m_spinBox->isAccelerated()); // Default should be true
+    QVERIFY(m_spinBox->isAccelerated());  // Default should be true
 
     m_spinBox->setAccelerated(false);
     QVERIFY(!m_spinBox->isAccelerated());
@@ -548,9 +568,10 @@ void FluentSpinBoxTest::testAccelerated() {
 
 void FluentSpinBoxTest::testShowButtons() {
     // Test show buttons property
-    QSignalSpy showButtonsChangedSpy(m_spinBox, &FluentSpinBox::showButtonsChanged);
+    QSignalSpy showButtonsChangedSpy(m_spinBox,
+                                     &FluentSpinBox::showButtonsChanged);
 
-    QVERIFY(m_spinBox->showButtons()); // Default should be true
+    QVERIFY(m_spinBox->showButtons());  // Default should be true
 
     m_spinBox->setShowButtons(false);
     QVERIFY(!m_spinBox->showButtons());
@@ -571,7 +592,7 @@ void FluentSpinBoxTest::testAnimated() {
     // Test animated property
     QSignalSpy animatedChangedSpy(m_spinBox, &FluentSpinBox::animatedChanged);
 
-    QVERIFY(m_spinBox->isAnimated()); // Default should be true
+    QVERIFY(m_spinBox->isAnimated());  // Default should be true
 
     m_spinBox->setAnimated(false);
     QVERIFY(!m_spinBox->isAnimated());
@@ -607,7 +628,8 @@ void FluentSpinBoxTest::testValidation() {
     input = "25.";
     pos = input.length();
     QValidator::State state = m_spinBox->validate(input, pos);
-    QVERIFY(state == QValidator::Intermediate || state == QValidator::Acceptable);
+    QVERIFY(state == QValidator::Intermediate ||
+            state == QValidator::Acceptable);
 }
 
 void FluentSpinBoxTest::testFixup() {
@@ -623,7 +645,7 @@ void FluentSpinBoxTest::testFixup() {
 
 void FluentSpinBoxTest::testIsValid() {
     // Test isValid functionality
-    QVERIFY(m_spinBox->isValid()); // Should be valid by default
+    QVERIFY(m_spinBox->isValid());  // Should be valid by default
 
     // Set a valid value
     m_spinBox->setValue(25.5);
@@ -661,14 +683,14 @@ void FluentSpinBoxTest::testStepDown() {
     // Test step down functionality
     QSignalSpy valueChangedSpy(m_spinBox, &FluentSpinBox::valueChanged);
 
-    m_spinBox->setValue(10.0); // Set a value above minimum
+    m_spinBox->setValue(10.0);  // Set a value above minimum
     double initialValue = m_spinBox->value();
     double step = m_spinBox->singleStep();
 
     m_spinBox->stepDown();
 
     QCOMPARE(m_spinBox->value(), initialValue - step);
-    QCOMPARE(valueChangedSpy.count(), 2); // One for setValue, one for stepDown
+    QCOMPARE(valueChangedSpy.count(), 2);  // One for setValue, one for stepDown
 
     // Test step down when read-only (should not change)
     m_spinBox->setReadOnly(true);
@@ -768,7 +790,9 @@ void FluentSpinBoxTest::testWheelInteraction() {
     double step = m_spinBox->singleStep();
 
     // Test wheel up (should increase value)
-    QWheelEvent wheelUpEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0), QPoint(0, 120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QWheelEvent wheelUpEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0),
+                             QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                             Qt::NoScrollPhase, false);
     QApplication::sendEvent(m_spinBox, &wheelUpEvent);
     QCOMPARE(m_spinBox->value(), initialValue + step);
     QCOMPARE(valueChangedSpy.count(), 1);
@@ -776,7 +800,9 @@ void FluentSpinBoxTest::testWheelInteraction() {
     // Test wheel down (should decrease value)
     valueChangedSpy.clear();
     initialValue = m_spinBox->value();
-    QWheelEvent wheelDownEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0), QPoint(0, -120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+    QWheelEvent wheelDownEvent(QPointF(10, 10), QPointF(10, 10), QPoint(0, 0),
+                               QPoint(0, -120), Qt::NoButton, Qt::NoModifier,
+                               Qt::NoScrollPhase, false);
     QApplication::sendEvent(m_spinBox, &wheelDownEvent);
     QCOMPARE(m_spinBox->value(), initialValue - step);
     QCOMPARE(valueChangedSpy.count(), 1);
@@ -786,7 +812,7 @@ void FluentSpinBoxTest::testWheelInteraction() {
     valueChangedSpy.clear();
     initialValue = m_spinBox->value();
     QApplication::sendEvent(m_spinBox, &wheelUpEvent);
-    QCOMPARE(m_spinBox->value(), initialValue); // Should not change
+    QCOMPARE(m_spinBox->value(), initialValue);  // Should not change
     QCOMPARE(valueChangedSpy.count(), 0);
 }
 
@@ -796,14 +822,16 @@ void FluentSpinBoxTest::testMouseInteraction() {
     // For now, just verify that mouse events don't crash the component
 
     QPoint center = m_spinBox->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
+                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
+                             Qt::LeftButton, Qt::NoModifier);
 
     // These should not crash
     QApplication::sendEvent(m_spinBox, &pressEvent);
     QApplication::sendEvent(m_spinBox, &releaseEvent);
 
-    QVERIFY(true); // If we get here, the events were handled without crashing
+    QVERIFY(true);  // If we get here, the events were handled without crashing
 }
 
 void FluentSpinBoxTest::testValueChangedSignal() {
@@ -827,18 +855,25 @@ void FluentSpinBoxTest::testPropertyChangeSignals() {
     // Test that property change signals are emitted correctly
     QSignalSpy minimumChangedSpy(m_spinBox, &FluentSpinBox::minimumChanged);
     QSignalSpy maximumChangedSpy(m_spinBox, &FluentSpinBox::maximumChanged);
-    QSignalSpy singleStepChangedSpy(m_spinBox, &FluentSpinBox::singleStepChanged);
+    QSignalSpy singleStepChangedSpy(m_spinBox,
+                                    &FluentSpinBox::singleStepChanged);
     QSignalSpy decimalsChangedSpy(m_spinBox, &FluentSpinBox::decimalsChanged);
     QSignalSpy prefixChangedSpy(m_spinBox, &FluentSpinBox::prefixChanged);
     QSignalSpy suffixChangedSpy(m_spinBox, &FluentSpinBox::suffixChanged);
-    QSignalSpy placeholderTextChangedSpy(m_spinBox, &FluentSpinBox::placeholderTextChanged);
-    QSignalSpy spinBoxTypeChangedSpy(m_spinBox, &FluentSpinBox::spinBoxTypeChanged);
-    QSignalSpy spinBoxSizeChangedSpy(m_spinBox, &FluentSpinBox::spinBoxSizeChanged);
-    QSignalSpy buttonLayoutChangedSpy(m_spinBox, &FluentSpinBox::buttonLayoutChanged);
+    QSignalSpy placeholderTextChangedSpy(
+        m_spinBox, &FluentSpinBox::placeholderTextChanged);
+    QSignalSpy spinBoxTypeChangedSpy(m_spinBox,
+                                     &FluentSpinBox::spinBoxTypeChanged);
+    QSignalSpy spinBoxSizeChangedSpy(m_spinBox,
+                                     &FluentSpinBox::spinBoxSizeChanged);
+    QSignalSpy buttonLayoutChangedSpy(m_spinBox,
+                                      &FluentSpinBox::buttonLayoutChanged);
     QSignalSpy readOnlyChangedSpy(m_spinBox, &FluentSpinBox::readOnlyChanged);
     QSignalSpy wrappingChangedSpy(m_spinBox, &FluentSpinBox::wrappingChanged);
-    QSignalSpy acceleratedChangedSpy(m_spinBox, &FluentSpinBox::acceleratedChanged);
-    QSignalSpy showButtonsChangedSpy(m_spinBox, &FluentSpinBox::showButtonsChanged);
+    QSignalSpy acceleratedChangedSpy(m_spinBox,
+                                     &FluentSpinBox::acceleratedChanged);
+    QSignalSpy showButtonsChangedSpy(m_spinBox,
+                                     &FluentSpinBox::showButtonsChanged);
     QSignalSpy animatedChangedSpy(m_spinBox, &FluentSpinBox::animatedChanged);
 
     // Change properties and verify signals
@@ -933,7 +968,7 @@ void FluentSpinBoxTest::testClear() {
 
     m_spinBox->clear();
     QCOMPARE(m_spinBox->value(), m_spinBox->minimum());
-    QCOMPARE(valueChangedSpy.count(), 2); // One for setValue, one for clear
+    QCOMPARE(valueChangedSpy.count(), 2);  // One for setValue, one for clear
 }
 
 void FluentSpinBoxTest::testAccessibility() {
@@ -969,8 +1004,9 @@ void FluentSpinBoxTest::testThemeIntegration() {
     // Change theme mode
     theme.setDarkMode(!originalDarkMode);
 
-    // Spin box should update its appearance (this would require checking internal styling)
-    // For now, just verify the spin box still functions correctly
+    // Spin box should update its appearance (this would require checking
+    // internal styling) For now, just verify the spin box still functions
+    // correctly
     QVERIFY(m_spinBox->isEnabled());
 
     // Test that value operations still work after theme change

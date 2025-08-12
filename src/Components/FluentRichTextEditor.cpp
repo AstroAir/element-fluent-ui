@@ -1,30 +1,30 @@
 // src/Components/FluentRichTextEditor.cpp
 #include "FluentQt/Components/FluentRichTextEditor.h"
-#include "FluentQt/Styling/FluentTheme.h"
 #include "FluentQt/Components/FluentButton.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
-#include <QPainter>
-#include <QTextCursor>
-#include <QTextDocumentWriter>
-#include <QFileDialog>
-#include <QInputDialog>
+#include <QApplication>
+#include <QClipboard>
 #include <QColorDialog>
+#include <QContextMenuEvent>
+#include <QDesktopServices>
+#include <QFileDialog>
 #include <QFontDialog>
+#include <QInputDialog>
+#include <QKeyEvent>
+#include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
-#include <QUrl>
-#include <QDesktopServices>
-#include <QPrinter>
-#include <QPrintDialog>
 #include <QPageSetupDialog>
-#include <QApplication>
-#include <QMenu>
-#include <QClipboard>
-#include <QWheelEvent>
-#include <QKeyEvent>
-#include <QContextMenuEvent>
 #include <QPaintEvent>
+#include <QPainter>
+#include <QPrintDialog>
+#include <QPrinter>
 #include <QResizeEvent>
+#include <QTextCursor>
+#include <QTextDocumentWriter>
+#include <QUrl>
+#include <QWheelEvent>
 
 namespace FluentQt::Components {
 
@@ -35,80 +35,81 @@ FluentTextFormatBar::FluentTextFormatBar(QWidget* parent) : QWidget(parent) {
     setupAlignmentControls();
     setupListControls();
     setupInsertControls();
-    
+
     m_layout = new QHBoxLayout(this);
     m_layout->setContentsMargins(8, 4, 8, 4);
     m_layout->setSpacing(4);
-    
+
     // Add controls to layout
     m_layout->addWidget(m_fontCombo);
     m_layout->addWidget(m_fontSizeSpinBox);
     m_layout->addWidget(createSeparator());
-    
+
     m_layout->addWidget(m_boldButton);
     m_layout->addWidget(m_italicButton);
     m_layout->addWidget(m_underlineButton);
     m_layout->addWidget(m_strikethroughButton);
     m_layout->addWidget(createSeparator());
-    
+
     m_layout->addWidget(m_textColorButton);
     m_layout->addWidget(m_backgroundColorButton);
     m_layout->addWidget(createSeparator());
-    
+
     m_layout->addWidget(m_alignLeftButton);
     m_layout->addWidget(m_alignCenterButton);
     m_layout->addWidget(m_alignRightButton);
     m_layout->addWidget(m_alignJustifyButton);
     m_layout->addWidget(createSeparator());
-    
+
     m_layout->addWidget(m_listTypeCombo);
     m_layout->addWidget(m_indentButton);
     m_layout->addWidget(m_outdentButton);
     m_layout->addWidget(createSeparator());
-    
+
     m_layout->addWidget(m_linkButton);
     m_layout->addWidget(m_imageButton);
     m_layout->addWidget(m_tableButton);
-    
+
     m_layout->addStretch();
-    
+
     // Style the format bar
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
-    
+
     setStyleSheet(QString(R"(
         FluentTextFormatBar {
             background-color: %1;
             border-bottom: 1px solid %2;
         }
-    )").arg(
-        palette.neutralLighter.name(),
-        palette.neutralQuaternary.name()
-    ));
+    )")
+                      .arg(palette.neutralLighter.name(),
+                           palette.neutralQuaternary.name()));
 }
 
 void FluentTextFormatBar::updateFromCursor(const QTextCursor& cursor) {
-    if (m_updating) return;
-    
+    if (m_updating)
+        return;
+
     m_updating = true;
-    
+
     QTextCharFormat charFormat = cursor.charFormat();
     QTextBlockFormat blockFormat = cursor.blockFormat();
-    
+
     updateFontControls(charFormat);
     updateFormatControls(charFormat);
     updateAlignmentControls(blockFormat);
     updateListControls(cursor);
-    
+
     m_updating = false;
 }
 
 void FluentTextFormatBar::setupFontControls() {
     m_fontCombo = new QFontComboBox(this);
     m_fontCombo->setMaximumWidth(150);
-    connect(m_fontCombo, QOverload<const QString&>::of(&QFontComboBox::currentTextChanged),
+    connect(m_fontCombo,
+            QOverload<const QString&>::of(&QFontComboBox::currentTextChanged),
             this, &FluentTextFormatBar::onFontFamilyChanged);
-    
+
     m_fontSizeSpinBox = new QSpinBox(this);
     m_fontSizeSpinBox->setRange(6, 72);
     m_fontSizeSpinBox->setValue(12);
@@ -122,16 +123,20 @@ void FluentTextFormatBar::setupFormatControls() {
     m_boldButton->setCheckable(true);
     m_boldButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_boldButton->setFixedSize(32, 32);
-    m_boldButton->setFont(QFont(font().family(), font().pointSize(), QFont::Bold));
-    connect(m_boldButton, &FluentButton::clicked, this, &FluentTextFormatBar::onBoldClicked);
-    
+    m_boldButton->setFont(
+        QFont(font().family(), font().pointSize(), QFont::Bold));
+    connect(m_boldButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onBoldClicked);
+
     m_italicButton = new FluentButton("I", this);
     m_italicButton->setCheckable(true);
     m_italicButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_italicButton->setFixedSize(32, 32);
-    m_italicButton->setFont(QFont(font().family(), font().pointSize(), QFont::Normal, true));
-    connect(m_italicButton, &FluentButton::clicked, this, &FluentTextFormatBar::onItalicClicked);
-    
+    m_italicButton->setFont(
+        QFont(font().family(), font().pointSize(), QFont::Normal, true));
+    connect(m_italicButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onItalicClicked);
+
     m_underlineButton = new FluentButton("U", this);
     m_underlineButton->setCheckable(true);
     m_underlineButton->setButtonStyle(FluentButtonStyle::Subtle);
@@ -139,8 +144,9 @@ void FluentTextFormatBar::setupFormatControls() {
     QFont underlineFont = font();
     underlineFont.setUnderline(true);
     m_underlineButton->setFont(underlineFont);
-    connect(m_underlineButton, &FluentButton::clicked, this, &FluentTextFormatBar::onUnderlineClicked);
-    
+    connect(m_underlineButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onUnderlineClicked);
+
     m_strikethroughButton = new FluentButton("S", this);
     m_strikethroughButton->setCheckable(true);
     m_strikethroughButton->setButtonStyle(FluentButtonStyle::Subtle);
@@ -148,17 +154,20 @@ void FluentTextFormatBar::setupFormatControls() {
     QFont strikeFont = font();
     strikeFont.setStrikeOut(true);
     m_strikethroughButton->setFont(strikeFont);
-    connect(m_strikethroughButton, &FluentButton::clicked, this, &FluentTextFormatBar::onStrikethroughClicked);
-    
+    connect(m_strikethroughButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onStrikethroughClicked);
+
     m_textColorButton = new FluentButton("A", this);
     m_textColorButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_textColorButton->setFixedSize(32, 32);
-    connect(m_textColorButton, &FluentButton::clicked, this, &FluentTextFormatBar::onTextColorClicked);
-    
+    connect(m_textColorButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onTextColorClicked);
+
     m_backgroundColorButton = new FluentButton("H", this);
     m_backgroundColorButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_backgroundColorButton->setFixedSize(32, 32);
-    connect(m_backgroundColorButton, &FluentButton::clicked, this, &FluentTextFormatBar::onBackgroundColorClicked);
+    connect(m_backgroundColorButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::onBackgroundColorClicked);
 }
 
 void FluentTextFormatBar::setupAlignmentControls() {
@@ -182,7 +191,8 @@ void FluentTextFormatBar::setupAlignmentControls() {
     m_alignJustifyButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_alignJustifyButton->setFixedSize(32, 32);
 
-    // Connect buttons manually since FluentButton doesn't inherit from QAbstractButton
+    // Connect buttons manually since FluentButton doesn't inherit from
+    // QAbstractButton
     connect(m_alignLeftButton, &FluentButton::clicked, this, [this]() {
         m_alignCenterButton->setChecked(false);
         m_alignRightButton->setChecked(false);
@@ -218,37 +228,44 @@ void FluentTextFormatBar::setupAlignmentControls() {
 
 void FluentTextFormatBar::setupListControls() {
     m_listTypeCombo = new FluentComboBox(this);
-    m_listTypeCombo->addItems({"None", "Bullet List", "Numbered List", "Check List"});
+    m_listTypeCombo->addItems(
+        {"None", "Bullet List", "Numbered List", "Check List"});
     m_listTypeCombo->setMaximumWidth(120);
-    connect(m_listTypeCombo, QOverload<int>::of(&FluentComboBox::currentIndexChanged),
-            this, &FluentTextFormatBar::onListTypeChanged);
-    
+    connect(m_listTypeCombo,
+            QOverload<int>::of(&FluentComboBox::currentIndexChanged), this,
+            &FluentTextFormatBar::onListTypeChanged);
+
     m_indentButton = new FluentButton("→", this);
     m_indentButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_indentButton->setFixedSize(32, 32);
-    connect(m_indentButton, &FluentButton::clicked, this, &FluentTextFormatBar::indentRequested);
-    
+    connect(m_indentButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::indentRequested);
+
     m_outdentButton = new FluentButton("←", this);
     m_outdentButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_outdentButton->setFixedSize(32, 32);
-    connect(m_outdentButton, &FluentButton::clicked, this, &FluentTextFormatBar::outdentRequested);
+    connect(m_outdentButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::outdentRequested);
 }
 
 void FluentTextFormatBar::setupInsertControls() {
     m_linkButton = new FluentButton("🔗", this);
     m_linkButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_linkButton->setFixedSize(32, 32);
-    connect(m_linkButton, &FluentButton::clicked, this, &FluentTextFormatBar::insertLinkRequested);
-    
+    connect(m_linkButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::insertLinkRequested);
+
     m_imageButton = new FluentButton("🖼", this);
     m_imageButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_imageButton->setFixedSize(32, 32);
-    connect(m_imageButton, &FluentButton::clicked, this, &FluentTextFormatBar::insertImageRequested);
-    
+    connect(m_imageButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::insertImageRequested);
+
     m_tableButton = new FluentButton("⊞", this);
     m_tableButton->setButtonStyle(FluentButtonStyle::Subtle);
     m_tableButton->setFixedSize(32, 32);
-    connect(m_tableButton, &FluentButton::clicked, this, &FluentTextFormatBar::insertTableRequested);
+    connect(m_tableButton, &FluentButton::clicked, this,
+            &FluentTextFormatBar::insertTableRequested);
 }
 
 QWidget* FluentTextFormatBar::createSeparator() {
@@ -260,21 +277,20 @@ QWidget* FluentTextFormatBar::createSeparator() {
 }
 
 // FluentRichTextEditor Implementation
-FluentRichTextEditor::FluentRichTextEditor(QWidget* parent) : Core::FluentComponent(parent) {
+FluentRichTextEditor::FluentRichTextEditor(QWidget* parent)
+    : Core::FluentComponent(parent) {
     setupTextEditor();
     setupFormatBar();
     setupContextMenu();
-    
-    connect(&Styling::FluentTheme::instance(), &Styling::FluentTheme::themeChanged,
-            this, [this]() {
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this, [this]() {
                 // Update styling when theme changes
                 update();
             });
 }
 
-QString FluentRichTextEditor::toHtml() const {
-    return m_textEdit->toHtml();
-}
+QString FluentRichTextEditor::toHtml() const { return m_textEdit->toHtml(); }
 
 void FluentRichTextEditor::setHtml(const QString& html) {
     m_textEdit->setHtml(html);
@@ -307,9 +323,7 @@ void FluentRichTextEditor::setReadOnly(bool readOnly) {
     }
 }
 
-bool FluentRichTextEditor::showFormatBar() const {
-    return m_showFormatBar;
-}
+bool FluentRichTextEditor::showFormatBar() const { return m_showFormatBar; }
 
 void FluentRichTextEditor::setShowFormatBar(bool show) {
     if (m_showFormatBar != show) {
@@ -343,7 +357,7 @@ void FluentRichTextEditor::setFontSize(int size) {
 void FluentRichTextEditor::setAlignment(FluentTextAlignment alignment) {
     QTextBlockFormat format;
     Qt::Alignment qtAlignment;
-    
+
     switch (alignment) {
         case FluentTextAlignment::Left:
             qtAlignment = Qt::AlignLeft;
@@ -358,46 +372,47 @@ void FluentRichTextEditor::setAlignment(FluentTextAlignment alignment) {
             qtAlignment = Qt::AlignJustify;
             break;
     }
-    
+
     format.setAlignment(qtAlignment);
     applyBlockFormat(format);
 }
 
 void FluentRichTextEditor::insertLink(const QString& url, const QString& text) {
     QTextCursor cursor = m_textEdit->textCursor();
-    
+
     QString linkText = text.isEmpty() ? url : text;
-    
+
     QTextCharFormat linkFormat;
     linkFormat.setAnchor(true);
     linkFormat.setAnchorHref(url);
     linkFormat.setForeground(QColor(0, 0, 255));
     linkFormat.setUnderlineStyle(QTextCharFormat::SingleUnderline);
-    
+
     cursor.insertText(linkText, linkFormat);
 }
 
-void FluentRichTextEditor::insertImage(const QString& path, const QString& alt) {
+void FluentRichTextEditor::insertImage(const QString& path,
+                                       const QString& alt) {
     QTextCursor cursor = m_textEdit->textCursor();
-    
+
     QTextImageFormat imageFormat;
     imageFormat.setName(path);
     if (!alt.isEmpty()) {
         imageFormat.setProperty(QTextFormat::ImageAltText, alt);
     }
-    
+
     cursor.insertImage(imageFormat);
 }
 
 void FluentRichTextEditor::insertTable(int rows, int cols) {
     QTextCursor cursor = m_textEdit->textCursor();
-    
+
     QTextTableFormat tableFormat;
     tableFormat.setBorderStyle(QTextFrameFormat::BorderStyle_Solid);
     tableFormat.setBorder(1);
     tableFormat.setCellSpacing(0);
     tableFormat.setCellPadding(4);
-    
+
     cursor.insertTable(rows, cols, tableFormat);
 }
 
@@ -405,7 +420,7 @@ bool FluentRichTextEditor::exportToPdf(const QString& fileName) {
     QPrinter printer(QPrinter::HighResolution);
     printer.setOutputFormat(QPrinter::PdfFormat);
     printer.setOutputFileName(fileName);
-    
+
     m_textEdit->document()->print(&printer);
     return true;
 }
@@ -442,41 +457,47 @@ void FluentRichTextEditor::setupTextEditor() {
     m_layout = new QVBoxLayout(this);
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
-    
+
     m_textEdit = new QTextEdit(this);
     m_textEdit->setAcceptRichText(true);
     m_textEdit->setFrameShape(QFrame::NoFrame);
-    
+
     // Enable drag and drop for images
     m_textEdit->setAcceptDrops(true);
-    
-    connect(m_textEdit, &QTextEdit::textChanged, this, &FluentRichTextEditor::onTextChanged);
-    connect(m_textEdit, &QTextEdit::selectionChanged, this, &FluentRichTextEditor::onSelectionChanged);
-    connect(m_textEdit, &QTextEdit::cursorPositionChanged, this, &FluentRichTextEditor::onCursorPositionChanged);
-    connect(m_textEdit, &QTextEdit::undoAvailable, this, &FluentRichTextEditor::undoAvailable);
-    connect(m_textEdit, &QTextEdit::redoAvailable, this, &FluentRichTextEditor::redoAvailable);
-    connect(m_textEdit, &QTextEdit::copyAvailable, this, &FluentRichTextEditor::copyAvailable);
-    
+
+    connect(m_textEdit, &QTextEdit::textChanged, this,
+            &FluentRichTextEditor::onTextChanged);
+    connect(m_textEdit, &QTextEdit::selectionChanged, this,
+            &FluentRichTextEditor::onSelectionChanged);
+    connect(m_textEdit, &QTextEdit::cursorPositionChanged, this,
+            &FluentRichTextEditor::onCursorPositionChanged);
+    connect(m_textEdit, &QTextEdit::undoAvailable, this,
+            &FluentRichTextEditor::undoAvailable);
+    connect(m_textEdit, &QTextEdit::redoAvailable, this,
+            &FluentRichTextEditor::redoAvailable);
+    connect(m_textEdit, &QTextEdit::copyAvailable, this,
+            &FluentRichTextEditor::copyAvailable);
+
     m_layout->addWidget(m_textEdit);
 }
 
 void FluentRichTextEditor::setupFormatBar() {
     if (m_showFormatBar) {
         m_formatBar = new FluentTextFormatBar(this);
-        
-        connect(m_formatBar, &FluentTextFormatBar::fontFamilyChanged,
-                this, &FluentRichTextEditor::setFontFamily);
-        connect(m_formatBar, &FluentTextFormatBar::fontSizeChanged,
-                this, &FluentRichTextEditor::setFontSize);
-        connect(m_formatBar, &FluentTextFormatBar::boldToggled,
-                this, [this](bool bold) {
+
+        connect(m_formatBar, &FluentTextFormatBar::fontFamilyChanged, this,
+                &FluentRichTextEditor::setFontFamily);
+        connect(m_formatBar, &FluentTextFormatBar::fontSizeChanged, this,
+                &FluentRichTextEditor::setFontSize);
+        connect(m_formatBar, &FluentTextFormatBar::boldToggled, this,
+                [this](bool bold) {
                     QTextCharFormat format;
                     format.setFontWeight(bold ? QFont::Bold : QFont::Normal);
                     applyCharacterFormat(format);
                 });
-        connect(m_formatBar, &FluentTextFormatBar::alignmentChanged,
-                this, &FluentRichTextEditor::setAlignment);
-        
+        connect(m_formatBar, &FluentTextFormatBar::alignmentChanged, this,
+                &FluentRichTextEditor::setAlignment);
+
         m_layout->insertWidget(0, m_formatBar);
     }
 }
@@ -497,13 +518,11 @@ void FluentRichTextEditor::updateZoom() {
     int newSize = (baseSize * m_zoomPercent) / 100;
     font.setPointSize(newSize);
     m_textEdit->setFont(font);
-    
+
     emit zoomChanged(m_zoomPercent);
 }
 
-void FluentRichTextEditor::onTextChanged() {
-    emit textChanged();
-}
+void FluentRichTextEditor::onTextChanged() { emit textChanged(); }
 
 void FluentRichTextEditor::onSelectionChanged() {
     updateFormatBar();
@@ -526,7 +545,8 @@ bool FluentRichTextEditor::acceptRichText() const {
 }
 
 bool FluentRichTextEditor::lineWrapMode() const {
-    return m_textEdit ? (m_textEdit->lineWrapMode() != QTextEdit::NoWrap) : true;
+    return m_textEdit ? (m_textEdit->lineWrapMode() != QTextEdit::NoWrap)
+                      : true;
 }
 
 void FluentRichTextEditor::clear() {
@@ -584,7 +604,8 @@ void FluentRichTextEditor::setAcceptRichText(bool accept) {
 
 void FluentRichTextEditor::setLineWrapMode(bool wrap) {
     if (m_textEdit) {
-        m_textEdit->setLineWrapMode(wrap ? QTextEdit::WidgetWidth : QTextEdit::NoWrap);
+        m_textEdit->setLineWrapMode(wrap ? QTextEdit::WidgetWidth
+                                         : QTextEdit::NoWrap);
     }
 }
 
@@ -597,8 +618,8 @@ void FluentRichTextEditor::applyBlockFormat(const QTextBlockFormat& format) {
 void FluentRichTextEditor::setupContextMenu() {
     // Setup context menu for the text editor
     m_textEdit->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_textEdit, &QTextEdit::customContextMenuRequested,
-            this, [this](const QPoint& pos) {
+    connect(m_textEdit, &QTextEdit::customContextMenuRequested, this,
+            [this](const QPoint& pos) {
                 QMenu* menu = m_textEdit->createStandardContextMenu();
                 menu->exec(m_textEdit->mapToGlobal(pos));
                 menu->deleteLater();
@@ -666,7 +687,8 @@ void FluentTextFormatBar::updateFormatControls(const QTextCharFormat& format) {
     // Update format controls based on format
 }
 
-void FluentTextFormatBar::updateAlignmentControls(const QTextBlockFormat& format) {
+void FluentTextFormatBar::updateAlignmentControls(
+    const QTextBlockFormat& format) {
     Q_UNUSED(format)
     // Update alignment controls based on format
 }
@@ -699,19 +721,19 @@ void FluentRichTextEditor::keyPressEvent(QKeyEvent* event) {
     // Handle key press events
     if (event->modifiers() & Qt::ControlModifier) {
         switch (event->key()) {
-        case Qt::Key_Plus:
-        case Qt::Key_Equal:
-            zoomIn();
-            event->accept();
-            return;
-        case Qt::Key_Minus:
-            zoomOut();
-            event->accept();
-            return;
-        case Qt::Key_0:
-            resetZoom();
-            event->accept();
-            return;
+            case Qt::Key_Plus:
+            case Qt::Key_Equal:
+                zoomIn();
+                event->accept();
+                return;
+            case Qt::Key_Minus:
+                zoomOut();
+                event->accept();
+                return;
+            case Qt::Key_0:
+                resetZoom();
+                event->accept();
+                return;
         }
     }
     Core::FluentComponent::keyPressEvent(event);
@@ -729,15 +751,12 @@ void FluentRichTextEditor::contextMenuEvent(QContextMenuEvent* event) {
     // Forward context menu events to the text edit
     if (m_textEdit) {
         QContextMenuEvent* textEditEvent = new QContextMenuEvent(
-            event->reason(),
-            m_textEdit->mapFromGlobal(event->globalPos()),
-            event->globalPos(),
-            event->modifiers()
-        );
+            event->reason(), m_textEdit->mapFromGlobal(event->globalPos()),
+            event->globalPos(), event->modifiers());
         QApplication::sendEvent(m_textEdit, textEditEvent);
         delete textEditEvent;
     }
     event->accept();
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

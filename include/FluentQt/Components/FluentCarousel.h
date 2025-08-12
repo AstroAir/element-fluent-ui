@@ -1,29 +1,29 @@
 // include/FluentQt/Components/FluentCarousel.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include "FluentQt/Animation/FluentAnimator.h"
-#include <QWidget>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QStackedWidget>
-#include <QPropertyAnimation>
-#include <QSequentialAnimationGroup>
-#include <QParallelAnimationGroup>
-#include <QTimer>
-#include <QGestureEvent>
-#include <QPanGesture>
-#include <QSwipeGesture>
-#include <QTouchEvent>
-#include <QMouseEvent>
-#include <QKeyEvent>
-#include <QWheelEvent>
-#include <QGraphicsOpacityEffect>
 #include <QEasingCurve>
 #include <QElapsedTimer>
+#include <QGestureEvent>
+#include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPanGesture>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
+#include <QSequentialAnimationGroup>
+#include <QStackedWidget>
+#include <QSwipeGesture>
+#include <QTimer>
+#include <QTouchEvent>
+#include <QVBoxLayout>
+#include <QWheelEvent>
+#include <QWidget>
+#include <functional>
 #include <memory>
 #include <vector>
-#include <functional>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
@@ -36,64 +36,67 @@ class FluentCarouselNavigation;
  * @brief Carousel transition effects
  */
 enum class FluentCarouselTransition {
-    Slide,          // Horizontal slide transition
-    Fade,           // Fade in/out transition
-    Scale,          // Scale transition
-    Flip,           // 3D flip transition
-    Cube,           // 3D cube transition
-    Coverflow,      // Coverflow-style transition
-    Stack,          // Stack transition
-    Parallax,       // Parallax scrolling effect
-    Custom          // Custom transition
+    Slide,      // Horizontal slide transition
+    Fade,       // Fade in/out transition
+    Scale,      // Scale transition
+    Flip,       // 3D flip transition
+    Cube,       // 3D cube transition
+    Coverflow,  // Coverflow-style transition
+    Stack,      // Stack transition
+    Parallax,   // Parallax scrolling effect
+    Custom      // Custom transition
 };
 
 /**
  * @brief Carousel navigation style
  */
 enum class FluentCarouselNavigationStyle {
-    None,           // No navigation controls
-    Arrows,         // Previous/Next arrow buttons
-    Dots,           // Indicator dots
-    Numbers,        // Numeric indicators
-    Thumbnails,     // Thumbnail navigation
-    Combined        // Arrows + Dots
+    None,        // No navigation controls
+    Arrows,      // Previous/Next arrow buttons
+    Dots,        // Indicator dots
+    Numbers,     // Numeric indicators
+    Thumbnails,  // Thumbnail navigation
+    Combined     // Arrows + Dots
 };
 
 /**
  * @brief Carousel orientation
  */
 enum class FluentCarouselOrientation {
-    Horizontal,     // Left-to-right navigation
-    Vertical        // Top-to-bottom navigation
+    Horizontal,  // Left-to-right navigation
+    Vertical     // Top-to-bottom navigation
 };
 
 /**
  * @brief Auto-play behavior
  */
 enum class FluentCarouselAutoPlay {
-    None,           // No auto-play
-    Forward,        // Auto-play forward
-    Backward,       // Auto-play backward
-    PingPong        // Auto-play forward then backward
+    None,      // No auto-play
+    Forward,   // Auto-play forward
+    Backward,  // Auto-play backward
+    PingPong,  // Auto-play forward then backward
+    // Aliases for test compatibility
+    Disabled = None,
+    Enabled = Forward
 };
 
 /**
  * @brief Touch/swipe gesture sensitivity
  */
 enum class FluentCarouselGestureSensitivity {
-    Low,            // Requires more movement to trigger
-    Medium,         // Default sensitivity
-    High,           // Triggers with minimal movement
-    Custom          // Custom threshold values
+    Low,     // Requires more movement to trigger
+    Medium,  // Default sensitivity
+    High,    // Triggers with minimal movement
+    Custom   // Custom threshold values
 };
 
 /**
  * @brief Carousel item alignment
  */
 enum class FluentCarouselAlignment {
-    Start,          // Align to start (left/top)
-    Center,         // Center alignment
-    End             // Align to end (right/bottom)
+    Start,   // Align to start (left/top)
+    Center,  // Center alignment
+    End      // Align to end (right/bottom)
 };
 
 /**
@@ -102,13 +105,16 @@ enum class FluentCarouselAlignment {
 struct FluentCarouselConfig {
     // Basic settings
     FluentCarouselTransition transition{FluentCarouselTransition::Slide};
-    FluentCarouselNavigationStyle navigationStyle{FluentCarouselNavigationStyle::Combined};
-    FluentCarouselOrientation orientation{FluentCarouselOrientation::Horizontal};
+    FluentCarouselNavigationStyle navigationStyle{
+        FluentCarouselNavigationStyle::Combined};
+    FluentCarouselOrientation orientation{
+        FluentCarouselOrientation::Horizontal};
     FluentCarouselAlignment alignment{FluentCarouselAlignment::Center};
 
     // Animation settings
     std::chrono::milliseconds transitionDuration{300};
-    Animation::FluentEasing transitionEasing{Animation::FluentEasing::EaseOutCubic};
+    Animation::FluentEasing transitionEasing{
+        Animation::FluentEasing::EaseOutCubic};
 
     // Auto-play settings
     FluentCarouselAutoPlay autoPlay{FluentCarouselAutoPlay::None};
@@ -119,21 +125,26 @@ struct FluentCarouselConfig {
     // Touch/gesture settings
     bool enableTouch{true};
     bool enableSwipe{true};
-    FluentCarouselGestureSensitivity gestureSensitivity{FluentCarouselGestureSensitivity::Medium};
-    qreal swipeThreshold{0.3}; // Percentage of width/height to trigger swipe
-    qreal velocityThreshold{500.0}; // Pixels per second
+    FluentCarouselGestureSensitivity gestureSensitivity{
+        FluentCarouselGestureSensitivity::Medium};
+    qreal swipeThreshold{0.3};  // Percentage of width/height to trigger swipe
+    qreal velocityThreshold{500.0};  // Pixels per second
 
     // Visual settings
     bool showIndicators{true};
     bool showNavigation{true};
     bool enableKeyboard{true};
     bool enableWheel{false};
-    bool infinite{true}; // Loop back to start/end
-    bool centerMode{false}; // Show partial previous/next items
+    bool infinite{true};     // Loop back to start/end
+    bool centerMode{false};  // Show partial previous/next items
+
+    // Aliases for test compatibility (using separate fields)
+    bool showNavigationButtons{true};
+    bool wrapAround{true};
 
     // Performance settings
-    bool lazyLoad{false}; // Load items on demand
-    int preloadCount{1}; // Number of items to preload
+    bool lazyLoad{false};  // Load items on demand
+    int preloadCount{1};   // Number of items to preload
     bool useHardwareAcceleration{true};
 
     // Accessibility settings
@@ -142,9 +153,9 @@ struct FluentCarouselConfig {
     bool announceChanges{true};
 
     // Layout settings
-    int itemSpacing{0}; // Space between items
+    int itemSpacing{0};  // Space between items
     QMargins contentMargins{0, 0, 0, 0};
-    int visibleItems{1}; // Number of items visible at once
+    int visibleItems{1};  // Number of items visible at once
 
     // Default constructor
     FluentCarouselConfig() = default;
@@ -164,13 +175,16 @@ struct FluentCarouselItemData {
 
     FluentCarouselItemData() = default;
     explicit FluentCarouselItemData(QWidget* w) : widget(w) {}
-    FluentCarouselItemData(QWidget* w, const QString& t) : widget(w), title(t) {}
+    FluentCarouselItemData(QWidget* w, const QString& t)
+        : widget(w), title(t) {}
 };
 
 /**
- * @brief Base carousel component implementing Microsoft Fluent Design principles
+ * @brief Base carousel component implementing Microsoft Fluent Design
+ * principles
  *
- * FluentCarousel provides a flexible, animated carousel widget with support for:
+ * FluentCarousel provides a flexible, animated carousel widget with support
+ * for:
  * - Multiple transition effects and navigation styles
  * - Touch/swipe gestures for mobile devices
  * - Auto-play functionality with configurable timing
@@ -180,20 +194,31 @@ struct FluentCarouselItemData {
  */
 class FluentCarousel : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY currentIndexChanged)
+    Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex NOTIFY
+                   currentIndexChanged)
     Q_PROPERTY(int itemCount READ itemCount NOTIFY itemCountChanged)
-    Q_PROPERTY(FluentCarouselTransition transition READ transition WRITE setTransition NOTIFY transitionChanged)
-    Q_PROPERTY(FluentCarouselNavigationStyle navigationStyle READ navigationStyle WRITE setNavigationStyle NOTIFY navigationStyleChanged)
-    Q_PROPERTY(FluentCarouselOrientation orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
-    Q_PROPERTY(bool autoPlay READ isAutoPlayEnabled WRITE setAutoPlayEnabled NOTIFY autoPlayChanged)
-    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
-    Q_PROPERTY(bool infinite READ isInfinite WRITE setInfinite NOTIFY infiniteChanged)
-    Q_PROPERTY(bool enableTouch READ isTouchEnabled WRITE setTouchEnabled NOTIFY touchEnabledChanged)
-    Q_PROPERTY(qreal transitionProgress READ transitionProgress NOTIFY transitionProgressChanged)
+    Q_PROPERTY(FluentCarouselTransition transition READ transition WRITE
+                   setTransition NOTIFY transitionChanged)
+    Q_PROPERTY(
+        FluentCarouselNavigationStyle navigationStyle READ navigationStyle WRITE
+            setNavigationStyle NOTIFY navigationStyleChanged)
+    Q_PROPERTY(FluentCarouselOrientation orientation READ orientation WRITE
+                   setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(bool autoPlay READ isAutoPlayEnabled WRITE setAutoPlayEnabled
+                   NOTIFY autoPlayChanged)
+    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE
+                   setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
+    Q_PROPERTY(
+        bool infinite READ isInfinite WRITE setInfinite NOTIFY infiniteChanged)
+    Q_PROPERTY(bool enableTouch READ isTouchEnabled WRITE setTouchEnabled NOTIFY
+                   touchEnabledChanged)
+    Q_PROPERTY(qreal transitionProgress READ transitionProgress NOTIFY
+                   transitionProgressChanged)
 
 public:
     explicit FluentCarousel(QWidget* parent = nullptr);
-    explicit FluentCarousel(const FluentCarouselConfig& config, QWidget* parent = nullptr);
+    explicit FluentCarousel(const FluentCarouselConfig& config,
+                            QWidget* parent = nullptr);
     ~FluentCarousel() override;
 
     // Configuration
@@ -208,7 +233,9 @@ public:
     void insertItem(int index, const FluentCarouselItemData& itemData);
     void removeItem(int index);
     void removeItem(QWidget* widget);
+    void removeItemAt(int index) { removeItem(index); }  // Alias for tests
     void clearItems();
+    void clear() { clearItems(); }  // Alias for tests
 
     QWidget* itemAt(int index) const;
     FluentCarouselItemData itemData(int index) const;
@@ -222,23 +249,35 @@ public:
     bool canGoToNext() const;
 
     // Transition properties
-    FluentCarouselTransition transition() const noexcept { return m_config.transition; }
+    FluentCarouselTransition transition() const noexcept {
+        return m_config.transition;
+    }
     void setTransition(FluentCarouselTransition transition);
 
-    FluentCarouselNavigationStyle navigationStyle() const noexcept { return m_config.navigationStyle; }
+    FluentCarouselNavigationStyle navigationStyle() const noexcept {
+        return m_config.navigationStyle;
+    }
     void setNavigationStyle(FluentCarouselNavigationStyle style);
 
-    FluentCarouselOrientation orientation() const noexcept { return m_config.orientation; }
+    FluentCarouselOrientation orientation() const noexcept {
+        return m_config.orientation;
+    }
     void setOrientation(FluentCarouselOrientation orientation);
 
     // Auto-play
-    bool isAutoPlayEnabled() const noexcept { return m_config.autoPlay != FluentCarouselAutoPlay::None; }
+    bool isAutoPlayEnabled() const noexcept {
+        return m_config.autoPlay != FluentCarouselAutoPlay::None;
+    }
     void setAutoPlayEnabled(bool enabled);
 
-    int autoPlayInterval() const noexcept { return static_cast<int>(m_config.autoPlayInterval.count()); }
+    int autoPlayInterval() const noexcept {
+        return static_cast<int>(m_config.autoPlayInterval.count());
+    }
     void setAutoPlayInterval(int milliseconds);
 
-    bool isAutoPlayActive() const noexcept { return m_autoPlayTimer && m_autoPlayTimer->isActive(); }
+    bool isAutoPlayActive() const noexcept {
+        return m_autoPlayTimer && m_autoPlayTimer->isActive();
+    }
 
     // Loop behavior
     bool isInfinite() const noexcept { return m_config.infinite; }
@@ -247,6 +286,19 @@ public:
     // Touch/gesture support
     bool isTouchEnabled() const noexcept { return m_config.enableTouch; }
     void setTouchEnabled(bool enabled);
+
+    // Configuration methods for test compatibility
+    void setConfiguration(const FluentCarouselConfig& config) {
+        setConfig(config);
+    }
+    int transitionDuration() const {
+        return static_cast<int>(m_config.transitionDuration.count());
+    }
+    void setTransitionDuration(int duration);
+    bool wrapAround() const { return m_config.infinite; }
+    void setWrapAround(bool wrap);
+    bool showNavigationButtons() const { return m_config.showNavigation; }
+    void setShowNavigationButtons(bool show);
 
     // Animation state
     qreal transitionProgress() const noexcept { return m_transitionProgress; }
@@ -262,6 +314,13 @@ public slots:
     void goToNext(bool animated = true);
     void goToFirst(bool animated = true);
     void goToLast(bool animated = true);
+
+    // Convenience navigation methods (aliases)
+    void next(bool animated = true) { goToNext(animated); }
+    void previous(bool animated = true) { goToPrevious(animated); }
+    void goToIndex(int index, bool animated = true) {
+        setCurrentIndex(index, animated);
+    }
 
     // Auto-play control
     void startAutoPlay();
@@ -280,6 +339,11 @@ signals:
     void transitionFinished(int index);
     void transitionProgressChanged(qreal progress);
 
+    // Item management signals (for test compatibility)
+    void itemChanged(QWidget* current, QWidget* previous);
+    void itemAdded(QWidget* item, int index);
+    void itemRemoved(QWidget* item, int index);
+
     // Configuration signals
     void transitionChanged(FluentCarouselTransition transition);
     void navigationStyleChanged(FluentCarouselNavigationStyle style);
@@ -294,12 +358,17 @@ signals:
     void autoPlayStopped();
     void autoPlayPaused();
     void autoPlayResumed();
+    void autoPlayProgressChanged(qreal progress);
 
     // Interaction signals
     void itemClicked(int index);
     void itemDoubleClicked(int index);
     void itemHovered(int index);
     void swipeDetected(Qt::GestureType gesture, qreal velocity);
+
+    // Additional signals for test compatibility
+    void configurationChanged(const FluentCarouselConfig& config);
+    void accessibilityUpdateRequested(const QString& announcement);
 
 protected:
     // Event handling
@@ -323,7 +392,8 @@ protected:
 
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
     // Accessibility helpers
     void updateAccessibilityInfo();
@@ -414,11 +484,11 @@ private:
     // Repaint coalescing during transitions
     std::unique_ptr<QTimer> m_repaintCoalesceTimer;
     bool m_pendingRepaint{false};
-    int m_repaintIntervalMs{16}; // ~60Hz
+    int m_repaintIntervalMs{16};  // ~60Hz
 
     // Helpers
     void scheduleCoalescedUpdate();
     void updateMotionPreference();
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

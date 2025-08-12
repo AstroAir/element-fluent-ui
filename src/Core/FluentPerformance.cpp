@@ -1,15 +1,15 @@
 // src/Core/FluentPerformance.cpp
 #include "FluentQt/Core/FluentPerformance.h"
 #include <QApplication>
-#include <QProcess>
 #include <QDebug>
 #include <QMutexLocker>
+#include <QProcess>
 #include <QSysInfo>
 #include <algorithm>
 
 #ifdef Q_OS_WIN
-#include <windows.h>
 #include <psapi.h>
+#include <windows.h>
 #elif defined(Q_OS_LINUX)
 #include <unistd.h>
 #include <fstream>
@@ -25,9 +25,7 @@ FluentPerformanceMonitor& FluentPerformanceMonitor::instance() {
     return instance;
 }
 
-FluentPerformanceMonitor::FluentPerformanceMonitor() {
-    initializeMonitoring();
-}
+FluentPerformanceMonitor::FluentPerformanceMonitor() { initializeMonitoring(); }
 
 void FluentPerformanceMonitor::initializeMonitoring() {
     // Initialize timers
@@ -43,16 +41,26 @@ void FluentPerformanceMonitor::initializeMonitoring() {
     m_analysisTimer = new QTimer(this);
 
     // Connect signals
-    connect(m_frameTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateFrameRate);
-    connect(m_performanceTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::checkPerformance);
-    connect(m_metricsTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateMetrics);
-    connect(m_cpuTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateCpuUsage);
-    connect(m_gpuTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateGpuUsage);
-    connect(m_memoryPressureTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateMemoryPressure);
-    connect(m_thermalTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateThermalState);
-    connect(m_networkTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateNetworkMetrics);
-    connect(m_batteryTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::updateBatteryStatus);
-    connect(m_analysisTimer, &QTimer::timeout, this, &FluentPerformanceMonitor::analyzePerformanceTrends);
+    connect(m_frameTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateFrameRate);
+    connect(m_performanceTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::checkPerformance);
+    connect(m_metricsTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateMetrics);
+    connect(m_cpuTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateCpuUsage);
+    connect(m_gpuTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateGpuUsage);
+    connect(m_memoryPressureTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateMemoryPressure);
+    connect(m_thermalTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateThermalState);
+    connect(m_networkTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateNetworkMetrics);
+    connect(m_batteryTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::updateBatteryStatus);
+    connect(m_analysisTimer, &QTimer::timeout, this,
+            &FluentPerformanceMonitor::analyzePerformanceTrends);
 
     // Initialize metrics
     m_metrics = PerformanceMetrics{};
@@ -65,9 +73,9 @@ void FluentPerformanceMonitor::initializeMonitoring() {
 
 void FluentPerformanceMonitor::startFrameRateMonitoring() {
     m_frameTimeTracker.start();
-    m_frameTimer->start(16); // ~60 FPS
-    m_performanceTimer->start(1000); // Check every second
-    m_metricsTimer->start(500); // Update metrics twice per second
+    m_frameTimer->start(16);          // ~60 FPS
+    m_performanceTimer->start(1000);  // Check every second
+    m_metricsTimer->start(500);       // Update metrics twice per second
     m_frameCount = 0;
 }
 
@@ -78,27 +86,28 @@ void FluentPerformanceMonitor::stopFrameRateMonitoring() {
 }
 
 void FluentPerformanceMonitor::startCpuMonitoring() {
-    m_cpuTimer->start(2000); // Update CPU usage every 2 seconds
+    m_cpuTimer->start(2000);  // Update CPU usage every 2 seconds
 }
 
-void FluentPerformanceMonitor::stopCpuMonitoring() {
-    m_cpuTimer->stop();
-}
+void FluentPerformanceMonitor::stopCpuMonitoring() { m_cpuTimer->stop(); }
 
 // Component registration and monitoring
-void FluentPerformanceMonitor::registerComponent(const QString& componentName, QObject* component) {
+void FluentPerformanceMonitor::registerComponent(const QString& componentName,
+                                                 QObject* component) {
     QMutexLocker locker(&m_componentMutex);
     m_registeredComponents[componentName] = component;
     m_componentData[componentName] = ComponentPerformanceData{componentName};
 }
 
-void FluentPerformanceMonitor::unregisterComponent(const QString& componentName) {
+void FluentPerformanceMonitor::unregisterComponent(
+    const QString& componentName) {
     QMutexLocker locker(&m_componentMutex);
     m_registeredComponents.erase(componentName);
     m_componentData.erase(componentName);
 }
 
-void FluentPerformanceMonitor::recordComponentRender(const QString& componentName, std::chrono::milliseconds renderTime) {
+void FluentPerformanceMonitor::recordComponentRender(
+    const QString& componentName, std::chrono::milliseconds renderTime) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.renderCount++;
@@ -109,13 +118,16 @@ void FluentPerformanceMonitor::recordComponentRender(const QString& componentNam
     data.lastRenderTime = std::chrono::steady_clock::now();
 
     // Update performance scores
-    data.renderPerformanceScore = calculateComponentPerformanceScore(componentName);
-    data.overallPerformanceScore = (data.renderPerformanceScore + data.memoryEfficiencyScore) / 2.0;
+    data.renderPerformanceScore =
+        calculateComponentPerformanceScore(componentName);
+    data.overallPerformanceScore =
+        (data.renderPerformanceScore + data.memoryEfficiencyScore) / 2.0;
 
     // Check for performance issues
-    if (renderTime > std::chrono::milliseconds(16)) { // > 16ms = < 60fps
+    if (renderTime > std::chrono::milliseconds(16)) {  // > 16ms = < 60fps
         data.hasPerformanceIssues = true;
-        emit componentPerformanceIssue(componentName,
+        emit componentPerformanceIssue(
+            componentName,
             QString("Slow render: %1ms").arg(renderTime.count()));
     }
 
@@ -127,7 +139,8 @@ void FluentPerformanceMonitor::recordComponentRender(const QString& componentNam
     }
 }
 
-ComponentPerformanceData FluentPerformanceMonitor::getComponentData(const QString& componentName) const {
+ComponentPerformanceData FluentPerformanceMonitor::getComponentData(
+    const QString& componentName) const {
     QMutexLocker locker(&m_componentMutex);
     auto it = m_componentData.find(componentName);
     if (it != m_componentData.end()) {
@@ -141,7 +154,8 @@ ComponentPerformanceData FluentPerformanceMonitor::getComponentData(const QStrin
     }
 }
 
-QList<ComponentPerformanceData> FluentPerformanceMonitor::getAllComponentData() const {
+QList<ComponentPerformanceData> FluentPerformanceMonitor::getAllComponentData()
+    const {
     QMutexLocker locker(&m_componentMutex);
     QList<ComponentPerformanceData> result;
     for (const auto& [name, data] : m_componentData) {
@@ -162,13 +176,14 @@ size_t FluentPerformanceMonitor::currentMemoryUsage() const {
     std::string line;
     while (std::getline(file, line)) {
         if (line.substr(0, 6) == "VmRSS:") {
-            return std::stoul(line.substr(7)) * 1024; // Convert KB to bytes
+            return std::stoul(line.substr(7)) * 1024;  // Convert KB to bytes
         }
     }
 #elif defined(Q_OS_MACOS)
     task_basic_info info;
     mach_msg_type_number_t size = sizeof(info);
-    if (task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&info, &size) == KERN_SUCCESS) {
+    if (task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&info,
+                  &size) == KERN_SUCCESS) {
         return info.resident_size;
     }
 #endif
@@ -177,7 +192,8 @@ size_t FluentPerformanceMonitor::currentMemoryUsage() const {
 
 void FluentPerformanceMonitor::trackMemoryUsage() {
     m_metrics.memoryUsage = currentMemoryUsage();
-    m_metrics.peakMemoryUsage = std::max(m_metrics.peakMemoryUsage, m_metrics.memoryUsage);
+    m_metrics.peakMemoryUsage =
+        std::max(m_metrics.peakMemoryUsage, m_metrics.memoryUsage);
 }
 
 void FluentPerformanceMonitor::resetPeakMemoryUsage() {
@@ -199,10 +215,12 @@ void FluentPerformanceMonitor::endProfile(const QString& operation) {
     }
 }
 
-std::chrono::milliseconds FluentPerformanceMonitor::getProfileTime(const QString& operation) const {
+std::chrono::milliseconds FluentPerformanceMonitor::getProfileTime(
+    const QString& operation) const {
     QMutexLocker locker(&m_profileMutex);
     auto it = m_profileResults.find(operation);
-    return (it != m_profileResults.end()) ? it->second : std::chrono::milliseconds(0);
+    return (it != m_profileResults.end()) ? it->second
+                                          : std::chrono::milliseconds(0);
 }
 
 void FluentPerformanceMonitor::clearProfileData() {
@@ -212,7 +230,8 @@ void FluentPerformanceMonitor::clearProfileData() {
 }
 
 // Benchmarking
-void FluentPerformanceMonitor::runBenchmark(const QString& benchmarkName, std::function<void()> benchmark) {
+void FluentPerformanceMonitor::runBenchmark(const QString& benchmarkName,
+                                            std::function<void()> benchmark) {
     QElapsedTimer timer;
     size_t initialMemory = currentMemoryUsage();
 
@@ -221,23 +240,26 @@ void FluentPerformanceMonitor::runBenchmark(const QString& benchmarkName, std::f
     auto duration = std::chrono::milliseconds(timer.elapsed());
 
     size_t finalMemory = currentMemoryUsage();
-    size_t memoryAllocated = (finalMemory > initialMemory) ? finalMemory - initialMemory : 0;
+    size_t memoryAllocated =
+        (finalMemory > initialMemory) ? finalMemory - initialMemory : 0;
 
     BenchmarkResult result{
         benchmarkName,
         duration,
-        1000.0 / duration.count(), // Operations per second
+        1000.0 / duration.count(),  // Operations per second
         memoryAllocated,
-        duration < std::chrono::milliseconds(100), // Pass if < 100ms
-        QString("Duration: %1ms, Memory: %2 bytes").arg(duration.count()).arg(memoryAllocated)
-    };
+        duration < std::chrono::milliseconds(100),  // Pass if < 100ms
+        QString("Duration: %1ms, Memory: %2 bytes")
+            .arg(duration.count())
+            .arg(memoryAllocated)};
 
     QMutexLocker locker(&m_benchmarkMutex);
     m_benchmarkResults.append(result);
     emit benchmarkCompleted(result);
 }
 
-void FluentPerformanceMonitor::runComponentBenchmark(const QString& componentName) {
+void FluentPerformanceMonitor::runComponentBenchmark(
+    const QString& componentName) {
     Q_UNUSED(componentName)
     // This would run component-specific benchmarks
     // Implementation depends on component type
@@ -256,7 +278,8 @@ void FluentPerformanceMonitor::clearBenchmarkResults() {
 
 // Optimization hints
 bool FluentPerformanceMonitor::shouldSkipAnimation() const {
-    return m_metrics.frameRate < LOW_FPS_THRESHOLD || m_metrics.isLowPerformanceMode;
+    return m_metrics.frameRate < LOW_FPS_THRESHOLD ||
+           m_metrics.isLowPerformanceMode;
 }
 
 bool FluentPerformanceMonitor::shouldReduceEffects() const {
@@ -267,9 +290,9 @@ int FluentPerformanceMonitor::recommendedAnimationDuration() const {
     if (m_metrics.isLowPerformanceMode) {
         return 50;
     } else if (m_metrics.frameRate >= 60.0) {
-        return 250; // Full duration
+        return 250;  // Full duration
     } else if (m_metrics.frameRate >= 30.0) {
-        return 150; // Reduced duration
+        return 150;  // Reduced duration
     } else {
         return 50;  // Minimal duration
     }
@@ -308,8 +331,9 @@ void FluentPerformanceMonitor::enableLowPerformanceMode(bool enable) {
 void FluentPerformanceMonitor::updateFrameRate() {
     m_frameCount++;
 
-    if (m_frameTimeTracker.elapsed() >= 1000) { // Update every second
-        m_metrics.frameRate = (m_frameCount * 1000.0) / m_frameTimeTracker.elapsed();
+    if (m_frameTimeTracker.elapsed() >= 1000) {  // Update every second
+        m_metrics.frameRate =
+            (m_frameCount * 1000.0) / m_frameTimeTracker.elapsed();
         emit frameRateChanged(m_metrics.frameRate);
 
         m_frameCount = 0;
@@ -321,25 +345,29 @@ void FluentPerformanceMonitor::checkPerformance() {
     detectPerformanceIssues();
 
     if (m_metrics.frameRate < CRITICAL_FPS_THRESHOLD) {
-        emit performanceCritical("Critical frame rate detected. Enabling low performance mode.");
+        emit performanceCritical(
+            "Critical frame rate detected. Enabling low performance mode.");
         enableLowPerformanceMode(true);
     } else if (m_metrics.frameRate < LOW_FPS_THRESHOLD) {
-        emit performanceWarning("Low frame rate detected. Consider reducing visual effects.");
+        emit performanceWarning(
+            "Low frame rate detected. Consider reducing visual effects.");
     }
 
     if (m_metrics.memoryUsage > HIGH_MEMORY_THRESHOLD) {
-        emit performanceWarning(QString("High memory usage: %1 MB")
-            .arg(m_metrics.memoryUsage / (1024 * 1024)));
+        emit performanceWarning(
+            QString("High memory usage: %1 MB")
+                .arg(m_metrics.memoryUsage / (1024 * 1024)));
     }
 
     if (m_metrics.cpuUsage > HIGH_CPU_THRESHOLD) {
-        emit performanceWarning(QString("High CPU usage: %1%").arg(m_metrics.cpuUsage));
+        emit performanceWarning(
+            QString("High CPU usage: %1%").arg(m_metrics.cpuUsage));
     }
 }
 
 void FluentPerformanceMonitor::updateMetrics() {
     trackMemoryUsage();
-    m_metrics.renderCalls++; // This would be updated by components
+    m_metrics.renderCalls++;  // This would be updated by components
     emit metricsUpdated(m_metrics);
 }
 
@@ -347,13 +375,13 @@ void FluentPerformanceMonitor::updateCpuUsage() {
     // Platform-specific CPU usage calculation
 #ifdef Q_OS_WIN
     // Windows implementation would go here
-    m_metrics.cpuUsage = 0.0; // Placeholder
+    m_metrics.cpuUsage = 0.0;  // Placeholder
 #elif defined(Q_OS_LINUX)
     // Linux implementation would go here
-    m_metrics.cpuUsage = 0.0; // Placeholder
+    m_metrics.cpuUsage = 0.0;  // Placeholder
 #elif defined(Q_OS_MACOS)
     // macOS implementation would go here
-    m_metrics.cpuUsage = 0.0; // Placeholder
+    m_metrics.cpuUsage = 0.0;  // Placeholder
 #endif
 }
 
@@ -377,7 +405,7 @@ void FluentPerformanceMonitor::optimizeForLowPerformance() {
 // Enhanced monitoring methods
 void FluentPerformanceMonitor::startGpuMonitoring() {
     m_gpuMonitoringEnabled = true;
-    m_gpuTimer->start(3000); // Update GPU usage every 3 seconds
+    m_gpuTimer->start(3000);  // Update GPU usage every 3 seconds
 }
 
 void FluentPerformanceMonitor::stopGpuMonitoring() {
@@ -387,7 +415,7 @@ void FluentPerformanceMonitor::stopGpuMonitoring() {
 
 void FluentPerformanceMonitor::startMemoryPressureMonitoring() {
     m_memoryPressureMonitoringEnabled = true;
-    m_memoryPressureTimer->start(2000); // Update every 2 seconds
+    m_memoryPressureTimer->start(2000);  // Update every 2 seconds
 }
 
 void FluentPerformanceMonitor::stopMemoryPressureMonitoring() {
@@ -397,7 +425,7 @@ void FluentPerformanceMonitor::stopMemoryPressureMonitoring() {
 
 void FluentPerformanceMonitor::startThermalMonitoring() {
     m_thermalMonitoringEnabled = true;
-    m_thermalTimer->start(5000); // Update every 5 seconds
+    m_thermalTimer->start(5000);  // Update every 5 seconds
 }
 
 void FluentPerformanceMonitor::stopThermalMonitoring() {
@@ -407,7 +435,7 @@ void FluentPerformanceMonitor::stopThermalMonitoring() {
 
 void FluentPerformanceMonitor::startNetworkMonitoring() {
     m_networkMonitoringEnabled = true;
-    m_networkTimer->start(1000); // Update every second
+    m_networkTimer->start(1000);  // Update every second
 }
 
 void FluentPerformanceMonitor::stopNetworkMonitoring() {
@@ -417,7 +445,7 @@ void FluentPerformanceMonitor::stopNetworkMonitoring() {
 
 void FluentPerformanceMonitor::startBatteryMonitoring() {
     m_batteryMonitoringEnabled = true;
-    m_batteryTimer->start(10000); // Update every 10 seconds
+    m_batteryTimer->start(10000);  // Update every 10 seconds
 }
 
 void FluentPerformanceMonitor::stopBatteryMonitoring() {
@@ -434,11 +462,12 @@ void FluentPerformanceMonitor::recordInputEvent(const QString& eventType) {
     auto cutoff = now - std::chrono::seconds(5);
     m_inputEventTimes.erase(
         std::remove_if(m_inputEventTimes.begin(), m_inputEventTimes.end(),
-                      [cutoff](const auto& time) { return time < cutoff; }),
+                       [cutoff](const auto& time) { return time < cutoff; }),
         m_inputEventTimes.end());
 }
 
-void FluentPerformanceMonitor::recordInputLatency(std::chrono::milliseconds latency) {
+void FluentPerformanceMonitor::recordInputLatency(
+    std::chrono::milliseconds latency) {
     m_inputLatencies.append(latency);
 
     // Keep only recent latencies (last 100 events)
@@ -448,8 +477,9 @@ void FluentPerformanceMonitor::recordInputLatency(std::chrono::milliseconds late
 
     // Calculate average
     if (!m_inputLatencies.isEmpty()) {
-        auto total = std::accumulate(m_inputLatencies.begin(), m_inputLatencies.end(),
-                                   std::chrono::milliseconds(0));
+        auto total =
+            std::accumulate(m_inputLatencies.begin(), m_inputLatencies.end(),
+                            std::chrono::milliseconds(0));
         m_metrics.inputLatency = total / m_inputLatencies.size();
     }
 
@@ -459,29 +489,34 @@ void FluentPerformanceMonitor::recordInputLatency(std::chrono::milliseconds late
     }
 }
 
-void FluentPerformanceMonitor::recordComponentUpdate(const QString& componentName, std::chrono::milliseconds updateTime) {
+void FluentPerformanceMonitor::recordComponentUpdate(
+    const QString& componentName, std::chrono::milliseconds updateTime) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.updateCount++;
     data.totalUpdateTime += updateTime;
 }
 
-void FluentPerformanceMonitor::recordComponentLayout(const QString& componentName, std::chrono::milliseconds layoutTime) {
+void FluentPerformanceMonitor::recordComponentLayout(
+    const QString& componentName, std::chrono::milliseconds layoutTime) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.layoutCount++;
     data.totalLayoutTime += layoutTime;
 }
 
-void FluentPerformanceMonitor::recordComponentInteraction(const QString& componentName, std::chrono::milliseconds responseTime) {
+void FluentPerformanceMonitor::recordComponentInteraction(
+    const QString& componentName, std::chrono::milliseconds responseTime) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.userInteractions++;
     data.totalInteractionTime += responseTime;
-    data.averageInteractionLatency = data.totalInteractionTime.count() / static_cast<double>(data.userInteractions);
+    data.averageInteractionLatency = data.totalInteractionTime.count() /
+                                     static_cast<double>(data.userInteractions);
 }
 
-void FluentPerformanceMonitor::setComponentVisibility(const QString& componentName, bool visible) {
+void FluentPerformanceMonitor::setComponentVisibility(
+    const QString& componentName, bool visible) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.isVisible = visible;
@@ -489,17 +524,20 @@ void FluentPerformanceMonitor::setComponentVisibility(const QString& componentNa
     if (visible) {
         m_metrics.visibleComponents++;
     } else {
-        m_metrics.visibleComponents = std::max(0, m_metrics.visibleComponents - 1);
+        m_metrics.visibleComponents =
+            std::max(0, m_metrics.visibleComponents - 1);
     }
 }
 
-void FluentPerformanceMonitor::markComponentAsLazyLoaded(const QString& componentName, bool lazyLoaded) {
+void FluentPerformanceMonitor::markComponentAsLazyLoaded(
+    const QString& componentName, bool lazyLoaded) {
     QMutexLocker locker(&m_componentMutex);
     auto& data = m_componentData[componentName];
     data.isLazyLoaded = lazyLoaded;
 }
 
-double FluentPerformanceMonitor::calculateComponentPerformanceScore(const QString& componentName) const {
+double FluentPerformanceMonitor::calculateComponentPerformanceScore(
+    const QString& componentName) const {
     QMutexLocker locker(&m_componentMutex);
     auto it = m_componentData.find(componentName);
     if (it == m_componentData.end()) {
@@ -515,8 +553,9 @@ double FluentPerformanceMonitor::calculateComponentPerformanceScore(const QStrin
     }
 
     // Penalize high memory usage
-    if (data.memoryFootprint > 10 * 1024 * 1024) { // 10MB
-        double memoryMB = static_cast<double>(data.memoryFootprint) / (1024 * 1024);
+    if (data.memoryFootprint > 10 * 1024 * 1024) {  // 10MB
+        double memoryMB =
+            static_cast<double>(data.memoryFootprint) / (1024 * 1024);
         score -= (memoryMB - 10.0) * 5.0;
     }
 
@@ -558,7 +597,8 @@ double FluentPerformanceMonitor::calculateOverallPerformanceScore() const {
     return std::max(0.0, std::min(100.0, averageScore));
 }
 
-QStringList FluentPerformanceMonitor::generateOptimizationSuggestions(const QString& componentName) const {
+QStringList FluentPerformanceMonitor::generateOptimizationSuggestions(
+    const QString& componentName) const {
     QStringList suggestions;
 
     QMutexLocker locker(&m_componentMutex);
@@ -573,8 +613,9 @@ QStringList FluentPerformanceMonitor::generateOptimizationSuggestions(const QStr
         suggestions << "Consider optimizing render operations or using caching";
     }
 
-    if (data.memoryFootprint > 50 * 1024 * 1024) { // 50MB
-        suggestions << "High memory usage detected - consider lazy loading or data optimization";
+    if (data.memoryFootprint > 50 * 1024 * 1024) {  // 50MB
+        suggestions << "High memory usage detected - consider lazy loading or "
+                       "data optimization";
     }
 
     if (!data.isLazyLoaded && data.memoryFootprint > 10 * 1024 * 1024) {
@@ -582,7 +623,8 @@ QStringList FluentPerformanceMonitor::generateOptimizationSuggestions(const QStr
     }
 
     if (data.animationCount > 5) {
-        suggestions << "Too many concurrent animations - consider reducing or staggering them";
+        suggestions << "Too many concurrent animations - consider reducing or "
+                       "staggering them";
     }
 
     if (data.userInteractions > 0 && data.averageInteractionLatency > 100.0) {
@@ -592,7 +634,8 @@ QStringList FluentPerformanceMonitor::generateOptimizationSuggestions(const QStr
     return suggestions;
 }
 
-QStringList FluentPerformanceMonitor::generateGlobalOptimizationSuggestions() const {
+QStringList FluentPerformanceMonitor::generateGlobalOptimizationSuggestions()
+    const {
     QStringList suggestions;
 
     if (m_metrics.frameRate < LOW_FPS_THRESHOLD) {
@@ -600,15 +643,18 @@ QStringList FluentPerformanceMonitor::generateGlobalOptimizationSuggestions() co
     }
 
     if (m_metrics.memoryUsage > HIGH_MEMORY_THRESHOLD) {
-        suggestions << "High memory usage - consider unloading unused components";
+        suggestions
+            << "High memory usage - consider unloading unused components";
     }
 
     if (m_metrics.activeAnimations > recommendedMaxAnimations()) {
-        suggestions << "Too many active animations - consider reducing concurrent animations";
+        suggestions << "Too many active animations - consider reducing "
+                       "concurrent animations";
     }
 
     if (m_metrics.inputLatency > HIGH_INPUT_LATENCY_THRESHOLD) {
-        suggestions << "High input latency detected - optimize event processing";
+        suggestions
+            << "High input latency detected - optimize event processing";
     }
 
     if (m_metrics.isThrottling) {
@@ -620,52 +666,59 @@ QStringList FluentPerformanceMonitor::generateGlobalOptimizationSuggestions() co
 
 // Timer callback implementations
 void FluentPerformanceMonitor::updateGpuUsage() {
-    if (!m_gpuMonitoringEnabled) return;
+    if (!m_gpuMonitoringEnabled)
+        return;
 
     // Platform-specific GPU usage calculation
 #ifdef Q_OS_WIN
     // Windows GPU monitoring implementation
-    m_metrics.gpuUsage = 0.0; // Placeholder
+    m_metrics.gpuUsage = 0.0;  // Placeholder
 #elif defined(Q_OS_LINUX)
     // Linux GPU monitoring implementation
-    m_metrics.gpuUsage = 0.0; // Placeholder
+    m_metrics.gpuUsage = 0.0;  // Placeholder
 #elif defined(Q_OS_MACOS)
     // macOS GPU monitoring implementation
-    m_metrics.gpuUsage = 0.0; // Placeholder
+    m_metrics.gpuUsage = 0.0;  // Placeholder
 #endif
 
     if (m_metrics.gpuUsage > HIGH_GPU_THRESHOLD) {
-        emit performanceWarning(QString("High GPU usage: %1%").arg(m_metrics.gpuUsage));
+        emit performanceWarning(
+            QString("High GPU usage: %1%").arg(m_metrics.gpuUsage));
     }
 }
 
 void FluentPerformanceMonitor::updateMemoryPressure() {
-    if (!m_memoryPressureMonitoringEnabled) return;
+    if (!m_memoryPressureMonitoringEnabled)
+        return;
 
     // Calculate memory pressure based on available vs used memory
-    size_t totalMemory = 8ULL * 1024 * 1024 * 1024; // 8GB default, should be detected
-    m_metrics.memoryPressure = static_cast<double>(m_metrics.memoryUsage) / totalMemory;
+    size_t totalMemory =
+        8ULL * 1024 * 1024 * 1024;  // 8GB default, should be detected
+    m_metrics.memoryPressure =
+        static_cast<double>(m_metrics.memoryUsage) / totalMemory;
 
     if (m_metrics.memoryPressure > HIGH_MEMORY_PRESSURE_THRESHOLD) {
         emit memoryPressureChanged(m_metrics.memoryPressure);
-        emit performanceWarning(QString("High memory pressure: %1%")
-                               .arg(m_metrics.memoryPressure * 100, 0, 'f', 1));
+        emit performanceWarning(
+            QString("High memory pressure: %1%")
+                .arg(m_metrics.memoryPressure * 100, 0, 'f', 1));
     }
 }
 
 void FluentPerformanceMonitor::updateThermalState() {
-    if (!m_thermalMonitoringEnabled) return;
+    if (!m_thermalMonitoringEnabled)
+        return;
 
     // Platform-specific thermal monitoring
 #ifdef Q_OS_WIN
     // Windows thermal monitoring
-    m_metrics.thermalState = 0.0; // Placeholder
+    m_metrics.thermalState = 0.0;  // Placeholder
 #elif defined(Q_OS_LINUX)
     // Linux thermal monitoring
-    m_metrics.thermalState = 0.0; // Placeholder
+    m_metrics.thermalState = 0.0;  // Placeholder
 #elif defined(Q_OS_MACOS)
     // macOS thermal monitoring
-    m_metrics.thermalState = 0.0; // Placeholder
+    m_metrics.thermalState = 0.0;  // Placeholder
 #endif
 
     if (m_metrics.thermalState > HIGH_THERMAL_THRESHOLD) {
@@ -674,17 +727,20 @@ void FluentPerformanceMonitor::updateThermalState() {
             m_metrics.isThrottling = true;
             emit throttlingDetected("High thermal state");
         }
-    } else if (m_metrics.isThrottling && m_metrics.thermalState < HIGH_THERMAL_THRESHOLD - 10.0) {
+    } else if (m_metrics.isThrottling &&
+               m_metrics.thermalState < HIGH_THERMAL_THRESHOLD - 10.0) {
         m_metrics.isThrottling = false;
     }
 }
 
 void FluentPerformanceMonitor::updateNetworkMetrics() {
-    if (!m_networkMonitoringEnabled) return;
+    if (!m_networkMonitoringEnabled)
+        return;
 
     // Network latency and throughput monitoring
-    // This would typically ping a known server or measure local network performance
-    m_metrics.networkLatency = std::chrono::milliseconds(50); // Placeholder
+    // This would typically ping a known server or measure local network
+    // performance
+    m_metrics.networkLatency = std::chrono::milliseconds(50);  // Placeholder
 
     if (m_metrics.networkLatency > HIGH_NETWORK_LATENCY_THRESHOLD) {
         emit networkLatencyChanged(m_metrics.networkLatency);
@@ -692,21 +748,22 @@ void FluentPerformanceMonitor::updateNetworkMetrics() {
 }
 
 void FluentPerformanceMonitor::updateBatteryStatus() {
-    if (!m_batteryMonitoringEnabled) return;
+    if (!m_batteryMonitoringEnabled)
+        return;
 
     // Platform-specific battery monitoring
 #ifdef Q_OS_WIN
     // Windows battery monitoring
-    m_metrics.batteryLevel = 100.0; // Placeholder
-    m_metrics.isLowPowerMode = false; // Placeholder
+    m_metrics.batteryLevel = 100.0;    // Placeholder
+    m_metrics.isLowPowerMode = false;  // Placeholder
 #elif defined(Q_OS_LINUX)
     // Linux battery monitoring
-    m_metrics.batteryLevel = 100.0; // Placeholder
-    m_metrics.isLowPowerMode = false; // Placeholder
+    m_metrics.batteryLevel = 100.0;    // Placeholder
+    m_metrics.isLowPowerMode = false;  // Placeholder
 #elif defined(Q_OS_MACOS)
     // macOS battery monitoring
-    m_metrics.batteryLevel = 100.0; // Placeholder
-    m_metrics.isLowPowerMode = false; // Placeholder
+    m_metrics.batteryLevel = 100.0;    // Placeholder
+    m_metrics.isLowPowerMode = false;  // Placeholder
 #endif
 
     if (m_metrics.batteryLevel < LOW_BATTERY_THRESHOLD) {
@@ -734,7 +791,8 @@ void FluentPerformanceMonitor::analyzePerformanceTrends() {
 
         if (detectPerformanceAnomaly(recent, baseline)) {
             // Calculate degradation percentage
-            double fpsChange = (baseline.frameRate - recent.frameRate) / baseline.frameRate * 100.0;
+            double fpsChange = (baseline.frameRate - recent.frameRate) /
+                               baseline.frameRate * 100.0;
             if (fpsChange > 10.0) {
                 emit performanceDegradation("Frame Rate", fpsChange);
             }
@@ -746,7 +804,8 @@ void FluentPerformanceMonitor::detectPerformanceAnomalies() {
     // Detect memory leaks
     if (m_metricsHistory.size() >= 5) {
         auto current = m_metrics.memoryUsage;
-        auto previous = m_metricsHistory[m_metricsHistory.size() - 5].memoryUsage;
+        auto previous =
+            m_metricsHistory[m_metricsHistory.size() - 5].memoryUsage;
 
         if (current > previous + MEMORY_LEAK_THRESHOLD) {
             m_metrics.memoryLeaks++;
@@ -762,14 +821,15 @@ void FluentPerformanceMonitor::cleanupStaleData() {
 
     m_inputEventTimes.erase(
         std::remove_if(m_inputEventTimes.begin(), m_inputEventTimes.end(),
-                      [cutoff](const auto& time) { return time < cutoff; }),
+                       [cutoff](const auto& time) { return time < cutoff; }),
         m_inputEventTimes.end());
 
     // Clean up component data for destroyed components
     QMutexLocker locker(&m_componentMutex);
     for (auto it = m_componentData.begin(); it != m_componentData.end();) {
         auto componentIt = m_registeredComponents.find(it->first);
-        if (componentIt == m_registeredComponents.end() || !componentIt->second) {
+        if (componentIt == m_registeredComponents.end() ||
+            !componentIt->second) {
             it = m_componentData.erase(it);
         } else {
             ++it;
@@ -797,7 +857,8 @@ void FluentPerformanceMonitor::cleanupPlatformMonitoring() {
     }
 }
 
-double FluentPerformanceMonitor::calculatePerformanceTrend(const QString& metric) const {
+double FluentPerformanceMonitor::calculatePerformanceTrend(
+    const QString& metric) const {
     if (m_metricsHistory.size() < 2) {
         return 0.0;
     }
@@ -807,27 +868,34 @@ double FluentPerformanceMonitor::calculatePerformanceTrend(const QString& metric
     auto baseline = m_metricsHistory.first();
 
     if (metric == "frameRate") {
-        return (recent.frameRate - baseline.frameRate) / baseline.frameRate * 100.0;
+        return (recent.frameRate - baseline.frameRate) / baseline.frameRate *
+               100.0;
     } else if (metric == "memoryUsage") {
-        return (static_cast<double>(recent.memoryUsage) - static_cast<double>(baseline.memoryUsage)) /
+        return (static_cast<double>(recent.memoryUsage) -
+                static_cast<double>(baseline.memoryUsage)) /
                static_cast<double>(baseline.memoryUsage) * 100.0;
     } else if (metric == "cpuUsage") {
-        return (recent.cpuUsage - baseline.cpuUsage) / baseline.cpuUsage * 100.0;
+        return (recent.cpuUsage - baseline.cpuUsage) / baseline.cpuUsage *
+               100.0;
     }
 
     return 0.0;
 }
 
-bool FluentPerformanceMonitor::detectPerformanceAnomaly(const PerformanceMetrics& current,
-                                                       const PerformanceMetrics& baseline) const {
+bool FluentPerformanceMonitor::detectPerformanceAnomaly(
+    const PerformanceMetrics& current,
+    const PerformanceMetrics& baseline) const {
     // Detect significant performance changes
-    double fpsChange = std::abs(current.frameRate - baseline.frameRate) / baseline.frameRate;
-    double memoryChange = std::abs(static_cast<double>(current.memoryUsage) - static_cast<double>(baseline.memoryUsage)) /
-                         static_cast<double>(baseline.memoryUsage);
-    double cpuChange = std::abs(current.cpuUsage - baseline.cpuUsage) / baseline.cpuUsage;
+    double fpsChange =
+        std::abs(current.frameRate - baseline.frameRate) / baseline.frameRate;
+    double memoryChange = std::abs(static_cast<double>(current.memoryUsage) -
+                                   static_cast<double>(baseline.memoryUsage)) /
+                          static_cast<double>(baseline.memoryUsage);
+    double cpuChange =
+        std::abs(current.cpuUsage - baseline.cpuUsage) / baseline.cpuUsage;
 
     // Consider it an anomaly if any metric changes by more than 20%
     return fpsChange > 0.2 || memoryChange > 0.2 || cpuChange > 0.2;
 }
 
-} // namespace FluentQt::Core
+}  // namespace FluentQt::Core

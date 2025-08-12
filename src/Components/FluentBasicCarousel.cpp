@@ -1,25 +1,24 @@
 // src/Components/FluentBasicCarousel.cpp
 #include "FluentQt/Components/FluentBasicCarousel.h"
-#include "FluentQt/Styling/FluentTheme.h"
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QKeyEvent>
 #include <QFocusEvent>
-#include <QResizeEvent>
+#include <QHBoxLayout>
+#include <QKeyEvent>
 #include <QPainter>
+#include <QResizeEvent>
 #include <QStyleOption>
+#include <QVBoxLayout>
+#include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
 FluentBasicCarousel::FluentBasicCarousel(QWidget* parent)
-    : FluentCarousel(parent)
-{
+    : FluentCarousel(parent) {
     initializeBasicCarousel();
 }
 
-FluentBasicCarousel::FluentBasicCarousel(const FluentCarouselConfig& config, QWidget* parent)
-    : FluentCarousel(config, parent)
-{
+FluentBasicCarousel::FluentBasicCarousel(const FluentCarouselConfig& config,
+                                         QWidget* parent)
+    : FluentCarousel(config, parent) {
     initializeBasicCarousel();
 }
 
@@ -31,16 +30,16 @@ void FluentBasicCarousel::initializeBasicCarousel() {
     config.showIndicators = false;
     config.autoPlay = FluentCarouselAutoPlay::None;
     setConfig(config);
-    
+
     createNavigationButtons();
     setupKeyboardNavigation();
-    
+
     // Connect signals
-    connect(this, &FluentCarousel::currentIndexChanged,
-            this, &FluentBasicCarousel::onCurrentIndexChanged);
-    connect(this, &FluentCarousel::itemCountChanged,
-            this, &FluentBasicCarousel::onItemCountChanged);
-    
+    connect(this, &FluentCarousel::currentIndexChanged, this,
+            &FluentBasicCarousel::onCurrentIndexChanged);
+    connect(this, &FluentCarousel::itemCountChanged, this,
+            &FluentBasicCarousel::onItemCountChanged);
+
     updateNavigationLayout();
     updateButtonStates();
 }
@@ -49,12 +48,12 @@ void FluentBasicCarousel::createNavigationButtons() {
     // Create navigation container
     m_navigationContainer = new QWidget(this);
     m_navigationContainer->setObjectName("FluentBasicCarousel_Navigation");
-    
+
     // Create navigation layout
     m_navigationLayout = new QHBoxLayout(m_navigationContainer);
     m_navigationLayout->setContentsMargins(8, 8, 8, 8);
     m_navigationLayout->setSpacing(8);
-    
+
     // Create previous button
     m_previousButton = new FluentButton(m_navigationContainer);
     m_previousButton->setObjectName("FluentBasicCarousel_PreviousButton");
@@ -62,8 +61,9 @@ void FluentBasicCarousel::createNavigationButtons() {
     m_previousButton->setButtonStyle(m_navigationButtonStyle);
     m_previousButton->setIcon(QIcon(":/icons/chevron-left"));
     m_previousButton->setAccessibleName("Previous item");
-    m_previousButton->setAccessibleDescription("Navigate to the previous carousel item");
-    
+    m_previousButton->setAccessibleDescription(
+        "Navigate to the previous carousel item");
+
     // Create next button
     m_nextButton = new FluentButton(m_navigationContainer);
     m_nextButton->setObjectName("FluentBasicCarousel_NextButton");
@@ -71,19 +71,20 @@ void FluentBasicCarousel::createNavigationButtons() {
     m_nextButton->setButtonStyle(m_navigationButtonStyle);
     m_nextButton->setIcon(QIcon(":/icons/chevron-right"));
     m_nextButton->setAccessibleName("Next item");
-    m_nextButton->setAccessibleDescription("Navigate to the next carousel item");
-    
+    m_nextButton->setAccessibleDescription(
+        "Navigate to the next carousel item");
+
     // Add buttons to layout
     m_navigationLayout->addWidget(m_previousButton);
     m_navigationLayout->addStretch();
     m_navigationLayout->addWidget(m_nextButton);
-    
+
     // Connect button signals
-    connect(m_previousButton, &FluentButton::clicked,
-            this, &FluentBasicCarousel::onPreviousButtonClicked);
-    connect(m_nextButton, &FluentButton::clicked,
-            this, &FluentBasicCarousel::onNextButtonClicked);
-    
+    connect(m_previousButton, &FluentButton::clicked, this,
+            &FluentBasicCarousel::onPreviousButtonClicked);
+    connect(m_nextButton, &FluentButton::clicked, this,
+            &FluentBasicCarousel::onNextButtonClicked);
+
     // Add navigation container to main layout
     if (auto* mainLayout = qobject_cast<QHBoxLayout*>(layout())) {
         mainLayout->addWidget(m_navigationContainer);
@@ -91,11 +92,12 @@ void FluentBasicCarousel::createNavigationButtons() {
 }
 
 void FluentBasicCarousel::updateNavigationLayout() {
-    if (!m_navigationContainer) return;
-    
+    if (!m_navigationContainer)
+        return;
+
     // Position navigation container based on orientation
     const FluentCarouselConfig& config = this->config();
-    
+
     if (config.orientation == FluentCarouselOrientation::Vertical) {
         // For vertical carousel, place buttons on the sides
         m_navigationLayout->setDirection(QBoxLayout::LeftToRight);
@@ -107,7 +109,7 @@ void FluentBasicCarousel::updateNavigationLayout() {
         m_navigationContainer->setFixedHeight(60);
         m_navigationContainer->setMaximumWidth(QWIDGETSIZE_MAX);
     }
-    
+
     // Update button icons based on orientation
     if (config.orientation == FluentCarouselOrientation::Vertical) {
         m_previousButton->setIcon(QIcon(":/icons/chevron-up"));
@@ -116,29 +118,33 @@ void FluentBasicCarousel::updateNavigationLayout() {
         m_previousButton->setIcon(QIcon(":/icons/chevron-left"));
         m_nextButton->setIcon(QIcon(":/icons/chevron-right"));
     }
-    
+
     updateButtonStates();
 }
 
 void FluentBasicCarousel::updateButtonStates() {
-    if (!m_previousButton || !m_nextButton) return;
-    
+    if (!m_previousButton || !m_nextButton)
+        return;
+
     bool canGoPrev = canGoToPrevious();
     bool canGoNext = canGoToNext();
-    
+
     m_previousButton->setEnabled(canGoPrev && m_navigationButtonsEnabled);
     m_nextButton->setEnabled(canGoNext && m_navigationButtonsEnabled);
-    
+
     // Update accessibility
     m_previousButton->setAccessibleDescription(
-        canGoPrev ? "Navigate to the previous carousel item" : "No previous item available");
+        canGoPrev ? "Navigate to the previous carousel item"
+                  : "No previous item available");
     m_nextButton->setAccessibleDescription(
-        canGoNext ? "Navigate to the next carousel item" : "No next item available");
+        canGoNext ? "Navigate to the next carousel item"
+                  : "No next item available");
 }
 
 void FluentBasicCarousel::updateButtonStyles() {
-    if (!m_previousButton || !m_nextButton) return;
-    
+    if (!m_previousButton || !m_nextButton)
+        return;
+
     m_previousButton->setButtonStyle(m_navigationButtonStyle);
     m_nextButton->setButtonStyle(m_navigationButtonStyle);
 }
@@ -150,7 +156,7 @@ void FluentBasicCarousel::setupKeyboardNavigation() {
 
 void FluentBasicCarousel::updateAccessibilityInfo() {
     FluentCarousel::updateAccessibilityInfo();
-    
+
     // Update button accessibility
     updateButtonStates();
 }
@@ -158,11 +164,11 @@ void FluentBasicCarousel::updateAccessibilityInfo() {
 void FluentBasicCarousel::setShowNavigationButtons(bool show) {
     if (m_showNavigationButtons != show) {
         m_showNavigationButtons = show;
-        
+
         if (m_navigationContainer) {
             m_navigationContainer->setVisible(show);
         }
-        
+
         emit navigationButtonsVisibilityChanged(show);
     }
 }
@@ -170,11 +176,11 @@ void FluentBasicCarousel::setShowNavigationButtons(bool show) {
 void FluentBasicCarousel::setPreviousButtonText(const QString& text) {
     if (m_previousButtonText != text) {
         m_previousButtonText = text;
-        
+
         if (m_previousButton) {
             m_previousButton->setText(text);
         }
-        
+
         emit previousButtonTextChanged(text);
     }
 }
@@ -182,11 +188,11 @@ void FluentBasicCarousel::setPreviousButtonText(const QString& text) {
 void FluentBasicCarousel::setNextButtonText(const QString& text) {
     if (m_nextButtonText != text) {
         m_nextButtonText = text;
-        
+
         if (m_nextButton) {
             m_nextButton->setText(text);
         }
-        
+
         emit nextButtonTextChanged(text);
     }
 }
@@ -237,44 +243,44 @@ FluentBasicCarousel* FluentBasicCarousel::createMinimal(QWidget* parent) {
 // Event handling
 void FluentBasicCarousel::keyPressEvent(QKeyEvent* event) {
     bool handled = true;
-    
+
     switch (event->key()) {
-    case Qt::Key_Tab:
-        // Handle tab navigation between buttons
-        if (event->modifiers() & Qt::ShiftModifier) {
-            if (m_nextButton && m_nextButton->hasFocus()) {
-                m_previousButton->setFocus();
+        case Qt::Key_Tab:
+            // Handle tab navigation between buttons
+            if (event->modifiers() & Qt::ShiftModifier) {
+                if (m_nextButton && m_nextButton->hasFocus()) {
+                    m_previousButton->setFocus();
+                } else {
+                    setFocus();
+                }
             } else {
-                setFocus();
+                if (m_previousButton && m_previousButton->hasFocus()) {
+                    m_nextButton->setFocus();
+                } else if (hasFocus()) {
+                    m_previousButton->setFocus();
+                } else {
+                    handled = false;
+                }
             }
-        } else {
+            break;
+
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            // Activate focused button
             if (m_previousButton && m_previousButton->hasFocus()) {
-                m_nextButton->setFocus();
-            } else if (hasFocus()) {
-                m_previousButton->setFocus();
+                m_previousButton->animateClick();
+            } else if (m_nextButton && m_nextButton->hasFocus()) {
+                m_nextButton->animateClick();
             } else {
                 handled = false;
             }
-        }
-        break;
-        
-    case Qt::Key_Return:
-    case Qt::Key_Enter:
-        // Activate focused button
-        if (m_previousButton && m_previousButton->hasFocus()) {
-            m_previousButton->animateClick();
-        } else if (m_nextButton && m_nextButton->hasFocus()) {
-            m_nextButton->animateClick();
-        } else {
+            break;
+
+        default:
             handled = false;
-        }
-        break;
-        
-    default:
-        handled = false;
-        break;
+            break;
     }
-    
+
     if (!handled) {
         FluentCarousel::keyPressEvent(event);
     }
@@ -282,7 +288,7 @@ void FluentBasicCarousel::keyPressEvent(QKeyEvent* event) {
 
 void FluentBasicCarousel::focusInEvent(QFocusEvent* event) {
     FluentCarousel::focusInEvent(event);
-    
+
     // If no button has focus, focus the previous button
     if (!m_previousButton->hasFocus() && !m_nextButton->hasFocus()) {
         m_previousButton->setFocus();
@@ -300,7 +306,7 @@ void FluentBasicCarousel::resizeEvent(QResizeEvent* event) {
 
 void FluentBasicCarousel::changeEvent(QEvent* event) {
     FluentCarousel::changeEvent(event);
-    
+
     if (event->type() == QEvent::EnabledChange) {
         updateButtonStates();
     }
@@ -329,9 +335,7 @@ void FluentBasicCarousel::onItemCountChanged(int count) {
 
 // FluentCarouselNavigation implementation
 FluentCarouselNavigation::FluentCarouselNavigation(QWidget* parent)
-    : QWidget(parent)
-    , m_layout(new QHBoxLayout(this))
-{
+    : QWidget(parent), m_layout(new QHBoxLayout(this)) {
     initializeNavigation();
 }
 
@@ -346,10 +350,10 @@ void FluentCarouselNavigation::initializeNavigation() {
     m_layout->addWidget(m_nextButton);
     m_layout->setContentsMargins(0, 0, 0, 0);
 
-    connect(m_previousButton, &FluentButton::clicked,
-            this, &FluentCarouselNavigation::previousClicked);
-    connect(m_nextButton, &FluentButton::clicked,
-            this, &FluentCarouselNavigation::nextClicked);
+    connect(m_previousButton, &FluentButton::clicked, this,
+            &FluentCarouselNavigation::previousClicked);
+    connect(m_nextButton, &FluentButton::clicked, this,
+            &FluentCarouselNavigation::nextClicked);
 }
 
 void FluentCarouselNavigation::setPreviousButtonText(const QString& text) {
@@ -382,7 +386,8 @@ void FluentCarouselNavigation::setButtonsEnabled(bool enabled) {
     }
 }
 
-void FluentCarouselNavigation::updateButtonStates(bool canGoPrevious, bool canGoNext) {
+void FluentCarouselNavigation::updateButtonStates(bool canGoPrevious,
+                                                  bool canGoNext) {
     if (m_previousButton) {
         m_previousButton->setEnabled(canGoPrevious);
     }
@@ -407,4 +412,4 @@ void FluentCarouselNavigation::updateLayout() {
     }
 }
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

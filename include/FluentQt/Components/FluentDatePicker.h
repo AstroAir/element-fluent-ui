@@ -1,38 +1,46 @@
 // include/FluentQt/Components/FluentDatePicker.h
 #pragma once
 
-#include "FluentQt/Core/FluentComponent.h"
-#include <QDate>
-#include <QLabel>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QPushButton>
-#include <QPropertyAnimation>
-#include <QGraphicsOpacityEffect>
 #include <QCalendarWidget>
+#include <QDate>
+#include <QGraphicsOpacityEffect>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
+#include <QPropertyAnimation>
+#include <QPushButton>
+#include <QVBoxLayout>
 #include <memory>
+#include "FluentQt/Core/FluentComponent.h"
 
 namespace FluentQt::Components {
 
 enum class FluentDateFormat {
-    Short,      // MM/dd/yyyy
-    Medium,     // MMM dd, yyyy
-    Long,       // MMMM dd, yyyy
-    ISO,        // yyyy-MM-dd
+    Short,   // MM/dd/yyyy
+    Medium,  // MMM dd, yyyy
+    Long,    // MMMM dd, yyyy
+    ISO,     // yyyy-MM-dd
     Custom
 };
 
 class FluentDatePicker : public Core::FluentComponent {
     Q_OBJECT
-    Q_PROPERTY(QDate selectedDate READ selectedDate WRITE setSelectedDate NOTIFY selectedDateChanged)
-    Q_PROPERTY(QDate minimumDate READ minimumDate WRITE setMinimumDate NOTIFY minimumDateChanged)
-    Q_PROPERTY(QDate maximumDate READ maximumDate WRITE setMaximumDate NOTIFY maximumDateChanged)
-    Q_PROPERTY(FluentDateFormat dateFormat READ dateFormat WRITE setDateFormat NOTIFY dateFormatChanged)
-    Q_PROPERTY(QString customFormat READ customFormat WRITE setCustomFormat NOTIFY customFormatChanged)
-    Q_PROPERTY(QString placeholderText READ placeholderText WRITE setPlaceholderText NOTIFY placeholderTextChanged)
-    Q_PROPERTY(bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
-    Q_PROPERTY(bool calendarVisible READ isCalendarVisible WRITE setCalendarVisible NOTIFY calendarVisibilityChanged)
+    Q_PROPERTY(QDate selectedDate READ selectedDate WRITE setSelectedDate NOTIFY
+                   selectedDateChanged)
+    Q_PROPERTY(QDate minimumDate READ minimumDate WRITE setMinimumDate NOTIFY
+                   minimumDateChanged)
+    Q_PROPERTY(QDate maximumDate READ maximumDate WRITE setMaximumDate NOTIFY
+                   maximumDateChanged)
+    Q_PROPERTY(FluentDateFormat dateFormat READ dateFormat WRITE setDateFormat
+                   NOTIFY dateFormatChanged)
+    Q_PROPERTY(QString customFormat READ customFormat WRITE setCustomFormat
+                   NOTIFY customFormatChanged)
+    Q_PROPERTY(QString placeholderText READ placeholderText WRITE
+                   setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(
+        bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
+    Q_PROPERTY(bool calendarVisible READ isCalendarVisible WRITE
+                   setCalendarVisible NOTIFY calendarVisibilityChanged)
 
 public:
     explicit FluentDatePicker(QWidget* parent = nullptr);
@@ -101,10 +109,11 @@ protected:
     void focusInEvent(QFocusEvent* event) override;
     void focusOutEvent(QFocusEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
-    
+
     // State management
     void updateStateStyle() override;
-    void performStateTransition(Core::FluentState from, Core::FluentState to) override;
+    void performStateTransition(Core::FluentState from,
+                                Core::FluentState to) override;
 
 private slots:
     void onCalendarDateSelected(const QDate& date);
@@ -143,31 +152,31 @@ private:
     QDate m_selectedDate;
     QDate m_minimumDate{QDate(1900, 1, 1)};
     QDate m_maximumDate{QDate(2100, 12, 31)};
-    
+
     // Format properties
     FluentDateFormat m_dateFormat{FluentDateFormat::Short};
     QString m_customFormat;
     QString m_placeholderText{"Select date"};
-    
+
     // State
     bool m_readOnly{false};
     bool m_calendarVisible{false};
     bool m_pressed{false};
-    
+
     // UI components
     QHBoxLayout* m_mainLayout{nullptr};
     QLineEdit* m_lineEdit{nullptr};
     QPushButton* m_calendarButton{nullptr};
     QCalendarWidget* m_calendar{nullptr};
     QWidget* m_calendarContainer{nullptr};
-    
+
     // Animation
     std::unique_ptr<QPropertyAnimation> m_calendarAnimation;
     QGraphicsOpacityEffect* m_calendarOpacityEffect{nullptr};
-    
+
     // Cached values
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QWidget>
-#include <QVBoxLayout>
+#include <QFocusEvent>
 #include <QHBoxLayout>
-#include <QScrollArea>
-#include <QToolButton>
-#include <QLabel>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
-#include <QSequentialAnimationGroup>
-#include <QTimer>
 #include <QIcon>
 #include <QKeyEvent>
-#include <QFocusEvent>
+#include <QLabel>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
 #include <QResizeEvent>
+#include <QScrollArea>
+#include <QSequentialAnimationGroup>
+#include <QTimer>
+#include <QToolButton>
+#include <QVBoxLayout>
+#include <QWidget>
 #include <functional>
 
 namespace FluentQt::Components {
@@ -22,31 +22,31 @@ namespace FluentQt::Components {
  * @brief Sidebar display modes
  */
 enum class FluentSidebarMode {
-    Expanded,       // Full sidebar with text and icons
-    Compact,        // Icons only, no text
-    Overlay,        // Overlay mode for mobile/small screens
-    Hidden,         // Completely hidden
-    Auto            // Automatically choose based on screen size
+    Expanded,  // Full sidebar with text and icons
+    Compact,   // Icons only, no text
+    Overlay,   // Overlay mode for mobile/small screens
+    Hidden,    // Completely hidden
+    Auto       // Automatically choose based on screen size
 };
 
 /**
  * @brief Sidebar item configuration
  */
 struct FluentSidebarItem {
-    QString id;                                 // Unique identifier
-    QString text;                               // Display text
-    QIcon icon;                                 // Item icon
-    QString tooltip;                            // Tooltip text
-    bool enabled = true;                        // Whether item is enabled
-    bool separator = false;                     // Whether this is a separator
-    QWidget* customWidget = nullptr;            // Custom widget for item
-    std::function<void()> onClicked;           // Click callback
-    QVariantMap data;                          // Custom data
-    
+    QString id;                       // Unique identifier
+    QString text;                     // Display text
+    QIcon icon;                       // Item icon
+    QString tooltip;                  // Tooltip text
+    bool enabled = true;              // Whether item is enabled
+    bool separator = false;           // Whether this is a separator
+    QWidget* customWidget = nullptr;  // Custom widget for item
+    std::function<void()> onClicked;  // Click callback
+    QVariantMap data;                 // Custom data
+
     // Accessibility
-    QString accessibleName;                     // Accessible name
-    QString accessibleDescription;              // Accessible description
-    QString ariaRole = "button";               // ARIA role
+    QString accessibleName;         // Accessible name
+    QString accessibleDescription;  // Accessible description
+    QString ariaRole = "button";    // ARIA role
 };
 
 /**
@@ -54,7 +54,8 @@ struct FluentSidebarItem {
  */
 class FluentSidebar : public QWidget {
     Q_OBJECT
-    Q_PROPERTY(FluentSidebarMode mode READ mode WRITE setMode NOTIFY modeChanged)
+    Q_PROPERTY(
+        FluentSidebarMode mode READ mode WRITE setMode NOTIFY modeChanged)
     Q_PROPERTY(int expandedWidth READ expandedWidth WRITE setExpandedWidth)
     Q_PROPERTY(int compactWidth READ compactWidth WRITE setCompactWidth)
     Q_PROPERTY(bool collapsible READ isCollapsible WRITE setCollapsible)
@@ -71,14 +72,14 @@ public:
     // Size configuration
     int expandedWidth() const { return m_expandedWidth; }
     void setExpandedWidth(int width);
-    
+
     int compactWidth() const { return m_compactWidth; }
     void setCompactWidth(int width);
 
     // Behavior configuration
     bool isCollapsible() const { return m_collapsible; }
     void setCollapsible(bool collapsible);
-    
+
     bool autoHide() const { return m_autoHide; }
     void setAutoHide(bool autoHide);
 
@@ -88,7 +89,7 @@ public:
     void removeItem(const QString& id);
     void removeItem(int index);
     void clearItems();
-    
+
     FluentSidebarItem* findItem(const QString& id);
     int itemCount() const;
 
@@ -156,37 +157,37 @@ private:
     void createItemWidget(const FluentSidebarItem& item, int index);
     void removeItemWidget(int index);
     void updateItemWidget(int index);
-    
+
     // Responsive helpers
     void checkResponsiveBreakpoints();
     void handleResponsiveChange();
-    
+
     // Accessibility helpers
     void updateAccessibilityProperties();
     void announceStateChange(const QString& message);
 
     FluentSidebarMode m_mode = FluentSidebarMode::Expanded;
     FluentSidebarMode m_previousMode = FluentSidebarMode::Expanded;
-    
+
     // Size configuration
     int m_expandedWidth = 280;
     int m_compactWidth = 48;
     int m_currentWidth = 280;
-    
+
     // Behavior flags
     bool m_collapsible = true;
     bool m_autoHide = false;
     bool m_responsiveEnabled = true;
     bool m_animating = false;
-    
+
     // Responsive breakpoints
     int m_compactBreakpoint = 768;
     int m_hiddenBreakpoint = 480;
-    
+
     // Animation configuration
     int m_animationDuration = 250;
     QEasingCurve::Type m_animationEasing = QEasingCurve::OutCubic;
-    
+
     // UI components
     QVBoxLayout* m_mainLayout = nullptr;
     QScrollArea* m_scrollArea = nullptr;
@@ -194,23 +195,23 @@ private:
     QVBoxLayout* m_contentLayout = nullptr;
     QWidget* m_header = nullptr;
     QWidget* m_footer = nullptr;
-    
+
     // Items
     QList<FluentSidebarItem> m_items;
     QList<QWidget*> m_itemWidgets;
     QString m_selectedItemId;
-    
+
     // Animations
     QPropertyAnimation* m_widthAnimation = nullptr;
     QParallelAnimationGroup* m_modeAnimation = nullptr;
-    
+
     // Responsive behavior
     QTimer* m_responsiveTimer = nullptr;
     QSize m_lastParentSize;
-    
+
     // Accessibility
     QString m_accessibleName;
     QString m_accessibleDescription;
 };
 
-} // namespace FluentQt::Components
+}  // namespace FluentQt::Components

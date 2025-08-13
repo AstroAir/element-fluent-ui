@@ -741,10 +741,15 @@ void initializeAccessibility() {
     // it here explicitly
     Q_UNUSED(accessibilityManager);
 
-    // Initialize screen reader support
+    qDebug() << "FluentQt accessibility initialized";
+
+    // Initialize screen reader support asynchronously to avoid blocking startup
     auto& screenReaderManager =
         FluentQt::Accessibility::FluentScreenReaderManager::instance();
-    screenReaderManager.detectScreenReader();
+    // Defer screen reader detection to avoid blocking UI thread
+    QTimer::singleShot(200, [&screenReaderManager]() {
+        screenReaderManager.detectScreenReader();
+    });
 
     // Initialize keyboard navigation
     auto& keyboardManager =
@@ -757,28 +762,30 @@ void initializeAccessibility() {
 
     qDebug() << "Enhanced FluentQt accessibility initialized";
 
-    // Additional check for assistive technology
-    const bool hasAT = []() {
+    // Additional check for assistive technology (deferred to avoid blocking)
+    QTimer::singleShot(500, []() {
+        const bool hasAT = []() {
 #ifdef Q_OS_WIN
-        // Check for common Windows screen readers
-        return FindWindow(L"JAWS", nullptr) != nullptr ||
-               FindWindow(L"NVDAHelperWindow", nullptr) != nullptr ||
-               FindWindow(L"NVDA_controllerClient32", nullptr) != nullptr;
+            // Check for common Windows screen readers
+            return FindWindow(L"JAWS", nullptr) != nullptr ||
+                   FindWindow(L"NVDAHelperWindow", nullptr) != nullptr ||
+                   FindWindow(L"NVDA_controllerClient32", nullptr) != nullptr;
 #endif
 #ifdef Q_OS_MAC
-        // Check for VoiceOver
-        Boolean keyExists = false;
-        Boolean voiceOverEnabled = CFPreferencesGetAppBooleanValue(
-            CFSTR("voiceOverOnOffKey"), CFSTR("com.apple.universalaccess"),
-            &keyExists);
-        return keyExists && voiceOverEnabled;
+            // Check for VoiceOver
+            Boolean keyExists = false;
+            Boolean voiceOverEnabled = CFPreferencesGetAppBooleanValue(
+                CFSTR("voiceOverOnOffKey"), CFSTR("com.apple.universalaccess"),
+                &keyExists);
+            return keyExists && voiceOverEnabled;
 #endif
-        return false;
-    }();
+            return false;
+        }();
 
-    if (hasAT) {
-        qDebug() << "Assistive technology detected";
-    }
+        if (hasAT) {
+            qDebug() << "Assistive technology detected";
+        }
+    });
 
     qDebug() << "FluentQt accessibility initialized - Active:"
              << QAccessible::isActive();

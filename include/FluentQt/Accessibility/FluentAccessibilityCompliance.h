@@ -170,6 +170,7 @@ private slots:
     void performRealTimeValidation();
     void updateSystemAccessibilitySettings();
     void handleFocusChanged(QWidget* old, QWidget* now);
+    void detectSystemAccessibilitySettingsAsync();
 
 private:
     FluentAccessibilityComplianceManager(QObject* parent = nullptr);

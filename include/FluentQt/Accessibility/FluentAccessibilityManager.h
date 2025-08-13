@@ -351,6 +351,7 @@ signals:
 private slots:
     void processAnnouncementQueue();
     void onSystemAccessibilityChanged();
+    void detectSystemAccessibilitySettingsAsync();
 
 private:
     FluentAccessibilityManager();

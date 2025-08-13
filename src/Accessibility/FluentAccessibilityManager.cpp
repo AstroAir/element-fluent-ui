@@ -23,12 +23,16 @@ FluentAccessibilityManager::FluentAccessibilityManager() {
     // tests/headless
     const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
     if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
         platformName == "offscreen" || platformName == "minimal") {
         qDebug()
             << "Skipping accessibility system detection (env/platform override)"
             << platformName;
     } else {
-        detectSystemAccessibilitySettings();
+        // Defer system detection to avoid blocking UI thread during startup
+        QTimer::singleShot(0, this,
+                           &FluentAccessibilityManager::
+                               detectSystemAccessibilitySettingsAsync);
     }
 
     qDebug() << "FluentAccessibilityManager initialized";
@@ -104,6 +108,7 @@ void FluentAccessibilityManager::announceGlobally(const QString& message,
 void FluentAccessibilityManager::detectSystemAccessibilitySettings() {
     const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
     if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
         platformName == "offscreen" || platformName == "minimal") {
         qDebug() << "Skipping system accessibility settings detection "
                     "(env/platform override)"
@@ -120,9 +125,23 @@ void FluentAccessibilityManager::detectSystemAccessibilitySettings() {
     qDebug() << "Detecting system accessibility settings";
 }
 
+// Async version to avoid blocking UI thread during startup
+void FluentAccessibilityManager::detectSystemAccessibilitySettingsAsync() {
+    try {
+        qDebug() << "Starting asynchronous system accessibility detection";
+        detectSystemAccessibilitySettings();
+        qDebug() << "Asynchronous system accessibility detection completed";
+    } catch (const std::exception& e) {
+        qWarning() << "Error during async accessibility detection:" << e.what();
+    } catch (...) {
+        qWarning() << "Unknown error during async accessibility detection";
+    }
+}
+
 void FluentAccessibilityManager::applySystemSettings() {
     const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
     if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
         platformName == "offscreen" || platformName == "minimal") {
         qDebug() << "Skipping applySystemSettings (env/platform override)"
                  << platformName;
@@ -136,15 +155,19 @@ void FluentAccessibilityManager::applySystemSettings() {
 void FluentAccessibilityManager::onSystemAccessibilityChanged() {
     const QString platformName = qEnvironmentVariable("QT_QPA_PLATFORM");
     if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
         platformName == "offscreen" || platformName == "minimal") {
         qDebug() << "Skipping onSystemAccessibilityChanged handling "
                     "(env/platform override)"
                  << platformName;
         return;
     }
-    // Respond to system accessibility changes
-    detectSystemAccessibilitySettings();
-    qDebug() << "System accessibility settings changed";
+    // Respond to system accessibility changes asynchronously
+    QTimer::singleShot(
+        0, this,
+        &FluentAccessibilityManager::detectSystemAccessibilitySettingsAsync);
+    qDebug() << "System accessibility settings change detected, updating "
+                "asynchronously";
 }
 
 void FluentAccessibilityManager::validateRobustInternal(

@@ -24,8 +24,14 @@ FluentScreenReaderManager::FluentScreenReaderManager() {
     connect(m_announcementTimer, &QTimer::timeout, this,
             &FluentScreenReaderManager::processAnnouncementQueue);
 
-    // Detect screen reader on startup
-    detectScreenReader();
+    // Defer screen reader detection to avoid blocking UI thread during startup
+    // Check for skip environment variables
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION")) {
+        qDebug() << "Skipping screen reader detection (env override)";
+    } else {
+        QTimer::singleShot(300, this, [this]() { detectScreenReader(); });
+    }
 
     qDebug() << "FluentScreenReaderManager initialized";
 }
@@ -577,8 +583,15 @@ void FluentScreenReaderManager::onWidgetDestroyed(QObject* widget) {
 }
 
 void FluentScreenReaderManager::onSystemAccessibilityChanged() {
-    // Re-detect screen reader when system accessibility settings change
-    detectScreenReader();
+    // Check for skip environment variables
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION")) {
+        qDebug() << "Skipping screen reader re-detection (env override)";
+        return;
+    }
+
+    // Re-detect screen reader when system accessibility settings change (async)
+    QTimer::singleShot(0, this, [this]() { detectScreenReader(); });
 
     // Announce the change if a screen reader is active
     if (m_screenReaderActive) {

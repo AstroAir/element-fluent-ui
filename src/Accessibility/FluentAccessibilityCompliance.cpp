@@ -35,8 +35,17 @@ FluentAccessibilityComplianceManager::FluentAccessibilityComplianceManager(
     connect(qApp, &QApplication::focusChanged, this,
             &FluentAccessibilityComplianceManager::handleFocusChanged);
 
-    // Detect system accessibility settings
-    detectSystemAccessibilitySettings();
+    // Defer system accessibility detection to avoid blocking UI thread
+    // Check for skip environment variables
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION")) {
+        qDebug() << "Skipping accessibility compliance system detection (env "
+                    "override)";
+    } else {
+        QTimer::singleShot(100, this,
+                           &FluentAccessibilityComplianceManager::
+                               detectSystemAccessibilitySettingsAsync);
+    }
 
     // Start validation timer if real-time validation is enabled
     if (m_config.enableRealTimeValidation) {
@@ -382,27 +391,76 @@ void FluentAccessibilityComplianceManager::performRealTimeValidation() {
 }
 
 void FluentAccessibilityComplianceManager::detectSystemAccessibilitySettings() {
-    // Detect system accessibility preferences
-    QSettings settings(
-        "HKEY_CURRENT_"
-        "USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personaliz"
-        "e",
-        QSettings::NativeFormat);
+    // Check for skip environment variables
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION")) {
+        qDebug() << "Skipping system accessibility settings detection (env "
+                    "override)";
+        return;
+    }
 
-    // High contrast mode
-    m_systemHighContrast =
-        settings.value("AppsUseHighContrast", false).toBool();
+    try {
+        // Detect system accessibility preferences with timeout protection
+        qDebug() << "Detecting system accessibility settings";
 
-    // Reduced motion (Windows 10+)
-    QSettings animationSettings(
-        "HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics",
-        QSettings::NativeFormat);
-    m_systemReducedMotion =
-        animationSettings.value("MinAnimate", "1").toString() == "0";
+        // High contrast mode detection with error handling
+        try {
+            QSettings settings(
+                "HKEY_CURRENT_"
+                "USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Pe"
+                "rsonaliz"
+                "e",
+                QSettings::NativeFormat);
+            m_systemHighContrast =
+                settings.value("AppsUseHighContrast", false).toBool();
+        } catch (...) {
+            qWarning()
+                << "Failed to read high contrast settings, using default";
+            m_systemHighContrast = false;
+        }
 
-    // Screen reader detection (basic)
-    m_systemScreenReader = !qEnvironmentVariable("NVDA_PID").isEmpty() ||
-                           !qEnvironmentVariable("JAWS_PID").isEmpty();
+        // Reduced motion detection with error handling
+        try {
+            QSettings animationSettings(
+                "HKEY_CURRENT_USER\\Control Panel\\Desktop\\WindowMetrics",
+                QSettings::NativeFormat);
+            m_systemReducedMotion =
+                animationSettings.value("MinAnimate", "1").toString() == "0";
+        } catch (...) {
+            qWarning() << "Failed to read animation settings, using default";
+            m_systemReducedMotion = false;
+        }
+
+        // Screen reader detection (basic, safe)
+        m_systemScreenReader = !qEnvironmentVariable("NVDA_PID").isEmpty() ||
+                               !qEnvironmentVariable("JAWS_PID").isEmpty();
+
+        qDebug() << "System accessibility detection completed - High contrast:"
+                 << m_systemHighContrast
+                 << "Reduced motion:" << m_systemReducedMotion
+                 << "Screen reader:" << m_systemScreenReader;
+    } catch (const std::exception& e) {
+        qWarning() << "Error during system accessibility detection:"
+                   << e.what();
+        // Set safe defaults
+        m_systemHighContrast = false;
+        m_systemReducedMotion = false;
+        m_systemScreenReader = false;
+    } catch (...) {
+        qWarning() << "Unknown error during system accessibility detection";
+        // Set safe defaults
+        m_systemHighContrast = false;
+        m_systemReducedMotion = false;
+        m_systemScreenReader = false;
+    }
+}
+
+// Async version to avoid blocking UI thread
+void FluentAccessibilityComplianceManager::
+    detectSystemAccessibilitySettingsAsync() {
+    qDebug() << "Starting asynchronous accessibility compliance detection";
+    detectSystemAccessibilitySettings();
+    qDebug() << "Asynchronous accessibility compliance detection completed";
 }
 
 void FluentAccessibilityComplianceManager::applySystemPreferences() {

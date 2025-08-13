@@ -31,6 +31,8 @@ class FluentCardFooter;
 
 class FluentCard : public Core::FluentComponent {
     Q_OBJECT
+    Q_ENUM(FluentCardElevation)
+    Q_ENUM(FluentCardStyle)
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
     Q_PROPERTY(
         QString subtitle READ subtitle WRITE setSubtitle NOTIFY subtitleChanged)
@@ -51,6 +53,8 @@ class FluentCard : public Core::FluentComponent {
     Q_PROPERTY(qreal shadowOpacity READ shadowOpacity WRITE setShadowOpacity)
     Q_PROPERTY(qreal expansionProgress READ expansionProgress WRITE
                    setExpansionProgress)
+    Q_PROPERTY(
+        QColor backgroundColor READ backgroundColor WRITE setBackgroundColor)
 
 public:
     explicit FluentCard(QWidget* parent = nullptr);
@@ -84,6 +88,9 @@ public:
 
     qreal expansionProgress() const noexcept { return m_expansionProgress; }
     void setExpansionProgress(qreal progress);
+
+    QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& color);
 
     // Selection properties
     bool isSelectable() const noexcept { return m_selectable; }
@@ -230,11 +237,13 @@ private:
     qreal m_expansionProgress{1.0};
     int m_collapsedHeight{0};
     int m_expandedHeight{0};
+    QColor m_backgroundColor;
 
     // Animations
     std::unique_ptr<QPropertyAnimation> m_expansionAnimation;
     std::unique_ptr<QPropertyAnimation> m_elevationAnimation;
     std::unique_ptr<QGraphicsDropShadowEffect> m_shadowEffect;
+    QList<QPropertyAnimation*> m_currentAnimations;
 
     // State
     bool m_pressed{false};

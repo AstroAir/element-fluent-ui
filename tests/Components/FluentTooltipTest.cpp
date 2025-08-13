@@ -147,7 +147,7 @@ void FluentTooltipTest::testText() {
     const QString text1 = "Tooltip text";
     const QString text2 = "New tooltip text";
 
-    QSignalSpy textChangedSpy(m_tooltip, &FluentTooltip::textChanged);
+    QSignalSpy textChangedSpy(m_tooltip, SIGNAL(textChanged(QString)));
 
     m_tooltip->setText(text1);
     QCOMPARE(m_tooltip->text(), text1);
@@ -169,7 +169,7 @@ void FluentTooltipTest::testTitle() {
     const QString title1 = "Tooltip title";
     const QString title2 = "New tooltip title";
 
-    QSignalSpy titleChangedSpy(m_tooltip, &FluentTooltip::titleChanged);
+    QSignalSpy titleChangedSpy(m_tooltip, SIGNAL(titleChanged(QString)));
 
     m_tooltip->setTitle(title1);
     QCOMPARE(m_tooltip->title(), title1);
@@ -188,7 +188,9 @@ void FluentTooltipTest::testTitle() {
 
 void FluentTooltipTest::testPosition() {
     // Test setting and getting position
-    QSignalSpy positionChangedSpy(m_tooltip, &FluentTooltip::positionChanged);
+    QSignalSpy positionChangedSpy(
+        m_tooltip,
+        SIGNAL(positionChanged(FluentQt::Components::FluentTooltipPosition)));
 
     QCOMPARE(m_tooltip->position(),
              FluentTooltipPosition::Auto);  // Default position
@@ -234,7 +236,9 @@ void FluentTooltipTest::testPosition() {
 
 void FluentTooltipTest::testTheme() {
     // Test setting and getting theme
-    QSignalSpy themeChangedSpy(m_tooltip, &FluentTooltip::themeChanged);
+    QSignalSpy themeChangedSpy(
+        m_tooltip,
+        SIGNAL(themeChanged(FluentQt::Components::FluentTooltipTheme)));
 
     QCOMPARE(m_tooltip->theme(), FluentTooltipTheme::Auto);  // Default theme
 
@@ -255,7 +259,7 @@ void FluentTooltipTest::testTheme() {
 
 void FluentTooltipTest::testShowDelay() {
     // Test setting and getting show delay
-    QSignalSpy showDelayChangedSpy(m_tooltip, &FluentTooltip::showDelayChanged);
+    QSignalSpy showDelayChangedSpy(m_tooltip, SIGNAL(showDelayChanged(int)));
 
     QCOMPARE(m_tooltip->showDelay(), 500);  // Default delay
 
@@ -276,7 +280,7 @@ void FluentTooltipTest::testShowDelay() {
 
 void FluentTooltipTest::testHideDelay() {
     // Test setting and getting hide delay
-    QSignalSpy hideDelayChangedSpy(m_tooltip, &FluentTooltip::hideDelayChanged);
+    QSignalSpy hideDelayChangedSpy(m_tooltip, SIGNAL(hideDelayChanged(int)));
 
     QCOMPARE(m_tooltip->hideDelay(), 100);  // Default delay
 
@@ -297,8 +301,7 @@ void FluentTooltipTest::testHideDelay() {
 
 void FluentTooltipTest::testPersistent() {
     // Test persistent property
-    QSignalSpy persistentChangedSpy(m_tooltip,
-                                    &FluentTooltip::persistentChanged);
+    QSignalSpy persistentChangedSpy(m_tooltip, SIGNAL(persistentChanged(bool)));
 
     QVERIFY(!m_tooltip->isPersistent());  // Default should be false
 
@@ -319,7 +322,7 @@ void FluentTooltipTest::testPersistent() {
 
 void FluentTooltipTest::testMaxSize() {
     // Test setting and getting max size
-    QSignalSpy maxSizeChangedSpy(m_tooltip, &FluentTooltip::maxSizeChanged);
+    QSignalSpy maxSizeChangedSpy(m_tooltip, SIGNAL(maxSizeChanged(QSize)));
 
     QCOMPARE(m_tooltip->maxSize(), QSize(300, 200));  // Default size
 
@@ -410,8 +413,8 @@ void FluentTooltipTest::testHide() {
 
 void FluentTooltipTest::testShowHideAnimation() {
     // Test show and hide animations
-    QSignalSpy aboutToShowSpy(m_tooltip, &FluentTooltip::aboutToShow);
-    QSignalSpy aboutToHideSpy(m_tooltip, &FluentTooltip::aboutToHide);
+    QSignalSpy aboutToShowSpy(m_tooltip, SIGNAL(aboutToShow()));
+    QSignalSpy aboutToHideSpy(m_tooltip, SIGNAL(aboutToHide()));
 
     m_tooltip->setText("Animated tooltip");
 
@@ -426,7 +429,7 @@ void FluentTooltipTest::testShowHideAnimation() {
 
 void FluentTooltipTest::testDelayedShow() {
     // Test delayed show functionality
-    QSignalSpy aboutToShowSpy(m_tooltip, &FluentTooltip::aboutToShow);
+    QSignalSpy aboutToShowSpy(m_tooltip, SIGNAL(aboutToShow()));
 
     m_tooltip->setText("Delayed tooltip");
     m_tooltip->setShowDelay(100);  // Short delay for testing
@@ -446,7 +449,7 @@ void FluentTooltipTest::testDelayedShow() {
 
 void FluentTooltipTest::testDelayedHide() {
     // Test delayed hide functionality
-    QSignalSpy aboutToHideSpy(m_tooltip, &FluentTooltip::aboutToHide);
+    QSignalSpy aboutToHideSpy(m_tooltip, SIGNAL(aboutToHide()));
 
     m_tooltip->setText("Delayed hide tooltip");
     m_tooltip->setHideDelay(100);  // Short delay for testing
@@ -490,15 +493,18 @@ void FluentTooltipTest::testMouseEvents() {
 
 void FluentTooltipTest::testPropertyChangeSignals() {
     // Test that property change signals are emitted correctly
-    QSignalSpy textChangedSpy(m_tooltip, &FluentTooltip::textChanged);
-    QSignalSpy titleChangedSpy(m_tooltip, &FluentTooltip::titleChanged);
-    QSignalSpy positionChangedSpy(m_tooltip, &FluentTooltip::positionChanged);
-    QSignalSpy themeChangedSpy(m_tooltip, &FluentTooltip::themeChanged);
-    QSignalSpy showDelayChangedSpy(m_tooltip, &FluentTooltip::showDelayChanged);
-    QSignalSpy hideDelayChangedSpy(m_tooltip, &FluentTooltip::hideDelayChanged);
-    QSignalSpy persistentChangedSpy(m_tooltip,
-                                    &FluentTooltip::persistentChanged);
-    QSignalSpy maxSizeChangedSpy(m_tooltip, &FluentTooltip::maxSizeChanged);
+    QSignalSpy textChangedSpy(m_tooltip, SIGNAL(textChanged(QString)));
+    QSignalSpy titleChangedSpy(m_tooltip, SIGNAL(titleChanged(QString)));
+    QSignalSpy positionChangedSpy(
+        m_tooltip,
+        SIGNAL(positionChanged(FluentQt::Components::FluentTooltipPosition)));
+    QSignalSpy themeChangedSpy(
+        m_tooltip,
+        SIGNAL(themeChanged(FluentQt::Components::FluentTooltipTheme)));
+    QSignalSpy showDelayChangedSpy(m_tooltip, SIGNAL(showDelayChanged(int)));
+    QSignalSpy hideDelayChangedSpy(m_tooltip, SIGNAL(hideDelayChanged(int)));
+    QSignalSpy persistentChangedSpy(m_tooltip, SIGNAL(persistentChanged(bool)));
+    QSignalSpy maxSizeChangedSpy(m_tooltip, SIGNAL(maxSizeChanged(QSize)));
 
     // Change properties and verify signals
     m_tooltip->setText("New text");
@@ -528,8 +534,8 @@ void FluentTooltipTest::testPropertyChangeSignals() {
 
 void FluentTooltipTest::testShowHideSignals() {
     // Test show and hide signals
-    QSignalSpy aboutToShowSpy(m_tooltip, &FluentTooltip::aboutToShow);
-    QSignalSpy aboutToHideSpy(m_tooltip, &FluentTooltip::aboutToHide);
+    QSignalSpy aboutToShowSpy(m_tooltip, SIGNAL(aboutToShow()));
+    QSignalSpy aboutToHideSpy(m_tooltip, SIGNAL(aboutToHide()));
 
     m_tooltip->setText("Signal test tooltip");
 
@@ -625,7 +631,7 @@ void FluentTooltipTest::testThemeIntegration() {
     // Tooltip should update its appearance (this would require checking
     // internal styling) For now, just verify the tooltip still functions
     // correctly
-    QSignalSpy textChangedSpy(m_tooltip, &FluentTooltip::textChanged);
+    QSignalSpy textChangedSpy(m_tooltip, SIGNAL(textChanged(QString)));
     m_tooltip->setText("Theme test tooltip");
     QCOMPARE(m_tooltip->text(), QString("Theme test tooltip"));
     QCOMPARE(textChangedSpy.count(), 1);

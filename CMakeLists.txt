@@ -164,10 +164,12 @@ endif()
 
 # Sanitizers for debugging
 if(FLUENTQT_ENABLE_SANITIZERS AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(NOT MSVC)
+    if(NOT MSVC AND NOT MINGW)
         add_compile_options(-fsanitize=address -fsanitize=undefined)
         add_link_options(-fsanitize=address -fsanitize=undefined)
         message(STATUS "Sanitizers enabled")
+    else()
+        message(STATUS "Sanitizers disabled (not supported on MSVC/MinGW)")
     endif()
 endif()
 

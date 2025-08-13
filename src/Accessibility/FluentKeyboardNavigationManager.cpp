@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QMutexLocker>
+#include <QThread>
 #include <QWidget>
 #include <algorithm>
 
@@ -19,18 +20,21 @@ FluentKeyboardNavigationManager::FluentKeyboardNavigationManager() {
     m_focusUpdateTimer = new QTimer(this);
     connect(m_focusUpdateTimer, &QTimer::timeout, this,
             &FluentKeyboardNavigationManager::updateFocusIndicators);
-    m_focusUpdateTimer->start(100);  // Update every 100ms
+
+    // Only start timer if we have a proper event loop
+    if (QApplication::instance() &&
+        QThread::currentThread() == QApplication::instance()->thread()) {
+        m_focusUpdateTimer->start(100);  // Update every 100ms
+    }
 
     // Connect to application focus changes (only if QApplication exists)
     if (auto* app = qobject_cast<QApplication*>(QApplication::instance())) {
         connect(app, &QApplication::focusChanged, this,
                 &FluentKeyboardNavigationManager::onApplicationFocusChanged);
     } else {
-        qDebug() << "QObject::startTimer: Timers can only be used with threads "
-                    "started with QThread";
-        qDebug() << "qt.core.qobject.connect: QObject::connect(QApplication, "
-                    "FluentQt::Accessibility::FluentKeyboardNavigationManager):"
-                    " invalid nullptr parameter";
+        // In test/headless environment, QApplication might not be available yet
+        // This is normal and expected - suppress debug messages to reduce noise
+        // The connection will be established later if needed
     }
 
     qDebug() << "FluentKeyboardNavigationManager initialized";

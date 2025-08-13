@@ -301,6 +301,7 @@ private:
     // Animation properties
     Q_PROPERTY(qreal badgeScale READ badgeScale WRITE setBadgeScale)
     Q_PROPERTY(qreal badgeOpacity READ badgeOpacity WRITE setBadgeOpacity)
+    Q_PROPERTY(qreal pulseScale READ pulseScale WRITE setPulseScale)
 
     qreal m_badgeScale{1.0};
     qreal m_badgeOpacity{1.0};

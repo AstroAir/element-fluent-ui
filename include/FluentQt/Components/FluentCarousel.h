@@ -212,8 +212,8 @@ class FluentCarousel : public Core::FluentComponent {
         bool infinite READ isInfinite WRITE setInfinite NOTIFY infiniteChanged)
     Q_PROPERTY(bool enableTouch READ isTouchEnabled WRITE setTouchEnabled NOTIFY
                    touchEnabledChanged)
-    Q_PROPERTY(qreal transitionProgress READ transitionProgress NOTIFY
-                   transitionProgressChanged)
+    Q_PROPERTY(qreal transitionProgress READ transitionProgress WRITE
+                   setTransitionProgress NOTIFY transitionProgressChanged)
 
 public:
     explicit FluentCarousel(QWidget* parent = nullptr);
@@ -302,6 +302,7 @@ public:
 
     // Animation state
     qreal transitionProgress() const noexcept { return m_transitionProgress; }
+    void setTransitionProgress(qreal progress);
     bool isTransitioning() const noexcept { return m_transitioning; }
 
     // Size calculations

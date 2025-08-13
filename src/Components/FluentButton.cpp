@@ -502,9 +502,9 @@ void FluentButton::mouseReleaseEvent(QMouseEvent* event) {
             emit clicked(m_checked);
             emit released();
 
-            // Brief click animation
+            // Brief click animation (visual only)
             if (isAnimated()) {
-                animateClick();
+                animateClickVisual();
             }
         }
 
@@ -552,7 +552,7 @@ void FluentButton::keyReleaseEvent(QKeyEvent* event) {
         setState(Core::FluentState::Focused);
 
         if (isAnimated()) {
-            animateClick();
+            animateClickVisual();
         }
 
         event->accept();
@@ -582,9 +582,15 @@ void FluentButton::resizeEvent(QResizeEvent* event) {
 }
 
 void FluentButton::changeEvent(QEvent* event) {
-    if (event->type() == QEvent::EnabledChange ||
-        event->type() == QEvent::FontChange ||
-        event->type() == QEvent::StyleChange) {
+    if (event->type() == QEvent::EnabledChange) {
+        setState(isEnabled() ? Core::FluentState::Normal
+                             : Core::FluentState::Disabled);
+        invalidateCache(FluentButtonDirtyRegion::All);
+        updateStateStyle();
+        updateAccessibility();
+        update();
+    } else if (event->type() == QEvent::FontChange ||
+               event->type() == QEvent::StyleChange) {
         invalidateCache(FluentButtonDirtyRegion::All);
         updateStateStyle();
         updateAccessibility();
@@ -1037,6 +1043,21 @@ void FluentButton::startRevealAnimation(const QPoint& center) {
 }
 
 void FluentButton::animateClick() {
+    if (!isEnabled()) {
+        return;
+    }
+
+    // Trigger the click logic
+    if (m_checkable) {
+        setChecked(!m_checked);
+    }
+    emit clicked(m_checked);
+
+    // Perform visual animation
+    animateClickVisual();
+}
+
+void FluentButton::animateClickVisual() {
     if (!m_clickTimer->isActive()) {
         const qreal originalOpacity = m_backgroundOpacity;
 
@@ -1125,6 +1146,7 @@ FluentButton* FluentButton::createIconButton(const QIcon& icon,
                                              QWidget* parent) {
     auto* button = new FluentButton(parent);
     button->setIcon(icon);
+    button->setButtonStyle(FluentButtonStyle::Icon);
     button->setFlat(true);
     return button;
 }

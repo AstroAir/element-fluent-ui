@@ -78,7 +78,7 @@ void FluentComponentTest::init() {
     // Create a fresh component before each test
     m_component = new FluentComponent();
     m_component->show();
-    QTest::qWaitForWindowExposed(m_component);
+    [[maybe_unused]] bool exposed = QTest::qWaitForWindowExposed(m_component);
 }
 
 void FluentComponentTest::cleanup() {
@@ -306,8 +306,8 @@ void FluentComponentTest::testMousePressEvent() {
 
     // Simulate mouse press event
     QPoint center = m_component->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
-                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, center,
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &pressEvent);
 
     // Should change to pressed state
@@ -328,8 +328,8 @@ void FluentComponentTest::testMouseReleaseEvent() {
 
     // Simulate mouse release event
     QPoint center = m_component->rect().center();
-    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton,
-                             Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent releaseEvent(QEvent::MouseButtonRelease, center, center,
+                             Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &releaseEvent);
 
     // Should change to normal or hovered state depending on mouse position
@@ -490,8 +490,8 @@ void FluentComponentTest::testDisabledState() {
 
     // Test that disabled component doesn't respond to mouse press
     QPoint center = m_component->rect().center();
-    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, Qt::LeftButton,
-                           Qt::LeftButton, Qt::NoModifier);
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, center, center,
+                           Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
     QApplication::sendEvent(m_component, &pressEvent);
 
     // State should remain disabled

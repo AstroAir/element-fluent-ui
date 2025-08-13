@@ -42,6 +42,9 @@ enum class FluentIconPosition { Left, Right, Top, Bottom };
 
 class FluentButton : public Core::FluentComponent {
     Q_OBJECT
+    Q_ENUM(FluentButtonStyle)
+    Q_ENUM(FluentButtonSize)
+    Q_ENUM(FluentIconPosition)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
     Q_PROPERTY(QIcon icon READ icon WRITE setIcon NOTIFY iconChanged)
     Q_PROPERTY(FluentButtonStyle buttonStyle READ buttonStyle WRITE
@@ -210,6 +213,9 @@ private:
     void invalidateCache(FluentButtonDirtyRegions regions = {}) const;
     void updateCacheIfNeeded() const;
     QString generateStyleKey() const;
+
+    // Internal animation methods
+    void animateClickVisual();
 
 private:
     // Content

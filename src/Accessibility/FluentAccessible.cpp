@@ -739,6 +739,7 @@ void initializeAccessibility() {
     // Note: detectSystemAccessibilitySettings() is already called in
     // constructor and applySystemSettings() calls it again, so no need to call
     // it here explicitly
+    Q_UNUSED(accessibilityManager);
 
     // Initialize screen reader support
     auto& screenReaderManager =

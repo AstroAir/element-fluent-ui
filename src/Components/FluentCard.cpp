@@ -60,7 +60,16 @@ FluentCard::FluentCard(const QString& title, const QString& subtitle,
     setSubtitle(subtitle);
 }
 
-FluentCard::~FluentCard() = default;
+FluentCard::~FluentCard() {
+    // Clean up any running animations
+    for (auto* anim : m_currentAnimations) {
+        if (anim) {
+            anim->stop();
+            anim->deleteLater();
+        }
+    }
+    m_currentAnimations.clear();
+}
 
 void FluentCard::setTitle(const QString& title) {
     if (m_header->title() != title) {
@@ -144,6 +153,18 @@ void FluentCard::setExpansionProgress(qreal progress) {
             setFixedHeight(targetHeight);
         }
 
+        update();
+    }
+}
+
+QColor FluentCard::backgroundColor() const {
+    return m_backgroundColor.isValid() ? m_backgroundColor
+                                       : getBackgroundColor();
+}
+
+void FluentCard::setBackgroundColor(const QColor& color) {
+    if (m_backgroundColor != color) {
+        m_backgroundColor = color;
         update();
     }
 }
@@ -247,6 +268,18 @@ void FluentCard::removeFooterWidget(QWidget* widget) {
 void FluentCard::clearFooterWidgets() { m_footer->clearWidgets(); }
 
 QLayout* FluentCard::contentLayout() const {
+    // Create content widget and layout on-demand if needed
+    if (!m_content->widget()) {
+        auto* contentWidget = new QWidget();
+        auto* layout = new QVBoxLayout(contentWidget);
+        layout->setContentsMargins(16, 16, 16, 16);
+        layout->setSpacing(8);
+
+        // Cast away const to modify the content widget
+        const_cast<FluentCardContent*>(m_content.get())
+            ->setContentWidget(contentWidget);
+    }
+
     return m_content->widget() ? m_content->widget()->layout() : nullptr;
 }
 
@@ -409,19 +442,9 @@ void FluentCard::mouseDoubleClickEvent(QMouseEvent* event) {
 }
 
 void FluentCard::updateStateStyle() {
-    if (isAnimated()) {
-        Animation::FluentAnimationConfig colorConfig;
-        colorConfig.duration = 150ms;
-        auto colorAnimation = Animation::FluentAnimator::colorTransition(
-            this, "backgroundColor", palette().window().color(),
-            getBackgroundColor(), colorConfig);
-
-        connect(colorAnimation.get(), &QPropertyAnimation::valueChanged, this,
-                QOverload<>::of(&QWidget::update));
-        colorAnimation->start();
-    } else {
-        update();
-    }
+    // TODO: Fix backgroundColor property animation
+    // Temporarily disabled to prevent segfault
+    update();
 }
 
 void FluentCard::enterEvent(QEnterEvent* event) {
@@ -518,15 +541,25 @@ void FluentCard::updateShadowEffect() {
 
     if (!m_shadowEffect) {
         m_shadowEffect = std::make_unique<QGraphicsDropShadowEffect>(this);
+        if (!m_shadowEffect) {
+            qWarning() << "Failed to create shadow effect";
+            return;
+        }
         m_shadowEffect->setColor(QColor(0, 0, 0, 30));
         setGraphicsEffect(m_shadowEffect.get());
+    }
+
+    // Additional null check for safety
+    if (!m_shadowEffect) {
+        qWarning() << "Shadow effect is null, cannot update";
+        return;
     }
 
     const int elevation = static_cast<int>(m_elevation);
     m_shadowEffect->setBlurRadius(elevation * 2);
     m_shadowEffect->setOffset(0, elevation / 2);
 
-    // Apply opacity
+    // Apply opacity with null check
     QColor shadowColor = m_shadowEffect->color();
     shadowColor.setAlphaF(shadowColor.alphaF() * m_shadowOpacity);
     m_shadowEffect->setColor(shadowColor);
@@ -612,8 +645,32 @@ void FluentCard::animateIn() {
     auto fadeAnimation = Animation::FluentAnimator::fadeIn(this, fadeConfig);
 
     show();
-    slideAnimation->start();
-    fadeAnimation->start();
+
+    // Store animations to prevent destruction and start them
+    if (slideAnimation) {
+        auto* anim = slideAnimation.release();
+        m_currentAnimations.append(anim);
+
+        // Clean up when finished
+        connect(anim, &QPropertyAnimation::finished, this, [this, anim]() {
+            m_currentAnimations.removeOne(anim);
+            anim->deleteLater();
+        });
+
+        anim->start();
+    }
+    if (fadeAnimation) {
+        auto* anim = fadeAnimation.release();
+        m_currentAnimations.append(anim);
+
+        // Clean up when finished
+        connect(anim, &QPropertyAnimation::finished, this, [this, anim]() {
+            m_currentAnimations.removeOne(anim);
+            anim->deleteLater();
+        });
+
+        anim->start();
+    }
 }
 
 void FluentCard::animateOut() {
@@ -626,11 +683,32 @@ void FluentCard::animateOut() {
     fadeConfig.duration = 200ms;
     auto fadeAnimation = Animation::FluentAnimator::fadeOut(this, fadeConfig);
 
-    connect(fadeAnimation.get(), &QPropertyAnimation::finished, this,
-            &QWidget::hide);
+    // Store animations to prevent destruction and start them
+    if (slideAnimation) {
+        auto* anim = slideAnimation.release();
+        m_currentAnimations.append(anim);
 
-    slideAnimation->start();
-    fadeAnimation->start();
+        // Clean up when finished
+        connect(anim, &QPropertyAnimation::finished, this, [this, anim]() {
+            m_currentAnimations.removeOne(anim);
+            anim->deleteLater();
+        });
+
+        anim->start();
+    }
+    if (fadeAnimation) {
+        auto* anim = fadeAnimation.release();
+        m_currentAnimations.append(anim);
+
+        // Clean up when finished and hide widget
+        connect(anim, &QPropertyAnimation::finished, this, [this, anim]() {
+            m_currentAnimations.removeOne(anim);
+            anim->deleteLater();
+            this->hide();
+        });
+
+        anim->start();
+    }
 }
 
 // Color methods
@@ -854,6 +932,9 @@ FluentCardContent::FluentCardContent(QWidget* parent) : QScrollArea(parent) {
     setWidgetResizable(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
+    // Don't create default content widget - will be created on-demand
+    m_contentWidget = nullptr;
 }
 
 void FluentCardContent::setContentWidget(QWidget* widget) {

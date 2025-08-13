@@ -22,6 +22,8 @@ class FluentCheckBox : public Core::FluentComponent {
                    NOTIFY autoExclusiveChanged)
     Q_PROPERTY(
         QSize iconSize READ iconSize WRITE setIconSize NOTIFY iconSizeChanged)
+    Q_PROPERTY(qreal checkProgress READ checkProgress WRITE setCheckProgress
+                   NOTIFY checkProgressChanged)
 
 public:
     explicit FluentCheckBox(QWidget* parent = nullptr);
@@ -51,6 +53,10 @@ public:
     QSize iconSize() const;
     void setIconSize(const QSize& size);
 
+    // Animation progress
+    qreal checkProgress() const;
+    void setCheckProgress(qreal progress);
+
     // Size hint
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
@@ -65,6 +71,7 @@ signals:
     void tristateChanged(bool tristate);
     void autoExclusiveChanged(bool autoExclusive);
     void iconSizeChanged(const QSize& size);
+    void checkProgressChanged(qreal progress);
     void toggled(bool checked);
     void clicked(bool checked);
     void stateChanged(int state);

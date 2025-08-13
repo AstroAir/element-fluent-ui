@@ -32,6 +32,8 @@ class FluentProgressBar : public Core::FluentComponent {
                    textVisibleChanged)
     Q_PROPERTY(
         bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
+    Q_PROPERTY(qreal animationProgress READ animationProgress WRITE
+                   setAnimationProgress NOTIFY animationProgressChanged)
     Q_PROPERTY(QColor accentColor READ accentColor WRITE setAccentColor NOTIFY
                    accentColorChanged)
 
@@ -70,6 +72,8 @@ public:
     // Animation
     bool isAnimated() const;
     void setAnimated(bool animated);
+    qreal animationProgress() const;
+    void setAnimationProgress(qreal progress);
 
     // Color customization
     QColor accentColor() const;
@@ -99,6 +103,7 @@ signals:
     void progressSizeChanged(FluentProgressBarSize size);
     void textVisibleChanged(bool visible);
     void animatedChanged(bool animated);
+    void animationProgressChanged(qreal progress);
     void accentColorChanged(const QColor& color);
     void finished();
     void started();

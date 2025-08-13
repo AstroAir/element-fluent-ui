@@ -182,6 +182,19 @@ void FluentProgressBar::setAnimated(bool animated) {
     }
 }
 
+qreal FluentProgressBar::animationProgress() const {
+    return m_animationProgress;
+}
+
+void FluentProgressBar::setAnimationProgress(qreal progress) {
+    progress = qBound(0.0, progress, 1.0);
+    if (!qFuzzyCompare(m_animationProgress, progress)) {
+        m_animationProgress = progress;
+        update();  // Trigger repaint for animation
+        emit animationProgressChanged(progress);
+    }
+}
+
 QColor FluentProgressBar::accentColor() const { return m_accentColor; }
 
 void FluentProgressBar::setAccentColor(const QColor& color) {

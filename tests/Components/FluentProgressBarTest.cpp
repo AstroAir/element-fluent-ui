@@ -137,7 +137,7 @@ void FluentProgressBarTest::testTypeConstructor() {
 
 void FluentProgressBarTest::testValue() {
     // Test setting and getting value
-    QSignalSpy valueChangedSpy(m_progressBar, &FluentProgressBar::valueChanged);
+    QSignalSpy valueChangedSpy(m_progressBar, SIGNAL(valueChanged(int)));
 
     QCOMPARE(m_progressBar->value(), 0);  // Default value
 
@@ -165,8 +165,7 @@ void FluentProgressBarTest::testValue() {
 
 void FluentProgressBarTest::testMinimum() {
     // Test setting and getting minimum
-    QSignalSpy minimumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::minimumChanged);
+    QSignalSpy minimumChangedSpy(m_progressBar, SIGNAL(minimumChanged(int)));
 
     QCOMPARE(m_progressBar->minimum(), 0);  // Default minimum
 
@@ -191,8 +190,7 @@ void FluentProgressBarTest::testMinimum() {
 
 void FluentProgressBarTest::testMaximum() {
     // Test setting and getting maximum
-    QSignalSpy maximumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::maximumChanged);
+    QSignalSpy maximumChangedSpy(m_progressBar, SIGNAL(maximumChanged(int)));
 
     QCOMPARE(m_progressBar->maximum(), 100);  // Default maximum
 
@@ -213,10 +211,8 @@ void FluentProgressBarTest::testMaximum() {
 
 void FluentProgressBarTest::testRange() {
     // Test setting range
-    QSignalSpy minimumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::minimumChanged);
-    QSignalSpy maximumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::maximumChanged);
+    QSignalSpy minimumChangedSpy(m_progressBar, SIGNAL(minimumChanged(int)));
+    QSignalSpy maximumChangedSpy(m_progressBar, SIGNAL(maximumChanged(int)));
 
     m_progressBar->setRange(10, 200);
     QCOMPARE(m_progressBar->minimum(), 10);
@@ -230,7 +226,7 @@ void FluentProgressBarTest::testText() {
     const QString text1 = "Loading...";
     const QString text2 = "Processing...";
 
-    QSignalSpy textChangedSpy(m_progressBar, &FluentProgressBar::textChanged);
+    QSignalSpy textChangedSpy(m_progressBar, SIGNAL(textChanged(QString)));
 
     m_progressBar->setText(text1);
     QCOMPARE(m_progressBar->text(), text1);
@@ -250,7 +246,7 @@ void FluentProgressBarTest::testText() {
 void FluentProgressBarTest::testTextVisible() {
     // Test text visibility
     QSignalSpy textVisibleChangedSpy(m_progressBar,
-                                     &FluentProgressBar::textVisibleChanged);
+                                     SIGNAL(textVisibleChanged(bool)));
 
     QVERIFY(m_progressBar->isTextVisible());  // Default should be true
 
@@ -271,8 +267,9 @@ void FluentProgressBarTest::testTextVisible() {
 
 void FluentProgressBarTest::testProgressType() {
     // Test setting and getting progress type
-    QSignalSpy progressTypeChangedSpy(m_progressBar,
-                                      &FluentProgressBar::progressTypeChanged);
+    QSignalSpy progressTypeChangedSpy(
+        m_progressBar, SIGNAL(progressTypeChanged(
+                           FluentQt::Components::FluentProgressBarType)));
 
     QCOMPARE(m_progressBar->progressType(),
              FluentProgressBarType::Determinate);  // Default type
@@ -300,8 +297,9 @@ void FluentProgressBarTest::testProgressType() {
 
 void FluentProgressBarTest::testProgressSize() {
     // Test setting and getting progress size
-    QSignalSpy progressSizeChangedSpy(m_progressBar,
-                                      &FluentProgressBar::progressSizeChanged);
+    QSignalSpy progressSizeChangedSpy(
+        m_progressBar, SIGNAL(progressSizeChanged(
+                           FluentQt::Components::FluentProgressBarSize)));
 
     QCOMPARE(m_progressBar->progressSize(),
              FluentProgressBarSize::Medium);  // Default size
@@ -324,8 +322,7 @@ void FluentProgressBarTest::testProgressSize() {
 
 void FluentProgressBarTest::testAnimated() {
     // Test animated property
-    QSignalSpy animatedChangedSpy(m_progressBar,
-                                  &FluentProgressBar::animatedChanged);
+    QSignalSpy animatedChangedSpy(m_progressBar, SIGNAL(animatedChanged(bool)));
 
     QVERIFY(m_progressBar->isAnimated());  // Default should be true
 
@@ -347,7 +344,7 @@ void FluentProgressBarTest::testAnimated() {
 void FluentProgressBarTest::testAccentColor() {
     // Test setting and getting accent color
     QSignalSpy accentColorChangedSpy(m_progressBar,
-                                     &FluentProgressBar::accentColorChanged);
+                                     SIGNAL(accentColorChanged(QColor)));
 
     QColor color1(255, 0, 0);  // Red
     m_progressBar->setAccentColor(color1);
@@ -368,7 +365,7 @@ void FluentProgressBarTest::testAccentColor() {
 
 void FluentProgressBarTest::testStart() {
     // Test start functionality
-    QSignalSpy startedSpy(m_progressBar, &FluentProgressBar::started);
+    QSignalSpy startedSpy(m_progressBar, SIGNAL(started()));
 
     // For determinate progress, start should not emit started signal
     m_progressBar->start();
@@ -399,7 +396,7 @@ void FluentProgressBarTest::testStop() {
 
 void FluentProgressBarTest::testPause() {
     // Test pause functionality
-    QSignalSpy pausedSpy(m_progressBar, &FluentProgressBar::paused);
+    QSignalSpy pausedSpy(m_progressBar, SIGNAL(paused()));
 
     m_progressBar->setProgressType(FluentProgressBarType::Indeterminate);
     m_progressBar->start();
@@ -414,7 +411,7 @@ void FluentProgressBarTest::testPause() {
 
 void FluentProgressBarTest::testResume() {
     // Test resume functionality
-    QSignalSpy resumedSpy(m_progressBar, &FluentProgressBar::resumed);
+    QSignalSpy resumedSpy(m_progressBar, SIGNAL(resumed()));
 
     m_progressBar->setProgressType(FluentProgressBarType::Indeterminate);
     m_progressBar->start();
@@ -484,7 +481,7 @@ void FluentProgressBarTest::testIsComplete() {
 
 void FluentProgressBarTest::testValueChangedSignal() {
     // Test value changed signal
-    QSignalSpy valueChangedSpy(m_progressBar, &FluentProgressBar::valueChanged);
+    QSignalSpy valueChangedSpy(m_progressBar, SIGNAL(valueChanged(int)));
 
     m_progressBar->setValue(25);
     QCOMPARE(valueChangedSpy.count(), 1);
@@ -501,21 +498,20 @@ void FluentProgressBarTest::testValueChangedSignal() {
 
 void FluentProgressBarTest::testPropertyChangeSignals() {
     // Test that property change signals are emitted correctly
-    QSignalSpy minimumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::minimumChanged);
-    QSignalSpy maximumChangedSpy(m_progressBar,
-                                 &FluentProgressBar::maximumChanged);
-    QSignalSpy textChangedSpy(m_progressBar, &FluentProgressBar::textChanged);
-    QSignalSpy progressTypeChangedSpy(m_progressBar,
-                                      &FluentProgressBar::progressTypeChanged);
-    QSignalSpy progressSizeChangedSpy(m_progressBar,
-                                      &FluentProgressBar::progressSizeChanged);
+    QSignalSpy minimumChangedSpy(m_progressBar, SIGNAL(minimumChanged(int)));
+    QSignalSpy maximumChangedSpy(m_progressBar, SIGNAL(maximumChanged(int)));
+    QSignalSpy textChangedSpy(m_progressBar, SIGNAL(textChanged(QString)));
+    QSignalSpy progressTypeChangedSpy(
+        m_progressBar, SIGNAL(progressTypeChanged(
+                           FluentQt::Components::FluentProgressBarType)));
+    QSignalSpy progressSizeChangedSpy(
+        m_progressBar, SIGNAL(progressSizeChanged(
+                           FluentQt::Components::FluentProgressBarSize)));
     QSignalSpy textVisibleChangedSpy(m_progressBar,
-                                     &FluentProgressBar::textVisibleChanged);
-    QSignalSpy animatedChangedSpy(m_progressBar,
-                                  &FluentProgressBar::animatedChanged);
+                                     SIGNAL(textVisibleChanged(bool)));
+    QSignalSpy animatedChangedSpy(m_progressBar, SIGNAL(animatedChanged(bool)));
     QSignalSpy accentColorChangedSpy(m_progressBar,
-                                     &FluentProgressBar::accentColorChanged);
+                                     SIGNAL(accentColorChanged(QColor)));
 
     // Change properties and verify signals
     m_progressBar->setMinimum(10);
@@ -545,10 +541,10 @@ void FluentProgressBarTest::testPropertyChangeSignals() {
 
 void FluentProgressBarTest::testStateChangeSignals() {
     // Test state change signals
-    QSignalSpy startedSpy(m_progressBar, &FluentProgressBar::started);
-    QSignalSpy pausedSpy(m_progressBar, &FluentProgressBar::paused);
-    QSignalSpy resumedSpy(m_progressBar, &FluentProgressBar::resumed);
-    QSignalSpy finishedSpy(m_progressBar, &FluentProgressBar::finished);
+    QSignalSpy startedSpy(m_progressBar, SIGNAL(started()));
+    QSignalSpy pausedSpy(m_progressBar, SIGNAL(paused()));
+    QSignalSpy resumedSpy(m_progressBar, SIGNAL(resumed()));
+    QSignalSpy finishedSpy(m_progressBar, SIGNAL(finished()));
 
     // Test started signal
     m_progressBar->setProgressType(FluentProgressBarType::Indeterminate);
@@ -576,7 +572,7 @@ void FluentProgressBarTest::testIndeterminateMode() {
              FluentProgressBarType::Indeterminate);
 
     // Start indeterminate animation
-    QSignalSpy startedSpy(m_progressBar, &FluentProgressBar::started);
+    QSignalSpy startedSpy(m_progressBar, SIGNAL(started()));
     m_progressBar->start();
     QCOMPARE(startedSpy.count(), 1);
 
@@ -597,7 +593,7 @@ void FluentProgressBarTest::testRingMode() {
     QCOMPARE(m_progressBar->value(), 50);
 
     // Start ring animation
-    QSignalSpy startedSpy(m_progressBar, &FluentProgressBar::started);
+    QSignalSpy startedSpy(m_progressBar, SIGNAL(started()));
     m_progressBar->start();
     QCOMPARE(startedSpy.count(), 1);
 
@@ -611,7 +607,7 @@ void FluentProgressBarTest::testDotsMode() {
     QCOMPARE(m_progressBar->progressType(), FluentProgressBarType::Dots);
 
     // Start dots animation
-    QSignalSpy startedSpy(m_progressBar, &FluentProgressBar::started);
+    QSignalSpy startedSpy(m_progressBar, SIGNAL(started()));
     m_progressBar->start();
     QCOMPARE(startedSpy.count(), 1);
 
@@ -623,7 +619,7 @@ void FluentProgressBarTest::testValueAnimation() {
     // Test value animation
     m_progressBar->setAnimated(true);
 
-    QSignalSpy valueChangedSpy(m_progressBar, &FluentProgressBar::valueChanged);
+    QSignalSpy valueChangedSpy(m_progressBar, SIGNAL(valueChanged(int)));
 
     // Animate value change
     m_progressBar->setValue(0);
@@ -693,7 +689,7 @@ void FluentProgressBarTest::testThemeIntegration() {
     // Progress bar should update its appearance (this would require checking
     // internal styling) For now, just verify the progress bar still functions
     // correctly
-    QSignalSpy valueChangedSpy(m_progressBar, &FluentProgressBar::valueChanged);
+    QSignalSpy valueChangedSpy(m_progressBar, SIGNAL(valueChanged(int)));
     m_progressBar->setValue(42);
     QCOMPARE(m_progressBar->value(), 42);
     QCOMPARE(valueChangedSpy.count(), 1);

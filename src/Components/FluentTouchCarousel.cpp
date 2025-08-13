@@ -718,6 +718,14 @@ void FluentTouchCarousel::calculateTouchVelocity() {
     }
 }
 
+void FluentTouchCarousel::setCurrentOffset(qreal offset) {
+    if (!qFuzzyCompare(m_currentOffset, offset)) {
+        m_currentOffset = offset;
+        emit currentOffsetChanged(offset);
+        update();  // Trigger repaint for animation
+    }
+}
+
 void FluentTouchCarousel::updateTouchOffset(qreal offset) {
     // Apply edge resistance
     applyEdgeResistance(offset);

@@ -188,6 +188,19 @@ void FluentLoadingIndicator::setTextVisible(bool visible) {
     }
 }
 
+qreal FluentLoadingIndicator::animationProgress() const {
+    return m_animationProgress;
+}
+
+void FluentLoadingIndicator::setAnimationProgress(qreal progress) {
+    progress = qBound(0.0, progress, 1.0);
+    if (!qFuzzyCompare(m_animationProgress, progress)) {
+        m_animationProgress = progress;
+        update();  // Trigger repaint for animation
+        emit animationProgressChanged(progress);
+    }
+}
+
 QSize FluentLoadingIndicator::sizeHint() const {
     const int indicatorSize = getIndicatorSize();
     int width = indicatorSize;

@@ -112,8 +112,8 @@ class FluentTouchCarousel : public FluentCarousel {
                    WRITE setTouchFeedback NOTIFY touchFeedbackChanged)
     Q_PROPERTY(bool momentumScrolling READ momentumScrolling WRITE
                    setMomentumScrolling NOTIFY momentumScrollingChanged)
-    Q_PROPERTY(
-        qreal currentOffset READ currentOffset NOTIFY currentOffsetChanged)
+    Q_PROPERTY(qreal currentOffset READ currentOffset WRITE setCurrentOffset
+                   NOTIFY currentOffsetChanged)
 
 public:
     explicit FluentTouchCarousel(QWidget* parent = nullptr);
@@ -165,6 +165,7 @@ public:
 
     // Current state
     qreal currentOffset() const noexcept { return m_currentOffset; }
+    void setCurrentOffset(qreal offset);
     bool isTouchActive() const noexcept { return m_touchActive; }
     bool isMomentumActive() const noexcept { return m_momentumActive; }
 

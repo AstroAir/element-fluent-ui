@@ -124,6 +124,17 @@ void FluentCheckBox::setIconSize(const QSize& size) {
     }
 }
 
+qreal FluentCheckBox::checkProgress() const { return m_checkProgress; }
+
+void FluentCheckBox::setCheckProgress(qreal progress) {
+    progress = qBound(0.0, progress, 1.0);
+    if (!qFuzzyCompare(m_checkProgress, progress)) {
+        m_checkProgress = progress;
+        update();  // Trigger repaint for animation
+        emit checkProgressChanged(progress);
+    }
+}
+
 QSize FluentCheckBox::sizeHint() const {
     const QFontMetrics fm(font());
     const int textWidth =

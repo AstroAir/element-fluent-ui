@@ -81,6 +81,14 @@ void FluentButtonTest::init() {
     m_button->show();
     QVERIFY2(QTest::qWaitForWindowExposed(m_button),
              "m_button window not exposed within timeout");
+
+    // Ensure button is fully initialized
+    QCoreApplication::processEvents();
+    QTest::qWait(10);  // Small delay to ensure full initialization
+
+    // Clear focus to ensure clean state for tests
+    m_button->clearFocus();
+    QCoreApplication::processEvents();
 }
 
 void FluentButtonTest::cleanup() {
@@ -168,7 +176,8 @@ void FluentButtonTest::testText() {
     const QString text1 = "Button Text";
     const QString text2 = "New Text";
 
-    QSignalSpy textChangedSpy(m_button, &FluentButton::textChanged);
+    // Try old-style signal connection for debugging
+    QSignalSpy textChangedSpy(m_button, SIGNAL(textChanged(QString)));
 
     m_button->setText(text1);
     QCOMPARE(m_button->text(), text1);
@@ -187,7 +196,7 @@ void FluentButtonTest::testText() {
 
 void FluentButtonTest::testIcon() {
     // Test setting and getting icon
-    QSignalSpy iconChangedSpy(m_button, &FluentButton::iconChanged);
+    QSignalSpy iconChangedSpy(m_button, SIGNAL(iconChanged(QIcon)));
 
     QIcon icon1;
     QPixmap pixmap1(16, 16);
@@ -210,7 +219,8 @@ void FluentButtonTest::testIcon() {
 
 void FluentButtonTest::testIconPosition() {
     // Test setting and getting icon position
-    QSignalSpy positionChangedSpy(m_button, &FluentButton::iconPositionChanged);
+    QSignalSpy positionChangedSpy(
+        m_button, SIGNAL(iconPositionChanged(FluentIconPosition)));
 
     // Default position should be Left
     QCOMPARE(m_button->iconPosition(), FluentIconPosition::Left);
@@ -236,7 +246,8 @@ void FluentButtonTest::testIconPosition() {
 
 void FluentButtonTest::testButtonStyle() {
     // Test setting and getting button style
-    QSignalSpy styleChangedSpy(m_button, &FluentButton::styleChanged);
+    QSignalSpy styleChangedSpy(m_button,
+                               SIGNAL(styleChanged(FluentButtonStyle)));
 
     // Default style should be Default
     QCOMPARE(m_button->buttonStyle(), FluentButtonStyle::Default);
@@ -266,7 +277,7 @@ void FluentButtonTest::testButtonStyle() {
 
 void FluentButtonTest::testButtonSize() {
     // Test setting and getting button size
-    QSignalSpy sizeChangedSpy(m_button, &FluentButton::sizeChanged);
+    QSignalSpy sizeChangedSpy(m_button, SIGNAL(sizeChanged(FluentButtonSize)));
 
     // Default size should be Medium
     QCOMPARE(m_button->buttonSize(), FluentButtonSize::Medium);
@@ -316,6 +327,14 @@ void FluentButtonTest::testEnabled() {
 
 void FluentButtonTest::testFocus() {
     // Test focus state
+    // Ensure mouse is not over button to avoid Hovered state
+    QTest::mouseMove(m_button, QPoint(-10, -10));
+
+    // Explicitly trigger leave event to ensure no hover state
+    QEvent leaveEvent(QEvent::Leave);
+    QApplication::sendEvent(m_button, &leaveEvent);
+    QCoreApplication::processEvents();
+
     QVERIFY(!m_button->hasFocus());
     QCOMPARE(m_button->state(), FluentState::Normal);
 
@@ -324,13 +343,16 @@ void FluentButtonTest::testFocus() {
     QCOMPARE(m_button->state(), FluentState::Focused);
 
     m_button->clearFocus();
+    // Ensure leave event is triggered after focus loss
+    QApplication::sendEvent(m_button, &leaveEvent);
+    QCoreApplication::processEvents();
     QVERIFY(!m_button->hasFocus());
     QCOMPARE(m_button->state(), FluentState::Normal);
 }
 
 void FluentButtonTest::testLoading() {
     // Test loading state
-    QSignalSpy loadingChangedSpy(m_button, &FluentButton::loadingChanged);
+    QSignalSpy loadingChangedSpy(m_button, SIGNAL(loadingChanged(bool)));
 
     QVERIFY(!m_button->isLoading());  // Default should be false
 
@@ -362,7 +384,7 @@ void FluentButtonTest::testCheckable() {
 
 void FluentButtonTest::testChecked() {
     // Test checked state
-    QSignalSpy checkedChangedSpy(m_button, &FluentButton::checkedChanged);
+    QSignalSpy checkedChangedSpy(m_button, SIGNAL(checkedChanged(bool)));
 
     QVERIFY(!m_button->isChecked());  // Default should be false
 
@@ -386,9 +408,9 @@ void FluentButtonTest::testChecked() {
 
 void FluentButtonTest::testMouseInteraction() {
     // Test mouse press and release
-    QSignalSpy pressedSpy(m_button, &FluentButton::pressed);
-    QSignalSpy releasedSpy(m_button, &FluentButton::released);
-    QSignalSpy clickedSpy(m_button, &FluentButton::clicked);
+    QSignalSpy pressedSpy(m_button, SIGNAL(pressed()));
+    QSignalSpy releasedSpy(m_button, SIGNAL(released()));
+    QSignalSpy clickedSpy(m_button, SIGNAL(clicked(bool)));
 
     QPoint center = m_button->rect().center();
     QPoint globalCenter = m_button->mapToGlobal(center);
@@ -427,9 +449,9 @@ void FluentButtonTest::testMouseInteraction() {
 
 void FluentButtonTest::testKeyboardInteraction() {
     // Test keyboard interaction
-    QSignalSpy pressedSpy(m_button, &FluentButton::pressed);
-    QSignalSpy releasedSpy(m_button, &FluentButton::released);
-    QSignalSpy clickedSpy(m_button, &FluentButton::clicked);
+    QSignalSpy pressedSpy(m_button, SIGNAL(pressed()));
+    QSignalSpy releasedSpy(m_button, SIGNAL(released()));
+    QSignalSpy clickedSpy(m_button, SIGNAL(clicked(bool)));
 
     m_button->setFocus();
     QVERIFY(m_button->hasFocus());
@@ -464,7 +486,7 @@ void FluentButtonTest::testKeyboardInteraction() {
 
 void FluentButtonTest::testAnimateClick() {
     // Test programmatic click animation
-    QSignalSpy clickedSpy(m_button, &FluentButton::clicked);
+    QSignalSpy clickedSpy(m_button, SIGNAL(clicked(bool)));
 
     m_button->animateClick();
 
@@ -474,8 +496,8 @@ void FluentButtonTest::testAnimateClick() {
 
 void FluentButtonTest::testToggle() {
     // Test toggle functionality
-    QSignalSpy toggledSpy(m_button, &FluentButton::toggled);
-    QSignalSpy checkedChangedSpy(m_button, &FluentButton::checkedChanged);
+    QSignalSpy toggledSpy(m_button, SIGNAL(toggled(bool)));
+    QSignalSpy checkedChangedSpy(m_button, SIGNAL(checkedChanged(bool)));
 
     // Make button checkable
     m_button->setCheckable(true);
@@ -496,7 +518,7 @@ void FluentButtonTest::testToggle() {
 
 void FluentButtonTest::testClickedSignal() {
     // Test clicked signal with checkable button
-    QSignalSpy clickedSpy(m_button, &FluentButton::clicked);
+    QSignalSpy clickedSpy(m_button, SIGNAL(clicked(bool)));
 
     // Non-checkable button
     m_button->setCheckable(false);
@@ -515,7 +537,7 @@ void FluentButtonTest::testClickedSignal() {
 
 void FluentButtonTest::testPressedSignal() {
     // Test pressed signal
-    QSignalSpy pressedSpy(m_button, &FluentButton::pressed);
+    QSignalSpy pressedSpy(m_button, SIGNAL(pressed()));
 
     QPoint center = m_button->rect().center();
     QPoint globalCenter = m_button->mapToGlobal(center);
@@ -529,7 +551,7 @@ void FluentButtonTest::testPressedSignal() {
 
 void FluentButtonTest::testReleasedSignal() {
     // Test released signal
-    QSignalSpy releasedSpy(m_button, &FluentButton::released);
+    QSignalSpy releasedSpy(m_button, SIGNAL(released()));
 
     QPoint center = m_button->rect().center();
     QPoint globalCenter = m_button->mapToGlobal(center);
@@ -548,7 +570,7 @@ void FluentButtonTest::testReleasedSignal() {
 
 void FluentButtonTest::testToggledSignal() {
     // Test toggled signal
-    QSignalSpy toggledSpy(m_button, &FluentButton::toggled);
+    QSignalSpy toggledSpy(m_button, SIGNAL(toggled(bool)));
 
     m_button->setCheckable(true);
 
@@ -578,12 +600,13 @@ void FluentButtonTest::testToggledSignal() {
 
 void FluentButtonTest::testContentChangeSignals() {
     // Test that content change signals are emitted correctly
-    QSignalSpy textChangedSpy(m_button, &FluentButton::textChanged);
-    QSignalSpy iconChangedSpy(m_button, &FluentButton::iconChanged);
-    QSignalSpy styleChangedSpy(m_button, &FluentButton::styleChanged);
-    QSignalSpy sizeChangedSpy(m_button, &FluentButton::sizeChanged);
-    QSignalSpy iconPositionChangedSpy(m_button,
-                                      &FluentButton::iconPositionChanged);
+    QSignalSpy textChangedSpy(m_button, SIGNAL(textChanged(QString)));
+    QSignalSpy iconChangedSpy(m_button, SIGNAL(iconChanged(QIcon)));
+    QSignalSpy styleChangedSpy(m_button,
+                               SIGNAL(styleChanged(FluentButtonStyle)));
+    QSignalSpy sizeChangedSpy(m_button, SIGNAL(sizeChanged(FluentButtonSize)));
+    QSignalSpy iconPositionChangedSpy(
+        m_button, SIGNAL(iconPositionChanged(FluentIconPosition)));
 
     // Change text
     m_button->setText("New Text");
@@ -610,8 +633,8 @@ void FluentButtonTest::testContentChangeSignals() {
 
 void FluentButtonTest::testStateChangeSignals() {
     // Test that state change signals are emitted correctly
-    QSignalSpy loadingChangedSpy(m_button, &FluentButton::loadingChanged);
-    QSignalSpy checkedChangedSpy(m_button, &FluentButton::checkedChanged);
+    QSignalSpy loadingChangedSpy(m_button, SIGNAL(loadingChanged(bool)));
+    QSignalSpy checkedChangedSpy(m_button, SIGNAL(checkedChanged(bool)));
 
     // Change loading state
     m_button->setLoading(true);

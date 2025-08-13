@@ -434,78 +434,180 @@ void FluentTheme::initializePalettes() {
     FLUENT_PROFILE("FluentTheme::initializePalettes");
 
     // Initialize light palette
-    m_lightPalette =
-        FluentColorPalette{// Accent colors (Blue by default)
-                           .accent = QColor("#0078d4"),
-                           .accentLight1 = QColor("#106ebe"),
-                           .accentLight2 = QColor("#2b88d8"),
-                           .accentLight3 = QColor("#71afe5"),
-                           .accentDark1 = QColor("#005a9e"),
-                           .accentDark2 = QColor("#004578"),
-                           .accentDark3 = QColor("#003966"),
+    m_lightPalette = FluentColorPalette{
+        // Accent colors (Blue by default)
+        .accent = QColor("#0078d4"),
+        .accentLight1 = QColor("#106ebe"),
+        .accentLight2 = QColor("#2b88d8"),
+        .accentLight3 = QColor("#71afe5"),
+        .accentDark1 = QColor("#005a9e"),
+        .accentDark2 = QColor("#004578"),
+        .accentDark3 = QColor("#003966"),
 
-                           // Neutral colors
-                           .neutralLightest = QColor("#ffffff"),
-                           .neutralLighter = QColor("#f3f2f1"),
-                           .neutralLight = QColor("#edebe9"),
-                           .neutralQuaternaryAlt = QColor("#e1dfdd"),
-                           .neutralQuaternary = QColor("#d2d0ce"),
-                           .neutralTertiaryAlt = QColor("#c8c6c4"),
-                           .neutralTertiary = QColor("#a19f9d"),
-                           .neutralSecondaryAlt = QColor("#8a8886"),
-                           .neutralSecondary = QColor("#605e5c"),
-                           .neutralPrimaryAlt = QColor("#3b3a39"),
-                           .neutralPrimary = QColor("#323130"),
-                           .neutralDark = QColor("#201f1e"),
-                           .neutralDarker = QColor("#106ebe"),
-                           .neutralDarkest = QColor("#11100f"),
+        // Neutral colors
+        .neutralLightest = QColor("#ffffff"),
+        .neutralLighter = QColor("#f3f2f1"),
+        .neutralLight = QColor("#edebe9"),
+        .neutralQuaternaryAlt = QColor("#e1dfdd"),
+        .neutralQuaternary = QColor("#d2d0ce"),
+        .neutralTertiaryAlt = QColor("#c8c6c4"),
+        .neutralTertiary = QColor("#a19f9d"),
+        .neutralSecondaryAlt = QColor("#8a8886"),
+        .neutralSecondary = QColor("#605e5c"),
+        .neutralPrimaryAlt = QColor("#3b3a39"),
+        .neutralPrimary = QColor("#323130"),
+        .neutralDark = QColor("#201f1e"),
+        .neutralDarker = QColor("#106ebe"),
+        .neutralDarkest = QColor("#11100f"),
 
-                           // Semantic colors
-                           .error = QColor("#d13438"),
-                           .errorLight = QColor("#f3d6d7"),
-                           .warning = QColor("#ff8c00"),
-                           .warningLight = QColor("#fff4ce"),
-                           .success = QColor("#107c10"),
-                           .successLight = QColor("#dff6dd"),
-                           .info = QColor("#0078d4"),
-                           .infoLight = QColor("#deecf9")};
+        // Semantic colors
+        .error = QColor("#d13438"),
+        .errorLight = QColor("#f3d6d7"),
+        .errorDark = QColor("#a4262c"),
+        .warning = QColor("#ff8c00"),
+        .warningLight = QColor("#fff4ce"),
+        .warningDark = QColor("#d83b01"),
+        .success = QColor("#107c10"),
+        .successLight = QColor("#dff6dd"),
+        .successDark = QColor("#0b5a0b"),
+        .info = QColor("#0078d4"),
+        .infoLight = QColor("#deecf9"),
+        .infoDark = QColor("#005a9e"),
+
+        // Interactive states
+        .hover = QColor("#f3f2f1"),
+        .pressed = QColor("#edebe9"),
+        .selected = QColor("#c8c6c4"),
+        .focus = QColor("#605e5c"),
+        .disabled = QColor("#a19f9d"),
+        .loading = QColor("#0078d4"),
+
+        // Surface colors
+        .surface = QColor("#ffffff"),
+        .surfaceSecondary = QColor("#f3f2f1"),
+        .surfaceTertiary = QColor("#edebe9"),
+        .overlay = QColor("#4C000000"),
+        .modal = QColor("#ffffff"),
+        .tooltip = QColor("#323130"),
+
+        // Shadow colors
+        .shadowLight = QColor("#19000000"),
+        .shadowMedium = QColor("#33000000"),
+        .shadowDark = QColor("#4C000000"),
+        .shadowKey = QColor("#66000000"),
+        .shadowAmbient = QColor("#26000000"),
+
+        // Border colors
+        .border = QColor("#e1dfdd"),
+        .borderSecondary = QColor("#c8c6c4"),
+        .borderFocus = QColor("#0078d4"),
+        .borderHover = QColor("#605e5c"),
+        .borderActive = QColor("#323130"),
+        .borderDisabled = QColor("#d2d0ce"),
+
+        // Accessibility colors
+        .highContrastText = QColor("#000000"),
+        .highContrastBackground = QColor("#ffffff"),
+        .focusIndicator = QColor("#0078d4"),
+
+        // Chart/visualization colors
+        .chartColors = QList<QColor>{QColor("#0078d4"), QColor("#ff8c00"),
+                                     QColor("#107c10"), QColor("#d13438"),
+                                     QColor("#605e5c"), QColor("#881798")},
+        .dataColors = QList<QColor>{QColor("#881798"), QColor("#605e5c"),
+                                    QColor("#d13438"), QColor("#107c10"),
+                                    QColor("#ff8c00"), QColor("#0078d4")},
+
+        // Custom colors map
+        .customColors = {}};
 
     // Initialize dark palette
-    m_darkPalette =
-        FluentColorPalette{// Accent colors (Blue by default)
-                           .accent = QColor("#60cdff"),
-                           .accentLight1 = QColor("#4fc3f7"),
-                           .accentLight2 = QColor("#29b6f6"),
-                           .accentLight3 = QColor("#039be5"),
-                           .accentDark1 = QColor("#0086c7"),
-                           .accentDark2 = QColor("#005ba1"),
-                           .accentDark3 = QColor("#004578"),
+    m_darkPalette = FluentColorPalette{
+        // Accent colors (Blue by default)
+        .accent = QColor("#60cdff"),
+        .accentLight1 = QColor("#4fc3f7"),
+        .accentLight2 = QColor("#29b6f6"),
+        .accentLight3 = QColor("#039be5"),
+        .accentDark1 = QColor("#0086c7"),
+        .accentDark2 = QColor("#005ba1"),
+        .accentDark3 = QColor("#004578"),
 
-                           // Neutral colors (inverted from light)
-                           .neutralLightest = QColor("#1f1f1f"),
-                           .neutralLighter = QColor("#2d2d2d"),
-                           .neutralLight = QColor("#3d3d3d"),
-                           .neutralQuaternaryAlt = QColor("#484644"),
-                           .neutralQuaternary = QColor("#605e5c"),
-                           .neutralTertiaryAlt = QColor("#8a8886"),
-                           .neutralTertiary = QColor("#a19f9d"),
-                           .neutralSecondaryAlt = QColor("#c8c6c4"),
-                           .neutralSecondary = QColor("#d2d0ce"),
-                           .neutralPrimaryAlt = QColor("#e1dfdd"),
-                           .neutralPrimary = QColor("#ffffff"),
-                           .neutralDark = QColor("#f3f2f1"),
-                           .neutralDarker = QColor("#faf9f8"),
-                           .neutralDarkest = QColor("#fdfdfc"),
+        // Neutral colors (inverted from light)
+        .neutralLightest = QColor("#1f1f1f"),
+        .neutralLighter = QColor("#2d2d2d"),
+        .neutralLight = QColor("#3d3d3d"),
+        .neutralQuaternaryAlt = QColor("#484644"),
+        .neutralQuaternary = QColor("#605e5c"),
+        .neutralTertiaryAlt = QColor("#8a8886"),
+        .neutralTertiary = QColor("#a19f9d"),
+        .neutralSecondaryAlt = QColor("#c8c6c4"),
+        .neutralSecondary = QColor("#d2d0ce"),
+        .neutralPrimaryAlt = QColor("#e1dfdd"),
+        .neutralPrimary = QColor("#ffffff"),
+        .neutralDark = QColor("#f3f2f1"),
+        .neutralDarker = QColor("#faf9f8"),
+        .neutralDarkest = QColor("#fdfdfc"),
 
-                           // Semantic colors (adjusted for dark theme)
-                           .error = QColor("#ff6b70"),
-                           .errorLight = QColor("#442726"),
-                           .warning = QColor("#ffaa44"),
-                           .warningLight = QColor("#433519"),
-                           .success = QColor("#6bb700"),
-                           .successLight = QColor("#393d1b"),
-                           .info = QColor("#60cdff"),
-                           .infoLight = QColor("#203047")};
+        // Semantic colors (adjusted for dark theme)
+        .error = QColor("#ff6b70"),
+        .errorLight = QColor("#442726"),
+        .errorDark = QColor("#a80000"),
+        .warning = QColor("#ffaa44"),
+        .warningLight = QColor("#433519"),
+        .warningDark = QColor("#d83b01"),
+        .success = QColor("#6bb700"),
+        .successLight = QColor("#393d1b"),
+        .successDark = QColor("#4f6b00"),
+        .info = QColor("#60cdff"),
+        .infoLight = QColor("#203047"),
+        .infoDark = QColor("#004578"),
+
+        // Interactive states
+        .hover = QColor("#2d2d2d"),
+        .pressed = QColor("#3d3d3d"),
+        .selected = QColor("#484644"),
+        .focus = QColor("#c8c6c4"),
+        .disabled = QColor("#605e5c"),
+        .loading = QColor("#60cdff"),
+
+        // Surface colors
+        .surface = QColor("#1f1f1f"),
+        .surfaceSecondary = QColor("#2d2d2d"),
+        .surfaceTertiary = QColor("#3d3d3d"),
+        .overlay = QColor("#66000000"),
+        .modal = QColor("#2d2d2d"),
+        .tooltip = QColor("#f3f2f1"),
+
+        // Shadow colors
+        .shadowLight = QColor("#33000000"),
+        .shadowMedium = QColor("#4C000000"),
+        .shadowDark = QColor("#66000000"),
+        .shadowKey = QColor("#80000000"),
+        .shadowAmbient = QColor("#26000000"),
+
+        // Border colors
+        .border = QColor("#3d3d3d"),
+        .borderSecondary = QColor("#484644"),
+        .borderFocus = QColor("#60cdff"),
+        .borderHover = QColor("#8a8886"),
+        .borderActive = QColor("#ffffff"),
+        .borderDisabled = QColor("#2d2d2d"),
+
+        // Accessibility colors
+        .highContrastText = QColor("#ffffff"),
+        .highContrastBackground = QColor("#000000"),
+        .focusIndicator = QColor("#60cdff"),
+
+        // Chart/visualization colors
+        .chartColors = QList<QColor>{QColor("#60cdff"), QColor("#ffaa44"),
+                                     QColor("#6bb700"), QColor("#ff6b70"),
+                                     QColor("#c8c6c4"), QColor("#b4009e")},
+        .dataColors = QList<QColor>{QColor("#b4009e"), QColor("#c8c6c4"),
+                                    QColor("#ff6b70"), QColor("#6bb700"),
+                                    QColor("#ffaa44"), QColor("#60cdff")},
+
+        // Custom colors map
+        .customColors = {}};
 
     // Update accent colors based on current setting
     updateAccentColors();

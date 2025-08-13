@@ -39,6 +39,8 @@ class FluentLoadingIndicator : public Core::FluentComponent {
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
     Q_PROPERTY(bool textVisible READ isTextVisible WRITE setTextVisible NOTIFY
                    textVisibleChanged)
+    Q_PROPERTY(qreal animationProgress READ animationProgress WRITE
+                   setAnimationProgress NOTIFY animationProgressChanged)
 
 public:
     explicit FluentLoadingIndicator(QWidget* parent = nullptr);
@@ -74,6 +76,10 @@ public:
     bool isTextVisible() const;
     void setTextVisible(bool visible);
 
+    // Animation progress
+    qreal animationProgress() const;
+    void setAnimationProgress(qreal progress);
+
     // Error boundary integration (ElaWidgetTools-inspired)
     void setErrorBoundary(Core::FluentErrorBoundary* boundary);
     Core::FluentErrorBoundary* errorBoundary() const { return m_errorBoundary; }
@@ -97,6 +103,7 @@ signals:
     void speedChanged(int speed);
     void textChanged(const QString& text);
     void textVisibleChanged(bool visible);
+    void animationProgressChanged(qreal progress);
     void started();
     void stopped();
 

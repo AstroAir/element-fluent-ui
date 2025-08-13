@@ -14,7 +14,7 @@ namespace FluentQt::Components {
 FluentBadge::FluentBadge(QWidget* parent)
     : Core::FluentComponent(parent),
       m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
-    m_pulseTimer = new QTimer();
+    m_pulseTimer = new QTimer(this);
     setupAnimations();
     updateSizeMetrics();
     setVisible(false);  // Hidden by default

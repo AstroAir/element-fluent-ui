@@ -1016,6 +1016,14 @@ void FluentCarousel::createTransitionAnimation(int fromIndex, int toIndex) {
     m_transitionAnimation->setEndValue(1.0);
 }
 
+void FluentCarousel::setTransitionProgress(qreal progress) {
+    if (!qFuzzyCompare(m_transitionProgress, progress)) {
+        m_transitionProgress = qBound(0.0, progress, 1.0);
+        emit transitionProgressChanged(m_transitionProgress);
+        update();  // Trigger repaint for animation
+    }
+}
+
 void FluentCarousel::updateTransitionProgress(qreal progress) {
     m_transitionProgress = progress;
     emit transitionProgressChanged(progress);

@@ -150,6 +150,28 @@ void FluentRadioButton::setSize(FluentRadioButtonSize size) {
     emit sizeChanged(m_size);
 }
 
+FluentRadioButtonComplexity FluentRadioButton::complexity() const {
+    return m_complexity;
+}
+
+void FluentRadioButton::setComplexity(FluentRadioButtonComplexity complexity) {
+    if (m_complexity != complexity) {
+        m_complexity = complexity;
+
+        // Adjust behavior based on complexity mode
+        if (complexity == FluentRadioButtonComplexity::Simple) {
+            // Simple mode: disable animations
+            setAnimated(false);
+        } else {
+            // Full mode: enable animations
+            setAnimated(true);
+        }
+
+        updateLayout();
+        emit complexityChanged(complexity);
+    }
+}
+
 FluentRadioButtonLabelPosition FluentRadioButton::labelPosition() const {
     return m_labelPosition;
 }
@@ -918,6 +940,22 @@ void FluentRadioButton::setRadioColor(const QColor& color) {
         return;
     m_borderColor = color;
     update();
+}
+
+// Factory methods for simple radio buttons (from Simple variant)
+FluentRadioButton* FluentRadioButton::createSimple(const QString& text,
+                                                   QWidget* parent) {
+    auto* radioButton = new FluentRadioButton(text, parent);
+    radioButton->setComplexity(FluentRadioButtonComplexity::Simple);
+    return radioButton;
+}
+
+FluentRadioButton* FluentRadioButton::createSimple(const QString& text,
+                                                   const QString& value,
+                                                   QWidget* parent) {
+    auto* radioButton = new FluentRadioButton(text, value, parent);
+    radioButton->setComplexity(FluentRadioButtonComplexity::Simple);
+    return radioButton;
 }
 
 }  // namespace FluentQt::Components

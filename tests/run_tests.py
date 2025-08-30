@@ -20,11 +20,53 @@ import time
 from pathlib import Path
 from typing import List, Dict, Optional
 
+
 class TestRunner:
     def __init__(self, build_dir: str = "build"):
         self.build_dir = Path(build_dir)
         self.test_dir = self.build_dir / "tests"
         self.results = {}
+
+        # Test categories for better organization
+        self.test_categories = {
+            "core": ["FluentAnimatorTest", "FluentThemeTest", "FluentComponentTest"],
+            "form": ["FluentFormComponentsTest"],
+            "basic_ui": [
+                "FluentButtonTest", "FluentCheckBoxTest", "FluentRadioButtonTest",
+                "FluentToggleSwitchTest", "FluentSliderTest", "FluentSpinBoxTest"
+            ],
+            "input": [
+                "FluentTextBoxTest", "FluentPasswordBoxTest", "FluentComboBoxTest",
+                "FluentSearchBoxTest", "FluentDatePickerTest", "FluentColorPickerTest",
+                "FluentFilePickerTest"
+            ],
+            "layout_nav": [
+                "FluentNavigationViewTest", "FluentTabViewTest", "FluentPivotTest",
+                "FluentSplitViewTest", "FluentAccordionTest", "FluentBreadcrumbTest"
+            ],
+            "data_display": [
+                "FluentDataTableTest", "FluentTreeViewPerfTest", "FluentGridTest",
+                "FluentCardTest", "FluentBadgeTest", "FluentAvatarTest"
+            ],
+            "feedback": [
+                "FluentProgressBarTest", "FluentProgressRingTest", "FluentLoadingIndicatorTest",
+                "FluentNotificationTest", "FluentTooltipTest"
+            ],
+            "media": [
+                "FluentImageViewTest", "FluentChartViewTest", "FluentCarouselTest",
+                "FluentAutoCarouselTest", "FluentBasicCarouselTest", "FluentIndicatorCarouselTest"
+            ],
+            "dialog": [
+                "FluentContentDialogTest", "FluentContextMenuTest", "FluentDropdownTest",
+                "FluentSheetTest"
+            ],
+            "utility": [
+                "FluentScrollAreaTest", "FluentEnhancedScrollBarTest", "FluentResizableTest",
+                "FluentRatingControlTest", "FluentCalendarTest"
+            ],
+            "integration": ["FluentIntegrationTest"],
+            "accessibility": ["FluentAccessibilityTest"]
+        }
 
     def run_test(self, test_name: str, timeout: int = 30) -> Dict:
         """Run a single test and return results."""
@@ -109,9 +151,63 @@ class TestRunner:
                     print(f"  Error: {result['error']}")
 
         print("=" * 60)
-        print(f"Results: {passed} passed, {failed} failed, {total_tests} total")
+        print(
+            f"Results: {passed} passed, {failed} failed, {total_tests} total")
 
         return results
+
+    def run_category_tests(self, category: str) -> Dict:
+        """Run all tests in a specific category."""
+        if category not in self.test_categories:
+            print(f"Unknown category: {category}")
+            print(
+                f"Available categories: {', '.join(self.test_categories.keys())}")
+            return {}
+
+        test_names = self.test_categories[category]
+        results = {}
+
+        print(f"Running {category} tests ({len(test_names)} tests)")
+        print("=" * 60)
+
+        for i, test_name in enumerate(test_names, 1):
+            print(f"[{i}/{len(test_names)}] ", end="")
+
+            result = self.run_test(test_name)
+            results[test_name] = result
+
+            if result["status"] == "PASSED":
+                print(f"✓ {test_name} ({result['duration']:.2f}s)")
+            else:
+                print(f"✗ {test_name} - {result['status']}")
+                if "error" in result:
+                    print(f"  Error: {result['error']}")
+
+        passed = sum(1 for r in results.values() if r["status"] == "PASSED")
+        failed = len(results) - passed
+
+        print("=" * 60)
+        print(
+            f"Category '{category}' results: {passed} passed, {failed} failed")
+
+        return results
+
+    def list_categories(self):
+        """List all available test categories."""
+        print("Available test categories:")
+        print("=" * 40)
+
+        for category, tests in self.test_categories.items():
+            print(
+                f"{category:15} ({len(tests):2} tests): {', '.join(tests[:3])}")
+            if len(tests) > 3:
+                print(f"{' ' * 20}... and {len(tests) - 3} more")
+
+        print("=" * 40)
+        total_tests = sum(len(tests)
+                          for tests in self.test_categories.values())
+        print(
+            f"Total: {total_tests} tests across {len(self.test_categories)} categories")
 
     def generate_coverage_report(self) -> bool:
         """Generate code coverage report."""
@@ -231,17 +327,28 @@ class TestRunner:
         print(f"Test report saved to: {output_path}")
         return report
 
+
 def main():
     parser = argparse.ArgumentParser(description="FluentQt Test Runner")
-    parser.add_argument("--build-dir", default="build", help="Build directory path")
+    parser.add_argument("--build-dir", default="build",
+                        help="Build directory path")
     parser.add_argument("--test", help="Run specific test")
-    parser.add_argument("--pattern", default="*Test", help="Test pattern to match")
-    parser.add_argument("--coverage", action="store_true", help="Generate coverage report")
+    parser.add_argument("--category", help="Run tests in specific category")
+    parser.add_argument("--list-categories", action="store_true",
+                        help="List available test categories")
+    parser.add_argument("--pattern", default="*Test",
+                        help="Test pattern to match")
+    parser.add_argument("--coverage", action="store_true",
+                        help="Generate coverage report")
     parser.add_argument("--memcheck", help="Run memory check on specific test")
-    parser.add_argument("--benchmark", action="store_true", help="Run performance benchmarks")
-    parser.add_argument("--timeout", type=int, default=30, help="Test timeout in seconds")
-    parser.add_argument("--report", default="test_report.json", help="Output report file")
-    parser.add_argument("--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--benchmark", action="store_true",
+                        help="Run performance benchmarks")
+    parser.add_argument("--timeout", type=int, default=30,
+                        help="Test timeout in seconds")
+    parser.add_argument("--report", default="test_report.json",
+                        help="Output report file")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Verbose output")
 
     args = parser.parse_args()
 
@@ -254,6 +361,11 @@ def main():
 
     results = {}
 
+    # List categories
+    if args.list_categories:
+        runner.list_categories()
+        return
+
     # Run specific test
     if args.test:
         result = runner.run_test(args.test, args.timeout)
@@ -262,6 +374,10 @@ def main():
         if args.verbose and result["status"] != "PASSED":
             print(f"STDOUT:\n{result.get('stdout', '')}")
             print(f"STDERR:\n{result.get('stderr', '')}")
+
+    # Run tests by category
+    elif args.category:
+        results = runner.run_category_tests(args.category)
 
     # Run all tests
     else:
@@ -288,6 +404,7 @@ def main():
         # Exit with error code if any tests failed
         if report["summary"]["failed"] > 0 or report["summary"]["error"] > 0:
             sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

@@ -155,7 +155,8 @@ void FluentScrollAreaTest::testDefaultConstructor() {
 
 void FluentScrollAreaTest::testWidgetConstructor() {
     QLabel* content = new QLabel("Test Content");
-    FluentScrollArea scrollArea(content);
+    FluentScrollArea scrollArea(
+        content, nullptr);  // Explicitly use the widget constructor
 
     QCOMPARE(scrollArea.widget(), content);
     QCOMPARE(content->parent(), &scrollArea);

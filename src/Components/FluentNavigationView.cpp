@@ -249,6 +249,27 @@ void FluentNavigationView::addNavigationItem(const FluentNavigationItem& item) {
     updateItemVisibility();
 }
 
+void FluentNavigationView::clearNavigationItems() {
+    // Clear all navigation items from UI
+    for (auto it = m_itemButtons.begin(); it != m_itemButtons.end(); ++it) {
+        QWidget* button = it.value();
+        m_paneLayout->removeWidget(button);
+        button->deleteLater();
+    }
+    m_itemButtons.clear();
+
+    // Clear content pages
+    for (auto it = m_contentPages.begin(); it != m_contentPages.end(); ++it) {
+        m_contentStack->removeWidget(it.value());
+    }
+    m_contentPages.clear();
+
+    // Clear data
+    m_navigationItems.clear();
+    m_selectedItemTag.clear();
+    m_selectedIndex = -1;
+}
+
 void FluentNavigationView::setSelectedItemTag(const QString& tag) {
     if (m_selectedItemTag == tag) {
         return;
@@ -632,6 +653,135 @@ void FluentNavigationView::setPaneOpen(bool open) { setIsPaneOpen(open); }
 QSize FluentNavigationView::sizeHint() const { return QSize(800, 600); }
 
 QSize FluentNavigationView::minimumSizeHint() const { return QSize(320, 240); }
+
+// Missing method implementations for new API
+void FluentNavigationView::setPaneTitle(const QString& title) {
+    if (m_paneTitle != title) {
+        m_paneTitle = title;
+        emit paneTitleChanged(title);
+        // Update UI if needed
+    }
+}
+
+void FluentNavigationView::setFooter(QWidget* footer) {
+    if (m_footerContent != footer) {
+        if (m_footerContent) {
+            m_paneLayout->removeWidget(m_footerContent);
+        }
+        m_footerContent = footer;
+        if (footer) {
+            m_paneLayout->addWidget(footer);
+        }
+        emit footerChanged(footer);
+    }
+}
+
+void FluentNavigationView::setSettingsItem(QWidget* item) {
+    if (m_settingsItem != item) {
+        m_settingsItem = item;
+        emit settingsItemChanged(item);
+        // Update UI if needed
+    }
+}
+
+void FluentNavigationView::setPaneToggleButtonVisible(bool visible) {
+    if (m_paneToggleButtonVisible != visible) {
+        m_paneToggleButtonVisible = visible;
+        if (m_hamburgerButton) {
+            m_hamburgerButton->setVisible(visible);
+        }
+        emit paneToggleButtonVisibleChanged(visible);
+    }
+}
+
+void FluentNavigationView::setContentFrame(QWidget* frame) {
+    if (m_contentFrame != frame) {
+        m_contentFrame = frame;
+        // Update content area if needed
+    }
+}
+
+void FluentNavigationView::setAutoSuggestBox(QWidget* box) {
+    if (m_autoSuggestBox != box) {
+        m_autoSuggestBox = box;
+        emit autoSuggestBoxChanged(box);
+        // Update UI if needed
+    }
+}
+
+void FluentNavigationView::setCompactModeThreshold(int threshold) {
+    if (m_compactModeThreshold != threshold && threshold >= 0) {
+        m_compactModeThreshold = threshold;
+        updateDisplayModeFromWidth();
+    }
+}
+
+void FluentNavigationView::setPaneDisplayMode(
+    FluentNavigationPaneDisplayMode mode) {
+    if (m_paneDisplayMode != mode) {
+        m_paneDisplayMode = mode;
+        emit paneDisplayModeChanged(mode);
+        // Update layout based on mode
+    }
+}
+
+FluentNavigationItem* FluentNavigationView::addMenuItem(const QString& text,
+                                                        const QIcon& icon) {
+    FluentNavigationItem item(text, icon);
+    addNavigationItem(item);
+
+    // Return pointer to the added item
+    if (!m_navigationItems.empty()) {
+        emit menuItemAdded(&m_navigationItems.back());
+        emit menuItemCountChanged(static_cast<int>(m_navigationItems.size()));
+        return &m_navigationItems.back();
+    }
+    return nullptr;
+}
+
+void FluentNavigationView::removeMenuItem(FluentNavigationItem* item) {
+    if (!item)
+        return;
+
+    auto it = std::find_if(m_navigationItems.begin(), m_navigationItems.end(),
+                           [item](const FluentNavigationItem& navItem) {
+                               return &navItem == item;
+                           });
+
+    if (it != m_navigationItems.end()) {
+        // Remove from UI
+        if (m_itemButtons.contains(it->tag)) {
+            QWidget* button = m_itemButtons[it->tag];
+            m_paneLayout->removeWidget(button);
+            button->deleteLater();
+            m_itemButtons.remove(it->tag);
+        }
+
+        // Remove from data
+        m_navigationItems.erase(it);
+        emit menuItemRemoved(item);
+        emit menuItemCountChanged(static_cast<int>(m_navigationItems.size()));
+    }
+}
+
+void FluentNavigationView::clearMenuItems() {
+    clearNavigationItems();
+    emit menuItemsCleared();
+    emit menuItemCountChanged(0);
+}
+
+void FluentNavigationView::invokeItem(FluentNavigationItem* item) {
+    if (item) {
+        setSelectedItemTag(item->tag);
+        emit itemInvoked(item->tag);
+    }
+}
+
+void FluentNavigationView::setSelectedItem(FluentNavigationItem* item) {
+    if (item) {
+        setSelectedItemTag(item->tag);
+    }
+}
 
 }  // namespace FluentQt::Components
 

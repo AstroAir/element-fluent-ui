@@ -1187,21 +1187,21 @@ void FluentSelect::paintEvent(QPaintEvent* event) {
     const auto& theme = FluentTheme::instance();
 
     // Draw background
-    QColor backgroundColor = theme.color("ControlFillColorDefault");
+    QColor backgroundColor = theme.color("controlFillDefault");
     if (state() == FluentState::Hovered) {
-        backgroundColor = theme.color("ControlFillColorSecondary");
+        backgroundColor = theme.color("controlFillSecondary");
     } else if (state() == FluentState::Pressed) {
-        backgroundColor = theme.color("ControlFillColorTertiary");
+        backgroundColor = theme.color("controlFillTertiary");
     } else if (state() == FluentState::Focused) {
-        backgroundColor = theme.color("ControlFillColorInputActive");
+        backgroundColor = theme.color("controlFillInputActive");
     }
 
     painter.fillRect(rect, backgroundColor);
 
     // Draw border
-    QPen borderPen(theme.color("ControlStrokeColorDefault"));
+    QPen borderPen(theme.color("controlStrokeDefault"));
     if (state() == FluentState::Focused) {
-        borderPen.setColor(theme.color("AccentFillColorDefault"));
+        borderPen.setColor(theme.color("accent"));
         borderPen.setWidth(2);
     }
     painter.setPen(borderPen);
@@ -1211,9 +1211,9 @@ void FluentSelect::paintEvent(QPaintEvent* event) {
     QString displayText = currentText();
     if (displayText.isEmpty()) {
         displayText = m_config.placeholderText;
-        painter.setPen(theme.color("TextFillColorSecondary"));
+        painter.setPen(theme.color("textSecondary"));
     } else {
-        painter.setPen(theme.color("TextFillColorPrimary"));
+        painter.setPen(theme.color("textPrimary"));
     }
 
     if (!displayText.isEmpty()) {
@@ -1226,7 +1226,7 @@ void FluentSelect::paintEvent(QPaintEvent* event) {
     // Draw dropdown arrow
     QRect arrowRect(rect.right() - 24, rect.top() + (rect.height() - 12) / 2,
                     12, 12);
-    painter.setPen(QPen(theme.color("TextFillColorSecondary"), 2));
+    painter.setPen(QPen(theme.color("textSecondary"), 2));
     painter.drawLine(arrowRect.left() + 2, arrowRect.top() + 4,
                      arrowRect.center().x(), arrowRect.bottom() - 2);
     painter.drawLine(arrowRect.center().x(), arrowRect.bottom() - 2,

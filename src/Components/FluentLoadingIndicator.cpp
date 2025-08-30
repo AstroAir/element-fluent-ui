@@ -123,6 +123,34 @@ void FluentLoadingIndicator::setLoadingSize(FluentLoadingSize size) {
     }
 }
 
+FluentLoadingComplexity FluentLoadingIndicator::complexity() const {
+    return m_complexity;
+}
+
+void FluentLoadingIndicator::setComplexity(FluentLoadingComplexity complexity) {
+    if (m_complexity != complexity) {
+        const bool wasRunning = m_running;
+        if (wasRunning) {
+            stop();
+        }
+
+        m_complexity = complexity;
+
+        // Adjust default text visibility based on complexity mode
+        if (complexity == FluentLoadingComplexity::Simple) {
+            setTextVisible(false);  // Simple mode defaults to no text
+        }
+
+        updateGeometry();
+
+        if (wasRunning) {
+            start();
+        }
+
+        emit complexityChanged(complexity);
+    }
+}
+
 QColor FluentLoadingIndicator::color() const { return m_color; }
 
 void FluentLoadingIndicator::setColor(const QColor& color) {
@@ -228,8 +256,8 @@ void FluentLoadingIndicator::start() {
     if (!m_running) {
         m_running = true;
 
-        // Start loading timeout if error boundary is set
-        if (m_errorBoundary) {
+        // Start loading timeout if error boundary is set (Full mode only)
+        if (m_errorBoundary && m_complexity == FluentLoadingComplexity::Full) {
             m_errorBoundary->clearError();
             m_errorBoundary->setLoadingTimeout(m_loadingTimeoutMs);
             m_errorBoundary->startLoadingTimeout();
@@ -238,10 +266,20 @@ void FluentLoadingIndicator::start() {
         switch (m_loadingType) {
             case FluentLoadingType::Spinner:
             case FluentLoadingType::Ring:
-                m_rotationAnimation->start();
+                if (m_complexity == FluentLoadingComplexity::Full) {
+                    m_rotationAnimation->start();
+                } else {
+                    // Simple mode uses basic timer animation
+                    m_animationTimer->start();
+                }
                 break;
             case FluentLoadingType::Pulse:
-                m_pulseAnimation->start();
+                if (m_complexity == FluentLoadingComplexity::Full) {
+                    m_pulseAnimation->start();
+                } else {
+                    // Simple mode uses basic timer animation
+                    m_animationTimer->start();
+                }
                 break;
             case FluentLoadingType::Dots:
             case FluentLoadingType::Bars:
@@ -258,13 +296,16 @@ void FluentLoadingIndicator::stop() {
     if (m_running) {
         m_running = false;
 
-        // Stop loading timeout if error boundary is set
-        if (m_errorBoundary) {
+        // Stop loading timeout if error boundary is set (Full mode only)
+        if (m_errorBoundary && m_complexity == FluentLoadingComplexity::Full) {
             m_errorBoundary->stopLoadingTimeout();
         }
 
-        m_rotationAnimation->stop();
-        m_pulseAnimation->stop();
+        // Stop all animations
+        if (m_complexity == FluentLoadingComplexity::Full) {
+            m_rotationAnimation->stop();
+            m_pulseAnimation->stop();
+        }
         m_animationTimer->stop();
 
         // Reset animation state
@@ -340,24 +381,57 @@ void FluentLoadingIndicator::changeEvent(QEvent* event) {
 void FluentLoadingIndicator::updateAnimation() { update(); }
 
 void FluentLoadingIndicator::onAnimationStep() {
-    // Update animation progress
-    m_animationProgress += 0.05 * m_speed;  // Adjust speed
-    if (m_animationProgress > 1.0) {
-        m_animationProgress = 0.0;
-    }
-
-    // Update dot phases for dots animation
-    if (m_loadingType == FluentLoadingType::Dots) {
-        for (int i = 0; i < m_dotPhases.size(); ++i) {
-            m_dotPhases[i] = fmod(m_animationProgress + i * 0.2, 1.0);
+    if (m_complexity == FluentLoadingComplexity::Simple) {
+        // Simple mode animation (from FluentLoadingIndicatorSimple)
+        m_animationProgress += 0.05;  // Fixed increment for simple mode
+        if (m_animationProgress >= 1.0) {
+            m_animationProgress = 0.0;
         }
-    }
 
-    // Update bar heights for bars animation
-    if (m_loadingType == FluentLoadingType::Bars) {
-        for (int i = 0; i < m_barHeights.size(); ++i) {
-            const qreal phase = fmod(m_animationProgress + i * 0.15, 1.0);
-            m_barHeights[i] = 0.3 + 0.7 * qAbs(qSin(phase * M_PI));
+        // Update rotation angle for spinner/ring
+        m_rotationAngle = m_animationProgress * 360.0;
+
+        // Update dot phases with staggered timing
+        if (m_loadingType == FluentLoadingType::Dots) {
+            for (int i = 0; i < m_dotPhases.size(); ++i) {
+                qreal phase = m_animationProgress + (i * 0.2);
+                if (phase >= 1.0)
+                    phase -= 1.0;
+                m_dotPhases[i] = phase;
+            }
+        }
+
+        // Update bar heights with wave pattern
+        if (m_loadingType == FluentLoadingType::Bars) {
+            for (int i = 0; i < m_barHeights.size(); ++i) {
+                qreal phase = m_animationProgress + (i * 0.15);
+                if (phase >= 1.0)
+                    phase -= 1.0;
+                m_barHeights[i] = 0.3 + 0.7 * qAbs(qSin(phase * M_PI));
+            }
+        }
+
+        emit animationProgressChanged(m_animationProgress);
+    } else {
+        // Full mode animation (original implementation)
+        m_animationProgress += 0.05 * m_speed;  // Adjust speed
+        if (m_animationProgress > 1.0) {
+            m_animationProgress = 0.0;
+        }
+
+        // Update dot phases for dots animation
+        if (m_loadingType == FluentLoadingType::Dots) {
+            for (int i = 0; i < m_dotPhases.size(); ++i) {
+                m_dotPhases[i] = fmod(m_animationProgress + i * 0.2, 1.0);
+            }
+        }
+
+        // Update bar heights for bars animation
+        if (m_loadingType == FluentLoadingType::Bars) {
+            for (int i = 0; i < m_barHeights.size(); ++i) {
+                const qreal phase = fmod(m_animationProgress + i * 0.15, 1.0);
+                m_barHeights[i] = 0.3 + 0.7 * qAbs(qSin(phase * M_PI));
+            }
         }
     }
 
@@ -590,6 +664,38 @@ void FluentLoadingIndicator::setLoadingTimeout(int timeoutMs) {
     if (m_errorBoundary) {
         m_errorBoundary->setLoadingTimeout(timeoutMs);
     }
+}
+
+// Factory methods (from Simple variant)
+FluentLoadingIndicator* FluentLoadingIndicator::createSpinner(
+    FluentLoadingSize size, QWidget* parent) {
+    auto* indicator =
+        new FluentLoadingIndicator(FluentLoadingType::Spinner, size, parent);
+    indicator->setComplexity(FluentLoadingComplexity::Simple);
+    return indicator;
+}
+
+FluentLoadingIndicator* FluentLoadingIndicator::createDots(
+    FluentLoadingSize size, QWidget* parent) {
+    auto* indicator =
+        new FluentLoadingIndicator(FluentLoadingType::Dots, size, parent);
+    indicator->setComplexity(FluentLoadingComplexity::Simple);
+    return indicator;
+}
+
+FluentLoadingIndicator* FluentLoadingIndicator::createPulse(
+    FluentLoadingSize size, QWidget* parent) {
+    auto* indicator =
+        new FluentLoadingIndicator(FluentLoadingType::Pulse, size, parent);
+    indicator->setComplexity(FluentLoadingComplexity::Simple);
+    return indicator;
+}
+
+FluentLoadingIndicator* FluentLoadingIndicator::createSimple(
+    FluentLoadingType type, FluentLoadingSize size, QWidget* parent) {
+    auto* indicator = new FluentLoadingIndicator(type, size, parent);
+    indicator->setComplexity(FluentLoadingComplexity::Simple);
+    return indicator;
 }
 
 }  // namespace FluentQt::Components

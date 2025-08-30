@@ -57,6 +57,25 @@ enum class FluentEasing {
     BackOut,
     BackIn,
     BackInOut,
+
+    // Microsoft Fluent Design System specific easing curves
+    FluentAccelerate,  // Fluent accelerate curve (0.7, 0.0, 1.0, 1.0)
+    FluentDecelerate,  // Fluent decelerate curve (0.1, 0.9, 0.2, 1.0)
+    FluentStandard,    // Fluent standard curve (0.8, 0.0, 0.2, 1.0)
+    FluentEmphasized,  // Fluent emphasized curve (0.3, 0.0, 0.8, 0.15)
+
+    // Fluent Design motion hierarchy curves
+    FluentSubtle,      // Subtle motion (0.33, 0.0, 0.67, 1.0)
+    FluentNormal,      // Normal motion (0.5, 0.0, 0.5, 1.0)
+    FluentExpressive,  // Expressive motion (0.68, -0.55, 0.265, 1.55)
+
+    // Fluent Design component-specific curves
+    FluentButton,      // Button interactions (0.1, 0.9, 0.2, 1.0)
+    FluentCard,        // Card animations (0.25, 0.46, 0.45, 0.94)
+    FluentDialog,      // Dialog transitions (0.0, 0.0, 0.2, 1.0)
+    FluentNavigation,  // Navigation transitions (0.4, 0.0, 0.2, 1.0)
+    FluentReveal,      // Reveal animations (0.0, 0.0, 0.2, 1.0)
+
     // Aliases expected by tests
     QuadIn,
     QuadOut,
@@ -112,8 +131,10 @@ enum class FluentAnimationType {
 };
 
 struct FluentAnimationConfig {
-    std::chrono::milliseconds duration{200ms};
-    FluentEasing easing{FluentEasing::EaseOut};
+    std::chrono::milliseconds duration{
+        250ms};  // Fluent Design standard duration
+    FluentEasing easing{
+        FluentEasing::FluentStandard};  // Use Fluent standard curve
     std::chrono::milliseconds delay{0ms};
     int loops{1};
     bool reverseOnComplete{false};
@@ -130,6 +151,88 @@ struct FluentAnimationConfig {
     // Performance settings
     bool useHardwareAcceleration{true};
     bool respectReducedMotion{true};
+
+    // Fluent Design motion hierarchy
+    enum class MotionHierarchy {
+        Primary,    // 250ms - Main content transitions
+        Secondary,  // 150ms - Supporting element transitions
+        Utility     // 100ms - Micro-interactions
+    };
+    MotionHierarchy hierarchy{MotionHierarchy::Primary};
+
+    // Fluent Design specific presets
+    static FluentAnimationConfig microInteraction() {
+        FluentAnimationConfig config;
+        config.duration = 100ms;
+        config.easing = FluentEasing::FluentButton;
+        config.hierarchy = MotionHierarchy::Utility;
+        return config;
+    }
+
+    static FluentAnimationConfig uiTransition() {
+        FluentAnimationConfig config;
+        config.duration = 150ms;
+        config.easing = FluentEasing::FluentStandard;
+        config.hierarchy = MotionHierarchy::Secondary;
+        return config;
+    }
+
+    static FluentAnimationConfig contentTransition() {
+        FluentAnimationConfig config;
+        config.duration = 250ms;
+        config.easing = FluentEasing::FluentStandard;
+        config.hierarchy = MotionHierarchy::Primary;
+        return config;
+    }
+
+    static FluentAnimationConfig complexAnimation() {
+        FluentAnimationConfig config;
+        config.duration = 500ms;
+        config.easing = FluentEasing::FluentEmphasized;
+        config.hierarchy = MotionHierarchy::Primary;
+        return config;
+    }
+
+    // Fluent Design animation presets for common scenarios
+    static FluentAnimationConfig buttonInteraction() {
+        FluentAnimationConfig config;
+        config.duration = 100ms;
+        config.easing = FluentEasing::FluentButton;
+        config.hierarchy = MotionHierarchy::Utility;
+        return config;
+    }
+
+    static FluentAnimationConfig cardHover() {
+        FluentAnimationConfig config;
+        config.duration = 150ms;
+        config.easing = FluentEasing::FluentCard;
+        config.hierarchy = MotionHierarchy::Secondary;
+        return config;
+    }
+
+    static FluentAnimationConfig dialogTransition() {
+        FluentAnimationConfig config;
+        config.duration = 300ms;
+        config.easing = FluentEasing::FluentDialog;
+        config.hierarchy = MotionHierarchy::Primary;
+        return config;
+    }
+
+    static FluentAnimationConfig navigationTransition() {
+        FluentAnimationConfig config;
+        config.duration = 300ms;
+        config.easing = FluentEasing::FluentNavigation;
+        config.hierarchy = MotionHierarchy::Primary;
+        return config;
+    }
+
+    static FluentAnimationConfig revealEffect() {
+        FluentAnimationConfig config;
+        config.duration = 250ms;
+        config.easing = FluentEasing::FluentReveal;
+        config.hierarchy = MotionHierarchy::Primary;
+        return config;
+    }
 
     // Default constructor for empty brace initialization
     FluentAnimationConfig() = default;
@@ -239,9 +342,19 @@ public:
         QWidget* target, const QPoint& center = {},
         const FluentAnimationConfig& config = {});
 
-    // Connected animations (for navigations)
+    // Connected animations (for navigations) - Fluent Design principle
     static std::unique_ptr<QParallelAnimationGroup> connectedAnimation(
         QWidget* from, QWidget* to, const FluentAnimationConfig& config = {});
+
+    // Enhanced connected animation with shared element transition
+    static std::unique_ptr<QParallelAnimationGroup> connectedElementAnimation(
+        QWidget* fromElement, QWidget* toElement, QWidget* fromContainer,
+        QWidget* toContainer, const FluentAnimationConfig& config = {});
+
+    // Enhanced navigation transitions with Fluent Design principles
+    static std::unique_ptr<QParallelAnimationGroup> navigationTransition(
+        QWidget* fromWidget, QWidget* toWidget,
+        const FluentAnimationConfig& config = {});
 
     // Stagger animations for lists
     template <typename Container>
@@ -276,6 +389,24 @@ public:
         QWidget* target, const QPoint& offset,
         const FluentAnimationConfig& config = {});
 
+    // Fluent Design entrance animations
+    static std::unique_ptr<QParallelAnimationGroup> entranceAnimation(
+        QWidget* target, const FluentAnimationConfig& config = {});
+
+    // Fluent Design exit animations
+    static std::unique_ptr<QParallelAnimationGroup> exitAnimation(
+        QWidget* target, const FluentAnimationConfig& config = {});
+
+    // Motion hierarchy animations (primary, secondary, utility)
+    static std::unique_ptr<QPropertyAnimation> primaryMotion(
+        QWidget* target, const FluentAnimationConfig& config = {});
+
+    static std::unique_ptr<QPropertyAnimation> secondaryMotion(
+        QWidget* target, const FluentAnimationConfig& config = {});
+
+    static std::unique_ptr<QPropertyAnimation> utilityMotion(
+        QWidget* target, const FluentAnimationConfig& config = {});
+
     // Loading animations
     static std::unique_ptr<QPropertyAnimation> spinnerAnimation(
         QWidget* target, const FluentAnimationConfig& config = {});
@@ -284,6 +415,8 @@ public:
         QWidget* target, const FluentAnimationConfig& config = {});
 
     static QEasingCurve::Type toQtEasing(FluentEasing easing);
+    static bool isFluentDesignEasing(FluentEasing easing);
+    static QEasingCurve createFluentBezierCurve(FluentEasing easing);
 
 signals:
     void animationStarted();
@@ -292,6 +425,7 @@ signals:
 private:
     static void setupAnimation(QPropertyAnimation* animation,
                                const FluentAnimationConfig& config);
+    static void enableHardwareAcceleration(QPropertyAnimation* animation);
     static void applyMicroInteractionSettings(
         QPropertyAnimation* animation, const FluentAnimationConfig& config);
     static bool shouldRespectReducedMotion();
@@ -342,6 +476,7 @@ public:
     void pauseAllAnimations();
     void resumeAllAnimations();
     void stopAllAnimations();
+    void cleanupWidgetAnimations(QWidget* widget);
     int activeAnimationCount() const;
 
 private:

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QColor>
+#include <QColorDialog>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>

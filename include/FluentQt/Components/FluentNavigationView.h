@@ -21,6 +21,16 @@ enum class FluentNavigationDisplayMode { Auto, Expanded, Compact, Minimal };
 
 enum class FluentNavigationSelectionFollowsFocus { Disabled, Enabled };
 
+enum class FluentNavigationViewDisplayMode { Auto, Expanded, Compact, Minimal };
+
+enum class FluentNavigationPaneDisplayMode {
+    Auto,
+    Left,
+    Top,
+    LeftCompact,
+    LeftMinimal
+};
+
 struct FluentNavigationItem {
     QString text;
     QIcon icon;
@@ -47,6 +57,19 @@ class FluentNavigationView : public Core::FluentComponent {
                    setBackButtonVisible)
     Q_PROPERTY(
         bool isSettingsVisible READ isSettingsVisible WRITE setSettingsVisible)
+    Q_PROPERTY(QString paneTitle READ paneTitle WRITE setPaneTitle NOTIFY
+                   paneTitleChanged)
+    Q_PROPERTY(QWidget* footer READ footer WRITE setFooter NOTIFY footerChanged)
+    Q_PROPERTY(QWidget* settingsItem READ settingsItem WRITE setSettingsItem
+                   NOTIFY settingsItemChanged)
+    Q_PROPERTY(
+        bool isPaneToggleButtonVisible READ isPaneToggleButtonVisible WRITE
+            setPaneToggleButtonVisible NOTIFY paneToggleButtonVisibleChanged)
+    Q_PROPERTY(QWidget* contentFrame READ contentFrame WRITE setContentFrame)
+    Q_PROPERTY(QWidget* autoSuggestBox READ autoSuggestBox WRITE
+                   setAutoSuggestBox NOTIFY autoSuggestBoxChanged)
+    Q_PROPERTY(int compactModeThreshold READ compactModeThreshold WRITE
+                   setCompactModeThreshold)
 
 public:
     explicit FluentNavigationView(QWidget* parent = nullptr);
@@ -59,6 +82,13 @@ public:
     // Pane state
     bool isPaneOpen() const { return m_isPaneOpen; }
     void setPaneOpen(bool open);
+    void setIsPaneOpen(bool open);
+
+    // Pane display mode
+    FluentNavigationPaneDisplayMode paneDisplayMode() const {
+        return m_paneDisplayMode;
+    }
+    void setPaneDisplayMode(FluentNavigationPaneDisplayMode mode);
 
     // Header
     QString header() const { return m_header; }
@@ -72,6 +102,34 @@ public:
     bool isSettingsVisible() const { return m_settingsVisible; }
     void setSettingsVisible(bool visible);
 
+    // Pane title
+    QString paneTitle() const { return m_paneTitle; }
+    void setPaneTitle(const QString& title);
+
+    // Footer
+    QWidget* footer() const { return m_footerContent; }
+    void setFooter(QWidget* footer);
+
+    // Settings item
+    QWidget* settingsItem() const { return m_settingsItem; }
+    void setSettingsItem(QWidget* item);
+
+    // Pane toggle button
+    bool isPaneToggleButtonVisible() const { return m_paneToggleButtonVisible; }
+    void setPaneToggleButtonVisible(bool visible);
+
+    // Content frame
+    QWidget* contentFrame() const { return m_contentFrame; }
+    void setContentFrame(QWidget* frame);
+
+    // Auto suggest box
+    QWidget* autoSuggestBox() const { return m_autoSuggestBox; }
+    void setAutoSuggestBox(QWidget* box);
+
+    // Compact mode threshold
+    int compactModeThreshold() const { return m_compactModeThreshold; }
+    void setCompactModeThreshold(int threshold);
+
     // Navigation items
     void addNavigationItem(const FluentNavigationItem& item);
     void insertNavigationItem(int index, const FluentNavigationItem& item);
@@ -79,10 +137,18 @@ public:
     void clearNavigationItems();
     int navigationItemCount() const;
 
+    // Menu item management (aliases for navigation items)
+    FluentNavigationItem* addMenuItem(const QString& text,
+                                      const QIcon& icon = QIcon());
+    void removeMenuItem(FluentNavigationItem* item);
+    void clearMenuItems();
+    void invokeItem(FluentNavigationItem* item);
+
     // Selection
     int selectedIndex() const { return m_selectedIndex; }
     void setSelectedIndex(int index);
     FluentNavigationItem selectedItem() const;
+    void setSelectedItem(FluentNavigationItem* item);
 
     // Content management
     QWidget* currentContent() const;
@@ -106,6 +172,18 @@ signals:
     void itemInvoked(int index);
     void itemInvoked(const QString& tag);
     void backRequested();
+    void paneTitleChanged(const QString& title);
+    void footerChanged(QWidget* footer);
+    void settingsItemChanged(QWidget* item);
+    void paneToggleButtonVisibleChanged(bool visible);
+    void autoSuggestBoxChanged(QWidget* box);
+    void menuItemCountChanged(int count);
+    void menuItemAdded(FluentNavigationItem* item);
+    void menuItemRemoved(FluentNavigationItem* item);
+    void menuItemsCleared();
+    void isPaneOpenChanged(bool open);
+    void paneDisplayModeChanged(FluentNavigationPaneDisplayMode mode);
+    void paneToggled();
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -131,7 +209,6 @@ private:
     void setSelectedItemTag(const QString& tag);
     void onItemClicked(const QString& tag);
     void onPaneToggleRequested();
-    void setIsPaneOpen(bool open);
 
     // Enhanced animation methods
     void animateNavigationItems(bool expanding);
@@ -147,6 +224,13 @@ private:
     bool m_backButtonVisible{false};
     bool m_settingsVisible{true};
     int m_selectedIndex{-1};
+    QString m_paneTitle;
+    QWidget* m_settingsItem{nullptr};
+    bool m_paneToggleButtonVisible{true};
+    QWidget* m_contentFrame{nullptr};
+    QWidget* m_autoSuggestBox{nullptr};
+    FluentNavigationPaneDisplayMode m_paneDisplayMode{
+        FluentNavigationPaneDisplayMode::Auto};
 
     // UI Components
     QHBoxLayout* m_mainLayout;

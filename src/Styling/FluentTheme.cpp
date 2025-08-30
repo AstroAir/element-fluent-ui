@@ -5,12 +5,16 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
+#include <QEasingCurve>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QParallelAnimationGroup>
+#include <QPropertyAnimation>
 #include <QSettings>
 #include <QStandardPaths>
 #include <QStyleHints>
 #include <QTimer>
+#include <QWidget>
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -140,8 +144,13 @@ void FluentTheme::setAccentColor(const QColor& color) {
     }
 
     setCustomAccentColor(color);
-    emit accentColorChanged(accentColor());
-    emit themeChanged();
+
+    // Only emit signals if the accent color actually changed
+    QColor newColor = accentColor();
+    if (newColor != currentColor) {
+        emit accentColorChanged(newColor);
+        emit themeChanged();
+    }
 }
 
 void FluentTheme::setCustomAccentColor(const QColor& color) {
@@ -243,7 +252,45 @@ QColor FluentTheme::color(std::string_view colorName) const {
             {"border", [](const auto& p) { return p.neutralQuaternaryAlt; }},
             {"borderStrong", [](const auto& p) { return p.neutralQuaternary; }},
             {"borderSubtle",
-             [](const auto& p) { return p.neutralTertiaryAlt; }}};
+             [](const auto& p) { return p.neutralTertiaryAlt; }},
+
+            // Control fill colors
+            {"controlFillDefault",
+             [](const auto& p) { return p.neutralLightest; }},
+            {"controlFillSecondary",
+             [](const auto& p) { return p.neutralLighter; }},
+            {"controlFillTertiary",
+             [](const auto& p) { return p.neutralLight; }},
+            {"controlFillDisabled",
+             [](const auto& p) { return p.neutralQuaternaryAlt; }},
+            {"controlFillInputActive",
+             [](const auto& p) { return p.neutralLightest; }},
+
+            // Control stroke colors
+            {"controlStrokeDefault",
+             [](const auto& p) { return p.neutralQuaternary; }},
+            {"controlStrokeSecondary",
+             [](const auto& p) { return p.neutralTertiary; }},
+            {"controlStrokeDisabled",
+             [](const auto& p) { return p.neutralTertiaryAlt; }},
+
+            // Legacy color names for compatibility
+            {"accentLight", [](const auto& p) { return p.accentLight1; }},
+            {"accentDark", [](const auto& p) { return p.accentDark1; }},
+            {"neutralTertiaryAlt",
+             [](const auto& p) { return p.neutralTertiaryAlt; }},
+
+            // Control fill color variants (alternative naming)
+            {"controlFillColorDefault",
+             [](const auto& p) { return p.neutralLightest; }},
+            {"controlFillColorSecondary",
+             [](const auto& p) { return p.neutralLighter; }},
+            {"controlFillColorTertiary",
+             [](const auto& p) { return p.neutralLight; }},
+            {"controlFillColorDisabled",
+             [](const auto& p) { return p.neutralQuaternaryAlt; }},
+            {"controlFillColorInputActive",
+             [](const auto& p) { return p.neutralLightest; }}};
 
     const auto it = colorMap.find(colorName);
     if (it != colorMap.end()) {
@@ -341,12 +388,18 @@ QFont FluentTheme::codeFont() const {
 }
 
 int FluentTheme::spacing(std::string_view size) const {
-    const auto it = m_spacingMap.find(std::string(size));
+    std::string sizeStr(size);
+    const auto it = m_spacingMap.find(sizeStr);
     if (it != m_spacingMap.end()) {
         return it->second;
     }
 
+    // Debug: print available keys when lookup fails
     qWarning() << "Unknown spacing size:" << size.data();
+    qDebug() << "Available spacing keys:";
+    for (const auto& pair : m_spacingMap) {
+        qDebug() << "  " << pair.first.c_str() << "=" << pair.second;
+    }
     return 8;  // Default spacing
 }
 
@@ -1397,17 +1450,75 @@ void FluentTheme::setVariant(FluentThemeVariant variant) {
 
 void FluentTheme::animateThemeTransition(FluentThemeMode fromMode,
                                          FluentThemeMode toMode) {
-    // ElaWidgetTools-inspired smooth theme transition
-    // This creates a subtle animation effect when switching themes
-
-    // For now, we'll implement a simple fade effect
-    // In a full implementation, this could animate color transitions
-
+    // Enhanced Fluent Design theme transition with proper timing and curves
     qDebug() << "Animating theme transition from" << static_cast<int>(fromMode)
              << "to" << static_cast<int>(toMode);
 
-    // Future enhancement: Add actual animation logic here
-    // Could animate opacity, color interpolation, etc.
+    // Create a coordinated theme transition animation
+    auto* transitionGroup = new QParallelAnimationGroup(this);
+
+    // Find all widgets that need theme transition
+    QList<QWidget*> widgets;
+    for (QWidget* widget : QApplication::allWidgets()) {
+        if (widget && widget->isVisible()) {
+            widgets.append(widget);
+        }
+    }
+
+    // Animate each widget with staggered timing for visual hierarchy
+    for (int i = 0; i < widgets.size() && i < 20;
+         ++i) {  // Limit to first 20 widgets for performance
+        QWidget* widget = widgets[i];
+
+        // Create opacity animation for smooth transition
+        auto* opacityAnimation =
+            new QPropertyAnimation(widget, "windowOpacity");
+        opacityAnimation->setDuration(
+            300);  // Fluent Design complex animation duration
+
+        // Use Fluent emphasized curve for theme transitions
+        QEasingCurve emphasizedCurve(QEasingCurve::BezierSpline);
+        emphasizedCurve.addCubicBezierSegment(
+            QPointF(0.3, 0.0), QPointF(0.8, 0.15), QPointF(1.0, 1.0));
+        opacityAnimation->setEasingCurve(emphasizedCurve);
+
+        // Stagger the start time based on widget hierarchy
+        opacityAnimation->setStartValue(1.0);
+        opacityAnimation->setEndValue(0.95);  // Subtle opacity change
+
+        // Add slight delay for visual hierarchy (primary elements first)
+        QTimer::singleShot(i * 10, [=]() { opacityAnimation->start(); });
+
+        // Restore opacity after theme change
+        connect(opacityAnimation, &QPropertyAnimation::finished, [widget]() {
+            auto* restoreAnimation =
+                new QPropertyAnimation(widget, "windowOpacity");
+            restoreAnimation->setDuration(200);
+            restoreAnimation->setStartValue(0.95);
+            restoreAnimation->setEndValue(1.0);
+
+            // Use Fluent standard curve for restore
+            QEasingCurve standardCurve(QEasingCurve::BezierSpline);
+            standardCurve.addCubicBezierSegment(
+                QPointF(0.8, 0.0), QPointF(0.2, 1.0), QPointF(1.0, 1.0));
+            restoreAnimation->setEasingCurve(standardCurve);
+
+            restoreAnimation->start();
+
+            // Clean up animation
+            connect(restoreAnimation, &QPropertyAnimation::finished,
+                    restoreAnimation, &QPropertyAnimation::deleteLater);
+        });
+
+        transitionGroup->addAnimation(opacityAnimation);
+    }
+
+    // Start the coordinated transition
+    transitionGroup->start();
+
+    // Clean up animation group when finished
+    connect(transitionGroup, &QParallelAnimationGroup::finished,
+            transitionGroup, &QParallelAnimationGroup::deleteLater);
 }
 
 }  // namespace FluentQt::Styling

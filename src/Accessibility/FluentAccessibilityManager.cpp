@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QMutexLocker>
+#include <QThread>
 #include <QTimer>
 
 namespace FluentQt::Accessibility {
@@ -13,11 +14,24 @@ FluentAccessibilityManager& FluentAccessibilityManager::instance() {
 }
 
 FluentAccessibilityManager::FluentAccessibilityManager() {
-    // Initialize announcement queue timer
-    m_announcementTimer = new QTimer(this);
-    m_announcementTimer->setSingleShot(true);
-    connect(m_announcementTimer, &QTimer::timeout, this,
-            &FluentAccessibilityManager::processAnnouncementQueue);
+    // Initialize announcement queue timer only if we have a proper event loop
+    if (QApplication::instance() &&
+        QThread::currentThread() == QApplication::instance()->thread()) {
+        m_announcementTimer = new QTimer(this);
+        m_announcementTimer->setSingleShot(true);
+        connect(m_announcementTimer, &QTimer::timeout, this,
+                &FluentAccessibilityManager::processAnnouncementQueue);
+    } else {
+        // Defer timer creation until we're in the main thread
+        QTimer::singleShot(0, this, [this]() {
+            if (!m_announcementTimer) {
+                m_announcementTimer = new QTimer(this);
+                m_announcementTimer->setSingleShot(true);
+                connect(m_announcementTimer, &QTimer::timeout, this,
+                        &FluentAccessibilityManager::processAnnouncementQueue);
+            }
+        });
+    }
 
     // Detect system accessibility settings unless explicitly skipped for
     // tests/headless
@@ -30,7 +44,7 @@ FluentAccessibilityManager::FluentAccessibilityManager() {
             << platformName;
     } else {
         // Defer system detection to avoid blocking UI thread during startup
-        QTimer::singleShot(0, this,
+        QTimer::singleShot(100, this,
                            &FluentAccessibilityManager::
                                detectSystemAccessibilitySettingsAsync);
     }

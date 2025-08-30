@@ -19,6 +19,11 @@ enum class FluentRadioButtonSize {
 
 enum class FluentRadioButtonLabelPosition { Left, Right, Above, Below };
 
+enum class FluentRadioButtonComplexity {
+    Simple,  // Lightweight mode with basic functionality (no animations)
+    Full     // Full-featured mode with animations and advanced features
+};
+
 class FluentRadioButton : public QAbstractButton {
     Q_OBJECT
     Q_PROPERTY(
@@ -27,6 +32,8 @@ class FluentRadioButton : public QAbstractButton {
     Q_PROPERTY(QString value READ value WRITE setValue NOTIFY valueChanged)
     Q_PROPERTY(
         FluentRadioButtonSize size READ size WRITE setSize NOTIFY sizeChanged)
+    Q_PROPERTY(FluentRadioButtonComplexity complexity READ complexity WRITE
+                   setComplexity NOTIFY complexityChanged)
     Q_PROPERTY(FluentRadioButtonLabelPosition labelPosition READ labelPosition
                    WRITE setLabelPosition NOTIFY labelPositionChanged)
     Q_PROPERTY(bool autoExclusive READ autoExclusive WRITE setAutoExclusive
@@ -69,6 +76,10 @@ public:
     FluentRadioButtonSize size() const;
     void setSize(FluentRadioButtonSize size);
 
+    // Complexity mode
+    FluentRadioButtonComplexity complexity() const;
+    void setComplexity(FluentRadioButtonComplexity complexity);
+
     FluentRadioButtonLabelPosition labelPosition() const;
     void setLabelPosition(FluentRadioButtonLabelPosition position);
 
@@ -103,6 +114,13 @@ public:
     static QList<FluentRadioButton*> createRadioGroup(
         const QStringList& options, QWidget* parent = nullptr);
 
+    // Factory methods for simple radio buttons (from Simple variant)
+    static FluentRadioButton* createSimple(const QString& text = QString(),
+                                           QWidget* parent = nullptr);
+    static FluentRadioButton* createSimple(const QString& text,
+                                           const QString& value,
+                                           QWidget* parent = nullptr);
+
 public slots:
     void animateCheck();
     void click();
@@ -112,6 +130,7 @@ signals:
     void textChanged(const QString& text);
     void valueChanged(const QString& value);
     void sizeChanged(FluentRadioButtonSize size);
+    void complexityChanged(FluentRadioButtonComplexity complexity);
     void labelPositionChanged(FluentRadioButtonLabelPosition position);
     void autoExclusiveChanged(bool autoExclusive);
     void iconChanged(const QIcon& icon);
@@ -185,6 +204,7 @@ private:
     bool m_checked{false};
     bool m_pressed{false};
     bool m_hovered{false};
+    FluentRadioButtonComplexity m_complexity{FluentRadioButtonComplexity::Full};
 
     // Content properties
     QString m_text;

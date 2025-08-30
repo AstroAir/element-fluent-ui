@@ -328,16 +328,16 @@ private:
 
     void setupConnections() {
         // Toast buttons
-        connect(m_basicToastBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::showBasicToast);
-        connect(m_actionToastBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::showActionToast);
-        connect(m_progressToastBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::showProgressToast);
-        connect(m_persistentToastBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::showPersistentToast);
-        connect(m_hideAllBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::hideAllToasts);
+        connect(m_basicToastBtn, SIGNAL(clicked(bool)), this,
+                SLOT(showBasicToast()));
+        connect(m_actionToastBtn, SIGNAL(clicked(bool)), this,
+                SLOT(showActionToast()));
+        connect(m_progressToastBtn, SIGNAL(clicked(bool)), this,
+                SLOT(showProgressToast()));
+        connect(m_persistentToastBtn, SIGNAL(clicked(bool)), this,
+                SLOT(showPersistentToast()));
+        connect(m_hideAllBtn, SIGNAL(clicked(bool)), this,
+                SLOT(hideAllToasts()));
 
         // Toast configuration
         connect(m_positionSelect,
@@ -347,16 +347,16 @@ private:
                 this, &ToastAndSelectDemo::onMaxVisibleChanged);
 
         // Select components
-        connect(m_countrySelect, &FluentSelect::currentTextChanged, this,
-                &ToastAndSelectDemo::onCountryChanged);
-        connect(m_languageSelect, &FluentSelect::selectionChanged, this,
-                &ToastAndSelectDemo::onLanguagesChanged);
-        connect(m_skillsSelect, &FluentSelect::selectionChanged, this,
-                &ToastAndSelectDemo::onSkillsChanged);
+        connect(m_countrySelect, SIGNAL(currentTextChanged(QString)), this,
+                SLOT(onCountryChanged(QString)));
+        connect(m_languageSelect, SIGNAL(selectionChanged()), this,
+                SLOT(onLanguagesChanged()));
+        connect(m_skillsSelect, SIGNAL(selectionChanged()), this,
+                SLOT(onSkillsChanged()));
 
         // Custom skill
-        connect(m_addSkillBtn, &FluentButton::clicked, this,
-                &ToastAndSelectDemo::addCustomSkill);
+        connect(m_addSkillBtn, SIGNAL(clicked(bool)), this,
+                SLOT(addCustomSkill()));
         connect(m_customSkillEdit, &QLineEdit::returnPressed, this,
                 &ToastAndSelectDemo::addCustomSkill);
     }

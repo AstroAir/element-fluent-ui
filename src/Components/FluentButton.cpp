@@ -1023,15 +1023,28 @@ void FluentButton::startRevealAnimation(const QPoint& center) {
     if (!m_revealAnimation) {
         m_revealAnimation = std::make_unique<QSequentialAnimationGroup>(this);
 
+        // Use Fluent Design reveal animation timing and curves
         auto expandAnim = new QPropertyAnimation(this, "revealProgress");
-        expandAnim->setDuration(300);
-        expandAnim->setEasingCurve(QEasingCurve::OutCubic);
+        expandAnim->setDuration(250);  // Fluent Design standard duration
+
+        // Create Fluent reveal curve (0.0, 0.0, 0.2, 1.0)
+        QEasingCurve revealCurve(QEasingCurve::BezierSpline);
+        revealCurve.addCubicBezierSegment(QPointF(0.0, 0.0), QPointF(0.2, 1.0),
+                                          QPointF(1.0, 1.0));
+        expandAnim->setEasingCurve(revealCurve);
+
         expandAnim->setStartValue(0.0);
         expandAnim->setEndValue(1.0);
 
         auto fadeAnim = new QPropertyAnimation(this, "revealProgress");
-        fadeAnim->setDuration(200);
-        fadeAnim->setEasingCurve(QEasingCurve::OutQuad);
+        fadeAnim->setDuration(150);  // Faster fade for better responsiveness
+
+        // Use Fluent decelerate curve for fade out
+        QEasingCurve fadeCurve(QEasingCurve::BezierSpline);
+        fadeCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+        fadeAnim->setEasingCurve(fadeCurve);
+
         fadeAnim->setStartValue(1.0);
         fadeAnim->setEndValue(0.0);
 
@@ -1063,19 +1076,32 @@ void FluentButton::animateClickVisual() {
 
         auto clickAnim =
             std::make_unique<QPropertyAnimation>(this, "backgroundOpacity");
-        clickAnim->setDuration(75);
+        clickAnim->setDuration(100);  // Fluent Design micro-interaction timing
         clickAnim->setStartValue(originalOpacity);
         clickAnim->setEndValue(0.7);
-        clickAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+        // Use Fluent button curve for press feedback
+        QEasingCurve buttonCurve(QEasingCurve::BezierSpline);
+        buttonCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                          QPointF(1.0, 1.0));
+        clickAnim->setEasingCurve(buttonCurve);
 
         connect(clickAnim.get(), &QPropertyAnimation::finished,
                 [this, originalOpacity]() {
                     auto restoreAnim = std::make_unique<QPropertyAnimation>(
                         this, "backgroundOpacity");
-                    restoreAnim->setDuration(75);
+                    restoreAnim->setDuration(
+                        150);  // Slightly longer restore for smooth feel
                     restoreAnim->setStartValue(0.7);
                     restoreAnim->setEndValue(originalOpacity);
-                    restoreAnim->setEasingCurve(QEasingCurve::OutCubic);
+
+                    // Use Fluent standard curve for restore
+                    QEasingCurve restoreCurve(QEasingCurve::BezierSpline);
+                    restoreCurve.addCubicBezierSegment(QPointF(0.8, 0.0),
+                                                       QPointF(0.2, 1.0),
+                                                       QPointF(1.0, 1.0));
+                    restoreAnim->setEasingCurve(restoreCurve);
+
                     restoreAnim->start();
                 });
 

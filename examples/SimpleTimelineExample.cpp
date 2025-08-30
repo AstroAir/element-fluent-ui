@@ -26,13 +26,23 @@ public:
         // Apply Fluent theme
         auto& theme = Styling::FluentTheme::instance();
         setStyleSheet(QString("QMainWindow { background-color: %1; }")
-                          .arg(theme.color("backgroundPrimary").name()));
+                          .arg(theme.color("neutralLightest").name()));
 
         setWindowTitle("Simple Timeline Example");
         resize(800, 600);
     }
 
 private slots:
+    void onProgressButtonClicked() {
+        if (m_progressButton->text() == "Restart Simulation") {
+            resetTimeline();
+        } else {
+            m_progressButton->setText("Simulating...");
+            m_progressButton->setEnabled(false);
+            simulateProgress();
+        }
+    }
+
     void simulateProgress() {
         static int currentStep = 0;
 
@@ -123,8 +133,8 @@ private:
         m_timeline->setScrollable(true);
 
         // Connect timeline signals
-        connect(m_timeline, &Components::FluentTimeline::itemClicked, this,
-                &SimpleTimelineWindow::onItemClicked);
+        connect(m_timeline, SIGNAL(itemClicked(FluentTimelineItem*, int)), this,
+                SLOT(onItemClicked(Components::FluentTimelineItem*, int)));
 
         timelineCard->setContentWidget(m_timeline);
         mainLayout->addWidget(timelineCard);
@@ -136,20 +146,13 @@ private:
             new Components::FluentButton("Start Progress Simulation");
         m_progressButton->setButtonStyle(
             Components::FluentButtonStyle::Primary);
-        connect(m_progressButton, &Components::FluentButton::clicked, [this]() {
-            if (m_progressButton->text() == "Restart Simulation") {
-                resetTimeline();
-            } else {
-                m_progressButton->setText("Simulating...");
-                m_progressButton->setEnabled(false);
-                simulateProgress();
-            }
-        });
+        connect(m_progressButton, SIGNAL(clicked(bool)), this,
+                SLOT(onProgressButtonClicked()));
         controlsLayout->addWidget(m_progressButton);
 
         auto* resetButton = new Components::FluentButton("Reset Timeline");
-        connect(resetButton, &Components::FluentButton::clicked, this,
-                &SimpleTimelineWindow::resetTimeline);
+        connect(resetButton, SIGNAL(clicked(bool)), this,
+                SLOT(resetTimeline()));
         controlsLayout->addWidget(resetButton);
 
         controlsLayout->addStretch();

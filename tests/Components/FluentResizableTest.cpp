@@ -146,7 +146,8 @@ void FluentResizableTest::testDefaultConstructor() {
 
 void FluentResizableTest::testContentConstructor() {
     QLabel* content = new QLabel("Test Content");
-    FluentResizable resizable(content);
+    FluentResizable resizable(
+        content, nullptr);  // Explicitly use the content widget constructor
 
     QCOMPARE(resizable.contentWidget(), content);
     QCOMPARE(content->parent(), &resizable);

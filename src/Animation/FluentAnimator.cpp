@@ -2,6 +2,7 @@
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Animation/FluentTransformEffect.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
 #include <QApplication>
@@ -13,10 +14,15 @@
 #include <QPauseAnimation>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
+#include <QSettings>
 #include <QTimer>
 #include <QTransform>
 #include <QWidget>
 #include <QtMath>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 namespace FluentQt::Animation {
 
@@ -635,9 +641,120 @@ QEasingCurve::Type FluentAnimator::toQtEasing(FluentEasing easing) {
             return QEasingCurve::InBack;
         case FluentEasing::BackInOut:
             return QEasingCurve::InOutBack;
+
+        // Microsoft Fluent Design System specific curves
+        case FluentEasing::FluentAccelerate:
+        case FluentEasing::FluentDecelerate:
+        case FluentEasing::FluentStandard:
+        case FluentEasing::FluentEmphasized:
+        case FluentEasing::FluentSubtle:
+        case FluentEasing::FluentNormal:
+        case FluentEasing::FluentExpressive:
+        case FluentEasing::FluentButton:
+        case FluentEasing::FluentCard:
+        case FluentEasing::FluentDialog:
+        case FluentEasing::FluentNavigation:
+        case FluentEasing::FluentReveal:
+            // These will be handled by custom Bezier curves
+            return QEasingCurve::BezierSpline;
+
         default:
             return QEasingCurve::OutCubic;
     }
+}
+
+bool FluentAnimator::isFluentDesignEasing(FluentEasing easing) {
+    switch (easing) {
+        case FluentEasing::FluentAccelerate:
+        case FluentEasing::FluentDecelerate:
+        case FluentEasing::FluentStandard:
+        case FluentEasing::FluentEmphasized:
+        case FluentEasing::FluentSubtle:
+        case FluentEasing::FluentNormal:
+        case FluentEasing::FluentExpressive:
+        case FluentEasing::FluentButton:
+        case FluentEasing::FluentCard:
+        case FluentEasing::FluentDialog:
+        case FluentEasing::FluentNavigation:
+        case FluentEasing::FluentReveal:
+            return true;
+        default:
+            return false;
+    }
+}
+
+QEasingCurve FluentAnimator::createFluentBezierCurve(FluentEasing easing) {
+    QEasingCurve curve(QEasingCurve::BezierSpline);
+
+    switch (easing) {
+        case FluentEasing::FluentAccelerate:
+            // Fluent accelerate curve (0.7, 0.0, 1.0, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.7, 0.0), QPointF(1.0, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentDecelerate:
+            // Fluent decelerate curve (0.1, 0.9, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentStandard:
+            // Fluent standard curve (0.8, 0.0, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.8, 0.0), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentEmphasized:
+            // Fluent emphasized curve (0.3, 0.0, 0.8, 0.15)
+            curve.addCubicBezierSegment(QPointF(0.3, 0.0), QPointF(0.8, 0.15),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentSubtle:
+            // Subtle motion (0.33, 0.0, 0.67, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.33, 0.0), QPointF(0.67, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentNormal:
+            // Normal motion (0.5, 0.0, 0.5, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.5, 0.0), QPointF(0.5, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentExpressive:
+            // Expressive motion (0.68, -0.55, 0.265, 1.55)
+            curve.addCubicBezierSegment(
+                QPointF(0.68, -0.55), QPointF(0.265, 1.55), QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentButton:
+            // Button interactions (0.1, 0.9, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentCard:
+            // Card animations (0.25, 0.46, 0.45, 0.94)
+            curve.addCubicBezierSegment(QPointF(0.25, 0.46),
+                                        QPointF(0.45, 0.94), QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentDialog:
+            // Dialog transitions (0.0, 0.0, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.0, 0.0), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentNavigation:
+            // Navigation transitions (0.4, 0.0, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.4, 0.0), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        case FluentEasing::FluentReveal:
+            // Reveal animations (0.0, 0.0, 0.2, 1.0)
+            curve.addCubicBezierSegment(QPointF(0.0, 0.0), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+        default:
+            // Fallback to standard curve
+            curve.addCubicBezierSegment(QPointF(0.8, 0.0), QPointF(0.2, 1.0),
+                                        QPointF(1.0, 1.0));
+            break;
+    }
+
+    return curve;
 }
 
 void FluentAnimator::setupAnimation(QPropertyAnimation* animation,
@@ -654,7 +771,14 @@ void FluentAnimator::setupAnimation(QPropertyAnimation* animation,
 
     // Apply configuration
     animation->setDuration(config.duration.count());
-    animation->setEasingCurve(toQtEasing(config.easing));
+
+    // Use custom Bezier curves for Fluent Design easing curves
+    if (isFluentDesignEasing(config.easing)) {
+        animation->setEasingCurve(createFluentBezierCurve(config.easing));
+    } else {
+        animation->setEasingCurve(toQtEasing(config.easing));
+    }
+
     animation->setLoopCount(config.loops);
 
     // Apply delay if specified
@@ -682,6 +806,29 @@ void FluentAnimator::setupAnimation(QPropertyAnimation* animation,
         } else {
             animation->setProperty("updateInterval", 33);  // 30 FPS fallback
         }
+
+        // Enable additional performance optimizations
+        enableHardwareAcceleration(animation);
+    }
+
+    // Apply motion hierarchy-based performance optimizations
+    switch (config.hierarchy) {
+        case FluentAnimationConfig::MotionHierarchy::Utility:
+            // Micro-interactions: prioritize responsiveness
+            animation->setProperty("priority", "high");
+            animation->setProperty("updateInterval",
+                                   8);  // 120 FPS for micro-interactions
+            break;
+        case FluentAnimationConfig::MotionHierarchy::Secondary:
+            // Supporting elements: balanced performance
+            animation->setProperty("priority", "normal");
+            animation->setProperty("updateInterval", 16);  // 60 FPS
+            break;
+        case FluentAnimationConfig::MotionHierarchy::Primary:
+            // Main content: smooth but efficient
+            animation->setProperty("priority", "normal");
+            animation->setProperty("updateInterval", 16);  // 60 FPS
+            break;
     }
 
     // Register animation with performance monitor
@@ -938,10 +1085,83 @@ void FluentAnimator::applyMicroInteractionSettings(
     }
 }
 
+void FluentAnimator::enableHardwareAcceleration(QPropertyAnimation* animation) {
+    if (!animation) {
+        return;
+    }
+
+    // Enable hardware acceleration hints for better performance
+    animation->setProperty("hardwareAccelerated", true);
+
+    // Set optimal update intervals based on hardware capabilities
+    if (QOpenGLContext::currentContext()) {
+        // GPU acceleration available
+        animation->setProperty("updateInterval", 16);  // 60 FPS
+        animation->setProperty("gpuAccelerated", true);
+    } else {
+        // Fallback to CPU optimization
+        animation->setProperty("updateInterval", 33);  // 30 FPS
+        animation->setProperty("cpuOptimized", true);
+    }
+
+    // Enable compositing hints for smoother animations
+    if (QWidget* widget = qobject_cast<QWidget*>(animation->targetObject())) {
+        widget->setAttribute(Qt::WA_OpaquePaintEvent, true);
+        widget->setAttribute(Qt::WA_NoSystemBackground, true);
+    }
+}
+
 bool FluentAnimator::shouldRespectReducedMotion() {
-    // Check system accessibility settings
-    // This is a simplified implementation
-    return QAccessible::isActive();
+    // Enhanced accessibility support for reduced motion
+
+    // Check if accessibility is active
+    if (QAccessible::isActive()) {
+        return true;
+    }
+
+    // Check system-specific reduced motion settings
+#ifdef Q_OS_WIN
+    // Windows: Check for reduced motion preference
+    BOOL enabled = FALSE;
+    if (SystemParametersInfo(SPI_GETCLIENTAREAANIMATION, 0, &enabled, 0)) {
+        return !enabled;  // If client area animation is disabled, respect
+                          // reduced motion
+    }
+#endif
+
+#ifdef Q_OS_MAC
+    // macOS: Check for reduced motion preference
+    // This would require Objective-C code to check
+    // NSWorkspace.accessibilityDisplayShouldReduceMotion For now, we'll use a
+    // simplified check
+    QSettings settings("com.apple.universalaccess",
+                       "com.apple.universalaccess");
+    if (settings.value("reduceMotion", false).toBool()) {
+        return true;
+    }
+#endif
+
+#ifdef Q_OS_LINUX
+    // Linux: Check for reduced motion preference in accessibility settings
+    QSettings settings("org.gnome.desktop.interface",
+                       "org.gnome.desktop.interface");
+    if (settings.value("enable-animations", true).toBool() == false) {
+        return true;
+    }
+#endif
+
+    // Check FluentQt-specific reduced motion setting
+    auto& theme = FluentQt::Styling::FluentTheme::instance();
+    if (theme.isReducedMotionMode()) {
+        return true;
+    }
+
+    // Check for low-performance devices
+    if (Core::FluentPerformanceMonitor::instance().shouldSkipAnimation()) {
+        return true;
+    }
+
+    return false;
 }
 
 // FluentAnimationManager implementation
@@ -951,13 +1171,45 @@ FluentAnimationManager& FluentAnimationManager::instance() {
 }
 
 void FluentAnimationManager::registerAnimation(QAbstractAnimation* animation) {
+    if (!animation) {
+        return;
+    }
+
     m_activeAnimations.insert(animation);
 
-    connect(animation, &QAbstractAnimation::finished,
-            [this, animation]() { m_activeAnimations.remove(animation); });
+    // Enhanced cleanup for finished animations
+    connect(animation, &QAbstractAnimation::finished, [this, animation]() {
+        m_activeAnimations.remove(animation);
 
-    connect(animation, &QAbstractAnimation::destroyed,
-            [this, animation]() { m_activeAnimations.remove(animation); });
+        // Clean up any associated graphics effects
+        if (auto* propAnim = qobject_cast<QPropertyAnimation*>(animation)) {
+            if (auto* widget =
+                    qobject_cast<QWidget*>(propAnim->targetObject())) {
+                cleanupWidgetAnimations(widget);
+            }
+        }
+    });
+
+    // Enhanced cleanup for destroyed animations
+    connect(animation, &QAbstractAnimation::destroyed, [this, animation]() {
+        m_activeAnimations.remove(animation);
+        m_pausedAnimations.remove(animation);
+    });
+
+    // Monitor target object destruction for proper cleanup
+    if (auto* propAnim = qobject_cast<QPropertyAnimation*>(animation)) {
+        if (QObject* target = propAnim->targetObject()) {
+            connect(target, &QObject::destroyed, [this, animation]() {
+                // Stop and remove animation when target is destroyed
+                if (m_activeAnimations.contains(animation)) {
+                    animation->stop();
+                    m_activeAnimations.remove(animation);
+                    m_pausedAnimations.remove(animation);
+                    animation->deleteLater();
+                }
+            });
+        }
+    }
 }
 
 void FluentAnimationManager::pauseAllAnimations() {
@@ -998,6 +1250,29 @@ void FluentAnimationManager::stopAllAnimations() {
     }
     m_activeAnimations.clear();
     m_pausedAnimations.clear();
+}
+
+void FluentAnimationManager::cleanupWidgetAnimations(QWidget* widget) {
+    if (!widget) {
+        return;
+    }
+
+    // Clean up any graphics effects that might be left over
+    if (auto* effect = widget->graphicsEffect()) {
+        if (auto* opacityEffect =
+                qobject_cast<QGraphicsOpacityEffect*>(effect)) {
+            // Reset opacity effect to default state
+            opacityEffect->setOpacity(1.0);
+        }
+    }
+
+    // Reset any animation-related widget attributes
+    widget->setAttribute(Qt::WA_OpaquePaintEvent, false);
+    widget->setAttribute(Qt::WA_NoSystemBackground, false);
+
+    // Ensure widget is in a clean state
+    widget->setWindowOpacity(1.0);
+    widget->update();
 }
 
 int FluentAnimationManager::activeAnimationCount() const {
@@ -1070,6 +1345,311 @@ std::unique_ptr<QPropertyAnimation> FluentAnimator::expandAnimation(
         target->show();
     }
 
+    return animation;
+}
+
+std::unique_ptr<QParallelAnimationGroup> FluentAnimator::navigationTransition(
+    QWidget* fromWidget, QWidget* toWidget,
+    const FluentAnimationConfig& config) {
+    if (!fromWidget || !toWidget) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::navigationTransition");
+
+    auto group = std::make_unique<QParallelAnimationGroup>();
+
+    // Exit animation for current widget
+    auto exitAnimation =
+        std::make_unique<QPropertyAnimation>(fromWidget, "geometry");
+    const QRect fromGeometry = fromWidget->geometry();
+    const QRect exitGeometry(fromGeometry.x() - fromGeometry.width() / 4,
+                             fromGeometry.y(), fromGeometry.width(),
+                             fromGeometry.height());
+
+    exitAnimation->setStartValue(fromGeometry);
+    exitAnimation->setEndValue(exitGeometry);
+
+    // Fade out current widget
+    auto fadeOutAnimation =
+        std::make_unique<QPropertyAnimation>(fromWidget, "windowOpacity");
+    fadeOutAnimation->setStartValue(1.0);
+    fadeOutAnimation->setEndValue(0.0);
+
+    // Enter animation for new widget
+    auto enterAnimation =
+        std::make_unique<QPropertyAnimation>(toWidget, "geometry");
+    const QRect toGeometry = toWidget->geometry();
+    const QRect enterStartGeometry(toGeometry.x() + toGeometry.width() / 4,
+                                   toGeometry.y(), toGeometry.width(),
+                                   toGeometry.height());
+
+    toWidget->setGeometry(enterStartGeometry);
+    toWidget->show();
+
+    enterAnimation->setStartValue(enterStartGeometry);
+    enterAnimation->setEndValue(toGeometry);
+
+    // Fade in new widget
+    auto fadeInAnimation =
+        std::make_unique<QPropertyAnimation>(toWidget, "windowOpacity");
+    toWidget->setWindowOpacity(0.0);
+    fadeInAnimation->setStartValue(0.0);
+    fadeInAnimation->setEndValue(1.0);
+
+    // Use Fluent navigation curves and timing
+    FluentAnimationConfig navConfig = config;
+    navConfig.duration =
+        std::chrono::milliseconds(300);  // Fluent navigation duration
+    navConfig.easing =
+        FluentEasing::FluentNavigation;  // Fluent navigation curve
+
+    setupAnimation(exitAnimation.get(), navConfig);
+    setupAnimation(fadeOutAnimation.get(), navConfig);
+    setupAnimation(enterAnimation.get(), navConfig);
+    setupAnimation(fadeInAnimation.get(), navConfig);
+
+    group->addAnimation(exitAnimation.release());
+    group->addAnimation(fadeOutAnimation.release());
+    group->addAnimation(enterAnimation.release());
+    group->addAnimation(fadeInAnimation.release());
+
+    return group;
+}
+
+std::unique_ptr<QParallelAnimationGroup>
+FluentAnimator::connectedElementAnimation(QWidget* fromElement,
+                                          QWidget* toElement,
+                                          QWidget* fromContainer,
+                                          QWidget* toContainer,
+                                          const FluentAnimationConfig& config) {
+    if (!fromElement || !toElement || !fromContainer || !toContainer) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::connectedElementAnimation");
+
+    auto group = std::make_unique<QParallelAnimationGroup>();
+
+    // Calculate the transformation between the two elements
+    QRect fromRect = fromElement->geometry();
+    QRect toRect = toElement->geometry();
+
+    // Convert to global coordinates for accurate positioning
+    QPoint fromGlobal = fromContainer->mapToGlobal(fromRect.topLeft());
+    QPoint toGlobal = toContainer->mapToGlobal(toRect.topLeft());
+
+    // Create a temporary widget for the shared element transition
+    auto* sharedElement = new QWidget(fromContainer->window());
+    sharedElement->setGeometry(fromGlobal.x(), fromGlobal.y(), fromRect.width(),
+                               fromRect.height());
+    sharedElement->setStyleSheet(fromElement->styleSheet());
+    sharedElement->show();
+
+    // Hide the original elements during transition
+    fromElement->hide();
+    toElement->hide();
+
+    // Animate the shared element from source to destination
+    auto* moveAnimation = new QPropertyAnimation(sharedElement, "geometry");
+    moveAnimation->setStartValue(QRect(fromGlobal, fromRect.size()));
+    moveAnimation->setEndValue(QRect(toGlobal, toRect.size()));
+
+    // Use Fluent emphasized curve for connected animations
+    FluentAnimationConfig connectedConfig = config;
+    connectedConfig.duration =
+        std::chrono::milliseconds(400);  // Longer for connected animations
+    connectedConfig.easing = FluentEasing::FluentEmphasized;
+
+    setupAnimation(moveAnimation, connectedConfig);
+
+    // Fade out source container
+    auto* fadeOutAnimation =
+        new QPropertyAnimation(fromContainer, "windowOpacity");
+    fadeOutAnimation->setStartValue(1.0);
+    fadeOutAnimation->setEndValue(0.3);
+    setupAnimation(fadeOutAnimation, connectedConfig);
+
+    // Fade in destination container
+    auto* fadeInAnimation =
+        new QPropertyAnimation(toContainer, "windowOpacity");
+    fadeInAnimation->setStartValue(0.3);
+    fadeInAnimation->setEndValue(1.0);
+    setupAnimation(fadeInAnimation, connectedConfig);
+
+    group->addAnimation(moveAnimation);
+    group->addAnimation(fadeOutAnimation);
+    group->addAnimation(fadeInAnimation);
+
+    // Clean up when animation finishes
+    connect(group.get(), &QParallelAnimationGroup::finished,
+            [sharedElement, fromElement, toElement]() {
+                sharedElement->deleteLater();
+                fromElement->show();
+                toElement->show();
+            });
+
+    return group;
+}
+
+std::unique_ptr<QParallelAnimationGroup> FluentAnimator::entranceAnimation(
+    QWidget* target, const FluentAnimationConfig& config) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::entranceAnimation");
+
+    auto group = std::make_unique<QParallelAnimationGroup>();
+
+    // Fluent Design entrance: fade + slide up + scale
+    auto* fadeAnimation = new QPropertyAnimation(target, "windowOpacity");
+    fadeAnimation->setStartValue(0.0);
+    fadeAnimation->setEndValue(1.0);
+
+    auto* slideAnimation = new QPropertyAnimation(target, "geometry");
+    QRect currentGeometry = target->geometry();
+    QRect startGeometry =
+        currentGeometry.translated(0, 20);  // Start 20px below
+    slideAnimation->setStartValue(startGeometry);
+    slideAnimation->setEndValue(currentGeometry);
+
+    auto* scaleAnimation = new QPropertyAnimation(target, "geometry");
+    QRect scaledGeometry =
+        QRect(currentGeometry.x() + currentGeometry.width() * 0.05,
+              currentGeometry.y() + currentGeometry.height() * 0.05,
+              currentGeometry.width() * 0.9, currentGeometry.height() * 0.9);
+    scaleAnimation->setStartValue(scaledGeometry);
+    scaleAnimation->setEndValue(currentGeometry);
+
+    // Use Fluent entrance timing and curves
+    FluentAnimationConfig entranceConfig = config;
+    entranceConfig.duration = std::chrono::milliseconds(300);
+    entranceConfig.easing = FluentEasing::FluentStandard;
+
+    setupAnimation(fadeAnimation, entranceConfig);
+    setupAnimation(slideAnimation, entranceConfig);
+    setupAnimation(scaleAnimation, entranceConfig);
+
+    group->addAnimation(fadeAnimation);
+    group->addAnimation(slideAnimation);
+    group->addAnimation(scaleAnimation);
+
+    return group;
+}
+
+std::unique_ptr<QParallelAnimationGroup> FluentAnimator::exitAnimation(
+    QWidget* target, const FluentAnimationConfig& config) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::exitAnimation");
+
+    auto group = std::make_unique<QParallelAnimationGroup>();
+
+    // Fluent Design exit: fade + slide down + scale
+    auto* fadeAnimation = new QPropertyAnimation(target, "windowOpacity");
+    fadeAnimation->setStartValue(1.0);
+    fadeAnimation->setEndValue(0.0);
+
+    auto* slideAnimation = new QPropertyAnimation(target, "geometry");
+    QRect currentGeometry = target->geometry();
+    QRect endGeometry = currentGeometry.translated(0, 20);  // End 20px below
+    slideAnimation->setStartValue(currentGeometry);
+    slideAnimation->setEndValue(endGeometry);
+
+    auto* scaleAnimation = new QPropertyAnimation(target, "geometry");
+    QRect scaledGeometry =
+        QRect(currentGeometry.x() + currentGeometry.width() * 0.05,
+              currentGeometry.y() + currentGeometry.height() * 0.05,
+              currentGeometry.width() * 0.9, currentGeometry.height() * 0.9);
+    scaleAnimation->setStartValue(currentGeometry);
+    scaleAnimation->setEndValue(scaledGeometry);
+
+    // Use Fluent exit timing and curves
+    FluentAnimationConfig exitConfig = config;
+    exitConfig.duration = std::chrono::milliseconds(200);  // Faster exit
+    exitConfig.easing = FluentEasing::FluentAccelerate;    // Accelerate out
+
+    setupAnimation(fadeAnimation, exitConfig);
+    setupAnimation(slideAnimation, exitConfig);
+    setupAnimation(scaleAnimation, exitConfig);
+
+    group->addAnimation(fadeAnimation);
+    group->addAnimation(slideAnimation);
+    group->addAnimation(scaleAnimation);
+
+    return group;
+}
+
+std::unique_ptr<QPropertyAnimation> FluentAnimator::primaryMotion(
+    QWidget* target, const FluentAnimationConfig& config) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::primaryMotion");
+
+    auto animation =
+        std::make_unique<QPropertyAnimation>(target, "windowOpacity");
+    animation->setStartValue(0.0);
+    animation->setEndValue(1.0);
+
+    // Primary motion: 250ms with Fluent standard curve
+    FluentAnimationConfig primaryConfig = config;
+    primaryConfig.duration = std::chrono::milliseconds(250);
+    primaryConfig.easing = FluentEasing::FluentStandard;
+    primaryConfig.hierarchy = FluentAnimationConfig::MotionHierarchy::Primary;
+
+    setupAnimation(animation.get(), primaryConfig);
+    return animation;
+}
+
+std::unique_ptr<QPropertyAnimation> FluentAnimator::secondaryMotion(
+    QWidget* target, const FluentAnimationConfig& config) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::secondaryMotion");
+
+    auto animation =
+        std::make_unique<QPropertyAnimation>(target, "windowOpacity");
+    animation->setStartValue(0.0);
+    animation->setEndValue(1.0);
+
+    // Secondary motion: 150ms with Fluent subtle curve
+    FluentAnimationConfig secondaryConfig = config;
+    secondaryConfig.duration = std::chrono::milliseconds(150);
+    secondaryConfig.easing = FluentEasing::FluentSubtle;
+    secondaryConfig.hierarchy =
+        FluentAnimationConfig::MotionHierarchy::Secondary;
+
+    setupAnimation(animation.get(), secondaryConfig);
+    return animation;
+}
+
+std::unique_ptr<QPropertyAnimation> FluentAnimator::utilityMotion(
+    QWidget* target, const FluentAnimationConfig& config) {
+    if (!target) {
+        return nullptr;
+    }
+
+    FLUENT_PROFILE("FluentAnimator::utilityMotion");
+
+    auto animation =
+        std::make_unique<QPropertyAnimation>(target, "windowOpacity");
+    animation->setStartValue(0.0);
+    animation->setEndValue(1.0);
+
+    // Utility motion: 100ms with Fluent button curve for micro-interactions
+    FluentAnimationConfig utilityConfig = config;
+    utilityConfig.duration = std::chrono::milliseconds(100);
+    utilityConfig.easing = FluentEasing::FluentButton;
+    utilityConfig.hierarchy = FluentAnimationConfig::MotionHierarchy::Utility;
+
+    setupAnimation(animation.get(), utilityConfig);
     return animation;
 }
 

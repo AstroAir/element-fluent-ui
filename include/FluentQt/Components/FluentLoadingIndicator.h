@@ -26,12 +26,19 @@ enum class FluentLoadingSize {
     ExtraLarge  // 48x48
 };
 
+enum class FluentLoadingComplexity {
+    Simple,  // Lightweight mode with basic animations (QWidget-based behavior)
+    Full     // Full-featured mode with advanced animations and error handling
+};
+
 class FluentLoadingIndicator : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(FluentLoadingType loadingType READ loadingType WRITE
                    setLoadingType NOTIFY loadingTypeChanged)
     Q_PROPERTY(FluentLoadingSize loadingSize READ loadingSize WRITE
                    setLoadingSize NOTIFY loadingSizeChanged)
+    Q_PROPERTY(FluentLoadingComplexity complexity READ complexity WRITE
+                   setComplexity NOTIFY complexityChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
     Q_PROPERTY(
         bool running READ isRunning WRITE setRunning NOTIFY runningChanged)
@@ -57,6 +64,10 @@ public:
 
     FluentLoadingSize loadingSize() const;
     void setLoadingSize(FluentLoadingSize size);
+
+    // Complexity mode
+    FluentLoadingComplexity complexity() const;
+    void setComplexity(FluentLoadingComplexity complexity);
 
     // Appearance
     QColor color() const;
@@ -91,6 +102,21 @@ public:
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
+    // Convenience factory methods (from Simple variant)
+    static FluentLoadingIndicator* createSpinner(
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
+    static FluentLoadingIndicator* createDots(
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
+    static FluentLoadingIndicator* createPulse(
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
+    static FluentLoadingIndicator* createSimple(
+        FluentLoadingType type,
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
+
 public slots:
     void start();
     void stop();
@@ -98,6 +124,7 @@ public slots:
 signals:
     void loadingTypeChanged(FluentLoadingType type);
     void loadingSizeChanged(FluentLoadingSize size);
+    void complexityChanged(FluentLoadingComplexity complexity);
     void colorChanged(const QColor& color);
     void runningChanged(bool running);
     void speedChanged(int speed);
@@ -142,6 +169,7 @@ private:
 private:
     FluentLoadingType m_loadingType{FluentLoadingType::Spinner};
     FluentLoadingSize m_loadingSize{FluentLoadingSize::Medium};
+    FluentLoadingComplexity m_complexity{FluentLoadingComplexity::Full};
     QColor m_color;
     bool m_running{false};
     int m_speed{5};  // 1-10 scale

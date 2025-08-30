@@ -5,6 +5,7 @@
 #include "FluentQt/Accessibility/FluentScreenReaderManager.h"
 #include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Components/FluentCard.h"
+#include "FluentQt/Components/FluentCheckBox.h"
 #include "FluentQt/Core/FluentComponent.h"
 
 #include <QAccessible>
@@ -89,6 +90,62 @@ QString FluentAccessibleInterface::text(QAccessible::Text type) const {
             if (obj && !obj->objectName().isEmpty()) {
                 return obj->objectName();
             }
+
+            // For components without explicit names, try to get meaningful text
+            QWidget* widget = safeWidget();
+            if (widget) {
+                const QString className = widget->metaObject()->className();
+
+                // For buttons, use their text property
+                if (className.contains("FluentButton")) {
+                    // Try direct cast first
+                    if (auto* button =
+                            qobject_cast<FluentQt::Components::FluentButton*>(
+                                widget)) {
+                        const QString text = button->text();
+                        if (!text.isEmpty()) {
+                            return text;
+                        }
+                    }
+                    // Fallback to property system
+                    const QString text = widget->property("text").toString();
+                    if (!text.isEmpty()) {
+                        return text;
+                    }
+                }
+
+                // For checkboxes, use their text property
+                if (className.contains("FluentCheckBox")) {
+                    // Try direct cast first
+                    if (auto* checkBox =
+                            qobject_cast<FluentQt::Components::FluentCheckBox*>(
+                                widget)) {
+                        const QString text = checkBox->text();
+                        if (!text.isEmpty()) {
+                            return text;
+                        }
+                    }
+                    // Fallback to property system
+                    const QString text = widget->property("text").toString();
+                    if (!text.isEmpty()) {
+                        return text;
+                    }
+                }
+
+                // For text inputs, return the placeholder or current text
+                if (className.contains("FluentTextInput")) {
+                    const QString placeholder =
+                        widget->property("placeholderText").toString();
+                    if (!placeholder.isEmpty()) {
+                        return placeholder;
+                    }
+                    const QString text = widget->property("text").toString();
+                    if (!text.isEmpty()) {
+                        return text;
+                    }
+                }
+            }
+
             return getFluentDescription();
         }
 
@@ -279,21 +336,32 @@ QAccessible::Role FluentAccessibleInterface::getFluentRole() const {
 
     QWidget* widget = safeWidget();
     if (widget) {
-        if (widget->inherits("FluentButton")) {
+        const QString className = widget->metaObject()->className();
+        qDebug() << "FluentAccessibleInterface::getFluentRole: className ="
+                 << className;
+
+        if (className.contains("FluentButton")) {
             const bool checkable = widget->property("checkable").toBool();
-            return checkable ? QAccessible::CheckBox : QAccessible::Button;
-        } else if (widget->inherits("FluentCard")) {
+            return checkable ? QAccessible::CheckBox : QAccessible::PushButton;
+        } else if (className.contains("FluentCard")) {
             return QAccessible::Grouping;
-        } else if (widget->inherits("FluentNavigationView")) {
+        } else if (className.contains("FluentNavigationView")) {
             return QAccessible::PageTabList;
-        } else if (widget->inherits("FluentListView")) {
+        } else if (className.contains("FluentListView")) {
             return QAccessible::List;
-        } else if (widget->inherits("FluentTextBox")) {
+        } else if (className.contains("FluentTextInput") ||
+                   className.contains("FluentTextBox")) {
             return QAccessible::EditableText;
-        } else if (widget->inherits("FluentSlider")) {
+        } else if (className.contains("FluentSlider")) {
             return QAccessible::Slider;
-        } else if (widget->inherits("FluentProgressBar")) {
+        } else if (className.contains("FluentProgressBar")) {
             return QAccessible::ProgressBar;
+        } else if (className.contains("FluentCheckBox")) {
+            return QAccessible::CheckBox;
+        } else if (className.contains("FluentRadioButton")) {
+            return QAccessible::RadioButton;
+        } else if (className.contains("FluentComboBox")) {
+            return QAccessible::ComboBox;
         }
     }
 
@@ -370,7 +438,9 @@ QString FluentAccessibleInterface::getFluentDescription() const {
         }
 
         // Generate description based on widget type and properties
-        if (widget->inherits("FluentButton")) {
+        const QString className = widget->metaObject()->className();
+
+        if (className.contains("FluentButton")) {
             const QString text = widget->property("text").toString();
             const bool loading = widget->property("loading").toBool();
             const bool checkable = widget->property("checkable").toBool();
@@ -388,7 +458,7 @@ QString FluentAccessibleInterface::getFluentDescription() const {
                 description += checked ? " (checked)" : " (unchecked)";
             }
 
-        } else if (widget->inherits("FluentCard")) {
+        } else if (className.contains("FluentCard")) {
             const QString title = widget->property("title").toString();
             const QString subtitle = widget->property("subtitle").toString();
             const bool selected = widget->property("selected").toBool();
@@ -457,7 +527,8 @@ void setAccessibleRole(QWidget* widget, QAccessible::Role role) {
         QAccessible::installFactory(
             [](const QString& classname,
                QObject* object) -> QAccessibleInterface* {
-                if (classname.startsWith("FluentQt::") &&
+                if ((classname.startsWith("FluentQt::") ||
+                     classname.contains("Fluent")) &&
                     qobject_cast<QWidget*>(object)) {
                     return new FluentAccessibleInterface(
                         qobject_cast<QWidget*>(object));

@@ -36,7 +36,7 @@ public:
         // Apply Fluent theme
         auto& theme = Styling::FluentTheme::instance();
         setStyleSheet(QString("QMainWindow { background-color: %1; }")
-                          .arg(theme.color("backgroundPrimary").name()));
+                          .arg(theme.color("neutralLightest").name()));
 
         setWindowTitle("FluentQt Timeline Showcase");
         resize(1200, 800);
@@ -280,23 +280,21 @@ private:
         auto* interactiveLayout = new QVBoxLayout(interactiveGroup);
 
         auto* addButton = new Components::FluentButton("Add Random Item");
-        connect(addButton, &Components::FluentButton::clicked, this,
-                &TimelineShowcaseWindow::addRandomItem);
+        connect(addButton, SIGNAL(clicked(bool)), this, SLOT(addRandomItem()));
         interactiveLayout->addWidget(addButton);
 
         auto* clearButton = new Components::FluentButton("Clear All Items");
-        connect(clearButton, &Components::FluentButton::clicked, this,
-                &TimelineShowcaseWindow::clearItems);
+        connect(clearButton, SIGNAL(clicked(bool)), this, SLOT(clearItems()));
         interactiveLayout->addWidget(clearButton);
 
         auto* expandButton = new Components::FluentButton("Expand All");
-        connect(expandButton, &Components::FluentButton::clicked, this,
-                &TimelineShowcaseWindow::expandAllItems);
+        connect(expandButton, SIGNAL(clicked(bool)), this,
+                SLOT(expandAllItems()));
         interactiveLayout->addWidget(expandButton);
 
         auto* collapseButton = new Components::FluentButton("Collapse All");
-        connect(collapseButton, &Components::FluentButton::clicked, this,
-                &TimelineShowcaseWindow::collapseAllItems);
+        connect(collapseButton, SIGNAL(clicked(bool)), this,
+                SLOT(collapseAllItems()));
         interactiveLayout->addWidget(collapseButton);
 
         layout->addWidget(interactiveGroup);
@@ -391,8 +389,10 @@ private:
         m_interactiveTimeline->setScrollable(true);
 
         // Connect interaction signals
-        connect(m_interactiveTimeline, &Components::FluentTimeline::itemClicked,
-                this, &TimelineShowcaseWindow::onTimelineItemClicked);
+        connect(
+            m_interactiveTimeline,
+            SIGNAL(itemClicked(FluentTimelineItem*, int)), this,
+            SLOT(onTimelineItemClicked(Components::FluentTimelineItem*, int)));
 
         // Add some initial items
         for (int i = 0; i < 5; ++i) {

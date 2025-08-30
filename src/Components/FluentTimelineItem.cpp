@@ -1083,3 +1083,23 @@ QFont FluentTimelineItem::getDateTimeFont() const {
     const auto& theme = FluentTheme::instance();
     return theme.captionFont();
 }
+
+void FluentTimelineItem::setExpansionProgress(qreal progress) {
+    if (qFuzzyCompare(m_expansionProgress, progress)) {
+        return;
+    }
+
+    m_expansionProgress = qBound(0.0, progress, 1.0);
+    emit expansionProgressChanged(m_expansionProgress);
+    update();
+}
+
+void FluentTimelineItem::setStateProgress(qreal progress) {
+    if (qFuzzyCompare(m_stateProgress, progress)) {
+        return;
+    }
+
+    m_stateProgress = qBound(0.0, progress, 1.0);
+    emit stateProgressChanged(m_stateProgress);
+    update();
+}

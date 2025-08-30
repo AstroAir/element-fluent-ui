@@ -25,6 +25,12 @@ enum class FluentSpinBoxButtonLayout {
     Embedded     // Buttons embedded in the input field
 };
 
+enum class FluentSpinBoxComplexity {
+    Simple,  // Lightweight mode with basic functionality
+             // (QAbstractSpinBox-based behavior)
+    Full     // Full-featured mode with advanced features and animations
+};
+
 class FluentSpinBox : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(double value READ value WRITE setValue NOTIFY valueChanged)
@@ -44,6 +50,8 @@ class FluentSpinBox : public Core::FluentComponent {
                    setSpinBoxType NOTIFY spinBoxTypeChanged)
     Q_PROPERTY(FluentSpinBoxSize spinBoxSize READ spinBoxSize WRITE
                    setSpinBoxSize NOTIFY spinBoxSizeChanged)
+    Q_PROPERTY(FluentSpinBoxComplexity complexity READ complexity WRITE
+                   setComplexity NOTIFY complexityChanged)
     Q_PROPERTY(FluentSpinBoxButtonLayout buttonLayout READ buttonLayout WRITE
                    setButtonLayout NOTIFY buttonLayoutChanged)
     Q_PROPERTY(
@@ -100,6 +108,10 @@ public:
     FluentSpinBoxSize spinBoxSize() const;
     void setSpinBoxSize(FluentSpinBoxSize size);
 
+    // Complexity mode
+    FluentSpinBoxComplexity complexity() const;
+    void setComplexity(FluentSpinBoxComplexity complexity);
+
     FluentSpinBoxButtonLayout buttonLayout() const;
     void setButtonLayout(FluentSpinBoxButtonLayout layout);
 
@@ -148,6 +160,16 @@ public:
                                                 QWidget* parent = nullptr);
     static FluentSpinBox* createPercentageSpinBox(QWidget* parent = nullptr);
 
+    // Factory methods for simple spin boxes (from Simple variant)
+    static FluentSpinBox* createSimple(
+        FluentSpinBoxType type = FluentSpinBoxType::Integer,
+        QWidget* parent = nullptr);
+    static FluentSpinBox* createSimpleInteger(int minimum, int maximum,
+                                              QWidget* parent = nullptr);
+    static FluentSpinBox* createSimpleDouble(double minimum, double maximum,
+                                             int decimals,
+                                             QWidget* parent = nullptr);
+
 public slots:
     void stepUp();
     void stepDown();
@@ -165,6 +187,7 @@ signals:
     void placeholderTextChanged(const QString& text);
     void spinBoxTypeChanged(FluentSpinBoxType type);
     void spinBoxSizeChanged(FluentSpinBoxSize size);
+    void complexityChanged(FluentSpinBoxComplexity complexity);
     void buttonLayoutChanged(FluentSpinBoxButtonLayout layout);
     void readOnlyChanged(bool readOnly);
     void wrappingChanged(bool wrapping);
@@ -233,6 +256,7 @@ private:
     FluentButton* m_upButton{nullptr};
     FluentButton* m_downButton{nullptr};
     QHBoxLayout* m_mainLayout{nullptr};
+    FluentSpinBoxComplexity m_complexity{FluentSpinBoxComplexity::Full};
     QVBoxLayout* m_buttonsLayout{nullptr};
 
     // Value properties

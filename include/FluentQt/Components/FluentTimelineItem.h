@@ -100,6 +100,10 @@ class FluentTimelineItem : public Core::FluentComponent {
                    showDateTimeChanged)
     Q_PROPERTY(bool showIndicator READ showIndicator WRITE setShowIndicator
                    NOTIFY showIndicatorChanged)
+    Q_PROPERTY(qreal expansionProgress READ expansionProgress WRITE
+                   setExpansionProgress NOTIFY expansionProgressChanged)
+    Q_PROPERTY(qreal stateProgress READ stateProgress WRITE setStateProgress
+                   NOTIFY stateProgressChanged)
 
 public:
     explicit FluentTimelineItem(QWidget* parent = nullptr);
@@ -194,6 +198,13 @@ public:
     void animateExpansion(bool expanded);
     void animateStateChange(FluentTimelineItemState newState);
 
+    // Animation progress properties
+    qreal expansionProgress() const { return m_expansionProgress; }
+    void setExpansionProgress(qreal progress);
+
+    qreal stateProgress() const { return m_stateProgress; }
+    void setStateProgress(qreal progress);
+
     // Static factory methods
     static FluentTimelineItem* createMilestone(
         const QString& title,
@@ -242,6 +253,8 @@ signals:
     void interactiveChanged(bool interactive);
     void showDateTimeChanged(bool show);
     void showIndicatorChanged(bool show);
+    void expansionProgressChanged(qreal progress);
+    void stateProgressChanged(qreal progress);
 
     void clicked();
     void doubleClicked();

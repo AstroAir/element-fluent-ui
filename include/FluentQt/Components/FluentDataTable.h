@@ -170,6 +170,13 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
 
+    // Protected members for inheritance
+    QTableWidget* m_table = nullptr;
+    QList<FluentTableRow> m_filteredRows;
+
+    // Protected methods for inheritance
+    void updateTable();
+
 private slots:
     void onCellClicked(int row, int column);
     void onCellDoubleClicked(int row, int column);
@@ -183,7 +190,6 @@ private:
     void setupTable();
     void setupToolbar();
     void setupPagination();
-    void updateTable();
     void updatePagination();
     void updateToolbar();
     void applyFilters();
@@ -195,7 +201,6 @@ private:
     // UI components
     QVBoxLayout* m_mainLayout = nullptr;
     QToolBar* m_toolbar = nullptr;
-    QTableWidget* m_table = nullptr;
     QWidget* m_paginationWidget = nullptr;
     QHBoxLayout* m_paginationLayout = nullptr;
 
@@ -210,7 +215,6 @@ private:
     // Data
     QList<FluentTableColumn> m_columns;
     QList<FluentTableRow> m_rows;
-    QList<FluentTableRow> m_filteredRows;
 
     // Configuration
     SelectionMode m_selectionMode = SelectionMode::Single;

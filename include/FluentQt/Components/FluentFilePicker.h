@@ -111,6 +111,9 @@ public:
     void setDropZoneIcon(const QIcon& icon);
     void setShowPreview(bool show);
 
+    // Utility methods
+    static QString formatFileSize(qint64 bytes);
+
 public slots:
     void openFileDialog();
     void openDirectoryDialog();
@@ -161,6 +164,9 @@ private:
     // Drag & drop helpers
     void setDragActive(bool active);
     void processDraggedFiles(const QList<QUrl>& urls);
+
+    // Upload helpers
+    void uploadNextFile();
 
     // UI components
     QVBoxLayout* m_mainLayout = nullptr;

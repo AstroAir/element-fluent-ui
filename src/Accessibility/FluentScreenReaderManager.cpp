@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QMutexLocker>
 #include <QProcess>
+#include <QThread>
 #include <QTimer>
 
 #ifdef Q_OS_WIN
@@ -18,11 +19,24 @@ FluentScreenReaderManager& FluentScreenReaderManager::instance() {
 }
 
 FluentScreenReaderManager::FluentScreenReaderManager() {
-    // Initialize announcement timer
-    m_announcementTimer = new QTimer(this);
-    m_announcementTimer->setSingleShot(true);
-    connect(m_announcementTimer, &QTimer::timeout, this,
-            &FluentScreenReaderManager::processAnnouncementQueue);
+    // Initialize announcement timer only if we have a proper event loop
+    if (QApplication::instance() &&
+        QThread::currentThread() == QApplication::instance()->thread()) {
+        m_announcementTimer = new QTimer(this);
+        m_announcementTimer->setSingleShot(true);
+        connect(m_announcementTimer, &QTimer::timeout, this,
+                &FluentScreenReaderManager::processAnnouncementQueue);
+    } else {
+        // Defer timer creation until we're in the main thread
+        QTimer::singleShot(0, this, [this]() {
+            if (!m_announcementTimer) {
+                m_announcementTimer = new QTimer(this);
+                m_announcementTimer->setSingleShot(true);
+                connect(m_announcementTimer, &QTimer::timeout, this,
+                        &FluentScreenReaderManager::processAnnouncementQueue);
+            }
+        });
+    }
 
     // Defer screen reader detection to avoid blocking UI thread during startup
     // Check for skip environment variables

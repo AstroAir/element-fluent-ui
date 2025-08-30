@@ -167,19 +167,37 @@ void FluentSliderTest::testCustomTicks() {
     m_slider->addTick(50.0, "Half");
     m_slider->addTick(75.0, "Three Quarters");
 
-    auto ticks = m_slider->customTicks();
+    auto ticks = m_slider->ticks();
     QCOMPARE(ticks.size(), 3);
-    QVERIFY(ticks.contains(25.0));
-    QVERIFY(ticks.contains(50.0));
-    QVERIFY(ticks.contains(75.0));
+
+    // Check if ticks contain the expected values
+    bool hasQuarter = false, hasHalf = false, hasThreeQuarters = false;
+    for (const auto& tick : ticks) {
+        if (tick.value == 25.0)
+            hasQuarter = true;
+        if (tick.value == 50.0)
+            hasHalf = true;
+        if (tick.value == 75.0)
+            hasThreeQuarters = true;
+    }
+    QVERIFY(hasQuarter);
+    QVERIFY(hasHalf);
+    QVERIFY(hasThreeQuarters);
 
     m_slider->removeTick(50.0);
-    ticks = m_slider->customTicks();
+    ticks = m_slider->ticks();
     QCOMPARE(ticks.size(), 2);
-    QVERIFY(!ticks.contains(50.0));
+
+    // Check that 50.0 tick is removed
+    bool stillHasHalf = false;
+    for (const auto& tick : ticks) {
+        if (tick.value == 50.0)
+            stillHasHalf = true;
+    }
+    QVERIFY(!stillHasHalf);
 
     m_slider->clearTicks();
-    ticks = m_slider->customTicks();
+    ticks = m_slider->ticks();
     QCOMPARE(ticks.size(), 0);
 }
 

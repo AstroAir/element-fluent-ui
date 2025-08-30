@@ -33,6 +33,12 @@ enum class FluentNotificationPosition {
 // Notification animation types
 enum class FluentNotificationAnimation { Slide, Fade, Scale, Bounce };
 
+// Notification complexity modes
+enum class FluentNotificationComplexity {
+    Simple,  // Lightweight mode with basic features (QWidget-based behavior)
+    Full  // Full-featured mode with advanced animations and manager integration
+};
+
 // Notification action structure
 struct FluentNotificationAction {
     QString text;
@@ -54,6 +60,8 @@ class FluentNotification : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(
         FluentNotificationType type READ type WRITE setType NOTIFY typeChanged)
+    Q_PROPERTY(FluentNotificationComplexity complexity READ complexity WRITE
+                   setComplexity NOTIFY complexityChanged)
     Q_PROPERTY(QString title READ title WRITE setTitle NOTIFY titleChanged)
     Q_PROPERTY(
         QString message READ message WRITE setMessage NOTIFY messageChanged)
@@ -78,6 +86,10 @@ public:
     // Type and content
     FluentNotificationType type() const;
     void setType(FluentNotificationType type);
+
+    // Complexity mode
+    FluentNotificationComplexity complexity() const;
+    void setComplexity(FluentNotificationComplexity complexity);
 
     QString title() const;
     void setTitle(const QString& title);
@@ -118,6 +130,24 @@ public:
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
 
+    // Convenience factory methods (from Simple variant)
+    static FluentNotification* createInfo(const QString& title,
+                                          const QString& message = QString(),
+                                          QWidget* parent = nullptr);
+    static FluentNotification* createSuccess(const QString& title,
+                                             const QString& message = QString(),
+                                             QWidget* parent = nullptr);
+    static FluentNotification* createWarning(const QString& title,
+                                             const QString& message = QString(),
+                                             QWidget* parent = nullptr);
+    static FluentNotification* createError(const QString& title,
+                                           const QString& message = QString(),
+                                           QWidget* parent = nullptr);
+    static FluentNotification* createSimple(FluentNotificationType type,
+                                            const QString& title,
+                                            const QString& message = QString(),
+                                            QWidget* parent = nullptr);
+
 public slots:
     void showAnimated();
     void hideAnimated();
@@ -126,6 +156,7 @@ public slots:
 
 signals:
     void typeChanged(FluentNotificationType type);
+    void complexityChanged(FluentNotificationComplexity complexity);
     void titleChanged(const QString& title);
     void messageChanged(const QString& message);
     void iconChanged(const QIcon& icon);
@@ -180,6 +211,8 @@ private:
 private:
     // Configuration
     FluentNotificationType m_type{FluentNotificationType::Info};
+    FluentNotificationComplexity m_complexity{
+        FluentNotificationComplexity::Full};
     QString m_title;
     QString m_message;
     QIcon m_customIcon;

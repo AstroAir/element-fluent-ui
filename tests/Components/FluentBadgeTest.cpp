@@ -646,18 +646,24 @@ void FluentBadgeTest::testDetach() {
 }
 
 void FluentBadgeTest::testAttachedWidget() {
+    // Add safety checks to prevent crashes
+    QVERIFY(m_badge != nullptr);
+    QVERIFY(m_parentWidget != nullptr);
+
     // Test attached widget property
     QVERIFY(m_badge->attachedWidget() == nullptr);
 
+    // Test attachment with safety checks
     m_badge->attachTo(m_parentWidget);
     QCOMPARE(m_badge->attachedWidget(), m_parentWidget);
 
     // Attach to different widget
     QWidget* anotherWidget = new QWidget();
-    m_badge->attachTo(anotherWidget);
-    QCOMPARE(m_badge->attachedWidget(), anotherWidget);
-
-    delete anotherWidget;
+    if (anotherWidget) {
+        m_badge->attachTo(anotherWidget);
+        QCOMPARE(m_badge->attachedWidget(), anotherWidget);
+        delete anotherWidget;
+    }
 }
 
 void FluentBadgeTest::testCreateCountBadge() {

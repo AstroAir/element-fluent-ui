@@ -557,7 +557,7 @@ void FluentCard::updateShadowEffect() {
 
     const int elevation = static_cast<int>(m_elevation);
     m_shadowEffect->setBlurRadius(elevation * 2);
-    m_shadowEffect->setOffset(0, elevation / 2);
+    m_shadowEffect->setOffset(0, elevation / 2.0);
 
     // Apply opacity with null check
     QColor shadowColor = m_shadowEffect->color();
@@ -567,12 +567,30 @@ void FluentCard::updateShadowEffect() {
 
 void FluentCard::animateElevation(FluentCardElevation from,
                                   FluentCardElevation to) {
-    Q_UNUSED(from)
-    Q_UNUSED(to)
+    if (!m_elevationAnimation) {
+        return;
+    }
 
     m_elevationAnimation->stop();
-    m_elevationAnimation->setStartValue(m_shadowOpacity);
-    m_elevationAnimation->setEndValue(1.0);
+
+    // Calculate shadow opacity based on elevation levels
+    const qreal fromOpacity = static_cast<qreal>(from) /
+                              static_cast<qreal>(FluentCardElevation::VeryHigh);
+    const qreal toOpacity = static_cast<qreal>(to) /
+                            static_cast<qreal>(FluentCardElevation::VeryHigh);
+
+    m_elevationAnimation->setStartValue(fromOpacity);
+    m_elevationAnimation->setEndValue(toOpacity);
+
+    // Use Fluent Design card animation timing and curve
+    m_elevationAnimation->setDuration(250);  // Fluent standard duration
+
+    // Create Fluent card curve (0.25, 0.46, 0.45, 0.94)
+    QEasingCurve cardCurve(QEasingCurve::BezierSpline);
+    cardCurve.addCubicBezierSegment(QPointF(0.25, 0.46), QPointF(0.45, 0.94),
+                                    QPointF(1.0, 1.0));
+    m_elevationAnimation->setEasingCurve(cardCurve);
+
     m_elevationAnimation->start();
 }
 
@@ -635,13 +653,19 @@ void FluentCard::collapseWithAnimation() {
 void FluentCard::animateIn() {
     hide();
 
+    // Use Fluent Design entrance animation timing and curves
     Animation::FluentAnimationConfig slideConfig;
-    slideConfig.duration = 400ms;
+    slideConfig.duration = 250ms;  // Fluent standard duration
+    slideConfig.easing =
+        Animation::FluentEasing::FluentStandard;  // Fluent standard curve
     auto slideAnimation =
         Animation::FluentAnimator::slideIn(this, QPoint(0, 20), slideConfig);
 
     Animation::FluentAnimationConfig fadeConfig;
-    fadeConfig.duration = 300ms;
+    fadeConfig.duration =
+        200ms;  // Slightly faster fade for better perceived performance
+    fadeConfig.easing =
+        Animation::FluentEasing::FluentDecelerate;  // Fluent decelerate curve
     auto fadeAnimation = Animation::FluentAnimator::fadeIn(this, fadeConfig);
 
     show();

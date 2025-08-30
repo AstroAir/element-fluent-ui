@@ -5,6 +5,7 @@
 #include <QKeyEvent>
 #include <QMutexLocker>
 #include <QThread>
+#include <QTimer>
 #include <QWidget>
 #include <algorithm>
 
@@ -16,15 +17,24 @@ FluentKeyboardNavigationManager& FluentKeyboardNavigationManager::instance() {
 }
 
 FluentKeyboardNavigationManager::FluentKeyboardNavigationManager() {
-    // Initialize focus update timer
-    m_focusUpdateTimer = new QTimer(this);
-    connect(m_focusUpdateTimer, &QTimer::timeout, this,
-            &FluentKeyboardNavigationManager::updateFocusIndicators);
-
-    // Only start timer if we have a proper event loop
+    // Initialize focus update timer only if we have a proper event loop
     if (QApplication::instance() &&
         QThread::currentThread() == QApplication::instance()->thread()) {
+        m_focusUpdateTimer = new QTimer(this);
+        connect(m_focusUpdateTimer, &QTimer::timeout, this,
+                &FluentKeyboardNavigationManager::updateFocusIndicators);
         m_focusUpdateTimer->start(100);  // Update every 100ms
+    } else {
+        // Defer timer creation until we're in the main thread
+        QTimer::singleShot(0, this, [this]() {
+            if (!m_focusUpdateTimer) {
+                m_focusUpdateTimer = new QTimer(this);
+                connect(
+                    m_focusUpdateTimer, &QTimer::timeout, this,
+                    &FluentKeyboardNavigationManager::updateFocusIndicators);
+                m_focusUpdateTimer->start(100);  // Update every 100ms
+            }
+        });
     }
 
     // Connect to application focus changes (only if QApplication exists)

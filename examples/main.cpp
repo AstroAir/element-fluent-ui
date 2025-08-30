@@ -46,8 +46,7 @@ private:
 
         auto* themeButton = new Components::FluentButton("Toggle Theme", this);
         themeButton->setButtonStyle(Components::FluentButtonStyle::Accent);
-        connect(themeButton, &Components::FluentButton::clicked, this,
-                &FluentDemo::toggleTheme);
+        connect(themeButton, SIGNAL(clicked(bool)), this, SLOT(toggleTheme()));
 
         headerLayout->addWidget(titleLabel);
         headerLayout->addStretch();

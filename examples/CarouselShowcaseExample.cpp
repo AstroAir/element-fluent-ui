@@ -149,8 +149,8 @@ private:
         }
 
         // Connect signals
-        connect(m_basicCarousel, &FluentCarousel::currentIndexChanged, this,
-                &CarouselShowcaseWindow::onCarouselIndexChanged);
+        connect(m_basicCarousel, SIGNAL(currentIndexChanged(int)), this,
+                SLOT(onCarouselIndexChanged(int)));
 
         // Center the carousel
         auto* carouselLayout = new QHBoxLayout();

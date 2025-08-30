@@ -160,11 +160,15 @@ void cleanup();
 
 // Feature detection macros
 #ifdef QT_CHARTS_LIB
+#ifndef FLUENTQT_CHARTS_AVAILABLE
 #define FLUENTQT_CHARTS_AVAILABLE
+#endif
 #endif
 
 #ifdef QT_MULTIMEDIA_LIB
+#ifndef FLUENTQT_MULTIMEDIA_AVAILABLE
 #define FLUENTQT_MULTIMEDIA_AVAILABLE
+#endif
 #endif
 
 #ifdef QT_NETWORK_LIB

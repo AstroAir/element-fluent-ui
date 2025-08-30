@@ -87,6 +87,27 @@ void FluentNotification::setType(FluentNotificationType type) {
     }
 }
 
+FluentNotificationComplexity FluentNotification::complexity() const {
+    return m_complexity;
+}
+
+void FluentNotification::setComplexity(
+    FluentNotificationComplexity complexity) {
+    if (m_complexity != complexity) {
+        m_complexity = complexity;
+
+        // Adjust behavior based on complexity mode
+        if (complexity == FluentNotificationComplexity::Simple) {
+            // Simple mode: disable advanced features
+            setClosable(true);     // Simple mode always allows closing
+            setPersistent(false);  // Simple mode doesn't support persistence
+        }
+
+        updateLayout();
+        emit complexityChanged(complexity);
+    }
+}
+
 QString FluentNotification::title() const { return m_title; }
 
 void FluentNotification::setTitle(const QString& title) {
@@ -270,6 +291,16 @@ void FluentNotification::showAnimated() {
     setOpacity(0.0);
     show();
 
+    if (m_complexity == FluentNotificationComplexity::Simple) {
+        // Simple mode: basic fade-in without complex animations
+        m_showAnimation->setDuration(200);  // Faster animation
+        m_showAnimation->setEasingCurve(QEasingCurve::OutQuad);
+    } else {
+        // Full mode: use advanced animations
+        m_showAnimation->setDuration(300);
+        m_showAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    }
+
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
     m_showAnimation->start();
@@ -283,6 +314,16 @@ void FluentNotification::hideAnimated() {
     m_showing = false;
 
     stopAutoHide();
+
+    if (m_complexity == FluentNotificationComplexity::Simple) {
+        // Simple mode: basic fade-out without complex animations
+        m_hideAnimation->setDuration(150);  // Faster animation
+        m_hideAnimation->setEasingCurve(QEasingCurve::InQuad);
+    } else {
+        // Full mode: use advanced animations
+        m_hideAnimation->setDuration(250);
+        m_hideAnimation->setEasingCurve(QEasingCurve::InCubic);
+    }
 
     m_hideAnimation->setStartValue(opacity());
     m_hideAnimation->setEndValue(0.0);
@@ -853,6 +894,51 @@ QWidget* FluentNotificationManager::getParentWidget() const {
     }
 
     return nullptr;
+}
+
+// Factory methods (from Simple variant)
+FluentNotification* FluentNotification::createInfo(const QString& title,
+                                                   const QString& message,
+                                                   QWidget* parent) {
+    auto* notification = new FluentNotification(FluentNotificationType::Info,
+                                                title, message, parent);
+    notification->setComplexity(FluentNotificationComplexity::Simple);
+    return notification;
+}
+
+FluentNotification* FluentNotification::createSuccess(const QString& title,
+                                                      const QString& message,
+                                                      QWidget* parent) {
+    auto* notification = new FluentNotification(FluentNotificationType::Success,
+                                                title, message, parent);
+    notification->setComplexity(FluentNotificationComplexity::Simple);
+    return notification;
+}
+
+FluentNotification* FluentNotification::createWarning(const QString& title,
+                                                      const QString& message,
+                                                      QWidget* parent) {
+    auto* notification = new FluentNotification(FluentNotificationType::Warning,
+                                                title, message, parent);
+    notification->setComplexity(FluentNotificationComplexity::Simple);
+    return notification;
+}
+
+FluentNotification* FluentNotification::createError(const QString& title,
+                                                    const QString& message,
+                                                    QWidget* parent) {
+    auto* notification = new FluentNotification(FluentNotificationType::Error,
+                                                title, message, parent);
+    notification->setComplexity(FluentNotificationComplexity::Simple);
+    return notification;
+}
+
+FluentNotification* FluentNotification::createSimple(
+    FluentNotificationType type, const QString& title, const QString& message,
+    QWidget* parent) {
+    auto* notification = new FluentNotification(type, title, message, parent);
+    notification->setComplexity(FluentNotificationComplexity::Simple);
+    return notification;
 }
 
 }  // namespace FluentQt::Components

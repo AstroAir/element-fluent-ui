@@ -16,6 +16,9 @@
 #include <memory>
 #include <unordered_map>
 
+// Include FluentTheme.h for FluentThemeMode enum
+#include "FluentTheme.h"
+
 namespace FluentQt::Styling {
 
 // Design token types
@@ -33,8 +36,7 @@ enum class FluentTokenType {
     Custom
 };
 
-// Theme modes
-enum class FluentThemeMode { Light, Dark, HighContrast, Custom };
+// Theme modes - using definition from FluentTheme.h to avoid conflicts
 
 // Animation preferences
 enum class FluentAnimationPreference {
@@ -80,142 +82,9 @@ struct FluentComponentTheme {
     bool inheritFromBase{true};
 };
 
-// Advanced theme manager with design tokens
-class FluentAdvancedThemeManager : public QObject {
-    Q_OBJECT
-
-public:
-    static FluentAdvancedThemeManager& instance();
-
-    // Theme management
-    void registerTheme(const FluentThemeConfig& themeConfig);
-    void unregisterTheme(const QString& themeName);
-    bool setCurrentTheme(const QString& themeName);
-    QString getCurrentTheme() const { return m_currentThemeName; }
-    QStringList getAvailableThemes() const;
-    FluentThemeConfig getThemeConfig(const QString& themeName) const;
-
-    // Design tokens
-    void registerToken(const FluentDesignToken& token);
-    void unregisterToken(const QString& tokenName);
-    QVariant getToken(const QString& tokenName) const;
-    void setToken(const QString& tokenName, const QVariant& value);
-    QStringList getTokenNames(
-        FluentTokenType type = FluentTokenType::Custom) const;
-
-    // Token resolution with fallbacks
-    QVariant resolveToken(const QString& tokenName,
-                          const QVariant& fallback = QVariant()) const;
-    QString resolveTokenExpression(const QString& expression) const;
-
-    // Component theming
-    void setComponentTheme(const QString& componentName,
-                           const FluentComponentTheme& theme);
-    FluentComponentTheme getComponentTheme(const QString& componentName) const;
-    void removeComponentTheme(const QString& componentName);
-
-    // Dynamic theming
-    void enableDynamicTheming(bool enabled = true);
-    bool isDynamicThemingEnabled() const { return m_dynamicThemingEnabled; }
-    void setThemeTransitionDuration(int milliseconds) {
-        m_transitionDuration = milliseconds;
-    }
-
-    // CSS-in-JS support
-    QString generateCSS(const QString& componentName) const;
-    QString generateGlobalCSS() const;
-    void injectCSS(const QString& css);
-    void clearInjectedCSS();
-
-    // Runtime theme switching
-    void switchTheme(const QString& themeName, bool animated = true);
-    void toggleThemeMode();  // Light/Dark toggle
-    void setAnimationPreference(FluentAnimationPreference preference);
-    FluentAnimationPreference getAnimationPreference() const {
-        return m_animationPreference;
-    }
-
-    // Theme inheritance
-    void setThemeInheritance(const QString& childTheme,
-                             const QString& parentTheme);
-    QStringList getThemeHierarchy(const QString& themeName) const;
-
-    // Custom properties
-    void setCustomProperty(const QString& name, const QVariant& value);
-    QVariant getCustomProperty(const QString& name,
-                               const QVariant& defaultValue = QVariant()) const;
-    void removeCustomProperty(const QString& name);
-
-    // Theme validation
-    bool validateTheme(const QString& themeName) const;
-    QStringList getThemeErrors(const QString& themeName) const;
-
-    // Import/Export
-    bool loadThemeFromFile(const QString& filename);
-    bool saveThemeToFile(const QString& themeName,
-                         const QString& filename) const;
-    bool loadThemeFromJson(const QJsonObject& json);
-    QJsonObject exportThemeToJson(const QString& themeName) const;
-
-    // Hot reloading
-    void enableHotReload(bool enabled = true);
-    void watchThemeFile(const QString& filename);
-    void unwatchThemeFile(const QString& filename);
-
-signals:
-    void themeChanged(const QString& oldTheme, const QString& newTheme);
-    void tokenChanged(const QString& tokenName, const QVariant& oldValue,
-                      const QVariant& newValue);
-    void componentThemeChanged(const QString& componentName);
-    void themeTransitionStarted(const QString& fromTheme,
-                                const QString& toTheme);
-    void themeTransitionCompleted(const QString& themeName);
-    void themeFileChanged(const QString& filename);
-    void themeValidationFailed(const QString& themeName,
-                               const QStringList& errors);
-
-private slots:
-    void onThemeFileChanged(const QString& path);
-    void onThemeTransitionTimer();
-
-private:
-    FluentAdvancedThemeManager();
-    void initializeDefaultTokens();
-    void initializeDefaultThemes();
-    QVariant computeTokenValue(const FluentDesignToken& token) const;
-    void applyThemeTransition(const QString& fromTheme, const QString& toTheme);
-    void validateTokenDependencies() const;
-
-private:
-    QString m_currentThemeName{"FluentLight"};
-    std::unordered_map<QString, FluentThemeConfig> m_themes;
-    std::unordered_map<QString, FluentDesignToken> m_tokens;
-    std::unordered_map<QString, FluentComponentTheme> m_componentThemes;
-    std::unordered_map<QString, QVariant> m_customProperties;
-
-    // Dynamic theming
-    bool m_dynamicThemingEnabled{true};
-    int m_transitionDuration{300};
-    FluentAnimationPreference m_animationPreference{
-        FluentAnimationPreference::Full};
-
-    // Hot reloading
-    bool m_hotReloadEnabled{false};
-    std::unique_ptr<QFileSystemWatcher> m_fileWatcher;
-
-    // Theme transition
-    QTimer* m_transitionTimer;
-    QString m_transitionFromTheme;
-    QString m_transitionToTheme;
-
-    // CSS injection
-    QStringList m_injectedCSS;
-
-    // Thread safety
-    mutable QMutex m_themesMutex;
-    mutable QMutex m_tokensMutex;
-    mutable QMutex m_componentsMutex;
-};
+// Forward declaration - FluentAdvancedThemeManager is defined in
+// FluentAdvancedThemeManager.h
+class FluentAdvancedThemeManager;
 
 // Design token utilities
 class FluentDesignTokens {

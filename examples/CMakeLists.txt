@@ -100,11 +100,23 @@ target_link_libraries(FeedbackComponents
     FluentQt
 )
 
+# Enhanced FluentAutoCarousel Example
+add_executable(EnhancedFluentAutoCarouselExample
+    EnhancedFluentAutoCarouselExample.cpp
+)
+
+target_link_libraries(EnhancedFluentAutoCarouselExample
+    Qt6::Core
+    Qt6::Widgets
+    FluentQt
+)
+
 # Toast and Select Demo
 add_subdirectory(ToastAndSelectDemo)
 
 # Installation
 install(TARGETS UnifiedComponentShowcase BasicExample AdvancedDemo ComprehensiveDemo
+    CarouselShowcase FormComponents FeedbackComponents EnhancedFluentAutoCarouselExample
     BUNDLE DESTINATION .
     RUNTIME DESTINATION bin
 )

@@ -219,7 +219,8 @@ signals:
     void themeValidated(const FluentThemeValidationResult& result);
     void dynamicThemeUpdated(const FluentColorPalette& palette);
     void themePresetApplied(const QString& name);
-    void themeTransitionStarted();
+    void themeTransitionStarted(const QString& fromTheme,
+                                const QString& toTheme);
     void themeTransitionFinished();
     void systemThemeChanged();
     void systemAccentColorChanged(const QColor& color);

@@ -51,6 +51,10 @@ class FluentScrollArea : public Core::FluentComponent {
         bool elasticScrolling READ elasticScrolling WRITE setElasticScrolling)
     Q_PROPERTY(
         qreal scrollBarOpacity READ scrollBarOpacity WRITE setScrollBarOpacity)
+    Q_PROPERTY(bool highContrastMode READ highContrastMode WRITE
+                   setHighContrastMode NOTIFY accessibilityModeChanged)
+    Q_PROPERTY(bool reducedMotionMode READ reducedMotionMode WRITE
+                   setReducedMotionMode NOTIFY accessibilityModeChanged)
 
 public:
     explicit FluentScrollArea(QWidget* parent = nullptr);
@@ -101,6 +105,15 @@ public:
 
     qreal scrollBarOpacity() const noexcept { return m_scrollBarOpacity; }
     void setScrollBarOpacity(qreal opacity);
+
+    // Accessibility support
+    bool highContrastMode() const noexcept { return m_highContrastMode; }
+    void setHighContrastMode(bool enabled);
+
+    bool reducedMotionMode() const noexcept { return m_reducedMotionMode; }
+    void setReducedMotionMode(bool enabled);
+
+    void announceScrollPosition();
 
     // Scroll position
     QPoint scrollPosition() const;
@@ -162,6 +175,8 @@ signals:
     void scrollStarted();
     void scrollFinished();
     void scrollBarVisibilityChanged(Qt::Orientation orientation, bool visible);
+    void accessibilityModeChanged();
+    void themeColorsChanged();
 
 protected:
     // Event handling
@@ -190,6 +205,7 @@ private slots:
     void onScrollBarRangeChanged(int min, int max);
     void onAutoHideTimer();
     void onThemeChanged();
+    void onAccessibilityModeChanged();
 
 private:
     // Setup methods
@@ -197,6 +213,7 @@ private:
     void setupScrollBars();
     void setupAnimations();
     void setupAccessibility();
+    void initializeThemeProperties();
 
     // Scroll bar management
     void updateScrollBarVisibility();
@@ -278,6 +295,15 @@ private:
     // Performance optimization
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
+
+    // Enhanced theme integration and accessibility
+    bool m_highContrastMode{false};
+    bool m_reducedMotionMode{false};
+    bool m_showBorder{false};
+
+    // Cached theme colors for performance
+    QColor m_cachedBackgroundColor;
+    QColor m_cachedBorderColor;
 };
 
 }  // namespace FluentQt::Components

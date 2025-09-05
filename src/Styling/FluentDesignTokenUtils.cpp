@@ -5,6 +5,7 @@
 #include <QMutexLocker>
 #include <QScreen>
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentAdvancedThemeManager.h"
 
 namespace FluentQt::Styling {
 
@@ -14,15 +15,12 @@ FluentDesignTokenUtils& FluentDesignTokenUtils::instance() {
 }
 
 FluentDesignTokenUtils::FluentDesignTokenUtils(QObject* parent)
-    : QObject(parent), m_themeManager(&FluentAdvancedThemeManager::instance()) {
-    // Connect to theme manager signals
-    connect(m_themeManager, &FluentAdvancedThemeManager::themeChanged, this,
-            &FluentDesignTokenUtils::onThemeChanged);
-    connect(m_themeManager, &FluentAdvancedThemeManager::tokenUpdated, this,
-            &FluentDesignTokenUtils::onTokenUpdated);
-
+    : QObject(parent), m_themeManager(nullptr) {
     // Initialize token cache
     initializeTokenCache();
+
+    // Initialize default tokens
+    initializeDefaultTokens();
 }
 
 QColor FluentDesignTokenUtils::getColor(const QString& tokenName,
@@ -166,15 +164,11 @@ QString FluentDesignTokenUtils::getEasing(const QString& type) const {
 QHash<QString, QVariant> FluentDesignTokenUtils::getComponentTokens(
     const QString& component) const {
     QHash<QString, QVariant> tokens;
-    QStringList allTokens = getAvailableTokens();
 
     QString prefix = component + ".";
-    for (const QString& token : allTokens) {
-        if (token.startsWith(prefix)) {
-            QVariant value = m_themeManager->getToken(token);
-            if (value.isValid()) {
-                tokens[token] = value;
-            }
+    for (auto it = m_customTokens.begin(); it != m_customTokens.end(); ++it) {
+        if (it.key().startsWith(prefix)) {
+            tokens[it.key()] = it.value();
         }
     }
 
@@ -199,12 +193,13 @@ QVariant FluentDesignTokenUtils::getComponentToken(const QString& component,
 }
 
 bool FluentDesignTokenUtils::isTokenValid(const QString& tokenName) const {
-    return m_themeManager->getToken(tokenName).isValid();
+    return m_customTokens.contains(tokenName);
 }
 
 QStringList FluentDesignTokenUtils::getAvailableTokens(
     FluentTokenType type) const {
-    return m_themeManager->getTokenNames(type);
+    Q_UNUSED(type)
+    return m_customTokens.keys();
 }
 
 QStringList FluentDesignTokenUtils::getComponentTokenNames(
@@ -235,31 +230,22 @@ void FluentDesignTokenUtils::setCustomToken(const QString& tokenName,
 
     m_customTokens[tokenName] = value;
 
-    // Register with theme manager
-    FluentDesignToken token;
-    token.name = tokenName;
-    token.value = value;
-    token.type = type;
-    token.category = "custom";
-    token.description = QString("Custom token: %1").arg(tokenName);
-
-    m_themeManager->registerToken(token);
+    // Token is stored in m_customTokens above
 
     // Update cache
     updateTokenCache(tokenName, value);
 
-    emit customTokenAdded(tokenName);
-    emit tokenChanged(tokenName, value);
+    // emit customTokenAdded(tokenName);  // Temporarily commented out
+    // emit tokenChanged(tokenName, value);  // Temporarily commented out
 }
 
 void FluentDesignTokenUtils::removeCustomToken(const QString& tokenName) {
     QMutexLocker locker(&m_cacheMutex);
 
     if (m_customTokens.remove(tokenName) > 0) {
-        m_themeManager->unregisterToken(tokenName);
         m_tokenCache.remove(tokenName);
 
-        emit customTokenRemoved(tokenName);
+        // emit customTokenRemoved(tokenName);  // Temporarily commented out
     }
 }
 
@@ -267,12 +253,11 @@ void FluentDesignTokenUtils::resetToDefaults() {
     QMutexLocker locker(&m_cacheMutex);
 
     // Remove all custom tokens
-    for (auto it = m_customTokens.begin(); it != m_customTokens.end(); ++it) {
-        m_themeManager->unregisterToken(it.key());
-    }
-
     m_customTokens.clear();
     invalidateTokenCache();
+
+    // Reinitialize default tokens
+    initializeDefaultTokens();
 }
 
 QVariant FluentDesignTokenUtils::getResponsiveToken(
@@ -289,14 +274,12 @@ QVariant FluentDesignTokenUtils::getResponsiveToken(
     // Try responsive token first
     QString responsiveToken =
         QString("%1.%2").arg(tokenName).arg(activeBreakpoint);
-    QVariant value = m_themeManager->getToken(responsiveToken);
-
-    if (value.isValid()) {
-        return value;
+    if (m_customTokens.contains(responsiveToken)) {
+        return m_customTokens[responsiveToken];
     }
 
     // Fallback to base token
-    return m_themeManager->getToken(tokenName);
+    return m_customTokens.value(tokenName, QVariant());
 }
 
 int FluentDesignTokenUtils::getBreakpoint(const QString& size) const {
@@ -314,14 +297,14 @@ QVariant FluentDesignTokenUtils::getThemeAwareToken(
     const QString& tokenName, FluentThemeMode mode) const {
     // This would require theme-specific token variants
     Q_UNUSED(mode)
-    return m_themeManager->getToken(tokenName);
+    return m_customTokens.value(tokenName, QVariant());
 }
 
 void FluentDesignTokenUtils::invalidateTokenCache() {
     QMutexLocker locker(&m_cacheMutex);
     m_tokenCache.clear();
     m_cacheValid = false;
-    emit tokenCacheInvalidated();
+    // emit tokenCacheInvalidated();  // Temporarily commented out
 }
 
 QColor FluentDesignTokenUtils::getAccessibleColor(
@@ -359,16 +342,17 @@ bool FluentDesignTokenUtils::validateColorContrast(
     return contrast >= minimumRatio;
 }
 
-void FluentDesignTokenUtils::onThemeChanged(const QString& themeName) {
-    Q_UNUSED(themeName)
-    invalidateTokenCache();
-}
+// Temporarily commented out slot implementations
+// void FluentDesignTokenUtils::onThemeChanged(const QString& themeName) {
+//     Q_UNUSED(themeName)
+//     invalidateTokenCache();
+// }
 
-void FluentDesignTokenUtils::onTokenUpdated(const QString& tokenName,
-                                            const QVariant& value) {
-    updateTokenCache(tokenName, value);
-    emit tokenChanged(tokenName, value);
-}
+// void FluentDesignTokenUtils::onTokenUpdated(const QString& tokenName,
+//                                             const QVariant& value) {
+//     updateTokenCache(tokenName, value);
+//     emit tokenChanged(tokenName, value);
+// }
 
 QString FluentDesignTokenUtils::buildTokenName(const QString& category,
                                                const QString& property,
@@ -391,8 +375,8 @@ QVariant FluentDesignTokenUtils::resolveTokenWithFallback(
     }
     locker.unlock();
 
-    // Resolve from theme manager
-    QVariant value = m_themeManager->resolveToken(tokenName, fallback);
+    // Resolve from custom tokens
+    QVariant value = m_customTokens.value(tokenName, fallback);
 
     // Update cache
     updateTokenCache(tokenName, value);
@@ -406,8 +390,37 @@ void FluentDesignTokenUtils::initializeTokenCache() {
     m_cacheValid = true;
 }
 
+void FluentDesignTokenUtils::initializeDefaultTokens() {
+    // Initialize basic design tokens with default values
+    m_customTokens["brand.100"] = QColor("#0078d4");
+    m_customTokens["neutral.0"] = QColor("#ffffff");
+    m_customTokens["neutral.54"] = QColor("#000000");
+
+    // Typography tokens
+    m_customTokens["typography.body1.fontSize"] = 14;
+    m_customTokens["typography.title1.fontSize"] = 28;
+    m_customTokens["typography.caption1.fontSize"] = 12;
+
+    // Spacing tokens
+    m_customTokens["spacing.xs"] = 4;
+    m_customTokens["spacing.s"] = 8;
+    m_customTokens["spacing.m"] = 12;
+    m_customTokens["spacing.l"] = 16;
+    m_customTokens["spacing.xl"] = 20;
+
+    // Border radius tokens
+    m_customTokens["borderRadius.small"] = 2;
+    m_customTokens["borderRadius.medium"] = 4;
+    m_customTokens["borderRadius.large"] = 8;
+
+    // Animation duration tokens
+    m_customTokens["duration.fast"] = 100;
+    m_customTokens["duration.normal"] = 200;
+    m_customTokens["duration.slow"] = 300;
+}
+
 void FluentDesignTokenUtils::updateTokenCache(const QString& tokenName,
-                                              const QVariant& value) {
+                                              const QVariant& value) const {
     QMutexLocker locker(&m_cacheMutex);
     m_tokenCache[tokenName] = value;
 }

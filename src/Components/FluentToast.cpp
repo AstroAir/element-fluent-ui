@@ -271,51 +271,62 @@ QSize FluentToast::calculateSizeHint() const {
     const QFontMetrics titleMetrics(theme.titleSmallFont());
     const QFontMetrics messageMetrics(theme.bodyFont());
 
+    // Use theme tokens for spacing and sizing
+    const int contentPadding = theme.paddingValue("medium");
+    const int contentSpacing = theme.spacing("small");
+    const int iconSize = theme.iconSize("small").width();
+    const int buttonSize = theme.componentHeight("small");
+    const int progressHeight = theme.spacing("xsmall");
+
     int width = m_config.minWidth;
-    int height = 16;  // Top padding
+    int height = contentPadding;  // Top padding
 
-    // Icon space
-    const int iconSize = 24;
-    const int iconSpace = iconSize + 8;
+    // Icon space calculation
+    const int iconSpace = iconSize + contentSpacing;
 
-    // Calculate text width
-    int textWidth = width - iconSpace - 16;  // Margins
+    // Calculate available text width
+    int textWidth =
+        width - iconSpace - (contentPadding * 2);  // Account for margins
     if (m_config.closable) {
-        textWidth -= 32;  // Close button space
+        textWidth -= buttonSize + contentSpacing;  // Close button space
     }
 
-    // Title height
+    // Title height calculation
     if (!m_title.isEmpty()) {
         const QRect titleRect = titleMetrics.boundingRect(
             QRect(0, 0, textWidth, 0), Qt::TextWordWrap, m_title);
-        height += titleRect.height() + 4;
-        width = qMax(width, titleRect.width() + iconSpace + 32);
+        height += titleRect.height() + theme.spacing("xsmall");
+        width = qMax(width,
+                     titleRect.width() + iconSpace + (contentPadding * 2) +
+                         (m_config.closable ? buttonSize + contentSpacing : 0));
     }
 
-    // Message height
+    // Message height calculation
     if (!m_message.isEmpty()) {
         const QRect messageRect = messageMetrics.boundingRect(
             QRect(0, 0, textWidth, 0), Qt::TextWordWrap, m_message);
-        height += messageRect.height() + 4;
-        width = qMax(width, messageRect.width() + iconSpace + 32);
+        height += messageRect.height() + theme.spacing("xsmall");
+        width = qMax(width,
+                     messageRect.width() + iconSpace + (contentPadding * 2) +
+                         (m_config.closable ? buttonSize + contentSpacing : 0));
     }
 
     // Progress bar height
     if (m_config.showProgress) {
-        height += 8 + 4;  // Progress bar height + spacing
+        height += progressHeight + contentSpacing;
     }
 
     // Actions height
     if (!m_actions.isEmpty()) {
-        height += 32 + 8;  // Button height + spacing
+        height += buttonSize + contentSpacing;
     }
 
-    height += 16;  // Bottom padding
+    height += contentPadding;  // Bottom padding
 
-    // Constrain to max width
-    if (m_config.maxWidth > 0) {
-        width = qMin(width, m_config.maxWidth);
-    }
+    // Constrain to max width with theme considerations
+    const int maxWidth = m_config.maxWidth > 0 ? m_config.maxWidth
+                                               : theme.componentWidth("dialog");
+    width = qMin(width, maxWidth);
 
     return QSize(width, height);
 }
@@ -492,6 +503,59 @@ void FluentToast::leaveEvent(QEvent* event) {
     }
 }
 
+void FluentToast::keyPressEvent(QKeyEvent* event) {
+    // Enhanced keyboard navigation for accessibility
+    switch (event->key()) {
+        case Qt::Key_Escape:
+            if (m_config.closable) {
+                dismiss();
+                event->accept();
+                return;
+            }
+            break;
+
+        case Qt::Key_Space:
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            // Activate the primary action or close if no actions
+            if (!m_actions.isEmpty()) {
+                // Find and trigger the primary action
+                for (int i = 0; i < m_actions.size(); ++i) {
+                    if (m_actions[i].primary && i < m_actionButtons.size()) {
+                        emit m_actionButtons[i]->clicked();
+                        event->accept();
+                        return;
+                    }
+                }
+                // If no primary action, trigger the first action
+                if (!m_actionButtons.isEmpty()) {
+                    emit m_actionButtons[0]->clicked();
+                    event->accept();
+                    return;
+                }
+            } else if (m_config.closable) {
+                dismiss();
+                event->accept();
+                return;
+            }
+            break;
+
+        case Qt::Key_Tab:
+            // Handle tab navigation between toast elements
+            if (m_config.closable && m_closeButton) {
+                m_closeButton->setFocus();
+                event->accept();
+                return;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    FluentComponent::keyPressEvent(event);
+}
+
 void FluentToast::resizeEvent(QResizeEvent* event) {
     FluentComponent::resizeEvent(event);
 
@@ -596,87 +660,122 @@ void FluentToast::onThemeChanged() {
 
 // Private implementation methods
 void FluentToast::setupUI() {
+    const auto& theme = FluentTheme::instance();
+
+    // Use theme tokens for layout spacing
+    const int contentPadding = theme.paddingValue("medium");
+    const int contentSpacing = theme.spacing("small");
+    const int iconSize = theme.iconSize("small").width();
+    const int buttonSize = theme.componentHeight("small");
+
     m_mainLayout = new QVBoxLayout(this);
-    m_mainLayout->setContentsMargins(16, 12, 16, 12);
-    m_mainLayout->setSpacing(8);
+    m_mainLayout->setContentsMargins(contentPadding, contentPadding,
+                                     contentPadding, contentPadding);
+    m_mainLayout->setSpacing(contentSpacing);
 
     // Content layout (icon + text + close button)
     m_contentLayout = new QHBoxLayout();
-    m_contentLayout->setSpacing(8);
+    m_contentLayout->setSpacing(contentSpacing);
 
-    // Icon label
+    // Icon label with theme-based sizing
     m_iconLabel = new QLabel();
-    m_iconLabel->setFixedSize(24, 24);
+    m_iconLabel->setFixedSize(iconSize, iconSize);
     m_iconLabel->setScaledContents(true);
+    m_iconLabel->setAlignment(Qt::AlignCenter);
     m_contentLayout->addWidget(m_iconLabel);
 
-    // Text layout
+    // Text layout with theme spacing
     auto* textLayout = new QVBoxLayout();
-    textLayout->setSpacing(2);
+    textLayout->setSpacing(theme.spacing("xsmall"));
 
     m_titleLabel = new QLabel();
     m_titleLabel->setWordWrap(true);
+    m_titleLabel->setFont(theme.titleSmallFont());
     textLayout->addWidget(m_titleLabel);
 
     m_messageLabel = new QLabel();
     m_messageLabel->setWordWrap(true);
+    m_messageLabel->setFont(theme.bodyFont());
     textLayout->addWidget(m_messageLabel);
 
     m_contentLayout->addLayout(textLayout, 1);
 
-    // Close button
+    // Close button with proper accessibility
     m_closeButton = new FluentButton();
     m_closeButton->setIcon(QIcon(":/icons/close"));
-    m_closeButton->setFixedSize(24, 24);
+    m_closeButton->setFixedSize(buttonSize, buttonSize);
     m_closeButton->setVisible(m_config.closable);
+    m_closeButton->setAccessibleName(tr("Close notification"));
+    m_closeButton->setAccessibleDescription(
+        tr("Close this toast notification"));
+    m_closeButton->setToolTip(tr("Close"));
     connect(m_closeButton, &FluentButton::clicked, this,
             &FluentToast::onCloseButtonClicked);
     m_contentLayout->addWidget(m_closeButton);
 
     m_mainLayout->addLayout(m_contentLayout);
 
-    // Progress bar
+    // Progress bar with theme styling
     m_progressBar = new QProgressBar();
     m_progressBar->setRange(0, 100);
     m_progressBar->setVisible(m_config.showProgress);
+    m_progressBar->setFixedHeight(theme.spacing("xsmall"));
     m_mainLayout->addWidget(m_progressBar);
 
-    // Actions layout
+    // Actions layout with theme spacing
     m_actionsLayout = new QHBoxLayout();
-    m_actionsLayout->setSpacing(8);
+    m_actionsLayout->setSpacing(contentSpacing);
     m_actionsLayout->addStretch();
     m_mainLayout->addLayout(m_actionsLayout);
 
+    // Apply Fluent styling and setup
+    setupFluentStyling();
     updateIcon();
     updateLayout();
 }
 
 void FluentToast::setupAnimations() {
+    const auto& theme = FluentTheme::instance();
+
     // Opacity effect for animations
     m_opacityEffect = std::make_unique<QGraphicsOpacityEffect>(this);
     setGraphicsEffect(m_opacityEffect.get());
 
-    // Shadow effect
+    // Shadow effect with theme-based elevation
     m_shadowEffect = std::make_unique<QGraphicsDropShadowEffect>(this);
-    m_shadowEffect->setBlurRadius(16);
-    m_shadowEffect->setOffset(0, 4);
-    m_shadowEffect->setColor(QColor(0, 0, 0, 60));
+    updateElevation();  // Apply theme-based shadow settings
 
-    // Show animation
+    // Enhanced show animation with Fluent motion principles
     m_showAnimation =
         std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
-    m_showAnimation->setDuration(m_config.animationDuration);
-    m_showAnimation->setEasingCurve(m_config.easingCurve);
+
+    // Use theme-based animation duration or config override
+    const int duration =
+        m_config.animationDuration > 0
+            ? m_config.animationDuration
+            : theme.spacing("medium") * 10;  // Convert to reasonable ms value
+
+    m_showAnimation->setDuration(duration);
+
+    // Use Fluent Design easing curves
+    QEasingCurve showEasing = m_config.easingCurve;
+    if (showEasing.type() == QEasingCurve::Linear) {
+        // Default to Fluent-recommended easing
+        showEasing = QEasingCurve::OutCubic;
+    }
+    m_showAnimation->setEasingCurve(showEasing);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
     connect(m_showAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentToast::onShowAnimationFinished);
 
-    // Hide animation
+    // Enhanced hide animation
     m_hideAnimation =
         std::make_unique<QPropertyAnimation>(m_opacityEffect.get(), "opacity");
-    m_hideAnimation->setDuration(m_config.animationDuration);
-    m_hideAnimation->setEasingCurve(m_config.easingCurve);
+    m_hideAnimation->setDuration(duration * 0.8);  // Slightly faster hide
+
+    QEasingCurve hideEasing = QEasingCurve::InCubic;  // Fluent hide pattern
+    m_hideAnimation->setEasingCurve(hideEasing);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
     connect(m_hideAnimation.get(), &QPropertyAnimation::finished, this,
@@ -736,66 +835,58 @@ void FluentToast::updateColors() {
     const auto& palette = theme.currentPalette();
 
     if (m_config.autoCalculateColors) {
-        // Calculate colors based on theme and type
+        // Use semantic color tokens based on toast type
         switch (m_config.type) {
             case FluentToastType::Success:
-                m_backgroundColor = palette.success;
-                m_textColor = palette.neutralLightest;
-                m_borderColor = palette.success.darker(120);
+                m_backgroundColor = theme.color("successBackground");
+                m_textColor = theme.color("successForeground");
+                m_borderColor = theme.color("successBorder");
                 break;
             case FluentToastType::Warning:
-                m_backgroundColor = palette.warning;
-                m_textColor = palette.neutralDarkest;
-                m_borderColor = palette.warning.darker(120);
+                m_backgroundColor = theme.color("warningBackground");
+                m_textColor = theme.color("warningForeground");
+                m_borderColor = theme.color("warningBorder");
                 break;
             case FluentToastType::Error:
-                m_backgroundColor = palette.error;
-                m_textColor = palette.neutralLightest;
-                m_borderColor = palette.error.darker(120);
+                m_backgroundColor = theme.color("errorBackground");
+                m_textColor = theme.color("errorForeground");
+                m_borderColor = theme.color("errorBorder");
                 break;
             case FluentToastType::Info:
-                m_backgroundColor = palette.accent;
-                m_textColor = palette.neutralLightest;
-                m_borderColor = palette.accent.darker(120);
+                m_backgroundColor = theme.color("infoBackground");
+                m_textColor = theme.color("infoForeground");
+                m_borderColor = theme.color("infoBorder");
                 break;
             case FluentToastType::Custom:
             default:
-                m_backgroundColor = palette.neutralLighter;
-                m_textColor = palette.neutralPrimary;
-                m_borderColor = palette.neutralTertiary;
+                m_backgroundColor = theme.color("cardBackground");
+                m_textColor = theme.color("textPrimary");
+                m_borderColor = theme.color("strokeSecondary");
                 break;
         }
+
+        // Ensure accessibility compliance
+        if (!theme.meetsAccessibilityStandards(m_textColor,
+                                               m_backgroundColor)) {
+            m_textColor =
+                const_cast<Styling::FluentTheme&>(theme).generateContrastColor(
+                    m_backgroundColor);
+        }
     } else {
-        // Use custom colors if provided
-        if (m_config.customBackgroundColor.isValid()) {
-            m_backgroundColor = m_config.customBackgroundColor;
-        }
-        if (m_config.customTextColor.isValid()) {
-            m_textColor = m_config.customTextColor;
-        }
-        if (m_config.customBorderColor.isValid()) {
-            m_borderColor = m_config.customBorderColor;
-        }
+        // Use custom colors if provided, with fallbacks
+        m_backgroundColor = m_config.customBackgroundColor.isValid()
+                                ? m_config.customBackgroundColor
+                                : theme.color("cardBackground");
+        m_textColor = m_config.customTextColor.isValid()
+                          ? m_config.customTextColor
+                          : theme.color("textPrimary");
+        m_borderColor = m_config.customBorderColor.isValid()
+                            ? m_config.customBorderColor
+                            : theme.color("strokeSecondary");
     }
 
-    // Apply colors to UI elements
-    if (m_titleLabel) {
-        m_titleLabel->setStyleSheet(
-            QString("color: %1; font-weight: bold;").arg(m_textColor.name()));
-    }
-    if (m_messageLabel) {
-        m_messageLabel->setStyleSheet(
-            QString("color: %1;").arg(m_textColor.name()));
-    }
-    if (m_progressBar) {
-        m_progressBar->setStyleSheet(
-            QString("QProgressBar { background-color: %1; border: 1px solid "
-                    "%2; border-radius: 2px; }"
-                    "QProgressBar::chunk { background-color: %3; }")
-                .arg(m_backgroundColor.lighter(120).name())
-                .arg(m_borderColor.name())
-                .arg(m_textColor.name()));
-    }
+    // Apply colors to UI elements with proper styling
+    applyColorsToElements();
 }
 
 void FluentToast::updateIcon() {
@@ -837,17 +928,64 @@ void FluentToast::updateProgress() {
 }
 
 void FluentToast::updateAccessibility() {
+    // Enhanced accessibility with comprehensive ARIA attributes
     QString accessibleName = m_title;
     if (!m_message.isEmpty()) {
         accessibleName += " - " + m_message;
     }
 
+    // Set basic accessibility properties
     setAccessibleName(accessibleName);
     setAccessibleDescription(QString("Toast notification: %1").arg(m_title));
+
+    // Set ARIA-like properties for better screen reader support
+    setProperty("role", "alert");
+    setProperty("aria-live", "polite");
+    setProperty("aria-atomic", "true");
+
+    // Set toast type for screen readers
+    QString toastTypeText;
+    switch (m_config.type) {
+        case FluentToastType::Success:
+            toastTypeText = tr("Success");
+            setProperty("aria-live", "polite");
+            break;
+        case FluentToastType::Warning:
+            toastTypeText = tr("Warning");
+            setProperty("aria-live", "assertive");
+            break;
+        case FluentToastType::Error:
+            toastTypeText = tr("Error");
+            setProperty("aria-live", "assertive");
+            break;
+        case FluentToastType::Info:
+            toastTypeText = tr("Information");
+            setProperty("aria-live", "polite");
+            break;
+        case FluentToastType::Custom:
+        default:
+            toastTypeText = tr("Notification");
+            break;
+    }
+
+    setProperty("aria-label",
+                QString("%1: %2").arg(toastTypeText, accessibleName));
+
+    // Set dismissible state
+    if (m_config.closable) {
+        setProperty("aria-describedby", "toast-close-instruction");
+        setProperty("aria-keyshortcuts", "Escape");
+    }
+
+    // Set progress information if applicable
+    if (m_config.showProgress && m_progressBar) {
+        setProperty("aria-describedby", "toast-progress");
+    }
 }
 
 void FluentToast::paintBackground(QPainter& painter, const QRect& rect) {
-    const int radius = 8;
+    const auto& theme = FluentTheme::instance();
+    const int radius = theme.borderRadius("medium");
 
     QPainterPath path;
     path.addRoundedRect(rect, radius, radius);
@@ -856,9 +994,11 @@ void FluentToast::paintBackground(QPainter& painter, const QRect& rect) {
 }
 
 void FluentToast::paintBorder(QPainter& painter, const QRect& rect) {
-    const int radius = 8;
+    const auto& theme = FluentTheme::instance();
+    const int radius = theme.borderRadius("medium");
+    const int strokeWidth = theme.strokeWidth("thin");
 
-    QPen pen(m_borderColor, 1);
+    QPen pen(m_borderColor, strokeWidth);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
 
@@ -871,6 +1011,7 @@ void FluentToast::paintShadow(QPainter& painter, const QRect& rect) {
     Q_UNUSED(painter)
     Q_UNUSED(rect)
     // Shadow is handled by QGraphicsDropShadowEffect
+    // Elevation is managed through updateElevation()
 }
 
 QColor FluentToast::getBackgroundColor() const { return m_backgroundColor; }
@@ -999,6 +1140,104 @@ QRect FluentToast::getCloseButtonRect() const {
 
 QRect FluentToast::getProgressRect() const {
     const QRect contentRect = getContentRect();
-    return QRect(contentRect.left(), contentRect.bottom() - 8,
-                 contentRect.width(), 8);
+    const auto& theme = FluentTheme::instance();
+    const int progressHeight = theme.spacing("xsmall");
+    return QRect(contentRect.left(), contentRect.bottom() - progressHeight,
+                 contentRect.width(), progressHeight);
+}
+
+// New helper methods for enhanced Fluent UI compliance
+
+void FluentToast::setupFluentStyling() {
+    const auto& theme = FluentTheme::instance();
+
+    // Apply elevation/shadow effect if enabled
+    if (m_config.autoElevation) {
+        updateElevation();
+    }
+
+    // Set up keyboard navigation if enabled
+    if (m_config.enableKeyboardNavigation) {
+        setFocusPolicy(Qt::StrongFocus);
+        if (m_closeButton) {
+            setTabOrder(this, m_closeButton);
+        }
+    }
+
+    // Apply theme-based corner radius
+    setCornerRadius(theme.borderRadius("medium"));
+
+    // Enable smooth transitions based on config and system settings
+    bool enableTransitions = m_config.useFluentMotion;
+    if (m_config.respectReducedMotion) {
+        // Check system reduced motion preference (simplified check)
+        // In a real implementation, this would check system accessibility
+        // settings
+        enableTransitions = enableTransitions && !theme.isReducedMotionMode();
+    }
+
+    setSmoothTransitions(enableTransitions);
+    if (enableTransitions) {
+        const int duration = m_config.animationDuration > 0
+                                 ? m_config.animationDuration
+                                 : theme.spacing("medium") * 10;
+        setTransitionDuration(duration);
+    }
+}
+
+void FluentToast::updateElevation() {
+    const auto& theme = FluentTheme::instance();
+
+    if (m_shadowEffect) {
+        // Use theme elevation system
+        const int elevation = theme.elevation("card");
+        m_shadowEffect->setBlurRadius(elevation);
+        m_shadowEffect->setOffset(0, elevation / 4);
+
+        // Adjust shadow color based on theme
+        QColor shadowColor = theme.color("shadow");
+        shadowColor.setAlpha(60);
+        m_shadowEffect->setColor(shadowColor);
+    }
+}
+
+void FluentToast::applyColorsToElements() {
+    const auto& theme = FluentTheme::instance();
+
+    // Apply colors to text elements with proper contrast
+    if (m_titleLabel) {
+        m_titleLabel->setStyleSheet(
+            QString("QLabel { color: %1; font-weight: 600; }")
+                .arg(m_textColor.name()));
+    }
+
+    if (m_messageLabel) {
+        m_messageLabel->setStyleSheet(
+            QString("QLabel { color: %1; }").arg(m_textColor.name()));
+    }
+
+    // Style progress bar with theme tokens
+    if (m_progressBar) {
+        const int borderRadius = theme.borderRadius("small");
+        const QString progressStyle =
+            QString(
+                "QProgressBar {"
+                "    background-color: %1;"
+                "    border: %2px solid %3;"
+                "    border-radius: %4px;"
+                "    text-align: center;"
+                "}"
+                "QProgressBar::chunk {"
+                "    background-color: %5;"
+                "    border-radius: %6px;"
+                "}")
+                .arg(m_backgroundColor.lighter(110).name())
+                .arg(theme.strokeWidth("hairline"))
+                .arg(m_borderColor.name())
+                .arg(borderRadius)
+                .arg(m_textColor.name())
+                .arg(borderRadius - 1);
+
+        m_progressBar->setStyleSheet(progressStyle);
+    }
 }

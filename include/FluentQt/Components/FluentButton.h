@@ -1,9 +1,11 @@
 // include/FluentQt/Components/FluentButton.h
 #pragma once
 
+#include <QAccessible>
 #include <QFontMetrics>
 #include <QGraphicsEffect>
 #include <QIcon>
+#include <QKeySequence>
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QSequentialAnimationGroup>
@@ -11,6 +13,7 @@
 #include <memory>
 #include <optional>
 #include "FluentQt/Core/FluentComponent.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 
 namespace FluentQt::Components {
 
@@ -32,8 +35,10 @@ enum class FluentButtonStyle {
     Subtle,
     Outline,
     Hyperlink,
+    Text,
     Toggle,
-    Icon
+    Icon,
+    Split
 };
 
 enum class FluentButtonSize { Small, Medium, Large, ExtraLarge };
@@ -104,6 +109,19 @@ public:
     bool isChecked() const noexcept { return m_checked; }
     void setChecked(bool checked);
 
+    // Shortcut key support
+    QKeySequence shortcut() const noexcept { return m_shortcut; }
+    void setShortcut(const QKeySequence& shortcut);
+    void setShortcut(QKeySequence::StandardKey key);
+
+    // Enhanced accessibility
+    QString accessibleName() const;
+    void setAccessibleName(const QString& name);
+    QString accessibleDescription() const;
+    void setAccessibleDescription(const QString& description);
+    QAccessible::Role accessibleRole() const;
+    void setAccessibleRole(QAccessible::Role role);
+
     // Animation properties
     qreal backgroundOpacity() const noexcept { return m_backgroundOpacity; }
     void setBackgroundOpacity(qreal opacity);
@@ -114,6 +132,17 @@ public:
     qreal revealProgress() const noexcept { return m_revealProgress; }
     void setRevealProgress(qreal progress);
 
+    // Design token integration
+    bool useDesignTokens() const noexcept { return m_useDesignTokens; }
+    void setUseDesignTokens(bool use);
+    void refreshFromDesignTokens();
+
+    // Token-based styling methods
+    QColor getTokenColor(const QString& tokenName) const;
+    QFont getTokenFont(const QString& tokenName) const;
+    int getTokenSize(const QString& tokenName) const;
+    int getTokenSpacing(const QString& tokenName) const;
+
     // Size calculations
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
@@ -123,8 +152,19 @@ public:
                                              QWidget* parent = nullptr);
     static FluentButton* createAccentButton(const QString& text,
                                             QWidget* parent = nullptr);
+    static FluentButton* createSubtleButton(const QString& text,
+                                            QWidget* parent = nullptr);
+    static FluentButton* createTextButton(const QString& text,
+                                          QWidget* parent = nullptr);
+    static FluentButton* createOutlineButton(const QString& text,
+                                             QWidget* parent = nullptr);
     static FluentButton* createIconButton(const QIcon& icon,
                                           QWidget* parent = nullptr);
+    static FluentButton* createToggleButton(const QString& text,
+                                            QWidget* parent = nullptr);
+    static FluentButton* createSplitButton(const QString& text,
+                                           const QIcon& dropdownIcon = QIcon(),
+                                           QWidget* parent = nullptr);
 
 public slots:
     void animateClick();
@@ -234,6 +274,15 @@ private:
     bool m_checked{false};
     bool m_pressed{false};
     bool m_spacePressedOnButton{false};
+
+    // Shortcut and accessibility
+    QKeySequence m_shortcut;
+    QString m_accessibleName;
+    QString m_accessibleDescription;
+    QAccessible::Role m_accessibleRole{QAccessible::Button};
+
+    // Design token integration
+    bool m_useDesignTokens{true};
 
     // Animation properties
     qreal m_backgroundOpacity{1.0};

@@ -70,6 +70,8 @@ private:
     void updateFormatControls(const QTextCharFormat& format);
     void updateAlignmentControls(const QTextBlockFormat& format);
     void updateListControls(const QTextCursor& cursor);
+    void updateColorButtonIndicator(FluentButton* button, const QColor& color);
+    void applyFluentStyling();
     QWidget* createSeparator();
 
 private:

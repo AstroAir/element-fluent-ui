@@ -23,6 +23,13 @@ enum class FluentCardElevation {
     VeryHigh = 32
 };
 
+enum class FluentCardSize {
+    Small,      // < 200px width
+    Medium,     // 200-400px width
+    Large,      // 400-600px width
+    ExtraLarge  // > 600px width
+};
+
 enum class FluentCardStyle { Default, Outlined, Elevated, Filled, Subtle };
 
 class FluentCardHeader;
@@ -135,6 +142,11 @@ public:
     void animateIn();
     void animateOut();
 
+    // Micro-interactions
+    void addHoverEffect();
+    void addPressEffect();
+    void addFocusEffect();
+
 public slots:
     void toggleExpanded();
     void expandWithAnimation();
@@ -194,6 +206,31 @@ private:
     QColor getSelectionColor() const;
     QPen getBorderPen() const;
     int getBorderWidth() const;
+
+    // Corner radius methods
+    int getFluentCornerRadius() const;
+    int getFluentCornerRadius(const QSize& size) const;
+
+    // Convenience methods for enhanced developer experience
+    void setCardContent(QWidget* content);
+    void setCardHeader(const QString& title,
+                       const QString& subtitle = QString());
+    void setCardFooter(QWidget* footer);
+    void setCardIcon(const QIcon& icon);
+    void setCardActions(const QList<QAction*>& actions);
+
+    // Smart defaults based on FluentUI guidelines
+    void applyFluentDefaults();
+    void setFluentSize(FluentCardSize size);
+
+    // Enhanced state management
+    bool isInteractive() const;
+    void setInteractive(bool interactive);
+    bool hasContent() const;
+
+    // Enhanced accessibility
+    void setupAccessibility();
+    void updateAccessibilityInfo();
 
     // Shadow methods
     void updateShadowEffect();

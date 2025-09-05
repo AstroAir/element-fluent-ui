@@ -4,10 +4,12 @@
 #include <QAbstractButton>
 #include <QButtonGroup>
 #include <QHBoxLayout>
+#include <QObject>
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QVBoxLayout>
-#include "FluentQt/Components/FluentButton.h"
+#include <QWidget>
+#include <memory>
 #include "FluentQt/Components/FluentCarousel.h"
 
 namespace FluentQt::Components {

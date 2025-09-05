@@ -27,6 +27,16 @@ class FluentAccordion : public Core::FluentComponent {
                    collapsibleChanged)
     Q_PROPERTY(qreal contentOpacity READ contentOpacity WRITE setContentOpacity)
     Q_PROPERTY(int contentHeight READ contentHeight WRITE setContentHeight)
+    Q_PROPERTY(
+        int elevation READ elevation WRITE setElevation NOTIFY elevationChanged)
+    Q_PROPERTY(bool showDescription READ showDescription WRITE
+                   setShowDescription NOTIFY showDescriptionChanged)
+    Q_PROPERTY(
+        bool showIcon READ showIcon WRITE setShowIcon NOTIFY showIconChanged)
+    Q_PROPERTY(QString ariaLabel READ ariaLabel WRITE setAriaLabel NOTIFY
+                   ariaLabelChanged)
+    Q_PROPERTY(bool reducedMotion READ reducedMotion WRITE setReducedMotion
+                   NOTIFY reducedMotionChanged)
 
 public:
     explicit FluentAccordion(QWidget* parent = nullptr);
@@ -57,6 +67,23 @@ public:
     int contentHeight() const;
     void setContentHeight(int height);
 
+    // Visual properties
+    int elevation() const;
+    void setElevation(int elevation);
+
+    bool showDescription() const;
+    void setShowDescription(bool show);
+
+    bool showIcon() const;
+    void setShowIcon(bool show);
+
+    // Accessibility properties
+    QString ariaLabel() const;
+    void setAriaLabel(const QString& label);
+
+    bool reducedMotion() const;
+    void setReducedMotion(bool reduced);
+
     // Content management
     void setContentWidget(QWidget* widget);
     QWidget* contentWidget() const;
@@ -76,6 +103,11 @@ signals:
     void iconChanged(const QIcon& icon);
     void accordionStateChanged(FluentAccordionState state);
     void collapsibleChanged(bool collapsible);
+    void elevationChanged(int elevation);
+    void showDescriptionChanged(bool show);
+    void showIconChanged(bool show);
+    void ariaLabelChanged(const QString& label);
+    void reducedMotionChanged(bool reduced);
     void expanded();
     void collapsed();
 
@@ -109,6 +141,8 @@ private:
     void paintIcon(QPainter& painter, const QRect& rect);
     void paintChevron(QPainter& painter, const QRect& rect);
     void paintBorder(QPainter& painter, const QRect& rect);
+    void paintElevationShadow(QPainter& painter, const QRect& rect);
+    void paintFocusIndicator(QPainter& painter, const QRect& rect);
 
     // Animation methods
     void startExpandAnimation();
@@ -120,7 +154,15 @@ private:
     QRect contentRect() const;
     QRect iconRect() const;
     QRect chevronRect() const;
+    QRect titleRect() const;
+    QRect descriptionRect() const;
     int calculateContentHeight() const;
+
+    // Fluent Design utilities
+    void updateFluentStyling();
+    void applyElevationEffect();
+    void updateAccessibilityAttributes();
+    bool shouldUseReducedMotion() const;
 
 private:
     // Content
@@ -133,6 +175,15 @@ private:
     bool m_collapsible{true};
     bool m_pressed{false};
     bool m_headerHovered{false};
+
+    // Visual properties
+    int m_elevation{2};  // Fluent Design elevation level
+    bool m_showDescription{true};
+    bool m_showIcon{true};
+
+    // Accessibility properties
+    QString m_ariaLabel;
+    bool m_reducedMotion{false};
 
     // Layout
     QVBoxLayout* m_mainLayout{nullptr};

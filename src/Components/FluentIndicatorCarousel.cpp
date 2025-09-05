@@ -1,6 +1,11 @@
 // src/Components/FluentIndicatorCarousel.cpp
+// Optimized FluentIndicatorCarousel implementation with enhanced Fluent UI
+// compliance
 #include "FluentQt/Components/FluentIndicatorCarousel.h"
+#include <QAccessible>
+#include <QApplication>
 #include <QButtonGroup>
+#include <QEasingCurve>
 #include <QEnterEvent>
 #include <QFocusEvent>
 #include <QGraphicsOpacityEffect>
@@ -12,6 +17,9 @@
 #include <QResizeEvent>
 #include <QStyleOption>
 #include <QVBoxLayout>
+#include <QWidget>
+#include <memory>
+#include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {

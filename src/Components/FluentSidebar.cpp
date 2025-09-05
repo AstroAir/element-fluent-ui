@@ -1,167 +1,45 @@
 #include "FluentQt/Components/FluentSidebar.h"
 #include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Components/FluentSidebarItemWidget.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
 #include <QApplication>
 #include <QFrame>
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
+#include <QHash>
 #include <QPainter>
 #include <QPainterPath>
 #include <QScreen>
 #include <QToolButton>
 
+// Design token macros for easier access
+#define FLUENT_COLOR(name) \
+    FluentQt::Styling::FluentDesignTokenUtils::instance().getColor(name)
+#define FLUENT_FONT(name) \
+    FluentQt::Styling::FluentDesignTokenUtils::instance().getFont(name)
+#define FLUENT_SPACING(name) \
+    FluentQt::Styling::FluentDesignTokenUtils::instance().getSpacing(name)
+#define FLUENT_SIZE(name) \
+    FluentQt::Styling::FluentDesignTokenUtils::instance().getSize(name)
+
 namespace FluentQt::Components {
-
-/**
- * @brief Custom sidebar item widget
- */
-class FluentSidebarItemWidget : public QToolButton {
-    Q_OBJECT
-
-public:
-    explicit FluentSidebarItemWidget(const FluentSidebarItem& item,
-                                     QWidget* parent = nullptr)
-        : QToolButton(parent), m_item(item) {
-        setupWidget();
-    }
-
-    void updateItem(const FluentSidebarItem& item) {
-        m_item = item;
-        setupWidget();
-    }
-
-    const FluentSidebarItem& item() const { return m_item; }
-
-    void setCompactMode(bool compact) {
-        if (m_compactMode != compact) {
-            m_compactMode = compact;
-            updateLayout();
-        }
-    }
-
-    bool isCompactMode() const { return m_compactMode; }
-
-signals:
-    void itemClicked(const QString& id);
-
-protected:
-    void paintEvent(QPaintEvent* event) override {
-        Q_UNUSED(event)
-
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
-
-        const QRect rect = this->rect();
-        const auto& theme = Styling::FluentTheme::instance();
-        const auto& palette = theme.currentPalette();
-
-        // Paint background
-        if (isChecked()) {
-            painter.fillRect(rect, palette.accent.lighter(180));
-
-            // Selection indicator
-            QRect indicator(0, 0, 3, rect.height());
-            painter.fillRect(indicator, palette.accent);
-        } else if (underMouse() && isEnabled()) {
-            painter.fillRect(rect, palette.neutralLight);
-        }
-
-        // Paint content
-        paintContent(&painter, rect);
-    }
-
-    void mousePressEvent(QMouseEvent* event) override {
-        QToolButton::mousePressEvent(event);
-        if (isEnabled()) {
-            emit itemClicked(m_item.id);
-        }
-    }
-
-private:
-    void setupWidget() {
-        setText(m_item.text);
-        setIcon(m_item.icon);
-        setToolTip(m_item.tooltip.isEmpty() ? m_item.text : m_item.tooltip);
-        setEnabled(m_item.enabled);
-        setCheckable(true);
-        setAutoRaise(true);
-
-        // Accessibility
-        setAccessibleName(m_item.accessibleName.isEmpty()
-                              ? m_item.text
-                              : m_item.accessibleName);
-        setAccessibleDescription(m_item.accessibleDescription);
-
-        updateLayout();
-    }
-
-    void updateLayout() {
-        if (m_compactMode) {
-            setFixedSize(48, 48);
-            setIconSize(QSize(20, 20));
-            setToolButtonStyle(Qt::ToolButtonIconOnly);
-        } else {
-            setFixedHeight(40);
-            setMinimumWidth(200);
-            setIconSize(QSize(16, 16));
-            setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-        }
-    }
-
-    void paintContent(QPainter* painter, const QRect& rect) {
-        if (m_compactMode) {
-            // Center icon in compact mode
-            if (!icon().isNull()) {
-                QIcon::Mode mode =
-                    isEnabled() ? QIcon::Normal : QIcon::Disabled;
-                QIcon::State state = isChecked() ? QIcon::On : QIcon::Off;
-                QRect iconRect = rect.adjusted(14, 14, -14, -14);
-                icon().paint(painter, iconRect, Qt::AlignCenter, mode, state);
-            }
-        } else {
-            // Icon and text layout for expanded mode
-            const int iconSize = 16;
-            const int margin = 16;
-            const int spacing = 12;
-
-            QRect iconRect(margin, (rect.height() - iconSize) / 2, iconSize,
-                           iconSize);
-            QRect textRect(margin + iconSize + spacing, 0,
-                           rect.width() - margin - iconSize - spacing - margin,
-                           rect.height());
-
-            // Draw icon
-            if (!icon().isNull()) {
-                QIcon::Mode mode =
-                    isEnabled() ? QIcon::Normal : QIcon::Disabled;
-                QIcon::State state = isChecked() ? QIcon::On : QIcon::Off;
-                icon().paint(painter, iconRect, Qt::AlignCenter, mode, state);
-            }
-
-            // Draw text
-            if (!text().isEmpty()) {
-                const auto& theme = Styling::FluentTheme::instance();
-                const auto& palette = theme.currentPalette();
-
-                painter->setPen(isEnabled() ? palette.text
-                                            : palette.textDisabled);
-                painter->setFont(font());
-                painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
-                                  text());
-            }
-        }
-    }
-
-    FluentSidebarItem m_item;
-    bool m_compactMode = false;
-};
 
 // FluentSidebar implementation
 FluentSidebar::FluentSidebar(QWidget* parent) : QWidget(parent) {
+    // Initialize with Fluent UI design tokens
+    if (m_useFluentDesignTokens) {
+        m_expandedWidth = FLUENT_SIZE("navigation.expanded.width");
+        m_compactWidth = FLUENT_SIZE("navigation.compact.width");
+        m_currentWidth = m_expandedWidth;
+    }
+
     setupUI();
     setupAnimations();
     setupAccessibility();
+    setupKeyboardNavigation();
 
     // Connect to theme changes
     connect(&Styling::FluentTheme::instance(),
@@ -174,6 +52,18 @@ FluentSidebar::FluentSidebar(QWidget* parent) : QWidget(parent) {
     m_responsiveTimer->setInterval(100);
     connect(m_responsiveTimer, &QTimer::timeout, this,
             &FluentSidebar::updateResponsiveMode);
+
+    // Setup typeahead timer
+    m_typeaheadTimer = new QTimer(this);
+    m_typeaheadTimer->setSingleShot(true);
+    m_typeaheadTimer->setInterval(1000);
+    connect(m_typeaheadTimer, &QTimer::timeout, this,
+            &FluentSidebar::clearTypeaheadBuffer);
+
+    // Apply Fluent UI design tokens
+    if (m_useFluentDesignTokens) {
+        applyFluentDesignTokens();
+    }
 
     updateLayout();
 }
@@ -293,27 +183,78 @@ void FluentSidebar::setSelectedItem(const QString& id) {
 void FluentSidebar::clearSelection() { setSelectedItem(QString()); }
 
 void FluentSidebar::setupUI() {
-    setFixedWidth(m_expandedWidth);
+    // Set initial width using design tokens
+    setFixedWidth(m_currentWidth);
+
+    // Apply Fluent UI styling
+    setObjectName("FluentSidebar");
+    setAttribute(Qt::WA_StyledBackground, true);
 
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
 
-    // Create scroll area for content
+    // Create scroll area for content with Fluent UI styling
     m_scrollArea = new QScrollArea(this);
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_scrollArea->setFrameShape(QFrame::NoFrame);
+    m_scrollArea->setObjectName("FluentSidebarScrollArea");
+
+    // Apply Fluent UI scrollbar styling
+    if (m_useFluentDesignTokens) {
+        m_scrollArea->setStyleSheet(
+            QString("QScrollArea#FluentSidebarScrollArea { "
+                    "    background-color: %1; "
+                    "    border: none; "
+                    "} "
+                    "QScrollBar:vertical { "
+                    "    background-color: transparent; "
+                    "    width: %2px; "
+                    "    border-radius: %3px; "
+                    "} "
+                    "QScrollBar::handle:vertical { "
+                    "    background-color: %4; "
+                    "    border-radius: %3px; "
+                    "    min-height: 20px; "
+                    "} "
+                    "QScrollBar::handle:vertical:hover { "
+                    "    background-color: %5; "
+                    "}")
+                .arg(getSemanticColor("color.background.primary").name())
+                .arg(getSemanticSpacing("scrollbar.width"))
+                .arg(getSemanticSpacing("border.radius.small"))
+                .arg(getSemanticColor("color.scrollbar.thumb").name())
+                .arg(getSemanticColor("color.scrollbar.thumb.hover").name()));
+    }
 
     m_contentWidget = new QWidget();
+    m_contentWidget->setObjectName("FluentSidebarContent");
     m_contentLayout = new QVBoxLayout(m_contentWidget);
-    m_contentLayout->setContentsMargins(0, 0, 0, 0);
-    m_contentLayout->setSpacing(2);
+
+    // Use Fluent UI spacing tokens
+    const int contentPadding =
+        m_useFluentDesignTokens ? getSemanticSpacing("spacing.s") : 4;
+    const int itemSpacing =
+        m_useFluentDesignTokens ? getSemanticSpacing("spacing.xs") : 2;
+
+    m_contentLayout->setContentsMargins(contentPadding, contentPadding,
+                                        contentPadding, contentPadding);
+    m_contentLayout->setSpacing(itemSpacing);
     m_contentLayout->addStretch();
 
     m_scrollArea->setWidget(m_contentWidget);
     m_mainLayout->addWidget(m_scrollArea);
+
+    // Add drop shadow effect for Fluent UI elevation
+    if (m_useFluentDesignTokens) {
+        auto* shadowEffect = new QGraphicsDropShadowEffect(this);
+        shadowEffect->setBlurRadius(8);
+        shadowEffect->setColor(QColor(0, 0, 0, 32));
+        shadowEffect->setOffset(2, 0);
+        setGraphicsEffect(shadowEffect);
+    }
 }
 
 void FluentSidebar::setupAnimations() {
@@ -329,11 +270,63 @@ void FluentSidebar::setupAnimations() {
 }
 
 void FluentSidebar::setupAccessibility() {
+    // Set ARIA role for navigation
     setAccessibleName(m_accessibleName.isEmpty() ? tr("Navigation Sidebar")
                                                  : m_accessibleName);
-    setAccessibleDescription(m_accessibleDescription.isEmpty()
-                                 ? tr("Main navigation sidebar")
-                                 : m_accessibleDescription);
+    setAccessibleDescription(
+        m_accessibleDescription.isEmpty()
+            ? tr("Main navigation sidebar with keyboard support")
+            : m_accessibleDescription);
+
+    // Set focus policy for keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+
+    // Enable tab focus
+    setTabOrder(this, nullptr);
+
+    // Set up accessibility properties
+    updateAccessibilityProperties();
+}
+
+void FluentSidebar::setupKeyboardNavigation() {
+    // Enable keyboard navigation by default
+    m_keyboardNavigationEnabled = true;
+    m_typeaheadSearchEnabled = true;
+
+    // Install event filter for global keyboard handling
+    installEventFilter(this);
+}
+
+void FluentSidebar::applyFluentDesignTokens() {
+    if (!m_useFluentDesignTokens)
+        return;
+
+    // Cache design tokens for performance
+    m_colorTokenCache.clear();
+    m_fontTokenCache.clear();
+    m_spacingTokenCache.clear();
+
+    // Pre-cache commonly used tokens
+    m_colorTokenCache["background.primary"] =
+        FLUENT_COLOR("color.background.primary");
+    m_colorTokenCache["text.primary"] = FLUENT_COLOR("color.text.primary");
+    m_colorTokenCache["accent.primary"] = FLUENT_COLOR("brand.100");
+    m_colorTokenCache["border.primary"] = FLUENT_COLOR("color.border.primary");
+
+    m_fontTokenCache["body"] = FLUENT_FONT("typography.body1");
+    m_fontTokenCache["caption"] = FLUENT_FONT("typography.caption1");
+
+    m_spacingTokenCache["xs"] = FLUENT_SPACING("spacing.xs");
+    m_spacingTokenCache["s"] = FLUENT_SPACING("spacing.s");
+    m_spacingTokenCache["m"] = FLUENT_SPACING("spacing.m");
+    m_spacingTokenCache["l"] = FLUENT_SPACING("spacing.l");
+
+    m_tokenCacheValid = true;
+
+    // Apply background color
+    setStyleSheet(
+        QString("FluentSidebar { background-color: %1; }")
+            .arg(getSemanticColor("color.background.primary").name()));
 }
 
 void FluentSidebar::updateLayout() {
@@ -496,6 +489,59 @@ void FluentSidebar::announceStateChange(const QString& message) {
         QAccessibleEvent event(this, QAccessible::NameChanged);
         QAccessible::updateAccessibility(&event);
     }
+
+    // Emit signal for external accessibility handling
+    emit accessibilityAnnouncement(message);
+}
+
+// Design token helper methods
+QColor FluentSidebar::getSemanticColor(const QString& colorName) const {
+    if (!m_useFluentDesignTokens) {
+        // Fallback colors when design tokens are disabled
+        static const QHash<QString, QColor> fallbackColors = {
+            {"color.background.primary", QColor("#ffffff")},
+            {"color.text.primary", QColor("#323130")},
+            {"brand.100", QColor("#0078d4")},
+            {"color.border.primary", QColor("#e1dfdd")},
+            {"color.scrollbar.thumb", QColor("#c8c6c4")},
+            {"color.scrollbar.thumb.hover", QColor("#a19f9d")}};
+        return fallbackColors.value(colorName, QColor("#000000"));
+    }
+
+    if (m_tokenCacheValid && m_colorTokenCache.contains(colorName)) {
+        return m_colorTokenCache[colorName];
+    }
+
+    return FLUENT_COLOR(colorName);
+}
+
+QFont FluentSidebar::getSemanticFont(const QString& fontName) const {
+    if (!m_useFluentDesignTokens) {
+        return QApplication::font();
+    }
+
+    if (m_tokenCacheValid && m_fontTokenCache.contains(fontName)) {
+        return m_fontTokenCache[fontName];
+    }
+
+    return FLUENT_FONT(fontName);
+}
+
+int FluentSidebar::getSemanticSpacing(const QString& spacingName) const {
+    if (!m_useFluentDesignTokens) {
+        // Fallback spacing values
+        static const QHash<QString, int> fallbackSpacing = {
+            {"spacing.xs", 4},       {"spacing.s", 8},
+            {"spacing.m", 12},       {"spacing.l", 16},
+            {"scrollbar.width", 12}, {"border.radius.small", 4}};
+        return fallbackSpacing.value(spacingName, 8);
+    }
+
+    if (m_tokenCacheValid && m_spacingTokenCache.contains(spacingName)) {
+        return m_spacingTokenCache[spacingName];
+    }
+
+    return FLUENT_SPACING(spacingName);
 }
 
 // Public slots implementation
@@ -619,17 +665,48 @@ void FluentSidebar::focusOutEvent(QFocusEvent* event) {
 void FluentSidebar::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
-    const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
+    const QRect rect = this->rect();
 
-    // Paint background
-    painter.fillRect(rect(), palette.background);
+    if (m_useFluentDesignTokens) {
+        // Use Fluent UI design tokens for styling
+        const QColor backgroundColor =
+            getSemanticColor("color.background.primary");
+        const QColor borderColor = getSemanticColor("color.border.primary");
+        const int borderRadius = getSemanticSpacing("border.radius.small");
 
-    // Paint border
-    if (m_mode != FluentSidebarMode::Hidden) {
-        painter.setPen(QPen(palette.border, 1));
-        painter.drawLine(rect().topRight(), rect().bottomRight());
+        // Paint background with rounded corners
+        QPainterPath backgroundPath;
+        backgroundPath.addRoundedRect(rect, borderRadius, borderRadius);
+        painter.fillPath(backgroundPath, backgroundColor);
+
+        // Paint border (only on the right side for left sidebar)
+        if (m_mode != FluentSidebarMode::Hidden) {
+            painter.setPen(QPen(borderColor, 1));
+            painter.drawLine(rect.topRight(), rect.bottomRight());
+        }
+
+        // Paint focus indicator if focused
+        if (hasFocus() && m_focusIndicatorVisible) {
+            const QColor focusColor = getSemanticColor("brand.100");
+            painter.setPen(QPen(focusColor, 2));
+            painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), borderRadius,
+                                    borderRadius);
+        }
+    } else {
+        // Fallback styling without design tokens
+        const auto& theme = Styling::FluentTheme::instance();
+        const auto& palette = theme.currentPalette();
+
+        // Paint background
+        painter.fillRect(rect, palette.background);
+
+        // Paint border
+        if (m_mode != FluentSidebarMode::Hidden) {
+            painter.setPen(QPen(palette.border, 1));
+            painter.drawLine(rect.topRight(), rect.bottomRight());
+        }
     }
 
     QWidget::paintEvent(event);
@@ -739,6 +816,116 @@ void FluentSidebar::setAccessibleDescription(const QString& description) {
     m_accessibleDescription = description;
     QWidget::setAccessibleDescription(description);
 }
+
+// Enhanced API methods implementation
+void FluentSidebar::updateItem(const QString& id,
+                               const FluentSidebarItem& item) {
+    for (int i = 0; i < m_items.size(); ++i) {
+        if (m_items[i].id == id) {
+            m_items[i] = item;
+            if (auto* itemWidget =
+                    qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[i])) {
+                itemWidget->updateItem(item);
+            }
+            m_cacheValid = false;
+            break;
+        }
+    }
+}
+
+void FluentSidebar::setItemEnabled(const QString& id, bool enabled) {
+    if (auto* item = findItem(id)) {
+        item->enabled = enabled;
+        updateItem(id, *item);
+    }
+}
+
+void FluentSidebar::setItemText(const QString& id, const QString& text) {
+    if (auto* item = findItem(id)) {
+        item->text = text;
+        updateItem(id, *item);
+    }
+}
+
+void FluentSidebar::setItemBadge(const QString& id, FluentSidebarBadgeType type,
+                                 int count) {
+    if (auto* item = findItem(id)) {
+        item->badgeType = type;
+        item->badgeCount = count;
+        updateItem(id, *item);
+        emit itemBadgeChanged(id, type, count);
+    }
+}
+
+void FluentSidebar::setUseFluentDesignTokens(bool use) {
+    if (m_useFluentDesignTokens != use) {
+        m_useFluentDesignTokens = use;
+        m_tokenCacheValid = false;
+        if (use) {
+            applyFluentDesignTokens();
+        }
+        update();
+    }
+}
+
+void FluentSidebar::refreshDesignTokens() {
+    m_tokenCacheValid = false;
+    if (m_useFluentDesignTokens) {
+        applyFluentDesignTokens();
+    }
+    update();
+}
+
+void FluentSidebar::announceToScreenReader(const QString& message) {
+    announceStateChange(message);
+}
+
+void FluentSidebar::setFocusIndicatorVisible(bool visible) {
+    if (m_focusIndicatorVisible != visible) {
+        m_focusIndicatorVisible = visible;
+        update();
+    }
+}
+
+void FluentSidebar::setKeyboardNavigationEnabled(bool enabled) {
+    m_keyboardNavigationEnabled = enabled;
+}
+
+void FluentSidebar::setTypeaheadSearchEnabled(bool enabled) {
+    m_typeaheadSearchEnabled = enabled;
+}
+
+void FluentSidebar::updateAccessibilityProperties() {
+    // Update accessibility properties for all items
+    for (int i = 0; i < m_itemWidgets.size(); ++i) {
+        updateItemAccessibility(i);
+    }
+}
+
+void FluentSidebar::updateItemAccessibility(int index) {
+    if (index < 0 || index >= m_itemWidgets.size())
+        return;
+
+    if (auto* itemWidget =
+            qobject_cast<FluentSidebarItemWidget*>(m_itemWidgets[index])) {
+        const auto& item = m_items[index];
+
+        // Set ARIA properties
+        itemWidget->setAccessibleName(
+            item.accessibleName.isEmpty() ? item.text : item.accessibleName);
+        itemWidget->setAccessibleDescription(item.accessibleDescription);
+
+        // Set focus order
+        if (index > 0) {
+            if (auto* prevWidget = qobject_cast<FluentSidebarItemWidget*>(
+                    m_itemWidgets[index - 1])) {
+                setTabOrder(prevWidget, itemWidget);
+            }
+        }
+    }
+}
+
+void FluentSidebar::clearTypeaheadBuffer() { m_typeaheadBuffer.clear(); }
 
 }  // namespace FluentQt::Components
 

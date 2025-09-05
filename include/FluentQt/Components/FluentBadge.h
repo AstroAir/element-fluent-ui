@@ -186,6 +186,10 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void moveEvent(QMoveEvent* event) override;
+    void enterEvent(QEnterEvent* event) override;
+    void leaveEvent(QEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
 
 private slots:
@@ -193,14 +197,13 @@ private slots:
     void onShowAnimationFinished();
     void onHideAnimationFinished();
     void onPulseTimer();
+    void onThemeChanged();
     void updatePosition();
     void updateColors();
 
 private:
     void setupAnimations();
-    void updateLayout();
     void updateSizeMetrics();
-    void updateDisplayContent();
     void updateContent();
     void updateVisibility();
     void updateAccessibility();
@@ -264,21 +267,14 @@ private:
     bool m_showZero{false};
     bool m_pulsing{false};
 
-    // State
-    bool m_isEmpty{true};
-    QString m_displayText;
-
     // Attachment
     QWidget* m_attachedWidget{nullptr};
-    QPoint m_attachmentOffset;
 
     // Size metrics (updated based on m_badgeSize)
-    int m_height{20};
     int m_minWidth{20};
     int m_minHeight{20};
     int m_padding{6};
     int m_iconSize{12};
-    int m_fontSize{11};
     int m_dotSize{10};
 
     // Extra colors and flags used in implementation
@@ -295,7 +291,7 @@ private:
     QPropertyAnimation* m_hideAnimation{nullptr};
     QPropertyAnimation* m_pulseAnimation{nullptr};
     QPropertyAnimation* m_scaleAnimation{nullptr};
-    QPropertyAnimation* m_opacityAnimation{nullptr};
+    QPropertyAnimation* m_colorAnimation{nullptr};
     QTimer* m_pulseTimer{nullptr};
 
     // Animation properties

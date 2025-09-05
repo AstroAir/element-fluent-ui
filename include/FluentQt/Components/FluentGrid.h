@@ -195,6 +195,9 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
     void childEvent(QChildEvent* event) override;
     void showEvent(QShowEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
 
 private slots:
     void onItemDestroyed(QObject* object);
@@ -218,11 +221,71 @@ private:
     QRect calculateAlignedRect(const QRect& rect, const QSize& size,
                                FluentGridAlignment alignment) const;
 
+    // Enhanced alignment methods
+    void applyContentAlignment();
+    void applyItemAlignment();
+    void applyJustification();
+    QPoint calculateContentOffset(const QRect& container, const QSize& content,
+                                  FluentGridAlignment alignment) const;
+    QRect applyItemSpecificAlignment(const QRect& itemRect,
+                                     const QSize& cellSize,
+                                     FluentGridAlignment alignment) const;
+    void applySpaceDistribution();
+    void applyItemJustification();
+
+    // Enhanced animation methods
+    void cleanupAnimations();
+    void createItemAnimations();
+    void startStaggeredAnimations();
+    QPropertyAnimation* createFluentAnimation(QWidget* widget,
+                                              const QRect& from,
+                                              const QRect& to, int delay);
+    int getFluentAnimationDuration() const;
+    QEasingCurve getFluentEasingCurve() const;
+    bool shouldRespectReducedMotion() const;
+
     int getEffectiveColumns() const;
     int getEffectiveRows() const;
 
     void updateItemVisibility();
     void sortItemsByOrder();
+
+    // FluentUI Design System Integration
+    void applyFluentSpacingTokens();
+    void validateFluentSpacing();
+    int getFluentSpacingToken(const QString& tokenName) const;
+    void applyFluentAlignment();
+    bool isFluentCompliant() const;
+
+    // Responsive design methods
+    void updateResponsiveLayout();
+    int getResponsiveColumns() const;
+    bool shouldUseResponsiveLayout() const;
+    void applyResponsiveSpacing();
+
+    // User interaction and focus management
+    void setupFocusChain();
+    void handleKeyboardNavigation(QKeyEvent* event);
+    void focusNextItem();
+    void focusPreviousItem();
+    int getCurrentFocusIndex() const;
+
+    // Accessibility support
+    void setupAccessibility();
+    void updateAccessibilityInfo();
+    void announceLayoutChange();
+
+    // Performance optimization methods
+    bool canUseCachedLayout() const;
+    void applyCachedLayout();
+    void cacheCurrentLayout();
+    void invalidateLayoutCache();
+
+    // FluentUI compliance validation
+    void validateFluentUICompliance();
+    bool validateSpacingCompliance() const;
+    bool validateAlignmentCompliance() const;
+    bool validateAccessibilityCompliance() const;
 
 private:
     // Grid configuration

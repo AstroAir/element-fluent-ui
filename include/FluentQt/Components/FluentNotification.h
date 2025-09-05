@@ -4,7 +4,10 @@
 #include <QGraphicsOpacityEffect>
 #include <QIcon>
 #include <QLabel>
+#include <QLineEdit>
+#include <QMenu>
 #include <QParallelAnimationGroup>
+#include <QProgressBar>
 #include <QPropertyAnimation>
 #include <QPushButton>
 #include <QQueue>
@@ -13,6 +16,7 @@
 #include <memory>
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentComponent.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 
 namespace FluentQt::Components {
 
@@ -32,6 +36,15 @@ enum class FluentNotificationPosition {
 
 // Notification animation types
 enum class FluentNotificationAnimation { Slide, Fade, Scale, Bounce };
+
+// Notification elevation levels
+enum class FluentNotificationElevation {
+    None,     // No shadow
+    Low,      // Subtle shadow for basic notifications
+    Medium,   // Standard shadow for important notifications
+    High,     // Prominent shadow for critical notifications
+    VeryHigh  // Maximum shadow for urgent notifications
+};
 
 // Notification complexity modes
 enum class FluentNotificationComplexity {
@@ -74,6 +87,8 @@ class FluentNotification : public Core::FluentComponent {
                    persistentChanged)
     Q_PROPERTY(
         qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
+    Q_PROPERTY(FluentNotificationElevation elevation READ elevation WRITE
+                   setElevation NOTIFY elevationChanged)
 
 public:
     explicit FluentNotification(QWidget* parent = nullptr);
@@ -110,6 +125,10 @@ public:
     bool isPersistent() const;
     void setPersistent(bool persistent);
 
+    // Elevation
+    FluentNotificationElevation elevation() const;
+    void setElevation(FluentNotificationElevation elevation);
+
     // Actions
     void addAction(const FluentNotificationAction& action);
     void addAction(const QString& text,
@@ -117,6 +136,25 @@ public:
     void addAction(const QString& text, const QIcon& icon,
                    std::function<void()> callback = nullptr);
     void clearActions();
+
+    // Progress support
+    void setProgress(int value);
+    void setProgressRange(int minimum, int maximum);
+    void setProgressVisible(bool visible);
+    int progress() const;
+    bool isProgressVisible() const;
+
+    // Quick reply support
+    void setQuickReplyEnabled(bool enabled);
+    void setQuickReplyPlaceholder(const QString& placeholder);
+    bool isQuickReplyEnabled() const;
+    QString quickReplyText() const;
+
+    // Context menu support
+    void setContextMenuEnabled(bool enabled);
+    void addContextMenuAction(const QString& text,
+                              std::function<void()> callback);
+    void clearContextMenuActions();
 
     // Animation and display
     qreal opacity() const;
@@ -164,6 +202,7 @@ signals:
     void closableChanged(bool closable);
     void persistentChanged(bool persistent);
     void opacityChanged(qreal opacity);
+    void elevationChanged(FluentNotificationElevation elevation);
 
     void aboutToShow();
     void shown();
@@ -172,12 +211,22 @@ signals:
     void closed();
     void actionTriggered(const QString& actionText);
 
+    // New signals for enhanced functionality
+    void progressChanged(int value);
+    void quickReplySubmitted(const QString& text);
+    void contextMenuRequested(const QPoint& position);
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void mouseReleaseEvent(QMouseEvent* event) override;
+    void contextMenuEvent(QContextMenuEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
 
 private slots:
     void onCloseButtonClicked();
@@ -186,13 +235,18 @@ private slots:
     void onShowAnimationFinished();
     void onHideAnimationFinished();
     void updateColors();
+    void onQuickReplySubmitted();
+    void onProgressChanged(int value);
+    void onContextMenuActionTriggered();
 
 private:
     void setupUI();
     void setupAnimations();
+    void setupAccessibility();
     void updateLayout();
     void updateTypeIcon();
     void updateActionButtons();
+    void updateAccessibleProperties();
 
     // Painting methods
     void paintBackground(QPainter* painter);
@@ -219,6 +273,8 @@ private:
     int m_duration{5000};  // 5 seconds default
     bool m_closable{true};
     bool m_persistent{false};
+    FluentNotificationElevation m_elevation{
+        FluentNotificationElevation::Medium};
 
     // Actions
     QList<FluentNotificationAction> m_actions;
@@ -229,6 +285,10 @@ private:
     QLabel* m_titleLabel{nullptr};
     QLabel* m_messageLabel{nullptr};
     QPushButton* m_closeButton{nullptr};
+    QProgressBar* m_progressBar{nullptr};
+    QLineEdit* m_quickReplyInput{nullptr};
+    QPushButton* m_quickReplyButton{nullptr};
+    QMenu* m_contextMenu{nullptr};
 
     // Animation and effects
     std::unique_ptr<Animation::FluentAnimator> m_animator;
@@ -239,8 +299,19 @@ private:
     // Timers
     QTimer* m_autoHideTimer{nullptr};
 
+    // Enhanced functionality state
+    bool m_progressVisible{false};
+    int m_progressValue{0};
+    int m_progressMin{0};
+    int m_progressMax{100};
+    bool m_quickReplyEnabled{false};
+    QString m_quickReplyPlaceholder;
+    bool m_contextMenuEnabled{false};
+    QList<QPair<QString, std::function<void()>>> m_contextMenuActions;
+
     // State
     bool m_hovered{false};
+    bool m_focused{false};
     bool m_showing{false};
     bool m_hiding{false};
     qreal m_currentOpacity{1.0};
@@ -251,6 +322,8 @@ private:
     QRect m_textRect;
     QRect m_actionsRect;
     QRect m_closeButtonRect;
+    QRect m_progressRect;
+    QRect m_quickReplyRect;
     bool m_layoutDirty{true};
 };
 

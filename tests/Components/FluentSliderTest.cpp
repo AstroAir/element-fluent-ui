@@ -352,5 +352,19 @@ void FluentSliderTest::testWheelInteraction() {
     QVERIFY(m_slider->value() != 50.0);
 }
 
+void FluentSliderTest::testPageStep() {
+    // Test page step functionality
+    m_slider->setPageStep(10.0);
+    QCOMPARE(m_slider->pageStep(), 10.0);
+
+    // Test page step with different values
+    m_slider->setPageStep(5.0);
+    QCOMPARE(m_slider->pageStep(), 5.0);
+
+    // Test page step bounds
+    m_slider->setPageStep(0.1);
+    QCOMPARE(m_slider->pageStep(), 0.1);
+}
+
 QTEST_MAIN(FluentSliderTest)
 #include "FluentSliderTest.moc"

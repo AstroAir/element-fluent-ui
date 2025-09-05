@@ -1521,4 +1521,29 @@ void FluentTheme::animateThemeTransition(FluentThemeMode fromMode,
             transitionGroup, &QParallelAnimationGroup::deleteLater);
 }
 
+// Missing method implementations for FluentToast
+QColor FluentTheme::generateContrastColor(const QColor& baseColor,
+                                          double targetRatio) {
+    // Calculate a color that meets the target contrast ratio with the base
+    // color
+    const auto& palette = currentPalette();
+    QColor background =
+        isDarkMode() ? palette.neutralLightest : palette.neutralDarkest;
+
+    // Use the ensureContrast method to generate appropriate color
+    return ensureContrast(baseColor, background, targetRatio);
+}
+
+bool FluentTheme::meetsAccessibilityStandards(const QColor& foreground,
+                                              const QColor& background) const {
+    // Check if the color combination meets WCAG AA standards (4.5:1 ratio)
+    return contrastRatio(foreground, background) >= 4.5;
+}
+
+double FluentTheme::calculateContrastRatio(const QColor& foreground,
+                                           const QColor& background) const {
+    // Wrapper for the existing contrastRatio method
+    return contrastRatio(foreground, background);
+}
+
 }  // namespace FluentQt::Styling

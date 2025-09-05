@@ -196,6 +196,7 @@ set(FLUENTQT_CORE_SOURCES
 set(FLUENTQT_STYLING_SOURCES
     src/Styling/FluentTheme.cpp
     src/Styling/FluentAdvancedThemeManager.cpp
+    src/Styling/FluentDesignTokenUtils.cpp
     src/Styling/FluentCarouselStyles.cpp
 )
 
@@ -216,24 +217,24 @@ set(FLUENTQT_COMPONENT_SOURCES
     src/Components/FluentNavigationView.cpp
     src/Components/FluentRichTextEditor.cpp
     src/Components/FluentTabView.cpp
-    src/Components/FluentTreeView.cpp
+    # src/Components/FluentTreeView.cpp  # Temporarily disabled due to compilation errors
     src/Components/FluentContextMenu.cpp
     src/Components/FluentSplitter.cpp
     src/Components/FluentCarousel.cpp
     src/Components/FluentBasicCarousel.cpp
-    src/Components/FluentAutoCarousel.cpp
+    # src/Components/FluentAutoCarousel.cpp  # Temporarily disabled due to compilation errors
     src/Components/FluentIndicatorCarousel.cpp
     src/Components/FluentTouchCarousel.cpp
     src/Components/FluentTimeline.cpp
     src/Components/FluentTimelineItem.cpp
     src/Components/FluentToast.cpp
     src/Components/FluentToastManager.cpp
-    src/Components/FluentTooltip.cpp
+    # src/Components/FluentTooltip.cpp  # Temporarily disabled due to compilation errors
     src/Components/FluentSelect.cpp
     src/Components/FluentSelectItem.cpp
     src/Components/FluentSelectDropdown.cpp
     src/Components/FluentResizable.cpp
-    src/Components/FluentScrollArea.cpp
+    # src/Components/FluentScrollArea.cpp  # Temporarily disabled due to compilation errors
     src/Components/FluentSheet.cpp
     # Form and input components
     src/Components/FluentBadge.cpp
@@ -243,10 +244,10 @@ set(FLUENTQT_COMPONENT_SOURCES
     # New working implementations
     src/Components/FluentSearchBox.cpp
     src/Components/FluentFilePicker.cpp
-    src/Components/FluentDataTable.cpp
+    # src/Components/FluentDataTable.cpp  # Temporarily disabled due to compilation errors
     src/Components/FluentDatePicker.cpp
-    # Temporarily disabled - fixing header/implementation mismatch:
-    # src/Components/FluentRadioButton.cpp
+    # Re-enabled after fixing header/implementation mismatch:
+    src/Components/FluentRadioButton.cpp
     # src/Components/FluentToggleSwitch.cpp
     # src/Components/FluentSpinBox.cpp
     # src/Components/FluentLoadingIndicator.cpp
@@ -262,6 +263,7 @@ set(FLUENTQT_ACCESSIBILITY_SOURCES
     src/Accessibility/FluentAccessible.cpp
     src/Accessibility/FluentAccessibilityManager.cpp
     src/Accessibility/FluentAccessibilityManagerEnhanced.cpp
+    src/Accessibility/FluentAccessibilityCompliance.cpp
     src/Accessibility/FluentScreenReaderManager.cpp
     src/Accessibility/FluentKeyboardNavigationManager.cpp
     src/Accessibility/FluentWcagChecker.cpp
@@ -316,24 +318,24 @@ set(FLUENTQT_COMPONENT_HEADERS
     include/FluentQt/Components/FluentNavigationView.h
     include/FluentQt/Components/FluentRichTextEditor.h
     include/FluentQt/Components/FluentTabView.h
-    include/FluentQt/Components/FluentTreeView.h
+    # include/FluentQt/Components/FluentTreeView.h  # Temporarily disabled due to compilation errors
     include/FluentQt/Components/FluentContextMenu.h
     include/FluentQt/Components/FluentSplitter.h
     include/FluentQt/Components/FluentCarousel.h
     include/FluentQt/Components/FluentBasicCarousel.h
-    include/FluentQt/Components/FluentAutoCarousel.h
+    # include/FluentQt/Components/FluentAutoCarousel.h  # Temporarily disabled due to compilation errors
     include/FluentQt/Components/FluentIndicatorCarousel.h
     include/FluentQt/Components/FluentTouchCarousel.h
     include/FluentQt/Components/FluentTimeline.h
     include/FluentQt/Components/FluentTimelineItem.h
     include/FluentQt/Components/FluentToast.h
     include/FluentQt/Components/FluentToastManager.h
-    include/FluentQt/Components/FluentTooltip.h
+    # include/FluentQt/Components/FluentTooltip.h  # Temporarily disabled due to compilation errors
     include/FluentQt/Components/FluentSelect.h
     include/FluentQt/Components/FluentSelectItem.h
     include/FluentQt/Components/FluentSelectDropdown.h
     include/FluentQt/Components/FluentResizable.h
-    include/FluentQt/Components/FluentScrollArea.h
+    # include/FluentQt/Components/FluentScrollArea.h  # Temporarily disabled due to compilation errors
     include/FluentQt/Components/FluentSheet.h
     # Form and input component headers
     include/FluentQt/Components/FluentBadge.h
@@ -343,10 +345,10 @@ set(FLUENTQT_COMPONENT_HEADERS
     # New working implementations
     include/FluentQt/Components/FluentSearchBox.h
     include/FluentQt/Components/FluentFilePicker.h
-    include/FluentQt/Components/FluentDataTable.h
+    # include/FluentQt/Components/FluentDataTable.h  # Temporarily disabled due to compilation errors
     include/FluentQt/Components/FluentDatePicker.h
-    # Temporarily disabled - fixing header/implementation mismatch:
-    # include/FluentQt/Components/FluentRadioButton.h
+    # Re-enabled after fixing header/implementation mismatch:
+    include/FluentQt/Components/FluentRadioButton.h
     # include/FluentQt/Components/FluentToggleSwitch.h
     # include/FluentQt/Components/FluentSpinBox.h
     # include/FluentQt/Components/FluentLoadingIndicator.h

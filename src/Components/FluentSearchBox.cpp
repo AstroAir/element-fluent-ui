@@ -1,8 +1,10 @@
 // src/Components/FluentSearchBox.cpp
 #include "FluentQt/Components/FluentSearchBox.h"
+#include <QAccessible>
 #include <QApplication>
 #include <QCompleter>
 #include <QFocusEvent>
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -10,8 +12,11 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QParallelAnimationGroup>
 #include <QPropertyAnimation>
 #include <QResizeEvent>
+#include <QScrollBar>
+#include <QSequentialAnimationGroup>
 #include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
@@ -21,16 +26,21 @@
 namespace FluentQt::Components {
 
 FluentSearchBox::FluentSearchBox(QWidget* parent) : QWidget(parent) {
+    // Initialize state
+    m_isLoading = false;
+    m_hasError = false;
+    m_isDisabled = false;
+
     setupUI();
     setupAnimations();
+    setupAccessibility();
+    setupThemeIntegration();
 
-    // Set default icons
-    setSearchIcon(QIcon(":/icons/search.png"));
-    setClearIcon(QIcon(":/icons/clear.png"));
-
-    // Setup search timer
+    // Setup search timer with theme-based delay
+    auto& theme = Styling::FluentTheme::instance();
     m_searchTimer = new QTimer(this);
     m_searchTimer->setSingleShot(true);
+    m_searchDelay = 300;  // Default, can be overridden by theme
     connect(m_searchTimer, &QTimer::timeout, this,
             &FluentSearchBox::onSearchTimer);
 
@@ -39,13 +49,19 @@ FluentSearchBox::FluentSearchBox(QWidget* parent) : QWidget(parent) {
             &FluentSearchBox::onTextChanged);
     connect(m_clearButton, &QToolButton::clicked, this,
             &FluentSearchBox::onClearClicked);
+    connect(m_searchButton, &QToolButton::clicked, this,
+            &FluentSearchBox::onSearchButtonClicked);
 
     // Install event filter for suggestions
     m_suggestionsList->installEventFilter(this);
 
-    // Apply theme
-    updateSearchIcon();
+    // Apply initial theme
+    applyTheme();
     updateClearButtonVisibility();
+
+    // Connect to theme changes
+    connect(&theme, &Styling::FluentTheme::themeChanged, this,
+            &FluentSearchBox::applyTheme);
 }
 
 FluentSearchBox::~FluentSearchBox() = default;
@@ -126,6 +142,55 @@ void FluentSearchBox::clear() {
 void FluentSearchBox::selectAll() { m_lineEdit->selectAll(); }
 
 void FluentSearchBox::focus() { m_lineEdit->setFocus(); }
+
+// Enhanced state management methods
+void FluentSearchBox::setLoading(bool loading) {
+    if (m_isLoading != loading) {
+        m_isLoading = loading;
+        updateLoadingState();
+        emit loadingStateChanged(loading);
+    }
+}
+
+void FluentSearchBox::setError(bool hasError, const QString& errorMessage) {
+    if (m_hasError != hasError || m_errorMessage != errorMessage) {
+        m_hasError = hasError;
+        m_errorMessage = errorMessage;
+        updateErrorState();
+        emit errorStateChanged(hasError, errorMessage);
+    }
+}
+
+void FluentSearchBox::setDisabled(bool disabled) {
+    if (m_isDisabled != disabled) {
+        m_isDisabled = disabled;
+        updateDisabledState();
+        setEnabled(!disabled);
+    }
+}
+
+// Enhanced accessibility methods
+void FluentSearchBox::setAccessibleName(const QString& name) {
+    m_accessibleName = name;
+    setAccessibleName(name);
+    if (m_lineEdit) {
+        m_lineEdit->setAccessibleName(name);
+    }
+}
+
+void FluentSearchBox::setAccessibleDescription(const QString& description) {
+    m_accessibleDescription = description;
+    setAccessibleDescription(description);
+    if (m_lineEdit) {
+        m_lineEdit->setAccessibleDescription(description);
+    }
+}
+
+QString FluentSearchBox::accessibleName() const { return m_accessibleName; }
+
+QString FluentSearchBox::accessibleDescription() const {
+    return m_accessibleDescription;
+}
 
 void FluentSearchBox::showSuggestionsList() {
     if (!m_showSuggestions || m_filteredSuggestions.isEmpty()) {
@@ -295,57 +360,92 @@ void FluentSearchBox::updateSuggestions() {
 }
 
 void FluentSearchBox::setupUI() {
-    // Main layout
-    m_mainLayout = new QHBoxLayout(this);
-    m_mainLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainLayout->setSpacing(0);
+    auto& theme = Styling::FluentTheme::instance();
 
-    // Search button
+    // Main layout with Fluent UI spacing
+    m_mainLayout = new QHBoxLayout(this);
+    int padding = theme.paddingValue("small");
+    m_mainLayout->setContentsMargins(padding, padding, padding, padding);
+    m_mainLayout->setSpacing(theme.spacing("xs"));
+
+    // Search button with theme-based sizing
     m_searchButton = new QToolButton(this);
-    m_searchButton->setObjectName("searchButton");
-    m_searchButton->setFixedSize(32, 32);
+    m_searchButton->setObjectName("fluentSearchButton");
+    int buttonSize = theme.componentHeight("small");
+    m_searchButton->setFixedSize(buttonSize, buttonSize);
+    m_searchButton->setToolTip(tr("Search"));
     m_mainLayout->addWidget(m_searchButton);
 
-    // Line edit
+    // Line edit with enhanced styling
     m_lineEdit = new QLineEdit(this);
-    m_lineEdit->setObjectName("searchLineEdit");
+    m_lineEdit->setObjectName("fluentSearchLineEdit");
+    m_lineEdit->setFont(theme.bodyFont());
+    m_lineEdit->setPlaceholderText(tr("Search..."));
     m_mainLayout->addWidget(m_lineEdit);
 
-    // Clear button
+    // Clear button with theme-based sizing
     m_clearButton = new QToolButton(this);
-    m_clearButton->setObjectName("clearButton");
-    m_clearButton->setFixedSize(32, 32);
+    m_clearButton->setObjectName("fluentClearButton");
+    m_clearButton->setFixedSize(buttonSize, buttonSize);
     m_clearButton->setVisible(false);
+    m_clearButton->setToolTip(tr("Clear search"));
     m_mainLayout->addWidget(m_clearButton);
 
-    // Suggestions container (positioned absolutely)
+    // Suggestions container with elevation and modern styling
     m_suggestionsContainer = new QWidget(this);
-    m_suggestionsContainer->setObjectName("suggestionsContainer");
-    m_suggestionsContainer->setWindowFlags(Qt::Popup);
+    m_suggestionsContainer->setObjectName("fluentSuggestionsContainer");
+    m_suggestionsContainer->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
+    m_suggestionsContainer->setAttribute(Qt::WA_TranslucentBackground);
     m_suggestionsContainer->hide();
 
-    auto* suggestionsLayout = new QVBoxLayout(m_suggestionsContainer);
-    suggestionsLayout->setContentsMargins(0, 0, 0, 0);
+    // Add drop shadow effect for elevation
+    auto* shadowEffect = new QGraphicsDropShadowEffect(this);
+    shadowEffect->setBlurRadius(theme.elevation("medium"));
+    shadowEffect->setColor(theme.color("shadowMedium"));
+    shadowEffect->setOffset(0, 2);
+    m_suggestionsContainer->setGraphicsEffect(shadowEffect);
 
-    // Suggestions list
+    auto* suggestionsLayout = new QVBoxLayout(m_suggestionsContainer);
+    int containerPadding = theme.paddingValue("xs");
+    suggestionsLayout->setContentsMargins(containerPadding, containerPadding,
+                                          containerPadding, containerPadding);
+
+    // Suggestions list with enhanced styling
     m_suggestionsList = new QListWidget(m_suggestionsContainer);
-    m_suggestionsList->setObjectName("suggestionsList");
+    m_suggestionsList->setObjectName("fluentSuggestionsList");
+    m_suggestionsList->setFont(theme.bodyFont());
+    m_suggestionsList->setFrameStyle(QFrame::NoFrame);
+    m_suggestionsList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_suggestionsList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     suggestionsLayout->addWidget(m_suggestionsList);
 
-    // Set minimum height
-    setMinimumHeight(32);
+    // Set minimum height based on theme
+    int minHeight = theme.componentHeight("medium");
+    setMinimumHeight(minHeight);
+    setMaximumHeight(minHeight);
 }
 
 void FluentSearchBox::setupAnimations() {
+    auto& theme = Styling::FluentTheme::instance();
+
     // Opacity effect for suggestions
     m_suggestionsOpacity = new QGraphicsOpacityEffect(this);
-    m_suggestionsContainer->setGraphicsEffect(m_suggestionsOpacity);
+    // Note: Don't set the effect here as we already set shadow effect
 
-    // Animation for suggestions
+    // Animation for suggestions with theme-based duration
     m_suggestionsAnimation =
         new QPropertyAnimation(m_suggestionsOpacity, "opacity", this);
-    m_suggestionsAnimation->setDuration(200);
-    m_suggestionsAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Use theme-based animation duration (fallback to 200ms if not available)
+    int duration = 200;  // Default Fluent UI duration for micro-interactions
+    if (!theme.isReducedMotionMode()) {
+        m_suggestionsAnimation->setDuration(duration);
+        m_suggestionsAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    } else {
+        // Reduced motion: instant or very fast
+        m_suggestionsAnimation->setDuration(50);
+        m_suggestionsAnimation->setEasingCurve(QEasingCurve::Linear);
+    }
 
     connect(m_suggestionsAnimation, &QPropertyAnimation::finished, this,
             [this]() {
@@ -724,6 +824,223 @@ bool FluentTagInput::isValidTag(const QString& tag) const {
         return m_validator(tag);
     }
     return !tag.isEmpty();
+}
+
+// New optimized methods for Fluent UI compliance
+
+void FluentSearchBox::setupAccessibility() {
+    // Set up comprehensive accessibility support
+    setAccessibleName(tr("Search Box"));
+    setAccessibleDescription(tr("Enter search terms to find items"));
+
+    if (m_lineEdit) {
+        m_lineEdit->setAccessibleName(tr("Search Input"));
+        m_lineEdit->setAccessibleDescription(tr("Type your search query here"));
+    }
+
+    if (m_searchButton) {
+        m_searchButton->setAccessibleName(tr("Search"));
+        m_searchButton->setAccessibleDescription(tr("Execute search"));
+    }
+
+    if (m_clearButton) {
+        m_clearButton->setAccessibleName(tr("Clear"));
+        m_clearButton->setAccessibleDescription(tr("Clear search text"));
+    }
+
+    if (m_suggestionsList) {
+        m_suggestionsList->setAccessibleName(tr("Search Suggestions"));
+        m_suggestionsList->setAccessibleDescription(
+            tr("List of search suggestions"));
+    }
+}
+
+void FluentSearchBox::setupThemeIntegration() {
+    // Set up theme integration and responsive behavior
+    auto& theme = Styling::FluentTheme::instance();
+
+    // Apply initial theme-based properties
+    setFont(theme.bodyFont());
+
+    // Set up responsive behavior based on theme settings
+    if (theme.isHighContrastMode()) {
+        // Enhanced contrast for accessibility
+        setStyleSheet(QString("FluentSearchBox { border: 2px solid %1; }")
+                          .arg(theme.color("borderFocus").name()));
+    }
+}
+
+void FluentSearchBox::applyTheme() {
+    auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+
+    // Apply theme colors and styling
+    QString styleSheet =
+        QString(R"(
+        FluentSearchBox {
+            background-color: %1;
+            border: 1px solid %2;
+            border-radius: %3px;
+        }
+
+        FluentSearchBox:focus {
+            border-color: %4;
+            box-shadow: 0 0 0 2px %5;
+        }
+
+        QLineEdit#fluentSearchLineEdit {
+            background-color: transparent;
+            border: none;
+            color: %6;
+            font-size: %7px;
+            padding: %8px;
+        }
+
+        QLineEdit#fluentSearchLineEdit:focus {
+            outline: none;
+        }
+
+        QToolButton#fluentSearchButton,
+        QToolButton#fluentClearButton {
+            background-color: transparent;
+            border: none;
+            border-radius: %9px;
+            color: %10;
+        }
+
+        QToolButton#fluentSearchButton:hover,
+        QToolButton#fluentClearButton:hover {
+            background-color: %11;
+        }
+
+        QToolButton#fluentSearchButton:pressed,
+        QToolButton#fluentClearButton:pressed {
+            background-color: %12;
+        }
+
+        QWidget#fluentSuggestionsContainer {
+            background-color: %13;
+            border: 1px solid %14;
+            border-radius: %15px;
+        }
+
+        QListWidget#fluentSuggestionsList {
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+
+        QListWidget#fluentSuggestionsList::item {
+            padding: %16px;
+            border-bottom: 1px solid %17;
+            color: %18;
+        }
+
+        QListWidget#fluentSuggestionsList::item:hover {
+            background-color: %19;
+        }
+
+        QListWidget#fluentSuggestionsList::item:selected {
+            background-color: %20;
+            color: %21;
+        }
+    )")
+            .arg(palette.surface.name())           // 1: background
+            .arg(palette.border.name())            // 2: border
+            .arg(theme.borderRadius("medium"))     // 3: border radius
+            .arg(palette.borderFocus.name())       // 4: focus border
+            .arg(palette.focus.name())             // 5: focus shadow
+            .arg(palette.neutralPrimary.name())    // 6: text color
+            .arg(theme.bodyFont().pointSize())     // 7: font size
+            .arg(theme.paddingValue("small"))      // 8: padding
+            .arg(theme.borderRadius("small"))      // 9: button radius
+            .arg(palette.neutralSecondary.name())  // 10: button color
+            .arg(palette.hover.name())             // 11: button hover
+            .arg(palette.pressed.name())           // 12: button pressed
+            .arg(palette.surfaceSecondary.name())  // 13: suggestions bg
+            .arg(palette.borderSecondary.name())   // 14: suggestions border
+            .arg(theme.borderRadius("medium"))     // 15: suggestions radius
+            .arg(theme.paddingValue("medium"))     // 16: item padding
+            .arg(palette.borderSecondary.name())   // 17: item border
+            .arg(palette.neutralPrimary.name())    // 18: item text
+            .arg(palette.hover.name())             // 19: item hover
+            .arg(palette.selected.name())          // 20: item selected bg
+            .arg(palette.neutralLightest.name());  // 21: item selected text
+
+    setStyleSheet(styleSheet);
+
+    // Update component sizes based on theme
+    if (m_searchButton && m_clearButton) {
+        int buttonSize = theme.componentHeight("small");
+        m_searchButton->setFixedSize(buttonSize, buttonSize);
+        m_clearButton->setFixedSize(buttonSize, buttonSize);
+    }
+
+    // Update fonts
+    if (m_lineEdit) {
+        m_lineEdit->setFont(theme.bodyFont());
+    }
+    if (m_suggestionsList) {
+        m_suggestionsList->setFont(theme.bodyFont());
+    }
+}
+
+void FluentSearchBox::updateLoadingState() {
+    if (m_isLoading) {
+        m_searchButton->setEnabled(false);
+        m_searchButton->setToolTip(tr("Searching..."));
+        // Could add a loading spinner here
+    } else {
+        m_searchButton->setEnabled(true);
+        m_searchButton->setToolTip(tr("Search"));
+    }
+}
+
+void FluentSearchBox::updateErrorState() {
+    auto& theme = Styling::FluentTheme::instance();
+
+    if (m_hasError) {
+        // Apply error styling
+        setStyleSheet(styleSheet() + QString(R"(
+            FluentSearchBox {
+                border-color: %1 !important;
+            }
+        )")
+                                         .arg(theme.color("error").name()));
+
+        setToolTip(m_errorMessage.isEmpty() ? tr("Search error occurred")
+                                            : m_errorMessage);
+    } else {
+        // Remove error styling by reapplying theme
+        applyTheme();
+        setToolTip(QString());
+    }
+}
+
+void FluentSearchBox::updateDisabledState() {
+    auto& theme = Styling::FluentTheme::instance();
+
+    if (m_isDisabled) {
+        // Apply disabled styling
+        setStyleSheet(styleSheet() +
+                      QString(R"(
+            FluentSearchBox {
+                background-color: %1 !important;
+                color: %2 !important;
+            }
+        )")
+                          .arg(theme.color("disabled").name())
+                          .arg(theme.color("neutralTertiary").name()));
+    } else {
+        // Remove disabled styling by reapplying theme
+        applyTheme();
+    }
+}
+
+void FluentSearchBox::onSearchButtonClicked() {
+    if (!m_lineEdit->text().isEmpty()) {
+        emit searchRequested(m_lineEdit->text());
+    }
 }
 
 }  // namespace FluentQt::Components

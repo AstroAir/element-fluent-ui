@@ -161,7 +161,9 @@ add_fluent_test(FluentImageViewTestSimple Components/FluentImageViewTestSimple.c
 # add_fluent_test(FluentImageViewTest Components/FluentImageViewTest.cpp)  # Disabled due to API mismatches
 # add_fluent_test(FluentChartViewTest Components/FluentChartViewTest.cpp)  # Disabled due to extensive API mismatches
 # add_fluent_test(FluentCarouselTest Components/FluentCarouselTest.cpp)  # Disabled due to API mismatches
-# add_fluent_test(FluentAutoCarouselTest Components/FluentAutoCarouselTest.cpp)  # Disabled due to API mismatches
+add_fluent_test(FluentAutoCarouselTest Components/FluentAutoCarouselTest.cpp)  # Fixed API compatibility
+add_fluent_test(FluentAutoCarouselAPITest Components/FluentAutoCarouselAPITest.cpp)  # API validation without widget creation
+add_fluent_test(FluentAutoCarouselEnhancedTest Components/FluentAutoCarouselEnhancedTest.cpp)  # Enhanced functionality tests
 # add_fluent_test(FluentBasicCarouselTest Components/FluentBasicCarouselTest.cpp)  # Disabled due to API mismatches
 # add_fluent_test(FluentIndicatorCarouselTest Components/FluentIndicatorCarouselTest.cpp)  # Disabled due to API mismatches
 

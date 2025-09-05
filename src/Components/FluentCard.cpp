@@ -3,6 +3,7 @@
 #include "FluentQt/Accessibility/FluentAccessible.h"
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
@@ -41,7 +42,13 @@ FluentCard::FluentCard(QWidget* parent)
             &FluentCard::headerClicked);
 
     updateShadowEffect();
-    setCornerRadius(static_cast<int>(Core::FluentCornerRadius::Medium));
+    setCornerRadius(getFluentCornerRadius());
+
+    // Apply FluentUI smart defaults
+    applyFluentDefaults();
+
+    // Enhanced accessibility setup
+    setupAccessibility();
 
     // Set initial accessibility
     Accessibility::setAccessibleName(this, "Card");
@@ -349,8 +356,10 @@ void FluentCard::paintBackground(QPainter& painter, const QRect& rect) {
         return;
     }
 
+    // Use FluentUI-compliant corner radius
+    const int fluentRadius = getFluentCornerRadius();
     QPainterPath path;
-    path.addRoundedRect(rect, cornerRadius(), cornerRadius());
+    path.addRoundedRect(rect, fluentRadius, fluentRadius);
 
     // Add subtle gradient for depth
     if (m_cardStyle == FluentCardStyle::Elevated) {
@@ -373,7 +382,9 @@ void FluentCard::paintBorder(QPainter& painter, const QRect& rect) {
     const QRectF borderRect =
         rect.adjusted(adjustment, adjustment, -adjustment, -adjustment);
 
-    painter.drawRoundedRect(borderRect, cornerRadius(), cornerRadius());
+    // Use FluentUI-compliant corner radius
+    const int fluentRadius = getFluentCornerRadius();
+    painter.drawRoundedRect(borderRect, fluentRadius, fluentRadius);
 
     painter.restore();
 }
@@ -390,7 +401,9 @@ void FluentCard::paintSelection(QPainter& painter, const QRect& rect) {
     painter.setPen(selectionPen);
 
     const QRectF selectionRect = rect.adjusted(1, 1, -1, -1);
-    painter.drawRoundedRect(selectionRect, cornerRadius(), cornerRadius());
+    // Use FluentUI-compliant corner radius
+    const int fluentRadius = getFluentCornerRadius();
+    painter.drawRoundedRect(selectionRect, fluentRadius, fluentRadius);
 
     painter.restore();
 }
@@ -483,12 +496,32 @@ void FluentCard::changeEvent(QEvent* event) {
 void FluentCard::performStateTransition(Core::FluentState from,
                                         Core::FluentState to) {
     if (isAnimated()) {
-        // Animate elevation changes based on state
-        if (to == Core::FluentState::Hovered &&
+        // Enhanced FluentUI-compliant state transitions
+        if (to == Core::FluentState::Hovered && m_selectable &&
             from != Core::FluentState::Pressed) {
-            animateElevation(m_elevation, FluentCardElevation::Medium);
-        } else if (to == Core::FluentState::Normal) {
+            // Subtle elevation increase on hover for interactive cards
+            FluentCardElevation hoverElevation = m_elevation;
+            if (m_elevation == FluentCardElevation::Flat) {
+                hoverElevation = FluentCardElevation::Low;
+            } else if (m_elevation == FluentCardElevation::Low) {
+                hoverElevation = FluentCardElevation::Medium;
+            } else if (m_elevation == FluentCardElevation::Medium) {
+                hoverElevation = FluentCardElevation::High;
+            }
+            animateElevation(m_elevation, hoverElevation);
+        } else if (to == Core::FluentState::Normal &&
+                   (from == Core::FluentState::Hovered ||
+                    from == Core::FluentState::Focused)) {
+            // Return to original elevation when leaving hover/focus
             animateElevation(FluentCardElevation::Medium, m_elevation);
+        } else if (to == Core::FluentState::Pressed && m_selectable) {
+            // Slight elevation decrease on press for tactile feedback
+            FluentCardElevation pressElevation = FluentCardElevation::Flat;
+            if (m_elevation > FluentCardElevation::Low) {
+                pressElevation = static_cast<FluentCardElevation>(
+                    static_cast<int>(m_elevation) / 2);
+            }
+            animateElevation(m_elevation, pressElevation);
         }
         updateStateStyle();
     } else {
@@ -511,22 +544,33 @@ void FluentCard::setupLayout() {
 }
 
 void FluentCard::setupAnimations() {
-    // Expansion animation
+    // Expansion animation with FluentUI motion specifications
     m_expansionAnimation =
         std::make_unique<QPropertyAnimation>(this, "expansionProgress");
-    m_expansionAnimation->setDuration(300);
-    m_expansionAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_expansionAnimation->setDuration(
+        350);  // FluentUI standard expansion duration
+
+    // Use FluentUI card expansion curve (0.25, 0.46, 0.45, 0.94)
+    QEasingCurve expansionCurve(QEasingCurve::BezierSpline);
+    expansionCurve.addCubicBezierSegment(
+        QPointF(0.25, 0.46), QPointF(0.45, 0.94), QPointF(1.0, 1.0));
+    m_expansionAnimation->setEasingCurve(expansionCurve);
 
     connect(m_expansionAnimation.get(), &QPropertyAnimation::valueChanged, this,
             &FluentCard::onExpansionAnimationValueChanged);
     connect(m_expansionAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentCard::onExpansionAnimationFinished);
 
-    // Elevation animation
+    // Elevation animation with FluentUI decelerate curve
     m_elevationAnimation =
         std::make_unique<QPropertyAnimation>(this, "shadowOpacity");
-    m_elevationAnimation->setDuration(200);
-    m_elevationAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_elevationAnimation->setDuration(150);  // FluentUI hover response duration
+
+    // Use FluentUI decelerate curve (0.1, 0.9, 0.2, 1.0)
+    QEasingCurve elevationCurve(QEasingCurve::BezierSpline);
+    elevationCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                         QPointF(1.0, 1.0));
+    m_elevationAnimation->setEasingCurve(elevationCurve);
 
     connect(m_elevationAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentCard::onElevationAnimationFinished);
@@ -545,7 +589,6 @@ void FluentCard::updateShadowEffect() {
             qWarning() << "Failed to create shadow effect";
             return;
         }
-        m_shadowEffect->setColor(QColor(0, 0, 0, 30));
         setGraphicsEffect(m_shadowEffect.get());
     }
 
@@ -555,12 +598,46 @@ void FluentCard::updateShadowEffect() {
         return;
     }
 
-    const int elevation = static_cast<int>(m_elevation);
-    m_shadowEffect->setBlurRadius(elevation * 2);
-    m_shadowEffect->setOffset(0, elevation / 2.0);
+    // Use FluentUI-compliant shadow specifications
+    const auto& theme = Styling::FluentTheme::instance();
+    bool isDarkMode = (theme.mode() == Styling::FluentThemeMode::Dark);
 
-    // Apply opacity with null check
-    QColor shadowColor = m_shadowEffect->color();
+    int blurRadius = 0;
+    int offsetY = 0;
+    int alpha = 0;
+
+    // FluentUI elevation specifications
+    switch (m_elevation) {
+        case FluentCardElevation::Flat:
+            // Already handled above
+            break;
+        case FluentCardElevation::Low:
+            blurRadius = 4;  // shadow.2 equivalent
+            offsetY = 1;
+            alpha = isDarkMode ? 40 : 28;  // Higher contrast in dark mode
+            break;
+        case FluentCardElevation::Medium:
+            blurRadius = 8;  // shadow.4 equivalent
+            offsetY = 2;
+            alpha = isDarkMode ? 50 : 35;
+            break;
+        case FluentCardElevation::High:
+            blurRadius = 16;  // shadow.8 equivalent
+            offsetY = 4;
+            alpha = isDarkMode ? 60 : 42;
+            break;
+        case FluentCardElevation::VeryHigh:
+            blurRadius = 28;  // shadow.16 equivalent
+            offsetY = 8;
+            alpha = isDarkMode ? 70 : 50;
+            break;
+    }
+
+    m_shadowEffect->setBlurRadius(blurRadius);
+    m_shadowEffect->setOffset(0, offsetY);
+
+    // Apply theme-aware shadow color with opacity
+    QColor shadowColor = QColor(0, 0, 0, alpha);
     shadowColor.setAlphaF(shadowColor.alphaF() * m_shadowOpacity);
     m_shadowEffect->setColor(shadowColor);
 }
@@ -582,14 +659,14 @@ void FluentCard::animateElevation(FluentCardElevation from,
     m_elevationAnimation->setStartValue(fromOpacity);
     m_elevationAnimation->setEndValue(toOpacity);
 
-    // Use Fluent Design card animation timing and curve
-    m_elevationAnimation->setDuration(250);  // Fluent standard duration
+    // Use FluentUI hover response timing - faster for better responsiveness
+    m_elevationAnimation->setDuration(150);  // FluentUI hover response duration
 
-    // Create Fluent card curve (0.25, 0.46, 0.45, 0.94)
-    QEasingCurve cardCurve(QEasingCurve::BezierSpline);
-    cardCurve.addCubicBezierSegment(QPointF(0.25, 0.46), QPointF(0.45, 0.94),
-                                    QPointF(1.0, 1.0));
-    m_elevationAnimation->setEasingCurve(cardCurve);
+    // Use FluentUI decelerate curve for elevation changes (0.1, 0.9, 0.2, 1.0)
+    QEasingCurve elevationCurve(QEasingCurve::BezierSpline);
+    elevationCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                         QPointF(1.0, 1.0));
+    m_elevationAnimation->setEasingCurve(elevationCurve);
 
     m_elevationAnimation->start();
 }
@@ -737,54 +814,75 @@ void FluentCard::animateOut() {
 
 // Color methods
 QColor FluentCard::getBackgroundColor() const {
-    const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
+    // Use FluentUI design tokens for consistent theming
+    const auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
 
     switch (m_cardStyle) {
         case FluentCardStyle::Filled:
             switch (state()) {
                 case Core::FluentState::Normal:
-                    return palette.neutralLighter;
+                    return tokenUtils.getSemanticColor("surface.secondary");
                 case Core::FluentState::Hovered:
-                    return palette.neutralLight;
+                    return tokenUtils.getSemanticColor("surface.tertiary");
                 case Core::FluentState::Pressed:
-                    return palette.neutralQuaternaryAlt;
+                    return tokenUtils.getNeutralColor(8);
                 default:
-                    return palette.neutralLighter;
+                    return tokenUtils.getSemanticColor("surface.secondary");
             }
 
         case FluentCardStyle::Outlined:
             return Qt::transparent;
 
-        default:  // Default and Elevated
+        case FluentCardStyle::Subtle:
             switch (state()) {
                 case Core::FluentState::Normal:
-                    return QColor(255, 255, 255);  // Card background
+                    return tokenUtils.getNeutralColor(2);
                 case Core::FluentState::Hovered:
-                    return m_selectable ? QColor(250, 250, 250)
-                                        : QColor(255, 255, 255);
+                    return m_selectable ? tokenUtils.getNeutralColor(4)
+                                        : tokenUtils.getNeutralColor(2);
                 case Core::FluentState::Pressed:
-                    return QColor(245, 245, 245);
+                    return tokenUtils.getNeutralColor(6);
                 default:
-                    return QColor(255, 255, 255);
+                    return tokenUtils.getNeutralColor(2);
+            }
+
+        default:  // Default and Elevated - use card design tokens
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return tokenUtils.getSemanticColor("surface.primary");
+                case Core::FluentState::Hovered:
+                    return m_selectable
+                               ? tokenUtils.getNeutralColor(1)
+                               : tokenUtils.getSemanticColor("surface.primary");
+                case Core::FluentState::Pressed:
+                    return tokenUtils.getNeutralColor(3);
+                default:
+                    return tokenUtils.getSemanticColor("surface.primary");
             }
     }
 }
 
 QColor FluentCard::getBorderColor() const {
-    const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
+    // Use FluentUI design tokens for consistent border colors
+    const auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
 
     if (m_selected) {
-        return palette.accent;
+        return tokenUtils.getSemanticColor("border.focus");
     }
 
-    return palette.neutralQuaternaryAlt;
+    switch (state()) {
+        case Core::FluentState::Hovered:
+            return tokenUtils.getSemanticColor("border.primary");
+        case Core::FluentState::Focused:
+            return tokenUtils.getSemanticColor("border.focus");
+        default:
+            return tokenUtils.getSemanticColor("border.secondary");
+    }
 }
 
 QColor FluentCard::getSelectionColor() const {
-    const auto& theme = Styling::FluentTheme::instance();
-    return theme.currentPalette().accent;
+    const auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
+    return tokenUtils.getSemanticColor("text.accent");
 }
 
 QPen FluentCard::getBorderPen() const {
@@ -792,6 +890,28 @@ QPen FluentCard::getBorderPen() const {
 }
 
 int FluentCard::getBorderWidth() const { return m_selected ? 2 : 1; }
+
+int FluentCard::getFluentCornerRadius() const {
+    return getFluentCornerRadius(size());
+}
+
+int FluentCard::getFluentCornerRadius(const QSize& size) const {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Use FluentUI corner radius specifications based on component size
+    const int minDimension = qMin(size.width(), size.height());
+
+    if (minDimension < 32) {
+        // Small components use 2px radius
+        return theme.borderRadius("small");
+    } else if (minDimension >= 200) {
+        // Large components use 8px radius
+        return theme.borderRadius("large");
+    } else {
+        // Standard components use 4px radius (medium)
+        return theme.borderRadius("medium");
+    }
+}
 
 int FluentCard::getHeaderHeight() const {
     return m_headerVisible ? m_header->sizeHint().height() : 0;
@@ -824,6 +944,221 @@ void FluentCard::onElevationAnimationFinished() { updateShadowEffect(); }
 void FluentCard::onThemeChanged() {
     updateStateStyle();
     updateShadowEffect();
+
+    // Trigger smooth color transitions when theme changes
+    if (isAnimated()) {
+        // Create a smooth transition animation for background color changes
+        auto* colorTransition = new QPropertyAnimation(this, "windowOpacity");
+        colorTransition->setDuration(200);
+        colorTransition->setEasingCurve(QEasingCurve::OutCubic);
+        colorTransition->setStartValue(0.95);
+        colorTransition->setEndValue(1.0);
+
+        m_currentAnimations.append(colorTransition);
+
+        connect(colorTransition, &QPropertyAnimation::finished,
+                [this, colorTransition]() {
+                    m_currentAnimations.removeOne(colorTransition);
+                    colorTransition->deleteLater();
+                });
+
+        colorTransition->start();
+    }
+
+    // Force repaint to apply new colors immediately
+    update();
+}
+
+// Micro-interaction methods
+void FluentCard::addHoverEffect() {
+    if (!m_selectable)
+        return;
+
+    // Micro-interactions are handled through the existing state transition
+    // system The enhanced performStateTransition method already provides
+    // FluentUI-compliant hover effects with proper elevation changes and
+    // animations
+}
+
+void FluentCard::addPressEffect() {
+    if (!m_selectable)
+        return;
+
+    // Press effects are handled through the existing state transition system
+    // The enhanced performStateTransition method provides proper press feedback
+    // with elevation changes that follow FluentUI interaction patterns
+}
+
+void FluentCard::addFocusEffect() {
+    // Focus effects are handled through the existing state transition system
+    // The enhanced performStateTransition method provides proper focus feedback
+    // with appropriate visual indicators following FluentUI guidelines
+}
+
+// Convenience methods for enhanced developer experience
+void FluentCard::setCardContent(QWidget* content) {
+    if (content) {
+        setContentWidget(content);
+    }
+}
+
+void FluentCard::setCardHeader(const QString& title, const QString& subtitle) {
+    if (!title.isEmpty()) {
+        setTitle(title);
+        if (!subtitle.isEmpty()) {
+            setSubtitle(subtitle);
+        }
+        setHeaderVisible(true);
+    }
+}
+
+void FluentCard::setCardFooter(QWidget* footer) {
+    if (footer) {
+        addFooterWidget(footer);
+    }
+}
+
+void FluentCard::setCardIcon(const QIcon& icon) {
+    if (!icon.isNull()) {
+        setHeaderIcon(icon);
+    }
+}
+
+void FluentCard::setCardActions(const QList<QAction*>& actions) {
+    if (!actions.isEmpty()) {
+        // Add actions to header for better FluentUI compliance
+        for (auto* action : actions) {
+            if (action) {
+                addHeaderAction(action);
+            }
+        }
+    }
+}
+
+// Smart defaults based on FluentUI guidelines
+void FluentCard::applyFluentDefaults() {
+    // Apply FluentUI-compliant defaults
+    setElevation(FluentCardElevation::Low);
+    setCardStyle(FluentCardStyle::Default);
+    setSelectable(true);
+    setAnimated(true);
+
+    // Set appropriate corner radius based on current size
+    setCornerRadius(getFluentCornerRadius());
+
+    // Apply default spacing and padding using FluentUI specifications
+    int defaultPadding = 16;  // FluentUI standard card padding
+    setContentsMargins(defaultPadding, defaultPadding, defaultPadding,
+                       defaultPadding);
+}
+
+void FluentCard::setFluentSize(FluentCardSize size) {
+    QSize targetSize;
+
+    switch (size) {
+        case FluentCardSize::Small:
+            targetSize = QSize(180, 120);
+            break;
+        case FluentCardSize::Medium:
+            targetSize = QSize(300, 200);
+            break;
+        case FluentCardSize::Large:
+            targetSize = QSize(500, 300);
+            break;
+        case FluentCardSize::ExtraLarge:
+            targetSize = QSize(700, 400);
+            break;
+    }
+
+    setMinimumSize(targetSize);
+    setCornerRadius(getFluentCornerRadius(targetSize));
+}
+
+// Enhanced state management
+bool FluentCard::isInteractive() const { return m_selectable && isEnabled(); }
+
+void FluentCard::setInteractive(bool interactive) {
+    setSelectable(interactive);
+    setEnabled(interactive);
+}
+
+bool FluentCard::hasContent() const {
+    return contentWidget() != nullptr || isHeaderVisible() ||
+           !title().isEmpty() || !subtitle().isEmpty();
+}
+
+// Enhanced accessibility methods
+void FluentCard::setupAccessibility() {
+    // Set appropriate accessible name and role
+    if (m_selectable) {
+        setAccessibleName(tr("Card"));
+        setAccessibleDescription(
+            tr("Interactive card, press Enter or Space to activate"));
+    } else {
+        setAccessibleName(tr("Information Card"));
+        setAccessibleDescription(tr("Information container"));
+    }
+
+    // Enable keyboard focus for interactive cards
+    if (m_selectable) {
+        setFocusPolicy(Qt::StrongFocus);
+        setTabOrder(this, nullptr);
+    }
+
+    // Set up accessible description
+    updateAccessibilityInfo();
+
+    // Enable accessible navigation
+    setAttribute(Qt::WA_AcceptTouchEvents, true);
+}
+
+void FluentCard::updateAccessibilityInfo() {
+    QString description;
+
+    // Build accessible description from card content
+    if (!title().isEmpty()) {
+        description += title();
+    }
+
+    if (!subtitle().isEmpty()) {
+        if (!description.isEmpty())
+            description += ", ";
+        description += subtitle();
+    }
+
+    // Add elevation information for screen readers
+    switch (m_elevation) {
+        case FluentCardElevation::Flat:
+            description += tr(", flat card");
+            break;
+        case FluentCardElevation::Low:
+            description += tr(", low elevation card");
+            break;
+        case FluentCardElevation::Medium:
+            description += tr(", medium elevation card");
+            break;
+        case FluentCardElevation::High:
+            description += tr(", high elevation card");
+            break;
+        case FluentCardElevation::VeryHigh:
+            description += tr(", very high elevation card");
+            break;
+    }
+
+    // Add interaction information
+    if (m_selectable) {
+        description += tr(", clickable");
+        if (m_selected) {
+            description += tr(", selected");
+        }
+    }
+
+    setAccessibleDescription(description);
+
+    // Update state information
+    if (m_selectable) {
+        setProperty("accessibleState", m_selected ? "selected" : "unselected");
+    }
 }
 
 // FluentCardHeader Implementation

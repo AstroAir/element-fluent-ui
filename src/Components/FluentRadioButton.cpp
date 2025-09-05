@@ -3,11 +3,19 @@
 #include <QAccessible>
 #include <QApplication>
 #include <QButtonGroup>
+#include <QEnterEvent>
+#include <QEvent>
 #include <QFocusEvent>
 #include <QFontMetrics>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QMutexLocker>
 #include <QPainter>
+#include <QResizeEvent>
+#include <QTimer>
+#include <exception>
+#include <memory>
+#include "FluentQt/Core/FluentState.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
@@ -23,8 +31,17 @@ FluentRadioButton::FluentRadioButton(QWidget* parent)
     setAttribute(Qt::WA_Hover, true);
 
     connect(&Styling::FluentTheme::instance(),
-            &Styling::FluentTheme::themeChanged, this,
-            &FluentRadioButton::updateColors);
+            &Styling::FluentTheme::themeChanged, this, [this]() {
+                {
+                    QMutexLocker locker(&m_mutex);
+                    m_colorsCacheValid =
+                        false;  // Thread-safe cache invalidation
+                }
+                updateColors();
+            });
+
+    // Enhanced accessibility setup
+    setupAccessibility();
 
     updateColors();
     updateAccessibility();
@@ -87,10 +104,21 @@ void FluentRadioButton::toggle() {
 QString FluentRadioButton::text() const { return m_text; }
 
 void FluentRadioButton::setText(const QString& text) {
-    if (m_text == text)
-        return;
+    // Enhanced error handling and boundary checks
+    if (text.length() > 1000) {
+        qWarning() << "FluentRadioButton::setText: Text too long ("
+                   << text.length()
+                   << " characters) - truncating to 1000 characters";
+        QString truncatedText = text.left(1000);
+        if (m_text == truncatedText)
+            return;
+        m_text = truncatedText;
+    } else {
+        if (m_text == text)
+            return;
+        m_text = text;
+    }
 
-    m_text = text;
     m_layoutDirty = true;
     updateGeometry();
     update();
@@ -160,8 +188,17 @@ void FluentRadioButton::setComplexity(FluentRadioButtonComplexity complexity) {
 
         // Adjust behavior based on complexity mode
         if (complexity == FluentRadioButtonComplexity::Simple) {
-            // Simple mode: disable animations
+            // Simple mode: disable animations and stop any running animations
             setAnimated(false);
+            // Stop all running animations
+            if (m_checkAnimation)
+                m_checkAnimation->stop();
+            if (m_scaleAnimation)
+                m_scaleAnimation->stop();
+            if (m_colorAnimation)
+                m_colorAnimation->stop();
+            if (m_indicatorAnimation)
+                m_indicatorAnimation->stop();
         } else {
             // Full mode: enable animations
             setAnimated(true);
@@ -233,17 +270,44 @@ void FluentRadioButton::setAnimated(bool animated) {
         return;
 
     m_animated = animated;
+
+    // Stop all running animations when animations are disabled
+    if (!animated) {
+        if (m_checkAnimation)
+            m_checkAnimation->stop();
+        if (m_scaleAnimation)
+            m_scaleAnimation->stop();
+        if (m_colorAnimation)
+            m_colorAnimation->stop();
+        if (m_indicatorAnimation)
+            m_indicatorAnimation->stop();
+    }
+
     emit animatedChanged(m_animated);
 }
 
 int FluentRadioButton::animationDuration() const { return m_animationDuration; }
 
 void FluentRadioButton::setAnimationDuration(int duration) {
+    // Enhanced error handling and boundary checks
+    if (duration < 0) {
+        qWarning()
+            << "FluentRadioButton::setAnimationDuration: Invalid duration"
+            << duration << "- must be non-negative, setting to 0";
+        duration = 0;
+    } else if (duration > 5000) {
+        qWarning()
+            << "FluentRadioButton::setAnimationDuration: Duration too long"
+            << duration << "ms - clamping to 5000ms for better UX";
+        duration = 5000;
+    }
+
     if (m_animationDuration == duration)
         return;
 
-    m_animationDuration = qMax(0, duration);
+    m_animationDuration = duration;
 
+    // Safely update animation durations with null checks
     if (m_checkAnimation) {
         m_checkAnimation->setDuration(m_animationDuration);
     }
@@ -290,12 +354,19 @@ QRect FluentRadioButton::labelRect() const {
 }
 
 QSize FluentRadioButton::sizeHint() const {
+    // Enhanced sizeHint with validation
     QFontMetrics fm(font());
-    QSize textSize =
-        m_text.isEmpty() ? QSize(0, 0) : fm.size(Qt::TextSingleLine, m_text);
-    QSize iconSize = (m_showIcon && !m_icon.isNull())
-                         ? QSize(m_iconSize, m_iconSize)
-                         : QSize(0, 0);
+    QSize textSize = m_text.isEmpty()
+                         ? QSize(0, 0)
+                         : fm.size(Qt::TextSingleLine,
+                                   m_text.left(1000));  // Limit text length
+
+    // Validate icon size
+    QSize iconSize(0, 0);
+    if (m_showIcon && !m_icon.isNull()) {
+        int validIconSize = qBound(8, m_iconSize, 128);  // Reasonable limits
+        iconSize = QSize(validIconSize, validIconSize);
+    }
 
     int width = m_radioSize;
     int height = m_radioSize;
@@ -370,13 +441,15 @@ void FluentRadioButton::click() {
 }
 
 void FluentRadioButton::setupAnimations() {
-    // Check animation for indicator opacity
-    m_indicatorAnimation =
-        new QPropertyAnimation(this, "indicatorOpacity", this);
-    m_indicatorAnimation->setDuration(m_animationDuration);
-    m_indicatorAnimation->setEasingCurve(QEasingCurve::OutCubic);
-    connect(m_indicatorAnimation, &QPropertyAnimation::finished, this,
+    // Check animation for indicator opacity (same as indicator animation)
+    m_checkAnimation = new QPropertyAnimation(this, "indicatorOpacity", this);
+    m_checkAnimation->setDuration(m_animationDuration);
+    m_checkAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_checkAnimation, &QPropertyAnimation::finished, this,
             &FluentRadioButton::onCheckAnimationFinished);
+
+    // Indicator animation (alias for check animation)
+    m_indicatorAnimation = m_checkAnimation;
 
     // Scale animation for press effect
     m_scaleAnimation = new QPropertyAnimation(this, "radioScale", this);
@@ -428,20 +501,108 @@ void FluentRadioButton::setupButtonGroup() {
     }
 }
 
+void FluentRadioButton::setupAccessibility() {
+#ifndef QT_NO_ACCESSIBILITY
+    // Enhanced accessibility setup for FluentUI compliance
+    try {
+        // Set focus policy for keyboard navigation
+        setFocusPolicy(Qt::StrongFocus);
+
+        // Enable tab navigation
+        setProperty("accessibleTabOrder", true);
+
+        // Set ARIA-like properties for better screen reader support
+        setProperty("role", "radio");
+        setProperty("aria-checked", m_checked);
+        setProperty("aria-disabled", !isEnabled());
+
+        // Set up keyboard shortcuts if text contains mnemonics
+        if (m_text.contains('&')) {
+            QString shortcut = m_text;
+            shortcut.remove('&');
+            if (!shortcut.isEmpty()) {
+                setProperty("accessibleShortcut",
+                            QString("Alt+%1").arg(shortcut.at(0)));
+            }
+        }
+
+        // Set up group information for screen readers
+        if (m_buttonGroup) {
+            setProperty("accessibleGroup", m_buttonGroup->objectName());
+
+            // Set position in group
+            QList<QAbstractButton*> buttons = m_buttonGroup->buttons();
+            int position = buttons.indexOf(this) + 1;
+            int total = buttons.size();
+            setProperty("accessiblePositionInSet", position);
+            setProperty("accessibleSetSize", total);
+        }
+
+        // Set up live region for dynamic updates
+        setProperty("accessibleLiveRegion", "polite");
+
+    } catch (const std::exception& e) {
+        qWarning() << "FluentRadioButton::setupAccessibility: Exception:"
+                   << e.what();
+    } catch (...) {
+        qWarning()
+            << "FluentRadioButton::setupAccessibility: Unknown exception";
+    }
+#endif
+}
+
 void FluentRadioButton::updateLayout() {
     if (!m_layoutDirty)
         return;
 
+    // Enhanced error handling and boundary checks
     const QRect rect = this->rect();
-    const QFontMetrics fm(font());
-    const QSize textSize =
-        m_text.isEmpty() ? QSize(0, 0) : fm.size(Qt::TextSingleLine, m_text);
-    const QSize iconSize = (m_showIcon && !m_icon.isNull())
-                               ? QSize(m_iconSize, m_iconSize)
-                               : QSize(0, 0);
+    if (rect.isEmpty() || !rect.isValid()) {
+        qWarning() << "FluentRadioButton::updateLayout: Invalid widget rect"
+                   << rect;
+        m_radioRect = QRect();
+        m_iconRect = QRect();
+        m_labelRect = QRect();
+        return;
+    }
 
-    // Calculate radio button position
+    // Validate font and get metrics safely
+    QFont currentFont = font();
+    if (!currentFont.exactMatch()) {
+        qWarning() << "FluentRadioButton::updateLayout: Font not available, "
+                      "using default";
+        currentFont = QFont();  // Use default font
+    }
+
+    const QFontMetrics fm(currentFont);
+    const QSize textSize =
+        m_text.isEmpty() ? QSize(0, 0)
+                         : fm.size(Qt::TextSingleLine,
+                                   m_text.left(1000));  // Limit text length
+
+    // Validate icon size
+    QSize iconSize(0, 0);
+    if (m_showIcon && !m_icon.isNull()) {
+        if (m_iconSize > 0 &&
+            m_iconSize <= 128) {  // Reasonable icon size limits
+            iconSize = QSize(m_iconSize, m_iconSize);
+        } else {
+            qWarning() << "FluentRadioButton::updateLayout: Invalid icon size"
+                       << m_iconSize;
+            iconSize = QSize(16, 16);  // Default icon size
+        }
+    }
+
+    // Calculate radio button position with validation
     m_radioRect = calculateRadioRect();
+    if (m_radioRect.isEmpty() || !rect.contains(m_radioRect)) {
+        qWarning()
+            << "FluentRadioButton::updateLayout: Invalid radio rect calculated";
+        // Fallback to simple centered position
+        int radioSize = qBound(8, m_radioSize, 64);
+        m_radioRect = QRect(rect.left(), rect.center().y() - radioSize / 2,
+                            radioSize, radioSize);
+    }
 
     // Calculate icon and label positions based on label position
     if (m_labelPosition == FluentRadioButtonLabelPosition::Right) {
@@ -527,24 +688,25 @@ void FluentRadioButton::updateRadioPosition() {
 }
 
 void FluentRadioButton::updateSizeMetrics() {
+    // Updated to match Microsoft FluentUI specifications
     switch (m_size) {
         case FluentRadioButtonSize::Small:
             m_radioSize = 16;
             m_indicatorSize = 6;
             m_iconSize = 12;
-            m_spacing = 6;
+            m_spacing = 8;  // Increased for better FluentUI compliance
             break;
         case FluentRadioButtonSize::Medium:
-            m_radioSize = 20;
+            m_radioSize = 20;  // Standard FluentUI radio button size
             m_indicatorSize = 8;
             m_iconSize = 16;
-            m_spacing = 8;
+            m_spacing = 12;  // Increased for better visual hierarchy
             break;
         case FluentRadioButtonSize::Large:
             m_radioSize = 24;
             m_indicatorSize = 10;
             m_iconSize = 20;
-            m_spacing = 10;
+            m_spacing = 16;  // Increased for better accessibility
             break;
     }
 }
@@ -589,7 +751,7 @@ void FluentRadioButton::paintEvent(QPaintEvent* event) {
     }
 
     // Paint radio button
-    paintRadioButton(&painter);
+    paintRadio(&painter);
 
     // Paint icon
     if (m_showIcon && !m_icon.isNull() && !m_iconRect.isEmpty()) {
@@ -598,7 +760,12 @@ void FluentRadioButton::paintEvent(QPaintEvent* event) {
 
     // Paint text
     if (!m_text.isEmpty() && !m_labelRect.isEmpty()) {
-        paintText(&painter);
+        paintLabel(&painter);
+    }
+
+    // Paint hover effect
+    if (m_hovered && isEnabled()) {
+        paintHoverEffect(&painter);
     }
 
     // Paint focus indicator
@@ -610,6 +777,12 @@ void FluentRadioButton::paintEvent(QPaintEvent* event) {
 void FluentRadioButton::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && isEnabled()) {
         m_pressed = true;
+
+        // Enhanced visual feedback with state transition
+        performStateTransition(
+            m_hovered ? Core::FluentState::Hovered : Core::FluentState::Normal,
+            Core::FluentState::Pressed);
+
         if (m_animated) {
             startPressAnimation();
         }
@@ -622,13 +795,28 @@ void FluentRadioButton::mousePressEvent(QMouseEvent* event) {
 void FluentRadioButton::mouseReleaseEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton && m_pressed) {
         m_pressed = false;
+
+        // Enhanced state transition on release
+        Core::FluentState newState = Core::FluentState::Normal;
+        if (hasFocus()) {
+            newState = Core::FluentState::Focused;
+        } else if (m_hovered && rect().contains(event->pos())) {
+            newState = Core::FluentState::Hovered;
+        }
+
+        performStateTransition(Core::FluentState::Pressed, newState);
+
         if (m_animated) {
             startReleaseAnimation();
         }
 
+        // Enhanced click detection with better hit testing
         if (rect().contains(event->pos()) && isEnabled()) {
-            setChecked(true);
-            emit clicked();
+            // Use hitTestRadio for more precise radio button area detection
+            if (hitTestRadio(event->pos()) || !m_text.isEmpty()) {
+                setChecked(true);
+                emit clicked();
+            }
         }
 
         update();
@@ -638,10 +826,59 @@ void FluentRadioButton::mouseReleaseEvent(QMouseEvent* event) {
 }
 
 void FluentRadioButton::keyPressEvent(QKeyEvent* event) {
+    // Enhanced keyboard interaction for FluentUI compliance
     if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return) {
         if (isEnabled()) {
+            // Provide visual feedback for keyboard activation
+            m_pressed = true;
+            if (m_animated) {
+                startPressAnimation();
+            }
+            update();
+
             setChecked(true);
             emit clicked();
+
+            // Reset pressed state after a short delay for visual feedback
+            QTimer::singleShot(100, this, [this]() {
+                m_pressed = false;
+                if (m_animated) {
+                    startReleaseAnimation();
+                }
+                update();
+            });
+        }
+        event->accept();
+        return;
+    }
+
+    // Enhanced arrow key navigation for radio button groups
+    if (event->key() == Qt::Key_Up || event->key() == Qt::Key_Left ||
+        event->key() == Qt::Key_Down || event->key() == Qt::Key_Right) {
+        if (buttonGroup()) {
+            // Find next/previous radio button in group
+            QList<QAbstractButton*> buttons = buttonGroup()->buttons();
+            int currentIndex = buttons.indexOf(this);
+
+            if (currentIndex != -1) {
+                int nextIndex = currentIndex;
+
+                if (event->key() == Qt::Key_Up ||
+                    event->key() == Qt::Key_Left) {
+                    nextIndex =
+                        (currentIndex - 1 + buttons.size()) % buttons.size();
+                } else {
+                    nextIndex = (currentIndex + 1) % buttons.size();
+                }
+
+                if (nextIndex != currentIndex && nextIndex < buttons.size()) {
+                    QAbstractButton* nextButton = buttons[nextIndex];
+                    if (nextButton && nextButton->isEnabled()) {
+                        nextButton->setFocus();
+                        nextButton->setChecked(true);
+                    }
+                }
+            }
         }
         event->accept();
         return;
@@ -651,11 +888,21 @@ void FluentRadioButton::keyPressEvent(QKeyEvent* event) {
 }
 
 void FluentRadioButton::focusInEvent(QFocusEvent* event) {
+    // Enhanced focus handling with state transitions
+    if (isEnabled()) {
+        performStateTransition(
+            m_hovered ? Core::FluentState::Hovered : Core::FluentState::Normal,
+            Core::FluentState::Focused);
+    }
     update();
     QAbstractButton::focusInEvent(event);
 }
 
 void FluentRadioButton::focusOutEvent(QFocusEvent* event) {
+    // Enhanced focus out handling with state transitions
+    Core::FluentState newState =
+        m_hovered ? Core::FluentState::Hovered : Core::FluentState::Normal;
+    performStateTransition(Core::FluentState::Focused, newState);
     update();
     QAbstractButton::focusOutEvent(event);
 }
@@ -679,20 +926,19 @@ void FluentRadioButton::changeEvent(QEvent* event) {
 void FluentRadioButton::enterEvent(QEnterEvent* event) {
     if (isEnabled()) {
         m_hovered = true;
-        if (m_animated) {
-            startHoverAnimation(true);
-        }
-        update();
+        // Trigger state transition manually
+        performStateTransition(Core::FluentState::Normal,
+                               Core::FluentState::Hovered);
     }
     QAbstractButton::enterEvent(event);
 }
 
 void FluentRadioButton::leaveEvent(QEvent* event) {
     m_hovered = false;
-    if (m_animated) {
-        startHoverAnimation(false);
-    }
-    update();
+    // Trigger state transition manually
+    Core::FluentState newState =
+        hasFocus() ? Core::FluentState::Focused : Core::FluentState::Normal;
+    performStateTransition(Core::FluentState::Hovered, newState);
     QAbstractButton::leaveEvent(event);
 }
 
@@ -700,87 +946,196 @@ void FluentRadioButton::onCheckAnimationFinished() { update(); }
 
 void FluentRadioButton::onButtonGroupToggled(QAbstractButton* button,
                                              bool checked) {
-    if (button == this && checked != m_checked) {
+    // Cast to check if this button is the one being toggled
+    if (qobject_cast<FluentRadioButton*>(button) == this &&
+        checked != m_checked) {
         setChecked(checked);
     }
+}
+
+// Missing slot implementation for position changes
+void FluentRadioButton::onRadioPositionChanged() { updateRadioPosition(); }
+
+// Button-specific functionality implementation
+void FluentRadioButton::setDown(bool down) {
+    if (m_pressed == down)
+        return;
+
+    m_pressed = down;
+    if (m_animated) {
+        if (down) {
+            startPressAnimation();
+        } else {
+            startReleaseAnimation();
+        }
+    }
+    update();
+}
+
+// FluentComponent-style state management (manual implementation)
+void FluentRadioButton::updateStateStyle() {
+    // Update colors based on current state
+    updateColors();
+}
+
+void FluentRadioButton::performStateTransition(Core::FluentState /* from */,
+                                               Core::FluentState to) {
+    // Handle radio button specific transitions
+    if (m_animated) {
+        switch (to) {
+            case Core::FluentState::Hovered:
+                // Hover animation will be handled by color updates
+                break;
+            case Core::FluentState::Normal:
+                // Normal state animation handled by color updates
+                break;
+            case Core::FluentState::Pressed:
+                // Press animation will be handled by scale animation
+                animateRadioScale();
+                break;
+            case Core::FluentState::Focused:
+                // Focus animation handled by focus indicator
+                break;
+            default:
+                break;
+        }
+    }
+
+    updateColors();
 }
 
 void FluentRadioButton::updateColors() {
     const auto& theme = Styling::FluentTheme::instance();
 
+    // Thread-safe update of color cache for performance optimization
+    {
+        QMutexLocker locker(&m_mutex);
+        m_cachedAccentColor = theme.color("accent");
+        m_cachedHoverColor = theme.color("controlFillSecondary");
+        m_cachedFocusColor = m_cachedAccentColor;
+        m_colorsCacheValid = true;
+    }
+
     if (isEnabled()) {
-        switch (state()) {
+        // Determine current state manually since we don't inherit from
+        // FluentComponent
+        Core::FluentState currentState = Core::FluentState::Normal;
+        if (m_pressed) {
+            currentState = Core::FluentState::Pressed;
+        } else if (hasFocus()) {
+            currentState = Core::FluentState::Focused;
+        } else if (m_hovered) {
+            currentState = Core::FluentState::Hovered;
+        }
+
+        switch (currentState) {
             case Core::FluentState::Normal:
-                m_borderColor = theme.color(
-                    Styling::FluentThemeColor::ControlStrokeDefault);
-                m_backgroundColor =
-                    theme.color(Styling::FluentThemeColor::ControlFillDefault);
-                m_textColor =
-                    theme.color(Styling::FluentThemeColor::TextFillPrimary);
+                m_borderColor = theme.color("controlStrokeDefault");
+                m_backgroundColor = theme.color("controlFillDefault");
+                m_textColor = theme.color("textPrimary");
                 break;
             case Core::FluentState::Hovered:
-                m_borderColor = theme.color(
-                    Styling::FluentThemeColor::ControlStrokeSecondary);
-                m_backgroundColor = theme.color(
-                    Styling::FluentThemeColor::ControlFillSecondary);
-                m_textColor =
-                    theme.color(Styling::FluentThemeColor::TextFillPrimary);
+                m_borderColor = theme.color("controlStrokeSecondary");
+                m_backgroundColor = theme.color("controlFillSecondary");
+                m_textColor = theme.color("textPrimary");
                 break;
             case Core::FluentState::Pressed:
-                m_borderColor = theme.color(
-                    Styling::FluentThemeColor::ControlStrokeDefault);
-                m_backgroundColor =
-                    theme.color(Styling::FluentThemeColor::ControlFillTertiary);
-                m_textColor =
-                    theme.color(Styling::FluentThemeColor::TextFillSecondary);
+                m_borderColor = theme.color("controlStrokeDefault");
+                m_backgroundColor = theme.color("controlFillTertiary");
+                m_textColor = theme.color("textSecondary");
                 break;
             case Core::FluentState::Focused:
-                m_borderColor =
-                    theme.color(Styling::FluentThemeColor::AccentFillDefault);
-                m_backgroundColor =
-                    theme.color(Styling::FluentThemeColor::ControlFillDefault);
-                m_textColor =
-                    theme.color(Styling::FluentThemeColor::TextFillPrimary);
+                m_borderColor = theme.color("accent");
+                m_backgroundColor = theme.color("controlFillDefault");
+                m_textColor = theme.color("textPrimary");
                 break;
             default:
                 break;
         }
 
         if (m_checked) {
-            m_borderColor =
-                theme.color(Styling::FluentThemeColor::AccentFillDefault);
-            m_indicatorColor =
-                theme.color(Styling::FluentThemeColor::AccentFillDefault);
+            m_borderColor = theme.color("accent");
+            m_indicatorColor = theme.color("accent");
         } else {
             m_indicatorColor = Qt::transparent;
         }
     } else {
-        m_borderColor =
-            theme.color(Styling::FluentThemeColor::ControlStrokeDisabled);
-        m_backgroundColor =
-            theme.color(Styling::FluentThemeColor::ControlFillDisabled);
-        m_textColor = theme.color(Styling::FluentThemeColor::TextFillDisabled);
-        m_indicatorColor =
-            theme.color(Styling::FluentThemeColor::TextFillDisabled);
+        m_borderColor = theme.color("controlStrokeDisabled");
+        m_backgroundColor = theme.color("controlFillDisabled");
+        m_textColor = theme.color("disabled");
+        m_indicatorColor = theme.color("disabled");
     }
+
+    // Keep radioColor in sync with borderColor for property animation
+    m_radioColor = m_borderColor;
 
     update();
 }
 
 void FluentRadioButton::updateAccessibility() {
 #ifndef QT_NO_ACCESSIBILITY
-    if (QAccessible::isActive()) {
-        QAccessibleEvent event(this, QAccessible::StateChanged);
-        QAccessible::updateAccessibility(&event);
+    if (!QAccessible::isActive()) {
+        return;
+    }
+
+    // Enhanced accessibility implementation
+    try {
+        // Set accessible name and description
+        QString accessibleName = m_text.isEmpty() ? objectName() : m_text;
+        if (accessibleName.isEmpty()) {
+            accessibleName = tr("Radio Button");
+        }
+        setAccessibleName(accessibleName);
+
+        // Set accessible description with state information
+        QString description = tr("Radio button");
+        if (!m_value.isEmpty() && m_value != m_text) {
+            description += tr(" with value: %1").arg(m_value);
+        }
+        if (m_checked) {
+            description += tr(" (selected)");
+        }
+        if (!isEnabled()) {
+            description += tr(" (disabled)");
+        }
+        setAccessibleDescription(description);
+
+        // Set proper role
+        setProperty("accessibleRole", QAccessible::RadioButton);
+
+        // Update state information
+        QAccessibleEvent stateEvent(this, QAccessible::StateChanged);
+        QAccessible::updateAccessibility(&stateEvent);
+
+        // If checked state changed, notify screen readers
+        if (m_checked) {
+            QAccessibleEvent checkedEvent(this, QAccessible::Selection);
+            QAccessible::updateAccessibility(&checkedEvent);
+        }
+
+        // Update focus information if focused
+        if (hasFocus()) {
+            QAccessibleEvent focusEvent(this, QAccessible::Focus);
+            QAccessible::updateAccessibility(&focusEvent);
+        }
+
+    } catch (const std::exception& e) {
+        qWarning() << "FluentRadioButton::updateAccessibility: Exception:"
+                   << e.what();
+    } catch (...) {
+        qWarning()
+            << "FluentRadioButton::updateAccessibility: Unknown exception";
     }
 #endif
 }
 
-void FluentRadioButton::paintRadioButton(QPainter* painter) {
+// New primary painting method with enhanced FluentUI styling
+void FluentRadioButton::paintRadio(QPainter* painter) {
     const QRect radioRect = m_radioRect;
     const qreal scale = m_radioScale;
 
     painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
 
     // Apply scale transformation
     if (scale != 1.0) {
@@ -790,26 +1145,65 @@ void FluentRadioButton::paintRadioButton(QPainter* painter) {
         painter->translate(-center);
     }
 
-    // Draw outer circle (border)
-    painter->setPen(QPen(m_borderColor, 2));
-    painter->setBrush(m_backgroundColor);
-    painter->drawEllipse(radioRect);
-
-    // Draw inner indicator circle
-    if (m_checked && m_indicatorOpacity > 0.0) {
-        const int margin = (m_radioSize - m_indicatorSize) / 2;
-        const QRect indicatorRect =
-            radioRect.adjusted(margin, margin, -margin, -margin);
-
-        QColor indicatorColor = m_indicatorColor;
-        indicatorColor.setAlphaF(m_indicatorOpacity);
-
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(indicatorColor);
-        painter->drawEllipse(indicatorRect);
+    // Enhanced FluentUI styling with proper border width
+    qreal borderWidth = 2.0;
+    if (m_hovered && isEnabled()) {
+        borderWidth = 2.5;  // Slightly thicker border on hover
+    }
+    if (hasFocus()) {
+        borderWidth = 3.0;  // Thicker border for focus
     }
 
+    // Draw outer circle (border) with enhanced styling
+    QPen borderPen(m_borderColor, borderWidth);
+    borderPen.setCapStyle(Qt::RoundCap);
+    painter->setPen(borderPen);
+    painter->setBrush(m_backgroundColor);
+
+    // Adjust rect for border width to prevent clipping
+    QRectF adjustedRect = radioRect.adjusted(
+        borderWidth / 2, borderWidth / 2, -borderWidth / 2, -borderWidth / 2);
+    painter->drawEllipse(adjustedRect);
+
+    // Paint the indicator separately
+    paintRadioIndicator(painter);
+
     painter->restore();
+}
+
+// Enhanced indicator painting method with FluentUI styling
+void FluentRadioButton::paintRadioIndicator(QPainter* painter) {
+    if (!m_checked || m_indicatorOpacity <= 0.0)
+        return;
+
+    const QRect radioRect = m_radioRect;
+    const int margin = (m_radioSize - m_indicatorSize) / 2;
+    const QRect indicatorRect =
+        radioRect.adjusted(margin, margin, -margin, -margin);
+
+    QColor indicatorColor = m_indicatorColor;
+    indicatorColor.setAlphaF(m_indicatorOpacity);
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(Qt::NoPen);
+
+    // Enhanced FluentUI indicator with subtle gradient effect
+    QRadialGradient gradient(indicatorRect.center(), m_indicatorSize / 2.0);
+    gradient.setColorAt(0.0, indicatorColor);
+    gradient.setColorAt(0.8, indicatorColor);
+    QColor fadeColor = indicatorColor;
+    fadeColor.setAlphaF(indicatorColor.alphaF() * 0.8);
+    gradient.setColorAt(1.0, fadeColor);
+
+    painter->setBrush(gradient);
+    painter->drawEllipse(indicatorRect);
+    painter->restore();
+}
+
+// Legacy method for compatibility
+void FluentRadioButton::paintRadioButton(QPainter* painter) {
+    paintRadio(painter);
 }
 
 void FluentRadioButton::paintIcon(QPainter* painter) {
@@ -821,7 +1215,7 @@ void FluentRadioButton::paintIcon(QPainter* painter) {
     QIcon::Mode mode = QIcon::Normal;
     if (!isEnabled()) {
         mode = QIcon::Disabled;
-    } else if (state() == Core::FluentState::Pressed) {
+    } else if (m_pressed) {
         mode = QIcon::Selected;
     }
 
@@ -833,7 +1227,8 @@ void FluentRadioButton::paintIcon(QPainter* painter) {
     painter->restore();
 }
 
-void FluentRadioButton::paintText(QPainter* painter) {
+// New primary label painting method
+void FluentRadioButton::paintLabel(QPainter* painter) {
     if (m_text.isEmpty() || m_labelRect.isEmpty())
         return;
 
@@ -848,29 +1243,82 @@ void FluentRadioButton::paintText(QPainter* painter) {
     painter->restore();
 }
 
+// Legacy method for compatibility
+void FluentRadioButton::paintText(QPainter* painter) { paintLabel(painter); }
+
 void FluentRadioButton::paintFocusIndicator(QPainter* painter) {
     if (!hasFocus())
         return;
 
     painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
 
     const auto& theme = Styling::FluentTheme::instance();
-    const QColor focusColor =
-        theme.color(Styling::FluentThemeColor::AccentFillDefault);
+    const QColor focusColor = theme.color("accent");
 
+    // Enhanced FluentUI focus indicator - subtle outer ring
     QPen focusPen(focusColor, 2);
-    focusPen.setStyle(Qt::DashLine);
+    focusPen.setCapStyle(Qt::RoundCap);
     painter->setPen(focusPen);
     painter->setBrush(Qt::NoBrush);
 
-    const QRect focusRect = rect().adjusted(1, 1, -1, -1);
-    painter->drawRect(focusRect);
+    // Draw focus ring around the radio button with proper spacing
+    const QRect radioRect = m_radioRect;
+    const int focusMargin = 4;  // FluentUI standard focus margin
+    const QRect focusRect = radioRect.adjusted(-focusMargin, -focusMargin,
+                                               focusMargin, focusMargin);
+
+    // Draw subtle focus ring
+    QColor focusRingColor = focusColor;
+    focusRingColor.setAlphaF(0.6);
+    QPen focusRingPen(focusRingColor, 1.5);
+    painter->setPen(focusRingPen);
+    painter->drawEllipse(focusRect);
+
+    painter->restore();
+}
+
+// Enhanced hover effect painting method with FluentUI styling
+void FluentRadioButton::paintHoverEffect(QPainter* painter) {
+    if (!m_hovered || !isEnabled())
+        return;
+
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+
+    const auto& theme = Styling::FluentTheme::instance();
+    QColor hoverColor = theme.color("controlFillSecondary");
+    hoverColor.setAlphaF(0.08);  // Very subtle hover effect per FluentUI
+
+    // Paint subtle background hover effect around the entire control
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(hoverColor);
+
+    // FluentUI style: rounded rectangle with proper corner radius
+    const int cornerRadius = 6;  // FluentUI standard corner radius
+    painter->drawRoundedRect(rect().adjusted(2, 2, -2, -2), cornerRadius,
+                             cornerRadius);
+
+    // Additional subtle highlight around radio button itself
+    if (m_radioRect.isValid()) {
+        QColor radioHoverColor = theme.color("controlStrokeSecondary");
+        radioHoverColor.setAlphaF(0.15);
+
+        QPen hoverPen(radioHoverColor, 1);
+        painter->setPen(hoverPen);
+        painter->setBrush(Qt::NoBrush);
+
+        const int hoverMargin = 2;
+        const QRect hoverRect = m_radioRect.adjusted(-hoverMargin, -hoverMargin,
+                                                     hoverMargin, hoverMargin);
+        painter->drawEllipse(hoverRect);
+    }
 
     painter->restore();
 }
 
 void FluentRadioButton::startCheckAnimation() {
-    if (!m_indicatorAnimation)
+    if (!m_indicatorAnimation || !m_animated)
         return;
 
     m_indicatorAnimation->stop();
@@ -880,7 +1328,7 @@ void FluentRadioButton::startCheckAnimation() {
 }
 
 void FluentRadioButton::startPressAnimation() {
-    if (!m_scaleAnimation)
+    if (!m_scaleAnimation || !m_animated)
         return;
 
     m_scaleAnimation->stop();
@@ -890,7 +1338,7 @@ void FluentRadioButton::startPressAnimation() {
 }
 
 void FluentRadioButton::startReleaseAnimation() {
-    if (!m_scaleAnimation)
+    if (!m_scaleAnimation || !m_animated)
         return;
 
     m_scaleAnimation->stop();
@@ -899,14 +1347,15 @@ void FluentRadioButton::startReleaseAnimation() {
     m_scaleAnimation->start();
 }
 
+// Duplicate methods removed - already implemented earlier in the file
+
 void FluentRadioButton::startHoverAnimation(bool hover) {
-    if (!m_colorAnimation)
+    if (!m_colorAnimation || !m_animated)
         return;
 
     const auto& theme = Styling::FluentTheme::instance();
-    QColor targetColor =
-        hover ? theme.color(Styling::FluentThemeColor::ControlStrokeSecondary)
-              : theme.color(Styling::FluentThemeColor::ControlStrokeDefault);
+    QColor targetColor = hover ? theme.color("controlStrokeSecondary")
+                               : theme.color("controlStrokeDefault");
 
     m_colorAnimation->stop();
     m_colorAnimation->setStartValue(m_borderColor);
@@ -914,16 +1363,77 @@ void FluentRadioButton::startHoverAnimation(bool hover) {
     m_colorAnimation->start();
 }
 
-// Property accessors for animations
-qreal FluentRadioButton::indicatorOpacity() const { return m_indicatorOpacity; }
-
-void FluentRadioButton::setIndicatorOpacity(qreal opacity) {
-    if (qFuzzyCompare(m_indicatorOpacity, opacity))
+// Missing animation methods implementation
+void FluentRadioButton::animateRadioScale() {
+    if (!m_scaleAnimation || !m_animated)
         return;
-    m_indicatorOpacity = opacity;
-    update();
+
+    m_scaleAnimation->stop();
+    m_scaleAnimation->setStartValue(m_radioScale);
+    m_scaleAnimation->setEndValue(m_checked ? 1.05 : 1.0);
+    m_scaleAnimation->start();
 }
 
+void FluentRadioButton::animateColors() {
+    if (!m_colorAnimation || !m_animated)
+        return;
+
+    updateColors();  // Update target colors based on current state
+
+    m_colorAnimation->stop();
+    m_colorAnimation->setStartValue(m_borderColor);
+    m_colorAnimation->setEndValue(m_borderColor);
+    m_colorAnimation->start();
+}
+
+void FluentRadioButton::animateIndicatorOpacity() {
+    if (!m_indicatorAnimation || !m_animated)
+        return;
+
+    m_indicatorAnimation->stop();
+    m_indicatorAnimation->setStartValue(m_indicatorOpacity);
+    m_indicatorAnimation->setEndValue(m_checked ? 1.0 : 0.0);
+    m_indicatorAnimation->start();
+}
+
+// Color getter methods implementation
+QColor FluentRadioButton::getRadioColor() const { return m_borderColor; }
+
+QColor FluentRadioButton::getIndicatorColor() const { return m_indicatorColor; }
+
+QColor FluentRadioButton::getTextColor() const { return m_textColor; }
+
+QColor FluentRadioButton::getBorderColor() const { return m_borderColor; }
+
+QColor FluentRadioButton::getHoverColor() const {
+    // Thread-safe access to cached color for better performance
+    QMutexLocker locker(&m_mutex);
+    if (m_colorsCacheValid) {
+        return m_cachedHoverColor;
+    }
+    const auto& theme = Styling::FluentTheme::instance();
+    return theme.color("controlFillSecondary");
+}
+
+QColor FluentRadioButton::getFocusColor() const {
+    // Thread-safe access to cached color for better performance
+    QMutexLocker locker(&m_mutex);
+    if (m_colorsCacheValid) {
+        return m_cachedFocusColor;
+    }
+    const auto& theme = Styling::FluentTheme::instance();
+    return theme.color("accent");
+}
+
+// Hit test method implementation
+bool FluentRadioButton::hitTestRadio(const QPoint& position) const {
+    if (m_layoutDirty) {
+        const_cast<FluentRadioButton*>(this)->updateLayout();
+    }
+    return m_radioRect.contains(position);
+}
+
+// Property accessors for QPropertyAnimation
 qreal FluentRadioButton::radioScale() const { return m_radioScale; }
 
 void FluentRadioButton::setRadioScale(qreal scale) {
@@ -933,12 +1443,22 @@ void FluentRadioButton::setRadioScale(qreal scale) {
     update();
 }
 
-QColor FluentRadioButton::radioColor() const { return m_borderColor; }
+qreal FluentRadioButton::indicatorOpacity() const { return m_indicatorOpacity; }
+
+void FluentRadioButton::setIndicatorOpacity(qreal opacity) {
+    if (qFuzzyCompare(m_indicatorOpacity, opacity))
+        return;
+    m_indicatorOpacity = opacity;
+    update();
+}
+
+QColor FluentRadioButton::radioColor() const { return m_radioColor; }
 
 void FluentRadioButton::setRadioColor(const QColor& color) {
-    if (m_borderColor == color)
+    if (m_radioColor == color)
         return;
-    m_borderColor = color;
+    m_radioColor = color;
+    m_borderColor = color;  // Keep border color in sync
     update();
 }
 

@@ -183,6 +183,7 @@ private:
     void setupContent();
     void setupAnimations();
     void setupAccessibility();
+    void setupElevationEffect();
 
     // Animation methods
     void startOpenAnimation();

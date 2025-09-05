@@ -1,16 +1,22 @@
 #pragma once
 
 #include <QCompleter>
+#include <QFrame>
 #include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QObject>
 #include <QPropertyAnimation>
+#include <QString>
 #include <QStringListModel>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QVariant>
+#include <QVariantMap>
 #include <QWidget>
 #include <functional>
 
@@ -73,10 +79,23 @@ public:
     void setSearchIcon(const QIcon& icon);
     void setClearIcon(const QIcon& icon);
 
-    // State
+    // State management
     bool isEmpty() const;
+    bool isLoading() const { return m_isLoading; }
+    bool hasError() const { return m_hasError; }
+    bool isDisabled() const { return m_isDisabled; }
+
     void clear();
     void selectAll();
+    void setLoading(bool loading);
+    void setError(bool hasError, const QString& errorMessage = QString());
+    void setDisabled(bool disabled);
+
+    // Enhanced accessibility
+    void setAccessibleName(const QString& name);
+    void setAccessibleDescription(const QString& description);
+    QString accessibleName() const;
+    QString accessibleDescription() const;
 
 public slots:
     void focus();
@@ -90,6 +109,8 @@ signals:
     void cleared();
     void focusReceived();
     void focusLost();
+    void loadingStateChanged(bool loading);
+    void errorStateChanged(bool hasError, const QString& message);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -108,12 +129,19 @@ private slots:
 private:
     void setupUI();
     void setupAnimations();
+    void setupAccessibility();
+    void setupThemeIntegration();
+    void applyTheme();
     void updateSuggestionsPosition();
     void animateSuggestions(bool show);
     void selectSuggestion(int index);
     void applySuggestion(const FluentSearchSuggestion& suggestion);
     void updateClearButtonVisibility();
     void updateSearchIcon();
+    void updateLoadingState();
+    void updateErrorState();
+    void updateDisabledState();
+    void onSearchButtonClicked();
 
     // UI components
     QHBoxLayout* m_mainLayout = nullptr;
@@ -150,6 +178,12 @@ private:
 
     // State
     bool m_suggestionsVisible = false;
+    bool m_isLoading = false;
+    bool m_hasError = false;
+    bool m_isDisabled = false;
+    QString m_errorMessage;
+    QString m_accessibleName;
+    QString m_accessibleDescription;
 };
 
 /**

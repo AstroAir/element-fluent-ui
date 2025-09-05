@@ -16,7 +16,8 @@ enum class FluentLoadingType {
     Pulse,    // Pulsing circle
     Bars,     // Animated bars
     Ring,     // Ring with rotating segment
-    Wave      // Wave animation
+    Wave,     // Wave animation
+    Skeleton  // Skeleton/shimmer loading (FluentUI 2.0)
 };
 
 enum class FluentLoadingSize {
@@ -31,6 +32,17 @@ enum class FluentLoadingComplexity {
     Full     // Full-featured mode with advanced animations and error handling
 };
 
+enum class FluentLoadingMode {
+    Indeterminate,  // Unknown duration (default)
+    Determinate     // Known progress percentage
+};
+
+enum class FluentMotionPreference {
+    Auto,    // Follow system/theme settings
+    Full,    // Full animations enabled
+    Reduced  // Reduced motion for accessibility
+};
+
 class FluentLoadingIndicator : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(FluentLoadingType loadingType READ loadingType WRITE
@@ -39,6 +51,10 @@ class FluentLoadingIndicator : public Core::FluentComponent {
                    setLoadingSize NOTIFY loadingSizeChanged)
     Q_PROPERTY(FluentLoadingComplexity complexity READ complexity WRITE
                    setComplexity NOTIFY complexityChanged)
+    Q_PROPERTY(FluentLoadingMode loadingMode READ loadingMode WRITE
+                   setLoadingMode NOTIFY loadingModeChanged)
+    Q_PROPERTY(FluentMotionPreference motionPreference READ motionPreference
+                   WRITE setMotionPreference NOTIFY motionPreferenceChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
     Q_PROPERTY(
         bool running READ isRunning WRITE setRunning NOTIFY runningChanged)
@@ -48,6 +64,12 @@ class FluentLoadingIndicator : public Core::FluentComponent {
                    textVisibleChanged)
     Q_PROPERTY(qreal animationProgress READ animationProgress WRITE
                    setAnimationProgress NOTIFY animationProgressChanged)
+    Q_PROPERTY(qreal progressValue READ progressValue WRITE setProgressValue
+                   NOTIFY progressValueChanged)
+    Q_PROPERTY(QString accessibleName READ accessibleName WRITE
+                   setAccessibleName NOTIFY accessibleNameChanged)
+    Q_PROPERTY(QString accessibleDescription READ accessibleDescription WRITE
+                   setAccessibleDescription NOTIFY accessibleDescriptionChanged)
 
 public:
     explicit FluentLoadingIndicator(QWidget* parent = nullptr);
@@ -68,6 +90,14 @@ public:
     // Complexity mode
     FluentLoadingComplexity complexity() const;
     void setComplexity(FluentLoadingComplexity complexity);
+
+    // Loading mode (determinate/indeterminate)
+    FluentLoadingMode loadingMode() const;
+    void setLoadingMode(FluentLoadingMode mode);
+
+    // Motion preference for accessibility
+    FluentMotionPreference motionPreference() const;
+    void setMotionPreference(FluentMotionPreference preference);
 
     // Appearance
     QColor color() const;
@@ -91,6 +121,17 @@ public:
     qreal animationProgress() const;
     void setAnimationProgress(qreal progress);
 
+    // Progress value for determinate mode (0.0 - 1.0)
+    qreal progressValue() const;
+    void setProgressValue(qreal value);
+
+    // Accessibility properties
+    QString accessibleName() const;
+    void setAccessibleName(const QString& name);
+
+    QString accessibleDescription() const;
+    void setAccessibleDescription(const QString& description);
+
     // Error boundary integration (ElaWidgetTools-inspired)
     void setErrorBoundary(Core::FluentErrorBoundary* boundary);
     Core::FluentErrorBoundary* errorBoundary() const { return m_errorBoundary; }
@@ -112,6 +153,13 @@ public:
     static FluentLoadingIndicator* createPulse(
         FluentLoadingSize size = FluentLoadingSize::Medium,
         QWidget* parent = nullptr);
+    static FluentLoadingIndicator* createSkeleton(
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
+    static FluentLoadingIndicator* createDeterminate(
+        FluentLoadingType type = FluentLoadingType::Ring,
+        FluentLoadingSize size = FluentLoadingSize::Medium,
+        QWidget* parent = nullptr);
     static FluentLoadingIndicator* createSimple(
         FluentLoadingType type,
         FluentLoadingSize size = FluentLoadingSize::Medium,
@@ -125,12 +173,17 @@ signals:
     void loadingTypeChanged(FluentLoadingType type);
     void loadingSizeChanged(FluentLoadingSize size);
     void complexityChanged(FluentLoadingComplexity complexity);
+    void loadingModeChanged(FluentLoadingMode mode);
+    void motionPreferenceChanged(FluentMotionPreference preference);
     void colorChanged(const QColor& color);
     void runningChanged(bool running);
     void speedChanged(int speed);
     void textChanged(const QString& text);
     void textVisibleChanged(bool visible);
     void animationProgressChanged(qreal progress);
+    void progressValueChanged(qreal value);
+    void accessibleNameChanged(const QString& name);
+    void accessibleDescriptionChanged(const QString& description);
     void started();
     void stopped();
 
@@ -157,7 +210,9 @@ private:
     void drawBars(QPainter& painter, const QRect& rect);
     void drawRing(QPainter& painter, const QRect& rect);
     void drawWave(QPainter& painter, const QRect& rect);
+    void drawSkeleton(QPainter& painter, const QRect& rect);
     void drawText(QPainter& painter, const QRect& rect);
+    void drawProgressText(QPainter& painter, const QRect& rect);
 
     // Helper methods
     QRect indicatorRect() const;
@@ -165,16 +220,24 @@ private:
     int getIndicatorSize() const;
     QColor getIndicatorColor() const;
     int getAnimationDuration() const;
+    bool isReducedMotionEnabled() const;
+    void updateAccessibility();
+    void announceToScreenReader(const QString& message);
 
 private:
     FluentLoadingType m_loadingType{FluentLoadingType::Spinner};
     FluentLoadingSize m_loadingSize{FluentLoadingSize::Medium};
     FluentLoadingComplexity m_complexity{FluentLoadingComplexity::Full};
+    FluentLoadingMode m_loadingMode{FluentLoadingMode::Indeterminate};
+    FluentMotionPreference m_motionPreference{FluentMotionPreference::Auto};
     QColor m_color;
     bool m_running{false};
     int m_speed{5};  // 1-10 scale
     QString m_text;
     bool m_textVisible{true};
+    qreal m_progressValue{0.0};  // 0.0 - 1.0 for determinate mode
+    QString m_accessibleName;
+    QString m_accessibleDescription;
 
     // Animation state
     qreal m_animationProgress{0.0};

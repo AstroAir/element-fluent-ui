@@ -66,6 +66,13 @@ class FluentResizable : public Core::FluentComponent {
     Q_PROPERTY(qreal aspectRatio READ aspectRatio WRITE setAspectRatio)
     Q_PROPERTY(bool maintainAspectRatio READ maintainAspectRatio WRITE
                    setMaintainAspectRatio)
+    Q_PROPERTY(bool enableShadows READ enableShadows WRITE setEnableShadows
+                   NOTIFY enableShadowsChanged)
+    Q_PROPERTY(QString elevationLevel READ elevationLevel WRITE
+                   setElevationLevel NOTIFY elevationLevelChanged)
+    Q_PROPERTY(
+        bool enableHandleAnimations READ enableHandleAnimations WRITE
+            setEnableHandleAnimations NOTIFY enableHandleAnimationsChanged)
 
 public:
     explicit FluentResizable(QWidget* parent = nullptr);
@@ -125,6 +132,18 @@ public:
     bool maintainAspectRatio() const noexcept { return m_maintainAspectRatio; }
     void setMaintainAspectRatio(bool maintain);
 
+    // Visual enhancements
+    bool enableShadows() const noexcept { return m_enableShadows; }
+    void setEnableShadows(bool enable);
+
+    QString elevationLevel() const noexcept { return m_elevationLevel; }
+    void setElevationLevel(const QString& level);
+
+    bool enableHandleAnimations() const noexcept {
+        return m_enableHandleAnimations;
+    }
+    void setEnableHandleAnimations(bool enable);
+
     // Size management
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
@@ -152,6 +171,9 @@ signals:
     void resizing(const QSize& currentSize);
     void resizeFinished(const QSize& finalSize);
     void resizeCancelled();
+    void enableShadowsChanged(bool enabled);
+    void elevationLevelChanged(const QString& level);
+    void enableHandleAnimationsChanged(bool enabled);
 
 protected:
     // Event handling
@@ -181,13 +203,18 @@ private slots:
     void onResizeAnimationValueChanged(const QVariant& value);
     void onResizeAnimationFinished();
     void onHandleHoverChanged(bool hovered);
+    void onHandlePressedChanged(bool pressed);
+    void onHandleFocusChanged(bool focused);
     void onThemeChanged();
+    void onSystemPaletteChanged();
+    void updateMotionPreferences();
 
 private:
     // Setup methods
     void setupLayout();
     void setupHandles();
     void setupAnimations();
+    void setupHandleAnimations();
     void setupAccessibility();
 
     // Handle management
@@ -213,6 +240,7 @@ private:
     // Animation methods
     void animateToSize(const QSize& targetSize);
     void updateResizePreview(const QSize& previewSize);
+    void animateHandleVisibility(QWidget* handle, bool visible);
 
     // Painting methods
     void paintBackground(QPainter& painter, const QRect& rect);
@@ -228,13 +256,22 @@ private:
     QColor getBorderColor() const;
     QColor getHandleColor() const;
     QColor getHandleHoverColor() const;
+    QColor getHandlePressedColor() const;
+    QColor getHandleFocusedColor() const;
     QColor getPreviewColor() const;
     QPen getBorderPen() const;
     QPen getPreviewPen() const;
 
+    // Enhanced visual methods
+    QString getShadowStyle() const;
+    int getCornerRadius() const;
+    QGraphicsDropShadowEffect* createShadowEffect() const;
+
     // Utility methods
     void updateContentGeometry();
     void updateCursor();
+    void updateShadowEffect();
+    void validateGeometry();
     bool isResizing() const { return m_resizing; }
     QPoint mapToGlobal(const QPoint& pos) const;
     QPoint mapFromGlobal(const QPoint& pos) const;
@@ -285,6 +322,14 @@ private:
     // Performance optimization
     mutable QSize m_cachedSizeHint;
     mutable bool m_sizeHintValid{false};
+
+    // Visual enhancement properties
+    bool m_enableShadows{true};
+    QString m_elevationLevel{"medium"};
+    bool m_enableHandleAnimations{true};
+
+    // Shadow and visual effects
+    std::unique_ptr<QGraphicsDropShadowEffect> m_shadowEffect;
 };
 
 }  // namespace FluentQt::Components

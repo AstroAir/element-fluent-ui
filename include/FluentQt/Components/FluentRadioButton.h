@@ -3,11 +3,14 @@
 
 #include <QAbstractButton>
 #include <QButtonGroup>
+#include <QEnterEvent>
 #include <QGraphicsOpacityEffect>
 #include <QIcon>
+#include <QMutex>
 #include <QPropertyAnimation>
+#include <memory>
 #include "FluentQt/Animation/FluentAnimator.h"
-#include "FluentQt/Core/FluentComponent.h"
+#include "FluentQt/Core/FluentState.h"
 
 namespace FluentQt::Components {
 
@@ -45,6 +48,12 @@ class FluentRadioButton : public QAbstractButton {
         bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
     Q_PROPERTY(int animationDuration READ animationDuration WRITE
                    setAnimationDuration NOTIFY animationDurationChanged)
+
+    // Animation properties for QPropertyAnimation
+    Q_PROPERTY(qreal radioScale READ radioScale WRITE setRadioScale)
+    Q_PROPERTY(QColor radioColor READ radioColor WRITE setRadioColor)
+    Q_PROPERTY(
+        qreal indicatorOpacity READ indicatorOpacity WRITE setIndicatorOpacity)
 
 public:
     explicit FluentRadioButton(QWidget* parent = nullptr);
@@ -159,19 +168,23 @@ private slots:
     void onCheckAnimationFinished();
     void onRadioPositionChanged();
     void updateColors();
-    void onButtonGroupToggled(bool checked);
+    void onButtonGroupToggled(QAbstractButton* button, bool checked);
 
 private:
     void setupAnimations();
     void setupButtonGroup();
+    void setupAccessibility();
     void updateLayout();
     void updateRadioPosition();
 
     // Painting methods
     void paintRadio(QPainter* painter);
     void paintRadioIndicator(QPainter* painter);
+    void paintRadioButton(
+        QPainter* painter);  // Legacy method name for compatibility
     void paintIcon(QPainter* painter);
     void paintLabel(QPainter* painter);
+    void paintText(QPainter* painter);  // Legacy method name for compatibility
     void paintFocusIndicator(QPainter* painter);
     void paintHoverEffect(QPainter* painter);
 
@@ -180,6 +193,9 @@ private:
     void animateRadioScale();
     void animateColors();
     void animateIndicatorOpacity();
+    void startPressAnimation();
+    void startReleaseAnimation();
+    void startHoverAnimation(bool hover);
 
     // Utility methods
     QRect calculateRadioRect() const;
@@ -198,6 +214,18 @@ private:
 
     bool hitTestRadio(const QPoint& position) const;
     void updateAccessibility();
+
+    // State management for FluentUI compliance (override from FluentComponent)
+    // Core::FluentState state() const; // Inherited from FluentComponent
+
+    // Button-specific functionality (since we no longer inherit from
+    // QAbstractButton)
+    bool isDown() const { return m_pressed; }
+    void setDown(bool down);
+
+    // FluentComponent-style state management (manual implementation)
+    void updateStateStyle();
+    void performStateTransition(Core::FluentState from, Core::FluentState to);
 
 private:
     // State
@@ -246,23 +274,33 @@ private:
     QPropertyAnimation* m_indicatorAnimation{nullptr};
 
     // Animation properties
-    Q_PROPERTY(qreal radioScale READ radioScale WRITE setRadioScale)
-    Q_PROPERTY(QColor radioColor READ radioColor WRITE setRadioColor)
-    Q_PROPERTY(
-        qreal indicatorOpacity READ indicatorOpacity WRITE setIndicatorOpacity)
-
     qreal m_radioScale{1.0};
     QColor m_radioColor;
     qreal m_indicatorOpacity{0.0};  // 0.0 = hidden, 1.0 = fully visible
 
+    // Color properties for FluentUI styling
+    QColor m_borderColor;
+    QColor m_backgroundColor;
+    QColor m_textColor;
+    QColor m_indicatorColor;
+
+    // Cached theme colors for performance optimization
+    mutable QColor m_cachedAccentColor;
+    mutable QColor m_cachedHoverColor;
+    mutable QColor m_cachedFocusColor;
+    mutable bool m_colorsCacheValid{false};
+
+    // Thread safety
+    mutable QMutex m_mutex;
+
     // Property accessors for animations
-    qreal radioScale() const { return m_radioScale; }
+    qreal radioScale() const;
     void setRadioScale(qreal scale);
 
-    QColor radioColor() const { return m_radioColor; }
+    QColor radioColor() const;
     void setRadioColor(const QColor& color);
 
-    qreal indicatorOpacity() const { return m_indicatorOpacity; }
+    qreal indicatorOpacity() const;
     void setIndicatorOpacity(qreal opacity);
 };
 

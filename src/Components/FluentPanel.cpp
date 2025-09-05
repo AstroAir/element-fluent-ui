@@ -3,9 +3,11 @@
 #include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
+#include <QApplication>
 #include <QFontMetrics>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
@@ -25,6 +27,9 @@ FluentPanel::FluentPanel(QWidget* parent)
     setupAnimations();
     updateColors();
     updatePanelStyle();
+    updateAccessibility();
+    updateResponsiveState();
+    setupKeyboardShortcuts();
 }
 
 FluentPanel::FluentPanel(FluentPanelType type, QWidget* parent)
@@ -181,6 +186,127 @@ void FluentPanel::setAnimated(bool animated) {
         m_animated = animated;
         emit animatedChanged(animated);
     }
+}
+
+// Accessibility methods implementation
+QString FluentPanel::accessibleName() const {
+    return m_accessibleName.isEmpty() ? m_title : m_accessibleName;
+}
+
+void FluentPanel::setAccessibleName(const QString& name) {
+    if (m_accessibleName != name) {
+        m_accessibleName = name;
+        updateAccessibility();
+        emit accessibleNameChanged(name);
+    }
+}
+
+QString FluentPanel::accessibleDescription() const {
+    return m_accessibleDescription;
+}
+
+void FluentPanel::setAccessibleDescription(const QString& description) {
+    if (m_accessibleDescription != description) {
+        m_accessibleDescription = description;
+        updateAccessibility();
+        emit accessibleDescriptionChanged(description);
+    }
+}
+
+QString FluentPanel::accessibleRole() const { return m_accessibleRole; }
+
+void FluentPanel::setAccessibleRole(const QString& role) {
+    if (m_accessibleRole != role) {
+        m_accessibleRole = role;
+        updateAccessibility();
+        emit accessibleRoleChanged(role);
+    }
+}
+
+bool FluentPanel::isKeyboardNavigationEnabled() const {
+    return m_keyboardNavigationEnabled;
+}
+
+void FluentPanel::setKeyboardNavigationEnabled(bool enabled) {
+    if (m_keyboardNavigationEnabled != enabled) {
+        m_keyboardNavigationEnabled = enabled;
+        setFocusPolicy(enabled ? Qt::StrongFocus : Qt::NoFocus);
+        emit keyboardNavigationEnabledChanged(enabled);
+    }
+}
+
+bool FluentPanel::hasScreenReaderSupport() const {
+    return m_screenReaderSupport;
+}
+
+void FluentPanel::setScreenReaderSupport(bool enabled) {
+    if (m_screenReaderSupport != enabled) {
+        m_screenReaderSupport = enabled;
+        updateAccessibility();
+        emit screenReaderSupportChanged(enabled);
+    }
+}
+
+int FluentPanel::tabOrder() const { return m_tabOrder; }
+
+void FluentPanel::setTabOrder(int order) {
+    if (m_tabOrder != order) {
+        m_tabOrder = order;
+        // Note: Tab order is managed by the parent widget
+        emit tabOrderChanged(order);
+    }
+}
+
+// Keyboard navigation methods
+void FluentPanel::setFocusToContent() {
+    if (m_contentWidget && m_keyboardNavigationEnabled) {
+        m_contentWidget->setFocus();
+    }
+}
+
+void FluentPanel::setFocusToTitle() {
+    if (m_titleLabel && m_keyboardNavigationEnabled) {
+        m_titleLabel->setFocus();
+    }
+}
+
+bool FluentPanel::handleKeyboardNavigation(QKeyEvent* event) {
+    if (!m_keyboardNavigationEnabled || !event) {
+        return false;
+    }
+
+    switch (event->key()) {
+        case Qt::Key_Space:
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            if (m_collapsible) {
+                toggleCollapsed();
+                return true;
+            }
+            break;
+        case Qt::Key_Tab:
+            if (m_cycleFocusEnabled) {
+                cycleFocus(!(event->modifiers() & Qt::ShiftModifier));
+                return true;
+            }
+            break;
+        case Qt::Key_Escape:
+            if (hasFocus()) {
+                clearFocus();
+                return true;
+            }
+            break;
+        default:
+            // Check for custom keyboard shortcuts
+            QString keyString =
+                QKeySequence(event->key() | event->modifiers()).toString();
+            if (handleKeyboardShortcut(keyString)) {
+                return true;
+            }
+            break;
+    }
+
+    return false;
 }
 
 QString FluentPanel::title() const { return m_title; }
@@ -348,11 +474,21 @@ void FluentPanel::resizeEvent(QResizeEvent* event) {
     if (!m_collapsed) {
         m_expandedHeight = height();
     }
+
+    // Update responsive layout
+    if (m_responsiveEnabled) {
+        updateResponsiveLayout();
+    }
 }
 
 void FluentPanel::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         m_isPressed = true;
+
+        // Trigger press effects
+        if (m_pressAnimationsEnabled) {
+            triggerPressEffect();
+        }
 
         // Check if click is on title area and panel is collapsible
         if (m_collapsible && !m_title.isEmpty()) {
@@ -391,6 +527,12 @@ void FluentPanel::mouseReleaseEvent(QMouseEvent* event) {
 
 void FluentPanel::enterEvent(QEnterEvent* event) {
     m_isHovered = true;
+
+    // Trigger hover effects
+    if (m_hoverEffectsEnabled) {
+        triggerHoverEffect();
+    }
+
     update();
     FluentComponent::enterEvent(event);
 }
@@ -408,6 +550,34 @@ void FluentPanel::changeEvent(QEvent* event) {
     if (event->type() == QEvent::FontChange) {
         updateTitleVisibility();
     }
+}
+
+// Override focus events to add focus effects
+void FluentPanel::focusInEvent(QFocusEvent* event) {
+    FluentComponent::focusInEvent(event);
+
+    if (m_focusIndicatorVisible) {
+        triggerFocusEffect();
+    }
+
+    emit focusChanged(true);
+}
+
+void FluentPanel::focusOutEvent(QFocusEvent* event) {
+    FluentComponent::focusOutEvent(event);
+
+    update();  // Remove focus indicator
+    emit focusChanged(false);
+}
+
+// Override key press event for keyboard navigation
+void FluentPanel::keyPressEvent(QKeyEvent* event) {
+    if (handleKeyboardNavigation(event)) {
+        event->accept();
+        return;
+    }
+
+    FluentComponent::keyPressEvent(event);
 }
 
 void FluentPanel::updateColors() {
@@ -604,6 +774,11 @@ void FluentPanel::drawPanel(QPainter& painter) {
     if (m_borderWidth > 0) {
         drawBorder(painter, rect);
     }
+
+    // Draw focus indicator
+    if (hasFocus() && m_focusIndicatorVisible) {
+        drawFocusIndicator(painter, rect);
+    }
 }
 
 void FluentPanel::drawBackground(QPainter& painter, const QRect& rect) {
@@ -716,6 +891,460 @@ void FluentPanel::startExpandAnimation() {
     m_collapseAnimation->setStartValue(height());
     m_collapseAnimation->setEndValue(m_expandedHeight);
     m_collapseAnimation->start();
+}
+
+// Responsive design methods implementation
+bool FluentPanel::isResponsiveEnabled() const { return m_responsiveEnabled; }
+
+void FluentPanel::setResponsiveEnabled(bool enabled) {
+    if (m_responsiveEnabled != enabled) {
+        m_responsiveEnabled = enabled;
+        updateResponsiveState();
+        emit responsiveEnabledChanged(enabled);
+    }
+}
+
+QSize FluentPanel::minimumContentSize() const { return m_minimumContentSize; }
+
+void FluentPanel::setMinimumContentSize(const QSize& size) {
+    if (m_minimumContentSize != size) {
+        m_minimumContentSize = size;
+        if (m_contentWidget) {
+            m_contentWidget->setMinimumSize(size);
+        }
+        emit minimumContentSizeChanged(size);
+    }
+}
+
+QSize FluentPanel::maximumContentSize() const { return m_maximumContentSize; }
+
+void FluentPanel::setMaximumContentSize(const QSize& size) {
+    if (m_maximumContentSize != size) {
+        m_maximumContentSize = size;
+        if (m_contentWidget) {
+            m_contentWidget->setMaximumSize(size);
+        }
+        emit maximumContentSizeChanged(size);
+    }
+}
+
+bool FluentPanel::hasAdaptiveLayout() const { return m_adaptiveLayout; }
+
+void FluentPanel::setAdaptiveLayout(bool adaptive) {
+    if (m_adaptiveLayout != adaptive) {
+        m_adaptiveLayout = adaptive;
+        updateResponsiveState();
+        emit adaptiveLayoutChanged(adaptive);
+    }
+}
+
+bool FluentPanel::isTouchOptimized() const { return m_touchOptimized; }
+
+void FluentPanel::setTouchOptimized(bool optimized) {
+    if (m_touchOptimized != optimized) {
+        m_touchOptimized = optimized;
+        updateResponsiveState();
+        emit touchOptimizedChanged(optimized);
+    }
+}
+
+int FluentPanel::breakpointWidth() const { return m_breakpointWidth; }
+
+void FluentPanel::setBreakpointWidth(int width) {
+    if (m_breakpointWidth != width) {
+        m_breakpointWidth = width;
+        updateResponsiveState();
+        emit breakpointWidthChanged(width);
+    }
+}
+
+void FluentPanel::updateResponsiveLayout() {
+    if (!m_responsiveEnabled) {
+        return;
+    }
+
+    bool wasCompact = m_compactMode;
+    m_compactMode = isInCompactBreakpoint();
+
+    if (wasCompact != m_compactMode) {
+        emit compactModeChanged(m_compactMode);
+
+        // Adjust padding for compact mode
+        if (m_compactMode) {
+            setPadding(8, 8, 8, 8);
+        } else {
+            setPadding(16, 16, 16, 16);
+        }
+
+        // Update title height for touch optimization
+        if (m_touchOptimized && m_compactMode) {
+            // Increase touch targets in compact mode
+            if (m_collapseButton) {
+                m_collapseButton->setFixedSize(32, 32);
+            }
+        }
+    }
+}
+
+bool FluentPanel::isCompactMode() const { return m_compactMode; }
+
+void FluentPanel::setCompactMode(bool compact) {
+    if (m_compactMode != compact) {
+        m_compactMode = compact;
+        updateResponsiveLayout();
+        emit compactModeChanged(compact);
+    }
+}
+
+// Enhanced functionality helper methods
+void FluentPanel::updateAccessibility() {
+    if (!m_screenReaderSupport) {
+        return;
+    }
+
+    // Set accessible properties
+    setAccessibleName(accessibleName());
+    setAccessibleDescription(m_accessibleDescription);
+
+    // Set accessible role using property
+    if (m_accessibleRole == "panel") {
+        setProperty("accessibleRole", QAccessible::Pane);
+    } else if (m_accessibleRole == "region") {
+        setProperty("accessibleRole", QAccessible::Section);
+    } else if (m_accessibleRole == "group") {
+        setProperty("accessibleRole", QAccessible::Grouping);
+    }
+
+    // Update collapsible state for screen readers
+    if (m_collapsible) {
+        setProperty("aria-expanded", !m_collapsed);
+    }
+}
+
+void FluentPanel::updateResponsiveState() {
+    if (m_responsiveEnabled) {
+        updateResponsiveLayout();
+    }
+}
+
+void FluentPanel::updateVisualEffects() {
+    // This will be called when visual state changes
+    update();
+}
+
+void FluentPanel::updateKeyboardShortcuts() {
+    // Clear existing shortcuts
+    m_keyboardShortcuts.clear();
+
+    if (m_keyboardShortcutsEnabled) {
+        // Register default shortcuts
+        if (!m_expandShortcut.isEmpty()) {
+            m_keyboardShortcuts[m_expandShortcut] = "expand";
+        }
+        if (!m_collapseShortcut.isEmpty()) {
+            m_keyboardShortcuts[m_collapseShortcut] = "collapse";
+        }
+    }
+}
+
+bool FluentPanel::isInCompactBreakpoint() const {
+    return width() < m_breakpointWidth;
+}
+
+void FluentPanel::setupKeyboardShortcuts() { updateKeyboardShortcuts(); }
+
+void FluentPanel::handleAccessibilityEvent(QAccessibleEvent* event) {
+    if (!m_screenReaderSupport || !event) {
+        return;
+    }
+
+    // Handle accessibility events as needed
+    // This is a placeholder for future accessibility enhancements
+}
+
+void FluentPanel::drawFocusIndicator(QPainter& painter, const QRect& rect) {
+    if (!m_focusIndicatorVisible) {
+        return;
+    }
+
+    const QColor focusColor = focusIndicatorColor();
+    const int width = m_focusIndicatorWidth;
+    const int radius = getCornerRadiusPixels();
+
+    painter.save();
+    painter.setPen(QPen(focusColor, width));
+    painter.setBrush(Qt::NoBrush);
+
+    // Draw focus indicator as an outline
+    if (radius > 0) {
+        QPainterPath path;
+        const QRectF focusRect =
+            rect.adjusted(width / 2.0, width / 2.0, -width / 2.0, -width / 2.0);
+        path.addRoundedRect(focusRect, radius, radius);
+        painter.drawPath(path);
+    } else {
+        const QRect focusRect =
+            rect.adjusted(width / 2, width / 2, -width / 2, -width / 2);
+        painter.drawRect(focusRect);
+    }
+
+    painter.restore();
+}
+
+void FluentPanel::applyHoverEffect() {
+    if (!m_hoverEffectsEnabled) {
+        return;
+    }
+
+    // Apply hover opacity effect
+    setWindowOpacity(m_hoverOpacity);
+}
+
+void FluentPanel::applyPressEffect() {
+    if (!m_pressAnimationsEnabled) {
+        return;
+    }
+
+    // Apply press scale effect (simplified implementation)
+    // In a real implementation, this would use QGraphicsEffect or similar
+    update();
+}
+
+void FluentPanel::resetToNormalState() {
+    setWindowOpacity(1.0);
+    update();
+}
+
+// Enhanced keyboard navigation methods
+bool FluentPanel::areKeyboardShortcutsEnabled() const {
+    return m_keyboardShortcutsEnabled;
+}
+
+void FluentPanel::setKeyboardShortcutsEnabled(bool enabled) {
+    if (m_keyboardShortcutsEnabled != enabled) {
+        m_keyboardShortcutsEnabled = enabled;
+        updateKeyboardShortcuts();
+        emit keyboardShortcutsEnabledChanged(enabled);
+    }
+}
+
+QString FluentPanel::expandShortcut() const { return m_expandShortcut; }
+
+void FluentPanel::setExpandShortcut(const QString& shortcut) {
+    if (m_expandShortcut != shortcut) {
+        m_expandShortcut = shortcut;
+        updateKeyboardShortcuts();
+        emit expandShortcutChanged(shortcut);
+    }
+}
+
+QString FluentPanel::collapseShortcut() const { return m_collapseShortcut; }
+
+void FluentPanel::setCollapseShortcut(const QString& shortcut) {
+    if (m_collapseShortcut != shortcut) {
+        m_collapseShortcut = shortcut;
+        updateKeyboardShortcuts();
+        emit collapseShortcutChanged(shortcut);
+    }
+}
+
+bool FluentPanel::isCycleFocusEnabled() const { return m_cycleFocusEnabled; }
+
+void FluentPanel::setCycleFocusEnabled(bool enabled) {
+    if (m_cycleFocusEnabled != enabled) {
+        m_cycleFocusEnabled = enabled;
+        emit cycleFocusEnabledChanged(enabled);
+    }
+}
+
+void FluentPanel::registerKeyboardShortcut(const QString& key,
+                                           const QString& action) {
+    m_keyboardShortcuts[key] = action;
+}
+
+void FluentPanel::unregisterKeyboardShortcut(const QString& key) {
+    m_keyboardShortcuts.remove(key);
+}
+
+bool FluentPanel::handleKeyboardShortcut(const QString& key) {
+    if (!m_keyboardShortcutsEnabled || !m_keyboardShortcuts.contains(key)) {
+        return false;
+    }
+
+    const QString action = m_keyboardShortcuts[key];
+
+    if (action == "expand" && m_collapsible && m_collapsed) {
+        expand();
+        emit keyboardShortcutTriggered(action);
+        return true;
+    } else if (action == "collapse" && m_collapsible && !m_collapsed) {
+        collapse();
+        emit keyboardShortcutTriggered(action);
+        return true;
+    }
+
+    return false;
+}
+
+void FluentPanel::cycleFocus(bool forward) {
+    if (!m_cycleFocusEnabled) {
+        return;
+    }
+
+    QWidget* nextWidget = getNextFocusableWidget(forward);
+    if (nextWidget) {
+        nextWidget->setFocus();
+    }
+}
+
+QWidget* FluentPanel::getNextFocusableWidget(bool forward) const {
+    // Simple implementation - can be enhanced
+    QList<QWidget*> focusableWidgets;
+
+    if (m_titleLabel && m_titleLabel->focusPolicy() != Qt::NoFocus) {
+        focusableWidgets.append(m_titleLabel);
+    }
+
+    if (m_collapseButton && m_collapseButton->focusPolicy() != Qt::NoFocus) {
+        focusableWidgets.append(m_collapseButton);
+    }
+
+    if (m_contentWidget && m_contentWidget->focusPolicy() != Qt::NoFocus) {
+        focusableWidgets.append(m_contentWidget);
+    }
+
+    if (focusableWidgets.isEmpty()) {
+        return nullptr;
+    }
+
+    QWidget* currentFocus = QApplication::focusWidget();
+    int currentIndex = focusableWidgets.indexOf(currentFocus);
+
+    if (currentIndex == -1) {
+        return focusableWidgets.first();
+    }
+
+    if (forward) {
+        return focusableWidgets[(currentIndex + 1) % focusableWidgets.size()];
+    } else {
+        return focusableWidgets[(currentIndex - 1 + focusableWidgets.size()) %
+                                focusableWidgets.size()];
+    }
+}
+
+// Enhanced visual effects implementation
+bool FluentPanel::isFocusIndicatorVisible() const {
+    return m_focusIndicatorVisible;
+}
+
+void FluentPanel::setFocusIndicatorVisible(bool visible) {
+    if (m_focusIndicatorVisible != visible) {
+        m_focusIndicatorVisible = visible;
+        update();
+        emit focusIndicatorVisibleChanged(visible);
+    }
+}
+
+QColor FluentPanel::focusIndicatorColor() const {
+    if (m_focusIndicatorColor.isValid()) {
+        return m_focusIndicatorColor;
+    }
+    return Styling::FluentTheme::instance().color("accentDefault");
+}
+
+void FluentPanel::setFocusIndicatorColor(const QColor& color) {
+    if (m_focusIndicatorColor != color) {
+        m_focusIndicatorColor = color;
+        update();
+        emit focusIndicatorColorChanged(color);
+    }
+}
+
+int FluentPanel::focusIndicatorWidth() const { return m_focusIndicatorWidth; }
+
+void FluentPanel::setFocusIndicatorWidth(int width) {
+    if (m_focusIndicatorWidth != width) {
+        m_focusIndicatorWidth = width;
+        update();
+        emit focusIndicatorWidthChanged(width);
+    }
+}
+
+bool FluentPanel::areHoverEffectsEnabled() const {
+    return m_hoverEffectsEnabled;
+}
+
+void FluentPanel::setHoverEffectsEnabled(bool enabled) {
+    if (m_hoverEffectsEnabled != enabled) {
+        m_hoverEffectsEnabled = enabled;
+        emit hoverEffectsEnabledChanged(enabled);
+    }
+}
+
+bool FluentPanel::arePressAnimationsEnabled() const {
+    return m_pressAnimationsEnabled;
+}
+
+void FluentPanel::setPressAnimationsEnabled(bool enabled) {
+    if (m_pressAnimationsEnabled != enabled) {
+        m_pressAnimationsEnabled = enabled;
+        emit pressAnimationsEnabledChanged(enabled);
+    }
+}
+
+qreal FluentPanel::hoverOpacity() const { return m_hoverOpacity; }
+
+void FluentPanel::setHoverOpacity(qreal opacity) {
+    if (m_hoverOpacity != opacity) {
+        m_hoverOpacity = qBound(0.0, opacity, 1.0);
+        emit hoverOpacityChanged(m_hoverOpacity);
+    }
+}
+
+qreal FluentPanel::pressedScale() const { return m_pressedScale; }
+
+void FluentPanel::setPressedScale(qreal scale) {
+    if (m_pressedScale != scale) {
+        m_pressedScale = qBound(0.1, scale, 1.0);
+        emit pressedScaleChanged(m_pressedScale);
+    }
+}
+
+void FluentPanel::triggerHoverEffect() {
+    if (!m_hoverEffectsEnabled || !m_animator) {
+        return;
+    }
+
+    auto hoverAnimation = m_animator->hoverEffect(this);
+    if (hoverAnimation) {
+        hoverAnimation->start();
+    }
+}
+
+void FluentPanel::triggerPressEffect() {
+    if (!m_pressAnimationsEnabled || !m_animator) {
+        return;
+    }
+
+    auto pressAnimation = m_animator->pressEffect(this);
+    if (pressAnimation) {
+        pressAnimation->start();
+    }
+}
+
+void FluentPanel::triggerFocusEffect() {
+    if (!m_focusIndicatorVisible) {
+        return;
+    }
+
+    update();  // Redraw to show focus indicator
+}
+
+void FluentPanel::resetVisualEffects() {
+    // Reset any ongoing visual effects
+    setWindowOpacity(1.0);
+
+    update();
 }
 
 }  // namespace FluentQt::Components

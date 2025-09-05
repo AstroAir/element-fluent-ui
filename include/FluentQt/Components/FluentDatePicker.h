@@ -23,6 +23,16 @@ enum class FluentDateFormat {
     Custom
 };
 
+enum class FluentComponentSize {
+    Small,   // 24px height
+    Medium,  // 32px height (default)
+    Large    // 40px height
+};
+
+enum class FluentValidationState { None, Success, Warning, Error };
+
+enum class FluentCalendarPlacement { Auto, Above, Below, Left, Right };
+
 class FluentDatePicker : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(QDate selectedDate READ selectedDate WRITE setSelectedDate NOTIFY
@@ -41,6 +51,16 @@ class FluentDatePicker : public Core::FluentComponent {
         bool readOnly READ isReadOnly WRITE setReadOnly NOTIFY readOnlyChanged)
     Q_PROPERTY(bool calendarVisible READ isCalendarVisible WRITE
                    setCalendarVisible NOTIFY calendarVisibilityChanged)
+    Q_PROPERTY(
+        FluentComponentSize size READ size WRITE setSize NOTIFY sizeChanged)
+    Q_PROPERTY(FluentValidationState validationState READ validationState WRITE
+                   setValidationState NOTIFY validationStateChanged)
+    Q_PROPERTY(QString errorMessage READ errorMessage WRITE setErrorMessage
+                   NOTIFY errorMessageChanged)
+    Q_PROPERTY(bool showValidationIcon READ showValidationIcon WRITE
+                   setShowValidationIcon NOTIFY showValidationIconChanged)
+    Q_PROPERTY(FluentCalendarPlacement placement READ placement WRITE
+                   setPlacement NOTIFY placementChanged)
 
 public:
     explicit FluentDatePicker(QWidget* parent = nullptr);
@@ -74,9 +94,31 @@ public:
     bool isCalendarVisible() const;
     void setCalendarVisible(bool visible);
 
+    // Size properties
+    FluentComponentSize size() const;
+    void setSize(FluentComponentSize size);
+
+    // Validation properties
+    FluentValidationState validationState() const;
+    void setValidationState(FluentValidationState state);
+    void setValidationState(FluentValidationState state,
+                            const QString& message);
+
+    QString errorMessage() const;
+    void setErrorMessage(const QString& message);
+
+    bool showValidationIcon() const;
+    void setShowValidationIcon(bool show);
+
+    // Calendar placement
+    FluentCalendarPlacement placement() const;
+    void setPlacement(FluentCalendarPlacement placement);
+
     // Validation
     bool isValid() const;
     bool isDateInRange(const QDate& date) const;
+    bool validateInput();
+    void clearValidation();
 
     // Size calculations
     QSize sizeHint() const override;
@@ -100,6 +142,15 @@ signals:
     void calendarVisibilityChanged(bool visible);
     void dateSelected(const QDate& date);
     void dateCleared();
+
+    // New signals for enhanced functionality
+    void sizeChanged(FluentComponentSize size);
+    void validationStateChanged(FluentValidationState state);
+    void errorMessageChanged(const QString& message);
+    void showValidationIconChanged(bool show);
+    void placementChanged(FluentCalendarPlacement placement);
+    void validationCleared();
+    void inputValidated(bool isValid);
 
 protected:
     // Event handling
@@ -146,6 +197,16 @@ private:
     void updateCalendarPosition();
     QRect iconRect() const;
     QRect textRect() const;
+    QRect validationIconRect() const;
+
+    // Enhanced functionality
+    void updateSizeConstraints();
+    void updateValidationDisplay();
+    void setupAccessibilityAttributes();
+    void announceToScreenReader(const QString& message);
+    bool isValidDateString(const QString& text) const;
+    int getHeightForSize(FluentComponentSize size) const;
+    QColor getValidationColor(FluentValidationState state) const;
 
 private:
     // Date properties
@@ -162,6 +223,13 @@ private:
     bool m_readOnly{false};
     bool m_calendarVisible{false};
     bool m_pressed{false};
+
+    // Enhanced properties
+    FluentComponentSize m_size{FluentComponentSize::Medium};
+    FluentValidationState m_validationState{FluentValidationState::None};
+    QString m_errorMessage;
+    bool m_showValidationIcon{true};
+    FluentCalendarPlacement m_placement{FluentCalendarPlacement::Auto};
 
     // UI components
     QHBoxLayout* m_mainLayout{nullptr};

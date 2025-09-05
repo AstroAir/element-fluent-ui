@@ -9,6 +9,8 @@
 #include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentComponent.h"
 
+class QLabel;
+
 namespace FluentQt::Components {
 
 enum class FluentSliderOrientation { Horizontal, Vertical };
@@ -66,6 +68,10 @@ class FluentSlider : public Core::FluentComponent {
         bool animated READ isAnimated WRITE setAnimated NOTIFY animatedChanged)
     Q_PROPERTY(bool snapToTicks READ snapToTicks WRITE setSnapToTicks NOTIFY
                    snapToTicksChanged)
+    Q_PROPERTY(bool showFocusIndicator READ showFocusIndicator WRITE
+                   setShowFocusIndicator NOTIFY showFocusIndicatorChanged)
+    Q_PROPERTY(bool highContrastMode READ highContrastMode WRITE
+                   setHighContrastMode NOTIFY highContrastModeChanged)
 
 public:
     explicit FluentSlider(QWidget* parent = nullptr);
@@ -147,6 +153,27 @@ public:
     bool snapToTicks() const;
     void setSnapToTicks(bool snap);
 
+    // Focus and accessibility
+    bool showFocusIndicator() const;
+    void setShowFocusIndicator(bool show);
+
+    bool highContrastMode() const;
+    void setHighContrastMode(bool enabled);
+
+    // Motion preferences
+    bool respectMotionPreferences() const;
+    void setRespectMotionPreferences(bool respect);
+
+    // ARIA and accessibility
+    QString ariaLabel() const;
+    void setAriaLabel(const QString& label);
+
+    QString ariaDescription() const;
+    void setAriaDescription(const QString& description);
+
+    QString ariaValueText() const;
+    void setAriaValueText(const QString& valueText);
+
     // Utility methods
     qreal valueFromPosition(const QPoint& position) const;
     QPoint positionFromValue(qreal value) const;
@@ -182,6 +209,8 @@ signals:
     void showTooltipChanged(bool show);
     void animatedChanged(bool animated);
     void snapToTicksChanged(bool snap);
+    void showFocusIndicatorChanged(bool show);
+    void highContrastModeChanged(bool enabled);
 
     void sliderPressed();
     void sliderMoved(qreal value);
@@ -207,6 +236,16 @@ private slots:
     void updateColors();
 
 private:
+    void initializeAccessibility();
+    void updateAccessibleValue();
+    void announceValueChange();
+    void detectSystemHighContrast();
+    void initializeLiveRegion();
+    void announceStateChange(const QString& message);
+    void announceSliderPressed();
+    void announceSliderReleased();
+    void detectSystemMotionPreferences();
+    QEasingCurve getOptimalEasingCurve() const;
     void setupAnimations();
     void updateLayout();
     void updateHandlePositions();
@@ -270,6 +309,19 @@ private:
     // Interaction and animation
     bool m_animated{true};
     bool m_snapToTicks{false};
+
+    // Focus and accessibility
+    bool m_showFocusIndicator{true};
+    bool m_highContrastMode{false};
+    bool m_respectMotionPreferences{true};
+
+    // ARIA attributes
+    QString m_ariaLabel;
+    QString m_ariaDescription;
+    QString m_ariaValueText;
+
+    // Live region for announcements
+    QLabel* m_liveRegion{nullptr};
 
     // State
     int m_activeHandle{-1};  // -1: none, 0: lower/single, 1: upper

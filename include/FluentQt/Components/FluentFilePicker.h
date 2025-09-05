@@ -18,6 +18,9 @@
 #include <QWidget>
 #include <functional>
 
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Core/FluentComponent.h"
+
 namespace FluentQt::Components {
 
 /**
@@ -51,7 +54,7 @@ struct FluentUploadProgress {
 /**
  * @brief Modern file picker component with drag & drop support
  */
-class FluentFilePicker : public QWidget {
+class FluentFilePicker : public Core::FluentComponent {
     Q_OBJECT
     Q_PROPERTY(
         bool multipleFiles READ allowMultipleFiles WRITE setAllowMultipleFiles)
@@ -59,6 +62,13 @@ class FluentFilePicker : public QWidget {
         QStringList acceptedTypes READ acceptedTypes WRITE setAcceptedTypes)
     Q_PROPERTY(qint64 maxFileSize READ maxFileSize WRITE setMaxFileSize)
     Q_PROPERTY(int maxFiles READ maxFiles WRITE setMaxFiles)
+    Q_PROPERTY(PickerMode mode READ mode WRITE setMode NOTIFY modeChanged)
+    Q_PROPERTY(bool showPreview READ showPreview WRITE setShowPreview NOTIFY
+                   showPreviewChanged)
+    Q_PROPERTY(QString dropZoneText READ dropZoneText WRITE setDropZoneText
+                   NOTIFY dropZoneTextChanged)
+    Q_PROPERTY(QIcon dropZoneIcon READ dropZoneIcon WRITE setDropZoneIcon NOTIFY
+                   dropZoneIconChanged)
 
 public:
     enum class PickerMode {
@@ -107,12 +117,24 @@ public:
     void cancelUpload();
 
     // Appearance
+    QString dropZoneText() const { return m_dropZoneTextString; }
     void setDropZoneText(const QString& text);
+
+    QIcon dropZoneIcon() const { return m_dropZoneIconValue; }
     void setDropZoneIcon(const QIcon& icon);
+
+    bool showPreview() const { return m_showPreview; }
     void setShowPreview(bool show);
 
     // Utility methods
     static QString formatFileSize(qint64 bytes);
+
+    // Accessibility methods
+    void setAccessibleName(const QString& name);
+    void setAccessibleDescription(const QString& description);
+    QString accessibleFileListDescription() const;
+    void announceFileAdded(const FluentFileInfo& fileInfo);
+    void announceFileRemoved(const FluentFileInfo& fileInfo);
 
 public slots:
     void openFileDialog();
@@ -127,6 +149,10 @@ signals:
     void uploadCompleted(const QList<FluentFileInfo>& files);
     void uploadFailed(const QString& error);
     void validationFailed(const QString& error);
+    void modeChanged(PickerMode mode);
+    void showPreviewChanged(bool show);
+    void dropZoneTextChanged(const QString& text);
+    void dropZoneIconChanged(const QIcon& icon);
 
 protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
@@ -168,6 +194,13 @@ private:
     // Upload helpers
     void uploadNextFile();
 
+    // Accessibility helpers
+    void setupAccessibility();
+    void updateAccessibilityInfo();
+    void setAccessibleProperties();
+    void setupKeyboardNavigation();
+    void updateAriaLabels();
+
     // UI components
     QVBoxLayout* m_mainLayout = nullptr;
     QWidget* m_dropZone = nullptr;
@@ -197,6 +230,15 @@ private:
     int m_maxFiles = 10;
     PickerMode m_mode = PickerMode::Files;
 
+    // Additional FluentUI properties
+    bool m_showPreview = false;
+    bool m_enableDragDrop = true;
+    bool m_showFileSize = true;
+    bool m_showFileType = true;
+    bool m_autoUpload = false;
+    QString m_placeholderText = "No files selected";
+    int m_thumbnailSize = 48;
+
     // Validation
     std::function<bool(const FluentFileInfo&)> m_fileValidator;
     QString m_customErrorMessage;
@@ -211,12 +253,12 @@ private:
     // Appearance
     QString m_dropZoneTextString = "Drag & drop files here or click to browse";
     QIcon m_dropZoneIconValue;
-    bool m_showPreview = true;
     bool m_dragActive = false;
 
     // Animations
     QPropertyAnimation* m_dropZoneAnimation = nullptr;
     QGraphicsOpacityEffect* m_dropZoneOpacity = nullptr;
+    std::unique_ptr<Animation::FluentAnimator> m_animator;
 };
 
 /**

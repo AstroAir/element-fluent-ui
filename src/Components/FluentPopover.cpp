@@ -30,6 +30,7 @@ FluentPopover::FluentPopover(QWidget* parent) : Core::FluentComponent(parent) {
     setupAnimations();
     updateColors();
     updateFonts();
+    updateAccessibility();
 
     // Connect to theme changes
     connect(&Styling::FluentTheme::instance(),
@@ -99,8 +100,10 @@ void FluentPopover::setupUI() {
     connect(m_closeButton, &QPushButton::clicked, this,
             &FluentPopover::onCloseButtonClicked);
 
-    // Set maximum width
+    // Set size constraints
     setMaximumWidth(m_maxWidth);
+    setMinimumWidth(m_minWidth);
+    setMaximumHeight(m_maxHeight);
 
     // Initially hidden
     QWidget::hide();
@@ -114,37 +117,43 @@ void FluentPopover::setupAnimations() {
     m_opacityEffect->setOpacity(0.0);
     setGraphicsEffect(m_opacityEffect);
 
-    // Create shadow effect
+    // Create shadow effect with enhanced elevation
     m_shadowEffect = new QGraphicsDropShadowEffect(this);
-    m_shadowEffect->setBlurRadius(20);
-    m_shadowEffect->setOffset(0, 4);
-    m_shadowEffect->setColor(QColor(0, 0, 0, 60));
+    updateShadowEffect();
 
-    // Create show animation
+    // Create individual animations
     m_showAnimation =
         std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
-    m_showAnimation->setDuration(200);
-    m_showAnimation->setEasingCurve(QEasingCurve::OutQuad);
+    m_showAnimation->setDuration(250);
+    m_showAnimation->setEasingCurve(QEasingCurve::OutCubic);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
 
-    // Create hide animation
     m_hideAnimation =
         std::make_unique<QPropertyAnimation>(m_opacityEffect, "opacity");
-    m_hideAnimation->setDuration(150);
-    m_hideAnimation->setEasingCurve(QEasingCurve::InQuad);
+    m_hideAnimation->setDuration(200);
+    m_hideAnimation->setEasingCurve(QEasingCurve::InCubic);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
+
+    // Setup scale animation
+    setupScaleAnimation();
+
+    // Create animation groups
+    m_showAnimationGroup = std::make_unique<QParallelAnimationGroup>(this);
+    m_hideAnimationGroup = std::make_unique<QParallelAnimationGroup>(this);
+
+    updateAnimationProperties();
 
     // Create auto-hide timer
     m_autoHideTimer = new QTimer(this);
     m_autoHideTimer->setSingleShot(true);
 
     // Connect animations
-    connect(m_showAnimation.get(), &QPropertyAnimation::finished, this,
-            &FluentPopover::onShowAnimationFinished);
-    connect(m_hideAnimation.get(), &QPropertyAnimation::finished, this,
-            &FluentPopover::onHideAnimationFinished);
+    connect(m_showAnimationGroup.get(), &QParallelAnimationGroup::finished,
+            this, &FluentPopover::onShowAnimationFinished);
+    connect(m_hideAnimationGroup.get(), &QParallelAnimationGroup::finished,
+            this, &FluentPopover::onHideAnimationFinished);
     connect(m_autoHideTimer, &QTimer::timeout, this,
             &FluentPopover::onAutoHideTimer);
 }
@@ -264,6 +273,161 @@ void FluentPopover::setMaxWidth(int width) {
     }
 }
 
+int FluentPopover::elevation() const { return m_elevation; }
+
+void FluentPopover::setElevation(int elevation) {
+    if (m_elevation != elevation && elevation >= 0 && elevation <= 4) {
+        m_elevation = elevation;
+        updateColors();
+        update();
+        emit elevationChanged(elevation);
+    }
+}
+
+bool FluentPopover::enableBackdrop() const { return m_enableBackdrop; }
+
+void FluentPopover::setEnableBackdrop(bool enable) {
+    if (m_enableBackdrop != enable) {
+        m_enableBackdrop = enable;
+        update();
+        emit enableBackdropChanged(enable);
+    }
+}
+
+bool FluentPopover::enableScaleAnimation() const {
+    return m_enableScaleAnimation;
+}
+
+void FluentPopover::setEnableScaleAnimation(bool enable) {
+    if (m_enableScaleAnimation != enable) {
+        m_enableScaleAnimation = enable;
+        updateAnimationProperties();
+        emit enableScaleAnimationChanged(enable);
+    }
+}
+
+int FluentPopover::borderWidth() const { return m_borderWidth; }
+
+void FluentPopover::setBorderWidth(int width) {
+    if (m_borderWidth != width && width >= 0) {
+        m_borderWidth = width;
+        update();
+        emit borderWidthChanged(width);
+    }
+}
+
+QColor FluentPopover::customBackgroundColor() const {
+    return m_customBackgroundColor;
+}
+
+void FluentPopover::setCustomBackgroundColor(const QColor& color) {
+    if (m_customBackgroundColor != color) {
+        m_customBackgroundColor = color;
+        update();
+        emit customBackgroundColorChanged(color);
+    }
+}
+
+QColor FluentPopover::customBorderColor() const { return m_customBorderColor; }
+
+void FluentPopover::setCustomBorderColor(const QColor& color) {
+    if (m_customBorderColor != color) {
+        m_customBorderColor = color;
+        update();
+        emit customBorderColorChanged(color);
+    }
+}
+
+QString FluentPopover::accessibleName() const { return m_accessibleName; }
+
+void FluentPopover::setAccessibleName(const QString& name) {
+    if (m_accessibleName != name) {
+        m_accessibleName = name;
+        updateAccessibility();
+        emit accessibleNameChanged(name);
+    }
+}
+
+QString FluentPopover::accessibleDescription() const {
+    return m_accessibleDescription;
+}
+
+void FluentPopover::setAccessibleDescription(const QString& description) {
+    if (m_accessibleDescription != description) {
+        m_accessibleDescription = description;
+        updateAccessibility();
+        emit accessibleDescriptionChanged(description);
+    }
+}
+
+QString FluentPopover::ariaLabel() const { return m_ariaLabel; }
+
+void FluentPopover::setAriaLabel(const QString& label) {
+    if (m_ariaLabel != label) {
+        m_ariaLabel = label;
+        updateAccessibility();
+        emit ariaLabelChanged(label);
+    }
+}
+
+QString FluentPopover::ariaDescribedBy() const { return m_ariaDescribedBy; }
+
+void FluentPopover::setAriaDescribedBy(const QString& describedBy) {
+    if (m_ariaDescribedBy != describedBy) {
+        m_ariaDescribedBy = describedBy;
+        updateAccessibility();
+        emit ariaDescribedByChanged(describedBy);
+    }
+}
+
+int FluentPopover::minWidth() const { return m_minWidth; }
+
+void FluentPopover::setMinWidth(int width) {
+    if (m_minWidth != width && width > 0) {
+        m_minWidth = width;
+        setMinimumWidth(width);
+        m_sizeHintValid = false;
+        updateGeometry();
+        emit minWidthChanged(width);
+    }
+}
+
+int FluentPopover::maxHeight() const { return m_maxHeight; }
+
+void FluentPopover::setMaxHeight(int height) {
+    if (m_maxHeight != height && height > 0) {
+        m_maxHeight = height;
+        setMaximumHeight(height);
+        m_sizeHintValid = false;
+        updateGeometry();
+        emit maxHeightChanged(height);
+    }
+}
+
+bool FluentPopover::adaptiveWidth() const { return m_adaptiveWidth; }
+
+void FluentPopover::setAdaptiveWidth(bool adaptive) {
+    if (m_adaptiveWidth != adaptive) {
+        m_adaptiveWidth = adaptive;
+        if (adaptive) {
+            calculateResponsiveSize();
+        }
+        emit adaptiveWidthChanged(adaptive);
+    }
+}
+
+bool FluentPopover::adaptiveHeight() const { return m_adaptiveHeight; }
+
+void FluentPopover::setAdaptiveHeight(bool adaptive) {
+    if (m_adaptiveHeight != adaptive) {
+        m_adaptiveHeight = adaptive;
+        if (adaptive) {
+            calculateResponsiveSize();
+        }
+        emit adaptiveHeightChanged(adaptive);
+    }
+}
+
 void FluentPopover::setContentWidget(QWidget* widget) {
     if (m_contentWidget) {
         m_mainLayout->removeWidget(m_contentWidget);
@@ -326,8 +490,20 @@ QSize FluentPopover::sizeHint() const {
         contentSize += QSize(0, 8);  // Arrow space
     }
 
-    // Limit to maximum width
-    contentSize.setWidth(std::min(contentSize.width(), m_maxWidth));
+    // Apply responsive constraints
+    if (m_adaptiveWidth || m_adaptiveHeight) {
+        const QSize adaptiveSize = getAdaptiveSize();
+        if (m_adaptiveWidth) {
+            contentSize.setWidth(adaptiveSize.width());
+        }
+        if (m_adaptiveHeight) {
+            contentSize.setHeight(adaptiveSize.height());
+        }
+    }
+
+    // Apply size constraints
+    contentSize.setWidth(qBound(m_minWidth, contentSize.width(), m_maxWidth));
+    contentSize.setHeight(qBound(50, contentSize.height(), m_maxHeight));
 
     m_cachedSizeHint = contentSize;
     m_sizeHintValid = true;
@@ -335,14 +511,20 @@ QSize FluentPopover::sizeHint() const {
     return contentSize;
 }
 
-QSize FluentPopover::minimumSizeHint() const { return QSize(100, 50); }
+QSize FluentPopover::minimumSizeHint() const { return QSize(m_minWidth, 50); }
 
 void FluentPopover::show() {
     if (!m_isVisible) {
         m_isVisible = true;
         emit aboutToShow();
 
+        // Calculate responsive size if needed
+        calculateResponsiveSize();
+
+        // Update position and accessibility
         updatePosition();
+        updateAccessibility();
+
         QWidget::show();
         startShowAnimation();
 
@@ -352,6 +534,7 @@ void FluentPopover::show() {
         }
 
         emit visibilityChanged(true);
+        emit positionChanged(pos());
     }
 }
 
@@ -382,8 +565,14 @@ void FluentPopover::paintEvent(QPaintEvent* event) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
     const QRect rect = this->rect();
+
+    // Paint elevation shadow (behind the popover)
+    if (m_elevation > 0) {
+        paintElevationShadow(painter, rect);
+    }
 
     // Paint background
     paintBackground(painter, rect);
@@ -406,8 +595,23 @@ void FluentPopover::paintBackground(QPainter& painter, const QRect& rect) {
     const int radius = cornerRadius();
     path.addRoundedRect(rect, radius, radius);
 
-    // Fill background
-    painter.fillPath(path, palette.neutralLighter);
+    // Use custom background color if set, otherwise use theme color
+    QColor backgroundColor = m_customBackgroundColor.isValid()
+                                 ? m_customBackgroundColor
+                                 : palette.neutralLighter;
+
+    // Add subtle gradient for depth
+    QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
+    gradient.setColorAt(0.0, backgroundColor.lighter(105));
+    gradient.setColorAt(1.0, backgroundColor.darker(102));
+
+    // Fill background with gradient
+    painter.fillPath(path, QBrush(gradient));
+
+    // Add backdrop effect if enabled
+    if (m_enableBackdrop) {
+        paintBackdrop(painter);
+    }
 }
 
 void FluentPopover::paintBorder(QPainter& painter, const QRect& rect) {
@@ -416,14 +620,62 @@ void FluentPopover::paintBorder(QPainter& painter, const QRect& rect) {
 
     painter.save();
 
-    QPen borderPen(palette.neutralQuaternary, 1);
+    // Use custom border color if set, otherwise use theme color
+    QColor borderColor = m_customBorderColor.isValid()
+                             ? m_customBorderColor
+                             : palette.neutralQuaternary;
+
+    QPen borderPen(borderColor, m_borderWidth);
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
 
     const int radius = cornerRadius();
-    const QRectF borderRect = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5);
+    const qreal adjustment = m_borderWidth / 2.0;
+    const QRectF borderRect =
+        QRectF(rect).adjusted(adjustment, adjustment, -adjustment, -adjustment);
 
     painter.drawRoundedRect(borderRect, radius, radius);
+
+    painter.restore();
+}
+
+void FluentPopover::paintBackdrop(QPainter& painter) {
+    painter.save();
+
+    // Create a subtle backdrop blur effect
+    QColor backdropColor = QColor(255, 255, 255, 20);
+    if (Styling::FluentTheme::instance().mode() ==
+        Styling::FluentThemeMode::Dark) {
+        backdropColor = QColor(0, 0, 0, 30);
+    }
+
+    painter.fillRect(rect(), backdropColor);
+
+    painter.restore();
+}
+
+void FluentPopover::paintElevationShadow(QPainter& painter, const QRect& rect) {
+    if (m_elevation <= 0)
+        return;
+
+    painter.save();
+
+    const int radius = cornerRadius();
+    const int shadowOffset = 2 + (m_elevation * 2);
+    const int shadowBlur = 8 + (m_elevation * 4);
+    const int shadowAlpha = 40 + (m_elevation * 10);
+
+    // Create shadow path
+    QPainterPath shadowPath;
+    QRect shadowRect = rect.adjusted(0, shadowOffset, 0, shadowOffset);
+    shadowPath.addRoundedRect(shadowRect, radius, radius);
+
+    // Create shadow gradient
+    QRadialGradient shadowGradient(shadowRect.center(), shadowBlur);
+    shadowGradient.setColorAt(0.0, QColor(0, 0, 0, qMin(shadowAlpha, 80)));
+    shadowGradient.setColorAt(1.0, QColor(0, 0, 0, 0));
+
+    painter.fillPath(shadowPath, QBrush(shadowGradient));
 
     painter.restore();
 }
@@ -495,10 +747,36 @@ void FluentPopover::mousePressEvent(QMouseEvent* event) {
 }
 
 void FluentPopover::keyPressEvent(QKeyEvent* event) {
-    if (event->key() == Qt::Key_Escape) {
-        hide();
-        event->accept();
-        return;
+    switch (event->key()) {
+        case Qt::Key_Escape:
+            hide();
+            event->accept();
+            return;
+
+        case Qt::Key_Tab:
+        case Qt::Key_Backtab:
+            // Enhanced tab navigation within popover
+            if (m_contentWidget) {
+                // Let the content widget handle tab navigation
+                m_contentWidget->setFocus();
+            } else if (m_showCloseButton && m_closeButton->isVisible()) {
+                m_closeButton->setFocus();
+            }
+            event->accept();
+            return;
+
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+            // Activate focused element or close if no specific action
+            if (m_showCloseButton && m_closeButton->hasFocus()) {
+                hide();
+                event->accept();
+                return;
+            }
+            break;
+
+        default:
+            break;
     }
 
     Core::FluentComponent::keyPressEvent(event);
@@ -592,7 +870,34 @@ void FluentPopover::onHideAnimationFinished() {
 }
 
 void FluentPopover::updateColors() {
-    // Colors are handled in paintEvent
+    // Update shadow effect based on elevation
+    updateShadowEffect();
+
+    // Update widget colors based on theme
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+
+    // Set widget background color for proper rendering
+    QPalette widgetPalette = this->palette();
+    widgetPalette.setColor(QPalette::Window, palette.neutralLighter);
+    widgetPalette.setColor(QPalette::WindowText, palette.neutralPrimary);
+    setPalette(widgetPalette);
+
+    // Update child widget colors
+    if (m_titleLabel) {
+        QPalette titlePalette = m_titleLabel->palette();
+        titlePalette.setColor(QPalette::WindowText, palette.neutralPrimary);
+        m_titleLabel->setPalette(titlePalette);
+    }
+
+    if (m_contentLabel) {
+        QPalette contentPalette = m_contentLabel->palette();
+        contentPalette.setColor(QPalette::WindowText, palette.neutralSecondary);
+        m_contentLabel->setPalette(contentPalette);
+    }
+
+    // Colors are also handled in paintEvent for custom drawing
+    update();
 }
 
 void FluentPopover::updateFonts() {
@@ -608,7 +913,20 @@ void FluentPopover::startShowAnimation() {
         return;
     }
 
-    m_showAnimation->start();
+    // Setup scale animation if enabled
+    if (m_enableScaleAnimation && m_scaleAnimation) {
+        const QRect currentGeometry = geometry();
+        const QRect targetGeometry = currentGeometry;
+        const QRect startGeometry = QRect(
+            currentGeometry.center() - QPoint(currentGeometry.width() / 4,
+                                              currentGeometry.height() / 4),
+            currentGeometry.size() / 2);
+
+        m_scaleAnimation->setStartValue(startGeometry);
+        m_scaleAnimation->setEndValue(targetGeometry);
+    }
+
+    m_showAnimationGroup->start();
 }
 
 void FluentPopover::startHideAnimation() {
@@ -619,12 +937,54 @@ void FluentPopover::startHideAnimation() {
         return;
     }
 
-    m_hideAnimation->start();
+    m_hideAnimationGroup->start();
+}
+
+void FluentPopover::setupScaleAnimation() {
+    m_scaleAnimation = std::make_unique<QPropertyAnimation>(this, "geometry");
+    m_scaleAnimation->setDuration(250);
+    m_scaleAnimation->setEasingCurve(QEasingCurve::OutBack);
+}
+
+void FluentPopover::updateAnimationProperties() {
+    if (!m_showAnimationGroup || !m_hideAnimationGroup)
+        return;
+
+    // Clear existing animations
+    m_showAnimationGroup->clear();
+    m_hideAnimationGroup->clear();
+
+    // Always add opacity animation
+    m_showAnimationGroup->addAnimation(m_showAnimation.get());
+    m_hideAnimationGroup->addAnimation(m_hideAnimation.get());
+
+    // Add scale animation if enabled
+    if (m_enableScaleAnimation && m_scaleAnimation) {
+        m_showAnimationGroup->addAnimation(m_scaleAnimation.get());
+        m_hideAnimationGroup->addAnimation(m_scaleAnimation.get());
+    }
+}
+
+void FluentPopover::updateShadowEffect() {
+    if (!m_shadowEffect)
+        return;
+
+    // Update shadow based on elevation level
+    const int blurRadius = 8 + (m_elevation * 4);
+    const int offsetY = 2 + (m_elevation * 2);
+    const int alpha = 40 + (m_elevation * 10);
+
+    m_shadowEffect->setBlurRadius(blurRadius);
+    m_shadowEffect->setOffset(0, offsetY);
+    m_shadowEffect->setColor(QColor(0, 0, 0, qMin(alpha, 80)));
 }
 
 void FluentPopover::updatePosition() {
     if (!m_target)
         return;
+
+    // Store old position for comparison
+    const QPoint oldPosition = pos();
 
     // Determine optimal placement
     m_actualPlacement = (m_placement == FluentPopoverPlacement::Auto)
@@ -637,6 +997,11 @@ void FluentPopover::updatePosition() {
 
     // Update arrow position
     updateArrowPosition();
+
+    // Emit position changed signal if position actually changed
+    if (oldPosition != pos()) {
+        emit positionChanged(pos());
+    }
 }
 
 void FluentPopover::updateArrowPosition() {
@@ -757,6 +1122,90 @@ void FluentPopover::removeTargetEventFilter() {
     if (m_target) {
         m_target->removeEventFilter(this);
     }
+}
+
+void FluentPopover::updateAccessibility() {
+    // Set accessible name
+    if (!m_accessibleName.isEmpty()) {
+        setAccessibleName(m_accessibleName);
+    } else if (!m_title.isEmpty()) {
+        setAccessibleName(m_title);
+    } else if (!m_ariaLabel.isEmpty()) {
+        setAccessibleName(m_ariaLabel);
+    }
+
+    // Set accessible description
+    if (!m_accessibleDescription.isEmpty()) {
+        setAccessibleDescription(m_accessibleDescription);
+    } else if (!m_content.isEmpty()) {
+        setAccessibleDescription(m_content);
+    }
+
+    // Set ARIA properties as dynamic properties for CSS/styling
+    if (!m_ariaLabel.isEmpty()) {
+        setProperty("aria-label", m_ariaLabel);
+    }
+    if (!m_ariaDescribedBy.isEmpty()) {
+        setProperty("aria-describedby", m_ariaDescribedBy);
+    }
+
+    // Set role
+    setProperty("role", "dialog");
+    setProperty("aria-modal", "true");
+}
+
+void FluentPopover::calculateResponsiveSize() {
+    if (!m_adaptiveWidth && !m_adaptiveHeight)
+        return;
+
+    const QSize adaptiveSize = getAdaptiveSize();
+
+    if (m_adaptiveWidth) {
+        const int newWidth =
+            qBound(m_minWidth, adaptiveSize.width(), m_maxWidth);
+        if (width() != newWidth) {
+            resize(newWidth, height());
+            emit sizeChanged(size());
+        }
+    }
+
+    if (m_adaptiveHeight) {
+        const int newHeight = qBound(50, adaptiveSize.height(), m_maxHeight);
+        if (height() != newHeight) {
+            resize(width(), newHeight);
+            emit sizeChanged(size());
+        }
+    }
+}
+
+QSize FluentPopover::getAdaptiveSize() const {
+    if (!m_target)
+        return sizeHint();
+
+    // Get screen geometry
+    const QRect screenGeometry =
+        QApplication::primaryScreen()->availableGeometry();
+    const QRect targetGeometry = m_target->geometry();
+    const QPoint targetGlobal = m_target->mapToGlobal(QPoint(0, 0));
+
+    // Calculate available space
+    const int availableWidth =
+        screenGeometry.width() - targetGlobal.x() - 40;  // 40px margin
+    const int availableHeight = screenGeometry.height() - targetGlobal.y() -
+                                targetGeometry.height() - 40;
+
+    // Calculate adaptive size based on content and available space
+    QSize contentSize = sizeHint();
+
+    if (m_adaptiveWidth) {
+        contentSize.setWidth(qMin(contentSize.width(), availableWidth));
+    }
+
+    if (m_adaptiveHeight) {
+        contentSize.setHeight(qMin(contentSize.height(), availableHeight));
+    }
+
+    return contentSize;
 }
 
 }  // namespace FluentQt::Components

@@ -1,18 +1,22 @@
 // src/Components/FluentSheet.cpp
 #include "FluentQt/Components/FluentSheet.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
 #include <QApplication>
 #include <QDebug>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPaintEvent>
 #include <QPainter>
 #include <QScreen>
 #include <QVBoxLayout>
+#include <QWidget>
 #include <QWindow>
 
 namespace FluentQt::Components {
@@ -116,37 +120,79 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing);
 
         const QRect rect = this->rect();
-        const auto& theme = FluentQt::Styling::FluentTheme::instance();
-        const QColor backgroundColor = theme.color("layerFillColorDefault");
-        const QColor borderColor = theme.color("controlStrokeColorDefault");
+        const auto& tokenUtils =
+            FluentQt::Styling::FluentDesignTokenUtils::instance();
 
-        // Paint background
-        painter.fillRect(rect, backgroundColor);
+        // Use semantic color tokens for better theme compliance
+        const QColor backgroundColor =
+            tokenUtils.getColor("surface.background.default");
+        const QColor borderColor =
+            tokenUtils.getColor("surface.stroke.default");
+        const int borderRadius = tokenUtils.getBorderRadius("medium");  // 4px
+        const int borderWidth = tokenUtils.getBorderWidth("thin");      // 1px
 
-        // Paint border
-        painter.setPen(QPen(borderColor, 1));
+        // Paint background with rounded corners
+        painter.setBrush(QBrush(backgroundColor));
+        painter.setPen(Qt::NoPen);
+        painter.drawRoundedRect(rect, borderRadius, borderRadius);
+
+        // Paint border with rounded corners
         painter.setBrush(Qt::NoBrush);
-        painter.drawRect(rect.adjusted(0, 0, -1, -1));
+        painter.setPen(QPen(borderColor, borderWidth));
+        painter.drawRoundedRect(
+            rect.adjusted(borderWidth / 2, borderWidth / 2, -borderWidth / 2,
+                          -borderWidth / 2),
+            borderRadius, borderRadius);
     }
 
 private:
     void setupLayout() {
+        // Use Fluent design tokens for consistent spacing
+        const auto& tokenUtils =
+            FluentQt::Styling::FluentDesignTokenUtils::instance();
+
         m_mainLayout = new QVBoxLayout(this);
-        m_mainLayout->setContentsMargins(16, 16, 16, 16);
-        m_mainLayout->setSpacing(8);
 
-        // Header section
+        // Use Fluent spacing tokens instead of hardcoded values
+        const int sheetPadding = tokenUtils.getSpacing(
+            "l");  // 16px - large spacing for sheet content
+        const int contentSpacing =
+            tokenUtils.getSpacing("s");  // 8px - small spacing between sections
+
+        m_mainLayout->setContentsMargins(sheetPadding, sheetPadding,
+                                         sheetPadding, sheetPadding);
+        m_mainLayout->setSpacing(contentSpacing);
+
+        // Header section with proper spacing
         m_headerLayout = new QVBoxLayout();
-        m_headerLayout->setSpacing(4);
+        const int headerSpacing = tokenUtils.getSpacing(
+            "xs");  // 4px - extra small spacing between title/subtitle
+        m_headerLayout->setSpacing(headerSpacing);
 
+        // Title label with Fluent typography
         m_titleLabel = new QLabel();
         m_titleLabel->setObjectName("FluentSheetTitle");
+        m_titleLabel->setFont(
+            tokenUtils.getTitleFont(2));  // Use title2 font (20px, DemiBold)
         m_titleLabel->setVisible(false);
+
+        // Set accessible properties
+        m_titleLabel->setAccessibleName(tr("Sheet Title"));
+        m_titleLabel->setAccessibleName("Sheet Title");
+
         m_headerLayout->addWidget(m_titleLabel);
 
+        // Subtitle label with Fluent typography
         m_subtitleLabel = new QLabel();
         m_subtitleLabel->setObjectName("FluentSheetSubtitle");
+        m_subtitleLabel->setFont(
+            tokenUtils.getBodyFont(false));  // Use body font (14px, Regular)
         m_subtitleLabel->setVisible(false);
+
+        // Set accessible properties
+        m_subtitleLabel->setAccessibleName(tr("Sheet Subtitle"));
+        m_subtitleLabel->setAccessibleName("Sheet Subtitle");
+
         m_headerLayout->addWidget(m_subtitleLabel);
 
         m_mainLayout->addLayout(m_headerLayout);
@@ -379,23 +425,24 @@ void FluentSheet::openWithAnimation() { open(); }
 
 void FluentSheet::closeWithAnimation() { close(); }
 
-// Event handling
+// Event handling with enhanced Fluent UI rendering
 void FluentSheet::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
 
     const QRect rect = this->rect();
 
-    // Paint background
+    // Paint shadow first (behind the sheet)
+    paintShadow(painter, rect);
+
+    // Paint background with Fluent styling
     paintBackground(painter, rect);
 
-    // Paint border
+    // Paint border with Fluent styling
     paintBorder(painter, rect);
-
-    // Paint shadow
-    paintShadow(painter, rect);
 }
 
 void FluentSheet::resizeEvent(QResizeEvent* event) {
@@ -524,28 +571,60 @@ void FluentSheet::setupOverlay() {
 void FluentSheet::setupContent() {
     m_content->setParent(this);
     updateContentGeometry();
+
+    // Add Fluent elevation shadow effect
+    setupElevationEffect();
+}
+
+void FluentSheet::setupElevationEffect() {
+    // Create drop shadow effect for proper Fluent elevation
+    auto* shadowEffect = new QGraphicsDropShadowEffect(this);
+
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    const QColor shadowColor = getShadowColor();
+
+    // Configure shadow with Fluent design tokens
+    shadowEffect->setColor(shadowColor);
+    shadowEffect->setBlurRadius(8);  // Subtle blur for elevation
+    shadowEffect->setOffset(0, 2);   // Slight downward offset
+
+    // Apply shadow effect to the sheet
+    setGraphicsEffect(shadowEffect);
 }
 
 void FluentSheet::setupAnimations() {
-    // Setup open animation
-    m_openAnimation->setDuration(m_animationDuration);
-    m_openAnimation->setEasingCurve(m_easingCurve);
+    // Use Fluent motion tokens for consistent animation timing
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+
+    // Use Fluent motion duration (normal = 200ms for UI transitions)
+    const int fluentDuration = tokenUtils.getDuration("normal");
+
+    // Use Fluent easing curve (OutCubic is standard for Fluent UI)
+    const QEasingCurve::Type fluentEasing = QEasingCurve::OutCubic;
+
+    // Setup open animation with Fluent motion tokens
+    m_openAnimation->setDuration(fluentDuration);
+    m_openAnimation->setEasingCurve(fluentEasing);
     connect(m_openAnimation.get(), &QPropertyAnimation::valueChanged, this,
             &FluentSheet::onOpenAnimationValueChanged);
     connect(m_openAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentSheet::onOpenAnimationFinished);
 
-    // Setup close animation
-    m_closeAnimation->setDuration(m_animationDuration);
-    m_closeAnimation->setEasingCurve(m_easingCurve);
+    // Setup close animation with Fluent motion tokens
+    m_closeAnimation->setDuration(fluentDuration);
+    m_closeAnimation->setEasingCurve(fluentEasing);
     connect(m_closeAnimation.get(), &QPropertyAnimation::valueChanged, this,
             &FluentSheet::onCloseAnimationValueChanged);
     connect(m_closeAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentSheet::onCloseAnimationFinished);
 
-    // Setup overlay animation
-    m_overlayAnimation->setDuration(m_animationDuration);
-    m_overlayAnimation->setEasingCurve(m_easingCurve);
+    // Setup overlay animation with slightly faster timing for overlay
+    const int overlayDuration =
+        tokenUtils.getDuration("fast");  // 100ms for overlay
+    m_overlayAnimation->setDuration(overlayDuration);
+    m_overlayAnimation->setEasingCurve(fluentEasing);
 
     // Setup animation group
     m_animationGroup->addAnimation(m_openAnimation.get());
@@ -553,9 +632,24 @@ void FluentSheet::setupAnimations() {
 }
 
 void FluentSheet::setupAccessibility() {
-    setAccessibleName("Sheet");
-    setAccessibleDescription("A sliding panel that can contain content");
+    // Enhanced accessibility with proper ARIA attributes
+    setAccessibleName("Sheet Panel");
+    setAccessibleDescription(
+        "A sliding panel that can contain content and can be closed with "
+        "Escape key or by clicking the overlay");
     setFocusPolicy(Qt::StrongFocus);
+
+    // Set proper ARIA role for the sheet
+    setAccessibleName(tr("Sheet Dialog"));
+
+    // Add keyboard shortcuts information
+    setWhatsThis(
+        "Use Escape key to close the sheet, or Tab to navigate through "
+        "content");
+
+    // Set up proper focus handling
+    setAttribute(Qt::WA_AcceptTouchEvents, true);
+    setAttribute(Qt::WA_KeyboardFocusChange, true);
 }
 
 // Animation methods
@@ -885,41 +979,82 @@ bool FluentSheet::shouldCloseFromDrag(const QPoint& delta) const {
     return false;
 }
 
-// Painting methods
+// Painting methods using Fluent design tokens
 void FluentSheet::paintBackground(QPainter& painter, const QRect& rect) {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
     const QColor backgroundColor = getBackgroundColor();
-    painter.fillRect(rect, backgroundColor);
+    const int borderRadius = tokenUtils.getBorderRadius("medium");  // 4px
+
+    // Paint background with rounded corners for modern Fluent look
+    painter.setBrush(QBrush(backgroundColor));
+    painter.setPen(Qt::NoPen);
+    painter.drawRoundedRect(rect, borderRadius, borderRadius);
 }
 
 void FluentSheet::paintBorder(QPainter& painter, const QRect& rect) {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
     const QPen borderPen = getBorderPen();
-    painter.setPen(borderPen);
+    const int borderRadius = tokenUtils.getBorderRadius("medium");  // 4px
+    const int borderWidth = tokenUtils.getBorderWidth("thin");      // 1px
+
+    // Paint border with rounded corners
     painter.setBrush(Qt::NoBrush);
-    painter.drawRect(rect.adjusted(0, 0, -1, -1));
+    painter.setPen(borderPen);
+    painter.drawRoundedRect(rect.adjusted(borderWidth / 2, borderWidth / 2,
+                                          -borderWidth / 2, -borderWidth / 2),
+                            borderRadius, borderRadius);
 }
 
 void FluentSheet::paintShadow(QPainter& painter, const QRect& rect) {
-    Q_UNUSED(painter)
-    Q_UNUSED(rect)
-    // Shadow can be implemented using QGraphicsDropShadowEffect if needed
+    // Enhanced shadow implementation using Fluent elevation tokens
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    const QColor shadowColor = getShadowColor();
+    const int borderRadius = tokenUtils.getBorderRadius("medium");
+
+    // Create subtle shadow effect for elevation
+    painter.save();
+    painter.setBrush(QBrush(shadowColor));
+    painter.setPen(Qt::NoPen);
+
+    // Draw shadow slightly offset and larger than the main rect
+    QRect shadowRect = rect.adjusted(-2, -1, 2, 3);
+    painter.drawRoundedRect(shadowRect, borderRadius + 1, borderRadius + 1);
+
+    painter.restore();
 }
 
-// Style methods
+// Style methods using Fluent design tokens
 QColor FluentSheet::getBackgroundColor() const {
-    const auto& theme = FluentQt::Styling::FluentTheme::instance();
-    return theme.color("layerFillColorDefault");
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    // Use semantic surface color for better theme compliance
+    return tokenUtils.getColor("surface.background.default");
 }
 
 QColor FluentSheet::getBorderColor() const {
-    const auto& theme = FluentQt::Styling::FluentTheme::instance();
-    return theme.color("controlStrokeColorDefault");
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    // Use semantic stroke color for better theme compliance
+    return tokenUtils.getColor("surface.stroke.default");
 }
 
-QColor FluentSheet::getShadowColor() const { return QColor(0, 0, 0, 50); }
+QColor FluentSheet::getShadowColor() const {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    // Use semantic shadow color with proper opacity
+    return tokenUtils.getColor("shadow.default");
+}
 
 QPen FluentSheet::getBorderPen() const {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
     const QColor borderColor = getBorderColor();
-    return QPen(borderColor, 1);
+    const int borderWidth =
+        tokenUtils.getBorderWidth("thin");  // Use design token for border width
+    return QPen(borderColor, borderWidth);
 }
 
 }  // namespace FluentQt::Components

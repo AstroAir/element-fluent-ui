@@ -1,12 +1,16 @@
 // include/FluentQt/Components/FluentDropdown.h
 #pragma once
 
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QPropertyAnimation>
+#include <QString>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QVariant>
 #include <memory>
@@ -14,12 +18,32 @@
 
 namespace FluentQt::Components {
 
+// Fluent UI compliant size variants
+enum class FluentDropdownSize {
+    Small,   // 24px height - compact scenarios
+    Medium,  // 32px height - default
+    Large    // 40px height - touch-friendly
+};
+
+// Fluent UI visual styles
+enum class FluentDropdownStyle {
+    Outline,    // Default outlined style
+    Filled,     // Filled background style
+    Underlined  // Underlined style for forms
+};
+
+// Enhanced dropdown item with grouping support
 struct FluentDropdownItem {
     QString text;
+    QString description;  // Secondary text for rich items
+    QString tooltip;      // Tooltip text
     QIcon icon;
     QVariant data;
     bool enabled{true};
     bool separator{false};
+    bool isGroupHeader{false};  // For item grouping
+    QString groupId;            // Group identifier
+    int indentLevel{0};         // For hierarchical items
 
     FluentDropdownItem() = default;
     FluentDropdownItem(const QString& text, const QVariant& data = QVariant())
@@ -27,6 +51,10 @@ struct FluentDropdownItem {
     FluentDropdownItem(const QIcon& icon, const QString& text,
                        const QVariant& data = QVariant())
         : text(text), icon(icon), data(data) {}
+
+    // Factory methods for special item types
+    static FluentDropdownItem createSeparator();
+    static FluentDropdownItem createGroupHeader(const QString& title);
 };
 
 class FluentDropdown : public Core::FluentComponent {
@@ -44,6 +72,30 @@ class FluentDropdown : public Core::FluentComponent {
                    setDropdownVisible NOTIFY dropdownVisibilityChanged)
     Q_PROPERTY(int maxVisibleItems READ maxVisibleItems WRITE setMaxVisibleItems
                    NOTIFY maxVisibleItemsChanged)
+
+    // Enhanced Fluent UI properties
+    Q_PROPERTY(
+        FluentDropdownSize size READ size WRITE setSize NOTIFY sizeChanged)
+    Q_PROPERTY(
+        FluentDropdownStyle style READ style WRITE setStyle NOTIFY styleChanged)
+    Q_PROPERTY(
+        bool hasError READ hasError WRITE setHasError NOTIFY errorChanged)
+    Q_PROPERTY(QString errorMessage READ errorMessage WRITE setErrorMessage
+                   NOTIFY errorMessageChanged)
+    Q_PROPERTY(
+        bool isLoading READ isLoading WRITE setLoading NOTIFY loadingChanged)
+    Q_PROPERTY(bool searchEnabled READ isSearchEnabled WRITE setSearchEnabled
+                   NOTIFY searchEnabledChanged)
+    Q_PROPERTY(QString searchPlaceholder READ searchPlaceholder WRITE
+                   setSearchPlaceholder NOTIFY searchPlaceholderChanged)
+    Q_PROPERTY(bool groupingEnabled READ isGroupingEnabled WRITE
+                   setGroupingEnabled NOTIFY groupingEnabledChanged)
+
+    // Accessibility properties
+    Q_PROPERTY(
+        QString accessibleName READ accessibleName WRITE setAccessibleName)
+    Q_PROPERTY(QString accessibleDescription READ accessibleDescription WRITE
+                   setAccessibleDescription)
 
 public:
     explicit FluentDropdown(QWidget* parent = nullptr);
@@ -70,6 +122,38 @@ public:
 
     int maxVisibleItems() const;
     void setMaxVisibleItems(int count);
+
+    // Enhanced Fluent UI properties
+    FluentDropdownSize size() const;
+    void setSize(FluentDropdownSize size);
+
+    FluentDropdownStyle style() const;
+    void setStyle(FluentDropdownStyle style);
+
+    bool hasError() const;
+    void setHasError(bool hasError);
+
+    QString errorMessage() const;
+    void setErrorMessage(const QString& message);
+
+    bool isLoading() const;
+    void setLoading(bool loading);
+
+    bool isSearchEnabled() const;
+    void setSearchEnabled(bool enabled);
+
+    QString searchPlaceholder() const;
+    void setSearchPlaceholder(const QString& placeholder);
+
+    bool isGroupingEnabled() const;
+    void setGroupingEnabled(bool enabled);
+
+    // Accessibility properties
+    QString accessibleName() const;
+    void setAccessibleName(const QString& name);
+
+    QString accessibleDescription() const;
+    void setAccessibleDescription(const QString& description);
 
     // Item management
     void addItem(const QString& text, const QVariant& data = QVariant());
@@ -115,6 +199,23 @@ signals:
     void maxVisibleItemsChanged(int count);
     void itemSelected(int index);
     void textEdited(const QString& text);
+
+    // Enhanced Fluent UI signals
+    void sizeChanged(FluentDropdownSize size);
+    void styleChanged(FluentDropdownStyle style);
+    void errorChanged(bool hasError);
+    void errorMessageChanged(const QString& message);
+    void loadingChanged(bool loading);
+    void searchEnabledChanged(bool enabled);
+    void searchPlaceholderChanged(const QString& placeholder);
+    void groupingEnabledChanged(bool enabled);
+
+    // Search and filtering signals
+    void searchTextChanged(const QString& text);
+    void itemsFiltered(int visibleCount);
+
+    // Accessibility signals
+    void accessibilityChanged();
 
 protected:
     // Event handling
@@ -163,13 +264,46 @@ private:
     QRect textRect() const;
     int calculateDropdownHeight() const;
 
+    // Enhanced Fluent UI methods
+    void setupAccessibility();
+    void updateAccessibility();
+    void setupShadowEffect();
+    void updateShadowEffect();
+    void setupSearchFunctionality();
+    void updateComponentSize();
+    void updateComponentStyle();
+    void updateErrorState();
+    void updateLoadingState();
+    void filterItems(const QString& searchText);
+    void applyFluentDesignTokens();
+
+    // Theme integration
+    int getComponentHeight() const;
+    QMargins getComponentPadding() const;
+    int getBorderRadius() const;
+    int getElevation() const;
+
 private:
     // Content
     QList<FluentDropdownItem> m_items;
     int m_currentIndex{-1};
     QString m_placeholderText{"Select item"};
 
-    // State
+    // Enhanced Fluent UI state
+    FluentDropdownSize m_size{FluentDropdownSize::Medium};
+    FluentDropdownStyle m_style{FluentDropdownStyle::Outline};
+    bool m_hasError{false};
+    QString m_errorMessage;
+    bool m_isLoading{false};
+    bool m_searchEnabled{false};
+    QString m_searchPlaceholder{"Search..."};
+    bool m_groupingEnabled{false};
+
+    // Accessibility
+    QString m_accessibleName;
+    QString m_accessibleDescription;
+
+    // Legacy state
     bool m_editable{false};
     bool m_dropdownVisible{false};
     bool m_pressed{false};
@@ -178,12 +312,20 @@ private:
     // UI components
     QHBoxLayout* m_mainLayout{nullptr};
     QLabel* m_displayLabel{nullptr};
+    QLineEdit* m_searchEdit{nullptr};  // For search functionality
     QWidget* m_dropdownContainer{nullptr};
     QListWidget* m_listWidget{nullptr};
+    QLabel* m_errorLabel{nullptr};    // For error messages
+    QLabel* m_loadingLabel{nullptr};  // For loading state
 
-    // Animation
+    // Enhanced effects
     std::unique_ptr<QPropertyAnimation> m_dropdownAnimation;
     QGraphicsOpacityEffect* m_dropdownOpacityEffect{nullptr};
+    QGraphicsDropShadowEffect* m_shadowEffect{nullptr};  // For elevation
+
+    // Search functionality
+    QTimer* m_searchTimer{nullptr};  // For debounced search
+    QString m_currentSearchText;
 
     // Cached values
     mutable QSize m_cachedSizeHint;

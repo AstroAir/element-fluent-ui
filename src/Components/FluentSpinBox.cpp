@@ -183,6 +183,48 @@ void FluentSpinBox::setSuffix(const QString& suffix) {
     emit suffixChanged(m_suffix);
 }
 
+QString FluentSpinBox::placeholderText() const { return m_placeholderText; }
+
+void FluentSpinBox::setPlaceholderText(const QString& text) {
+    if (m_placeholderText == text)
+        return;
+
+    m_placeholderText = text;
+    m_lineEdit->setPlaceholderText(text);
+    emit placeholderTextChanged(m_placeholderText);
+}
+
+FluentSpinBoxSize FluentSpinBox::spinBoxSize() const { return m_spinBoxSize; }
+
+void FluentSpinBox::setSpinBoxSize(FluentSpinBoxSize size) {
+    if (m_spinBoxSize == size)
+        return;
+
+    m_spinBoxSize = size;
+    updateSizeMetrics();
+    m_layoutDirty = true;
+    updateGeometry();
+    update();
+    emit spinBoxSizeChanged(m_spinBoxSize);
+}
+
+FluentSpinBoxComplexity FluentSpinBox::complexity() const {
+    return m_complexity;
+}
+
+void FluentSpinBox::setComplexity(FluentSpinBoxComplexity complexity) {
+    if (m_complexity == complexity)
+        return;
+
+    m_complexity = complexity;
+    // Complexity affects which features are available
+    if (m_complexity == FluentSpinBoxComplexity::Simple) {
+        setAnimated(false);
+        setAccelerated(false);
+    }
+    emit complexityChanged(m_complexity);
+}
+
 bool FluentSpinBox::wrapping() const { return m_wrapping; }
 
 void FluentSpinBox::setWrapping(bool wrapping) {
@@ -193,7 +235,7 @@ void FluentSpinBox::setWrapping(bool wrapping) {
     emit wrappingChanged(m_wrapping);
 }
 
-bool FluentSpinBox::readOnly() const { return m_readOnly; }
+bool FluentSpinBox::isReadOnly() const { return m_readOnly; }
 
 void FluentSpinBox::setReadOnly(bool readOnly) {
     if (m_readOnly == readOnly)
@@ -204,6 +246,8 @@ void FluentSpinBox::setReadOnly(bool readOnly) {
     updateColors();
     emit readOnlyChanged(m_readOnly);
 }
+
+QString FluentSpinBox::text() const { return m_lineEdit->text(); }
 
 bool FluentSpinBox::showButtons() const { return m_showButtons; }
 
@@ -265,6 +309,19 @@ bool FluentSpinBox::isValid() const { return isValidValue(m_value); }
 
 bool FluentSpinBox::isValidValue(double value) const {
     return value >= m_minimum && value <= m_maximum;
+}
+
+QValidator::State FluentSpinBox::validate(QString& input, int& pos) const {
+    if (m_lineEdit->validator()) {
+        return m_lineEdit->validator()->validate(input, pos);
+    }
+    return QValidator::Acceptable;
+}
+
+void FluentSpinBox::fixup(QString& input) const {
+    const double value = parseValue(input);
+    const double boundedValue = boundValue(value);
+    input = formatValue(boundedValue);
 }
 
 double FluentSpinBox::boundValue(double value) const {
@@ -377,13 +434,39 @@ FluentSpinBox* FluentSpinBox::createPercentageSpinBox(QWidget* parent) {
     return spinBox;
 }
 
+FluentSpinBox* FluentSpinBox::createSimple(FluentSpinBoxType type,
+                                           QWidget* parent) {
+    auto* spinBox = new FluentSpinBox(parent);
+    spinBox->setSpinBoxType(type);
+    spinBox->setComplexity(FluentSpinBoxComplexity::Simple);
+    spinBox->setSpinBoxSize(FluentSpinBoxSize::Medium);
+    return spinBox;
+}
+
+FluentSpinBox* FluentSpinBox::createSimpleInteger(int minimum, int maximum,
+                                                  QWidget* parent) {
+    auto* spinBox = createSimple(FluentSpinBoxType::Integer, parent);
+    spinBox->setRange(minimum, maximum);
+    spinBox->setDecimals(0);
+    return spinBox;
+}
+
+FluentSpinBox* FluentSpinBox::createSimpleDouble(double minimum, double maximum,
+                                                 int decimals,
+                                                 QWidget* parent) {
+    auto* spinBox = createSimple(FluentSpinBoxType::Double, parent);
+    spinBox->setRange(minimum, maximum);
+    spinBox->setDecimals(decimals);
+    return spinBox;
+}
+
 void FluentSpinBox::stepUp() {
     if (!isEnabled() || m_readOnly)
         return;
 
     const double newValue = m_value + m_singleStep;
     setValue(newValue);
-    emit stepUpRequested();
+    // Note: stepUpRequested signal would be declared in header if needed
 }
 
 void FluentSpinBox::stepDown() {
@@ -392,7 +475,29 @@ void FluentSpinBox::stepDown() {
 
     const double newValue = m_value - m_singleStep;
     setValue(newValue);
-    emit stepDownRequested();
+    // Note: stepDownRequested signal would be declared in header if needed
+}
+
+void FluentSpinBox::stepBy(int steps) {
+    if (!isEnabled() || m_readOnly)
+        return;
+
+    const double newValue = m_value + (steps * m_singleStep);
+    setValue(newValue);
+}
+
+void FluentSpinBox::animateValue(double targetValue) {
+    if (!m_animated || m_complexity == FluentSpinBoxComplexity::Simple) {
+        setValue(targetValue);
+        return;
+    }
+
+    if (m_valueAnimation) {
+        m_valueAnimation->stop();
+        m_valueAnimation->setStartValue(m_value);
+        m_valueAnimation->setEndValue(targetValue);
+        m_valueAnimation->start();
+    }
 }
 
 void FluentSpinBox::selectAll() { m_lineEdit->selectAll(); }
@@ -412,21 +517,26 @@ void FluentSpinBox::setupLineEdit() {
 }
 
 void FluentSpinBox::setupAnimations() {
-    // Value change animation
+    // Use Fluent UI animation durations and easing curves
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Value change animation - smooth transition for value updates
     m_valueAnimation = new QPropertyAnimation(this, "animatedValue", this);
-    m_valueAnimation->setDuration(200);
-    m_valueAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_valueAnimation->setDuration(250);  // Fluent UI standard duration
+    m_valueAnimation->setEasingCurve(
+        QEasingCurve::OutCubic);  // Fluent UI standard easing
     connect(m_valueAnimation, &QPropertyAnimation::finished, this,
             &FluentSpinBox::onValueAnimationFinished);
 
-    // Button press animation
+    // Button press animation - subtle feedback
     m_buttonAnimation = new QPropertyAnimation(this, "buttonScale", this);
-    m_buttonAnimation->setDuration(100);
-    m_buttonAnimation->setEasingCurve(QEasingCurve::OutBack);
+    m_buttonAnimation->setDuration(150);  // Quick feedback
+    m_buttonAnimation->setEasingCurve(
+        QEasingCurve::OutQuart);  // Fluent UI button easing
 
-    // Focus animation
+    // Focus animation - smooth focus transition
     m_focusAnimation = new QPropertyAnimation(this, "focusOpacity", this);
-    m_focusAnimation->setDuration(150);
+    m_focusAnimation->setDuration(200);  // Fluent UI focus duration
     m_focusAnimation->setEasingCurve(QEasingCurve::OutCubic);
 }
 
@@ -509,20 +619,48 @@ void FluentSpinBox::updateLayout() {
 }
 
 void FluentSpinBox::updateSizeMetrics() {
-    switch (m_spinBoxType) {
-        case FluentSpinBoxType::Integer:
-        case FluentSpinBoxType::Double:
-            m_buttonSize = 20;
-            m_spacing = 4;
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Use Fluent UI design tokens for sizing based on spinBoxSize
+    int baseButtonSize;
+    int baseSpacing;
+    QMargins baseMargins;
+
+    switch (m_spinBoxSize) {
+        case FluentSpinBoxSize::Small:
+            baseButtonSize = theme.componentHeight("small");
+            baseSpacing = theme.spacing("s");  // 4px
+            baseMargins = theme.margins("small");
             break;
-        case FluentSpinBoxType::Currency:
-        case FluentSpinBoxType::Percentage:
-            m_buttonSize = 24;
-            m_spacing = 6;
+        case FluentSpinBoxSize::Medium:
+            baseButtonSize = theme.componentHeight("medium");
+            baseSpacing = theme.spacing("m");  // 8px
+            baseMargins = theme.margins("medium");
+            break;
+        case FluentSpinBoxSize::Large:
+            baseButtonSize = theme.componentHeight("large");
+            baseSpacing = theme.spacing("l");  // 12px
+            baseMargins = theme.margins("large");
             break;
     }
 
-    m_contentMargins = QMargins(8, 4, 8, 4);
+    // Adjust for spinBoxType if needed
+    switch (m_spinBoxType) {
+        case FluentSpinBoxType::Integer:
+        case FluentSpinBoxType::Double:
+            m_buttonSize = baseButtonSize;
+            m_spacing = baseSpacing;
+            break;
+        case FluentSpinBoxType::Currency:
+        case FluentSpinBoxType::Percentage:
+            // Currency and percentage need slightly larger buttons for better
+            // usability
+            m_buttonSize = baseButtonSize + theme.spacing("xs");  // +2px
+            m_spacing = baseSpacing + theme.spacing("xs");        // +2px
+            break;
+    }
+
+    m_contentMargins = baseMargins;
 }
 
 void FluentSpinBox::updateValidation() {
@@ -782,6 +920,8 @@ void FluentSpinBox::onLineEditTextChanged(const QString& text) {
     if (m_updatingFromValue)
         return;
 
+    emit textChanged(text);
+
     const double newValue = parseValue(text);
     if (!qFuzzyCompare(newValue, m_value)) {
         m_updatingFromLineEdit = true;
@@ -862,6 +1002,22 @@ void FluentSpinBox::updateColors() {
 void FluentSpinBox::updateAccessibility() {
 #ifndef QT_NO_ACCESSIBILITY
     if (QAccessible::isActive()) {
+        // Set proper accessibility properties
+        setAccessibleName(QString("Spin box, value %1").arg(m_value));
+        setAccessibleDescription(
+            QString("Spin box with range %1 to %2, step %3")
+                .arg(m_minimum)
+                .arg(m_maximum)
+                .arg(m_singleStep));
+
+        // Update accessibility role
+        if (m_spinBoxType == FluentSpinBoxType::Integer) {
+            setProperty("accessibleRole", "spinbox");
+        } else {
+            setProperty("accessibleRole", "spinbox");
+        }
+
+        // Notify screen readers of value changes
         QAccessibleEvent event(this, QAccessible::ValueChanged);
         QAccessible::updateAccessibility(&event);
     }
@@ -870,13 +1026,15 @@ void FluentSpinBox::updateAccessibility() {
 
 void FluentSpinBox::paintBackground(QPainter* painter) {
     const QRect rect = this->rect();
+    const auto& theme = Styling::FluentTheme::instance();
+    const int radius = theme.borderRadius("input");
 
     painter->save();
 
     // Draw background
     painter->setPen(QPen(m_borderColor, 1));
     painter->setBrush(m_backgroundColor);
-    painter->drawRoundedRect(rect, cornerRadius(), cornerRadius());
+    painter->drawRoundedRect(rect, radius, radius);
 
     painter->restore();
 }
@@ -902,13 +1060,17 @@ void FluentSpinBox::paintButtons(QPainter* painter) {
 
 void FluentSpinBox::paintButton(QPainter* painter, const QRect& rect, bool isUp,
                                 bool isPressed) {
+    const auto& theme = Styling::FluentTheme::instance();
+    const int buttonRadius =
+        theme.borderRadius("small");  // Smaller radius for buttons
+
     // Draw button background
     QColor buttonColor = isPressed ? m_buttonHoverColor : m_buttonColor;
     painter->setPen(Qt::NoPen);
     painter->setBrush(buttonColor);
-    painter->drawRoundedRect(rect, 4, 4);
+    painter->drawRoundedRect(rect, buttonRadius, buttonRadius);
 
-    // Draw arrow
+    // Draw arrow with proper Fluent UI styling
     const int arrowSize = qMin(rect.width(), rect.height()) / 3;
     const QPoint center = rect.center();
 
@@ -918,14 +1080,14 @@ void FluentSpinBox::paintButton(QPainter* painter, const QRect& rect, bool isUp,
     painter->setPen(arrowPen);
 
     if (isUp) {
-        // Up arrow
+        // Up arrow - Fluent UI chevron style
         QPolygon arrow;
         arrow << QPoint(center.x(), center.y() - arrowSize / 2)
               << QPoint(center.x() - arrowSize / 2, center.y() + arrowSize / 2)
               << QPoint(center.x() + arrowSize / 2, center.y() + arrowSize / 2);
         painter->drawPolyline(arrow);
     } else {
-        // Down arrow
+        // Down arrow - Fluent UI chevron style
         QPolygon arrow;
         arrow << QPoint(center.x() - arrowSize / 2, center.y() - arrowSize / 2)
               << QPoint(center.x(), center.y() + arrowSize / 2)
@@ -943,13 +1105,14 @@ void FluentSpinBox::paintFocusIndicator(QPainter* painter) {
     const auto& theme = Styling::FluentTheme::instance();
     const QColor focusColor =
         theme.color(Styling::FluentThemeColor::AccentFillDefault);
+    const int radius = theme.borderRadius("input");
 
     QPen focusPen(focusColor, 2);
     painter->setPen(focusPen);
     painter->setBrush(Qt::NoBrush);
 
     const QRect focusRect = rect().adjusted(1, 1, -1, -1);
-    painter->drawRoundedRect(focusRect, cornerRadius(), cornerRadius());
+    painter->drawRoundedRect(focusRect, radius, radius);
 
     painter->restore();
 }

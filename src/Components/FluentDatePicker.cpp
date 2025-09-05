@@ -1,7 +1,9 @@
 // src/Components/FluentDatePicker.cpp
 #include "FluentQt/Components/FluentDatePicker.h"
+#include "FluentQt/Accessibility/FluentAccessibilityCompliance.h"
 #include "FluentQt/Accessibility/FluentAccessible.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
@@ -16,6 +18,7 @@
 #include <QRegularExpression>
 #include <QResizeEvent>
 #include <QStyle>
+#include <QToolTip>
 
 namespace FluentQt::Components {
 
@@ -28,8 +31,10 @@ FluentDatePicker::FluentDatePicker(QWidget* parent)
     setupUI();
     setupCalendar();
     setupAnimations();
+    setupAccessibilityAttributes();
     updateColors();
     updateFonts();
+    updateSizeConstraints();
 
     // Connect to theme changes
     connect(&Styling::FluentTheme::instance(),
@@ -47,9 +52,13 @@ FluentDatePicker::~FluentDatePicker() = default;
 void FluentDatePicker::setupUI() {
     FLUENT_PROFILE("FluentDatePicker::setupUI");
 
-    // Create main layout
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Create main layout with proper spacing
     m_mainLayout = new QHBoxLayout(this);
-    m_mainLayout->setContentsMargins(1, 1, 1, 1);
+    const int borderWidth = theme.spacing("xs");  // 2px
+    m_mainLayout->setContentsMargins(borderWidth, borderWidth, borderWidth,
+                                     borderWidth);
     m_mainLayout->setSpacing(0);
 
     // Create line edit for date display
@@ -58,14 +67,28 @@ void FluentDatePicker::setupUI() {
     m_lineEdit->setFrame(false);
     m_lineEdit->setPlaceholderText(m_placeholderText);
     m_lineEdit->setReadOnly(true);  // Always read-only, use calendar for input
+
+    // Apply proper padding to line edit
+    const int inputPadding = theme.spacing("s");  // 4px
+    m_lineEdit->setStyleSheet(QString("QLineEdit { padding: %1px %2px; }")
+                                  .arg(inputPadding)
+                                  .arg(inputPadding * 2));
+
     m_mainLayout->addWidget(m_lineEdit);
 
-    // Create calendar button
+    // Create calendar button with proper icon
     m_calendarButton = new QPushButton(this);
     m_calendarButton->setObjectName("FluentDatePicker_CalendarButton");
-    m_calendarButton->setFixedSize(32, 32);
     m_calendarButton->setFlat(true);
-    m_calendarButton->setText("📅");
+
+    // Use proper Fluent UI calendar icon instead of emoji
+    // For now using a more appropriate text representation
+    m_calendarButton->setText(
+        "📅");  // TODO: Replace with proper FluentIcon when available
+
+    // Set button size based on component size
+    updateSizeConstraints();
+
     m_mainLayout->addWidget(m_calendarButton);
 
     // Connect signals
@@ -73,10 +96,6 @@ void FluentDatePicker::setupUI() {
             &FluentDatePicker::onTextChanged);
     connect(m_calendarButton, &QPushButton::clicked, this,
             &FluentDatePicker::toggleCalendar);
-
-    // Set minimum height
-    setMinimumHeight(32);
-    setFixedHeight(32);
 }
 
 void FluentDatePicker::setupCalendar() {
@@ -246,20 +265,35 @@ QSize FluentDatePicker::sizeHint() const {
         return m_cachedSizeHint;
     }
 
+    const auto& theme = Styling::FluentTheme::instance();
     const QFontMetrics fm(m_lineEdit->font());
     const QString sampleText =
         formatDate(QDate(2023, 12, 31));  // Sample long date
-    const int textWidth = fm.horizontalAdvance(sampleText) + 20;  // Add padding
-    const int buttonWidth = 32;
-    const int totalWidth = textWidth + buttonWidth + 10;  // Add spacing
 
-    m_cachedSizeHint = QSize(totalWidth, 32);
+    // Calculate text width with proper padding
+    const int inputPadding = theme.spacing("s") * 2;  // Left and right padding
+    const int textWidth = fm.horizontalAdvance(sampleText) + inputPadding * 2;
+
+    // Get button width based on component size
+    const int componentHeight = getHeightForSize(m_size);
+    const int buttonWidth = componentHeight;  // Square button
+
+    // Add spacing between elements
+    const int elementSpacing = theme.spacing("xs");
+    const int totalWidth = textWidth + buttonWidth + elementSpacing;
+
+    m_cachedSizeHint = QSize(totalWidth, componentHeight);
     m_sizeHintValid = true;
 
     return m_cachedSizeHint;
 }
 
-QSize FluentDatePicker::minimumSizeHint() const { return QSize(150, 32); }
+QSize FluentDatePicker::minimumSizeHint() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    const int minHeight = getHeightForSize(FluentComponentSize::Small);
+    const int minWidth = theme.spacing("xxxl") * 6;  // 24px * 6 = 144px minimum
+    return QSize(minWidth, minHeight);
+}
 
 void FluentDatePicker::showCalendar() { setCalendarVisible(true); }
 
@@ -280,6 +314,103 @@ void FluentDatePicker::clearDate() {
 
 void FluentDatePicker::setToday() { setSelectedDate(QDate::currentDate()); }
 
+// New enhanced functionality methods
+FluentComponentSize FluentDatePicker::size() const { return m_size; }
+
+void FluentDatePicker::setSize(FluentComponentSize size) {
+    if (m_size != size) {
+        m_size = size;
+        updateSizeConstraints();
+        emit sizeChanged(size);
+    }
+}
+
+FluentValidationState FluentDatePicker::validationState() const {
+    return m_validationState;
+}
+
+void FluentDatePicker::setValidationState(FluentValidationState state) {
+    setValidationState(state, QString());
+}
+
+void FluentDatePicker::setValidationState(FluentValidationState state,
+                                          const QString& message) {
+    if (m_validationState != state || m_errorMessage != message) {
+        m_validationState = state;
+        m_errorMessage = message;
+        updateValidationDisplay();
+        emit validationStateChanged(state);
+        emit errorMessageChanged(message);
+
+        // Announce validation state change to screen readers
+        if (state != FluentValidationState::None) {
+            QString announcement =
+                message.isEmpty() ? QString("Validation state changed to %1")
+                                        .arg(static_cast<int>(state))
+                                  : message;
+            announceToScreenReader(announcement);
+        }
+    }
+}
+
+QString FluentDatePicker::errorMessage() const { return m_errorMessage; }
+
+void FluentDatePicker::setErrorMessage(const QString& message) {
+    if (m_errorMessage != message) {
+        m_errorMessage = message;
+        updateValidationDisplay();
+        emit errorMessageChanged(message);
+    }
+}
+
+bool FluentDatePicker::showValidationIcon() const {
+    return m_showValidationIcon;
+}
+
+void FluentDatePicker::setShowValidationIcon(bool show) {
+    if (m_showValidationIcon != show) {
+        m_showValidationIcon = show;
+        updateValidationDisplay();
+        emit showValidationIconChanged(show);
+    }
+}
+
+FluentCalendarPlacement FluentDatePicker::placement() const {
+    return m_placement;
+}
+
+void FluentDatePicker::setPlacement(FluentCalendarPlacement placement) {
+    if (m_placement != placement) {
+        m_placement = placement;
+        emit placementChanged(placement);
+    }
+}
+
+bool FluentDatePicker::validateInput() {
+    bool isValid = this->isValid();
+
+    if (!isValid && m_validationState == FluentValidationState::None) {
+        setValidationState(FluentValidationState::Error, "Invalid date");
+    } else if (isValid && m_validationState == FluentValidationState::Error) {
+        clearValidation();
+    }
+
+    emit inputValidated(isValid);
+    return isValid;
+}
+
+void FluentDatePicker::clearValidation() {
+    if (m_validationState != FluentValidationState::None ||
+        !m_errorMessage.isEmpty()) {
+        m_validationState = FluentValidationState::None;
+        m_errorMessage.clear();
+        updateValidationDisplay();
+        emit validationCleared();
+        emit validationStateChanged(m_validationState);
+        emit errorMessageChanged(m_errorMessage);
+    }
+}
+
 void FluentDatePicker::paintEvent(QPaintEvent* event) {
     Q_UNUSED(event)
     FLUENT_PROFILE("FluentDatePicker::paintEvent");
@@ -296,6 +427,9 @@ void FluentDatePicker::paintEvent(QPaintEvent* event) {
     // Paint border
     paintBorder(painter, rect);
 
+    // Paint validation icon
+    paintIcon(painter, rect);
+
     // Paint focus ring
     if (hasFocus()) {
         paintFocusRing(painter, rect);
@@ -307,26 +441,38 @@ void FluentDatePicker::paintBackground(QPainter& painter, const QRect& rect) {
     const auto& palette = theme.currentPalette();
 
     QColor backgroundColor;
-    switch (state()) {
-        case Core::FluentState::Normal:
-            backgroundColor = palette.neutralLighter;
-            break;
-        case Core::FluentState::Hovered:
-            backgroundColor = palette.neutralLight;
-            break;
-        case Core::FluentState::Pressed:
-            backgroundColor = palette.neutralQuaternaryAlt;
-            break;
-        case Core::FluentState::Disabled:
-            backgroundColor = palette.neutralLighter;
-            break;
-        default:
-            backgroundColor = palette.neutralLighter;
+
+    // Check validation state first for error styling
+    if (m_validationState == FluentValidationState::Error) {
+        backgroundColor = theme.color("input.background.error");
+    } else if (m_validationState == FluentValidationState::Warning) {
+        backgroundColor = theme.color("input.background.warning");
+    } else if (m_validationState == FluentValidationState::Success) {
+        backgroundColor = theme.color("input.background.success");
+    } else {
+        // Use standard state-based colors
+        switch (state()) {
+            case Core::FluentState::Normal:
+                backgroundColor = theme.color("input.background.rest");
+                break;
+            case Core::FluentState::Hovered:
+                backgroundColor = theme.color("input.background.hover");
+                break;
+            case Core::FluentState::Pressed:
+            case Core::FluentState::Focused:
+                backgroundColor = theme.color("input.background.focus");
+                break;
+            case Core::FluentState::Disabled:
+                backgroundColor = theme.color("input.background.disabled");
+                break;
+            default:
+                backgroundColor = theme.color("input.background.rest");
+        }
     }
 
-    // Create path with rounded corners
+    // Create path with rounded corners using design tokens
     QPainterPath path;
-    const int radius = cornerRadius();
+    const int radius = theme.spacing("xs");  // 2px corner radius for inputs
     path.addRoundedRect(rect, radius, radius);
 
     painter.fillPath(path, backgroundColor);
@@ -334,51 +480,120 @@ void FluentDatePicker::paintBackground(QPainter& painter, const QRect& rect) {
 
 void FluentDatePicker::paintBorder(QPainter& painter, const QRect& rect) {
     const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
 
     painter.save();
 
     QColor borderColor;
-    switch (state()) {
-        case Core::FluentState::Normal:
-            borderColor = palette.neutralSecondary;
-            break;
-        case Core::FluentState::Hovered:
-            borderColor = palette.neutralPrimary;
-            break;
-        case Core::FluentState::Pressed:
-        case Core::FluentState::Focused:
-            borderColor = palette.accent;
-            break;
-        case Core::FluentState::Disabled:
-            borderColor = palette.neutralTertiaryAlt;
-            break;
-        default:
-            borderColor = palette.neutralSecondary;
+    int borderWidth = 1;
+
+    // Check validation state first for error styling
+    if (m_validationState == FluentValidationState::Error) {
+        borderColor = theme.color("input.border.error");
+        borderWidth = 2;  // Thicker border for errors
+    } else if (m_validationState == FluentValidationState::Warning) {
+        borderColor = theme.color("input.border.warning");
+        borderWidth = 2;
+    } else if (m_validationState == FluentValidationState::Success) {
+        borderColor = theme.color("input.border.success");
+    } else {
+        // Use standard state-based colors
+        switch (state()) {
+            case Core::FluentState::Normal:
+                borderColor = theme.color("input.border.rest");
+                break;
+            case Core::FluentState::Hovered:
+                borderColor = theme.color("input.border.hover");
+                break;
+            case Core::FluentState::Pressed:
+            case Core::FluentState::Focused:
+                borderColor = theme.color("input.border.focus");
+                borderWidth = 2;  // Thicker border for focus
+                break;
+            case Core::FluentState::Disabled:
+                borderColor = theme.color("input.border.disabled");
+                break;
+            default:
+                borderColor = theme.color("input.border.rest");
+        }
     }
 
-    QPen borderPen(borderColor, 1);
+    QPen borderPen(borderColor, borderWidth);
     painter.setPen(borderPen);
 
-    const int radius = cornerRadius();
-    const QRectF borderRect = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5);
+    const int radius = theme.spacing("xs");  // 2px corner radius
+    const qreal adjustment = borderWidth / 2.0;
+    const QRectF borderRect =
+        QRectF(rect).adjusted(adjustment, adjustment, -adjustment, -adjustment);
 
     painter.drawRoundedRect(borderRect, radius, radius);
 
     painter.restore();
 }
 
+void FluentDatePicker::paintIcon(QPainter& painter, const QRect& rect) {
+    Q_UNUSED(rect)
+
+    // Paint validation icon if enabled and validation state is not None
+    if (m_showValidationIcon &&
+        m_validationState != FluentValidationState::None) {
+        const auto& theme = Styling::FluentTheme::instance();
+        const QRect iconRect = validationIconRect();
+
+        if (!iconRect.isEmpty()) {
+            painter.save();
+
+            QColor iconColor = getValidationColor(m_validationState);
+            painter.setPen(QPen(iconColor, 2));
+            painter.setBrush(Qt::NoBrush);
+
+            // Draw simple validation icons
+            const int centerX = iconRect.center().x();
+            const int centerY = iconRect.center().y();
+            const int radius = qMin(iconRect.width(), iconRect.height()) / 3;
+
+            switch (m_validationState) {
+                case FluentValidationState::Error:
+                    // Draw X
+                    painter.drawLine(centerX - radius, centerY - radius,
+                                     centerX + radius, centerY + radius);
+                    painter.drawLine(centerX + radius, centerY - radius,
+                                     centerX - radius, centerY + radius);
+                    break;
+                case FluentValidationState::Warning:
+                    // Draw exclamation mark
+                    painter.drawLine(centerX, centerY - radius, centerX,
+                                     centerY);
+                    painter.drawPoint(centerX, centerY + radius / 2);
+                    break;
+                case FluentValidationState::Success:
+                    // Draw checkmark
+                    painter.drawLine(centerX - radius, centerY,
+                                     centerX - radius / 2,
+                                     centerY + radius / 2);
+                    painter.drawLine(centerX - radius / 2, centerY + radius / 2,
+                                     centerX + radius, centerY - radius / 2);
+                    break;
+                default:
+                    break;
+            }
+
+            painter.restore();
+        }
+    }
+}
+
 void FluentDatePicker::paintFocusRing(QPainter& painter, const QRect& rect) {
     const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
 
     painter.save();
 
-    QPen focusPen(palette.accent, 2);
+    QColor focusColor = theme.color("input.border.focus");
+    QPen focusPen(focusColor, 2);
     painter.setPen(focusPen);
     painter.setBrush(Qt::NoBrush);
 
-    const int radius = cornerRadius() + 2;
+    const int radius =
+        theme.spacing("xs") + 2;  // 2px corner radius + 2px offset
     const QRect focusRect = rect.adjusted(-2, -2, 2, 2);
 
     painter.drawRoundedRect(focusRect, radius, radius);
@@ -422,8 +637,54 @@ void FluentDatePicker::keyPressEvent(QKeyEvent* event) {
             case Qt::Key_Delete:
             case Qt::Key_Backspace:
                 clearDate();
+                clearValidation();  // Clear validation when date is cleared
                 event->accept();
                 return;
+
+            case Qt::Key_Up:
+                // Navigate to previous day when calendar is not visible
+                if (!m_calendarVisible && m_selectedDate.isValid()) {
+                    QDate newDate = m_selectedDate.addDays(-1);
+                    if (isDateInRange(newDate)) {
+                        setSelectedDate(newDate);
+                        validateInput();
+                    }
+                    event->accept();
+                    return;
+                }
+                break;
+
+            case Qt::Key_Down:
+                // Navigate to next day when calendar is not visible
+                if (!m_calendarVisible && m_selectedDate.isValid()) {
+                    QDate newDate = m_selectedDate.addDays(1);
+                    if (isDateInRange(newDate)) {
+                        setSelectedDate(newDate);
+                        validateInput();
+                    }
+                    event->accept();
+                    return;
+                }
+                break;
+
+            case Qt::Key_Home:
+                // Go to today
+                if (event->modifiers() & Qt::ControlModifier) {
+                    setToday();
+                    validateInput();
+                    event->accept();
+                    return;
+                }
+                break;
+
+            case Qt::Key_F4:
+                // Alt+F4 or F4 to toggle calendar (common shortcut)
+                if (!event->isAutoRepeat()) {
+                    toggleCalendar();
+                    event->accept();
+                    return;
+                }
+                break;
         }
     }
 
@@ -577,9 +838,165 @@ void FluentDatePicker::updateCalendarPosition() {
     if (!m_calendarContainer)
         return;
 
-    const QPoint globalPos = mapToGlobal(QPoint(0, height()));
-    m_calendarContainer->move(globalPos);
-    m_calendarContainer->resize(m_calendar->sizeHint() + QSize(16, 16));
+    QPoint position;
+    const QSize calendarSize = m_calendar->sizeHint() + QSize(16, 16);
+    const QRect screenGeometry =
+        QGuiApplication::primaryScreen()->availableGeometry();
+    const QPoint globalPos = mapToGlobal(QPoint(0, 0));
+
+    // Calculate position based on placement preference
+    switch (m_placement) {
+        case FluentCalendarPlacement::Above:
+            position =
+                QPoint(globalPos.x(), globalPos.y() - calendarSize.height());
+            break;
+        case FluentCalendarPlacement::Below:
+            position = QPoint(globalPos.x(), globalPos.y() + height());
+            break;
+        case FluentCalendarPlacement::Left:
+            position =
+                QPoint(globalPos.x() - calendarSize.width(), globalPos.y());
+            break;
+        case FluentCalendarPlacement::Right:
+            position = QPoint(globalPos.x() + width(), globalPos.y());
+            break;
+        case FluentCalendarPlacement::Auto:
+        default:
+            // Auto placement - choose best position
+            position = QPoint(globalPos.x(), globalPos.y() + height());
+
+            // Check if calendar would go off screen and adjust
+            if (position.y() + calendarSize.height() >
+                screenGeometry.bottom()) {
+                position.setY(globalPos.y() - calendarSize.height());
+            }
+            if (position.x() + calendarSize.width() > screenGeometry.right()) {
+                position.setX(screenGeometry.right() - calendarSize.width());
+            }
+            if (position.x() < screenGeometry.left()) {
+                position.setX(screenGeometry.left());
+            }
+            break;
+    }
+
+    m_calendarContainer->move(position);
+    m_calendarContainer->resize(calendarSize);
+}
+
+QRect FluentDatePicker::validationIconRect() const {
+    if (!m_showValidationIcon ||
+        m_validationState == FluentValidationState::None) {
+        return QRect();
+    }
+
+    const auto& theme = Styling::FluentTheme::instance();
+    const int iconSize = theme.iconSize("small").width();  // 12px
+    const int margin = theme.spacing("xs");                // 2px
+
+    // Position icon on the right side of the input, before the calendar button
+    const int buttonWidth = getHeightForSize(m_size);
+    const int x = width() - buttonWidth - iconSize - margin * 2;
+    const int y = (height() - iconSize) / 2;
+
+    return QRect(x, y, iconSize, iconSize);
+}
+
+void FluentDatePicker::updateSizeConstraints() {
+    const int componentHeight = getHeightForSize(m_size);
+    const int buttonSize = componentHeight;
+
+    setMinimumHeight(componentHeight);
+    setMaximumHeight(componentHeight);
+
+    if (m_calendarButton) {
+        m_calendarButton->setFixedSize(buttonSize, buttonSize);
+    }
+
+    m_sizeHintValid = false;
+    updateGeometry();
+}
+
+void FluentDatePicker::updateValidationDisplay() {
+    update();  // Trigger repaint to show validation state
+
+    // Update tooltip with error message
+    if (m_validationState == FluentValidationState::Error &&
+        !m_errorMessage.isEmpty()) {
+        setToolTip(m_errorMessage);
+    } else {
+        setToolTip(QString());
+    }
+}
+
+void FluentDatePicker::setupAccessibilityAttributes() {
+    // Set ARIA role and properties for better screen reader support
+    setProperty("role", "combobox");
+    setProperty("aria-haspopup", "dialog");
+    setProperty("aria-expanded", m_calendarVisible);
+    setProperty("aria-readonly", m_readOnly);
+
+    // Set accessible name and description
+    if (accessibleName().isEmpty()) {
+        setAccessibleName("Date picker");
+    }
+
+    if (accessibleDescription().isEmpty()) {
+        setAccessibleDescription("Select a date from the calendar");
+    }
+
+    // Enable keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+    setProperty("accessibleTabOrder", true);
+}
+
+void FluentDatePicker::announceToScreenReader(const QString& message) {
+    // Use Qt's accessibility system to announce to screen readers
+    if (QAccessibleInterface* iface =
+            QAccessible::queryAccessibleInterface(this)) {
+        QAccessibleEvent event(this, QAccessible::Alert);
+        // Note: setValue is not available in Qt6, using alternative approach
+        QAccessible::updateAccessibility(&event);
+        QAccessible::updateAccessibility(&event);
+    }
+}
+
+bool FluentDatePicker::isValidDateString(const QString& text) const {
+    if (text.isEmpty()) {
+        return true;  // Empty is valid (no date selected)
+    }
+
+    QDate parsed = parseDate(text);
+    return parsed.isValid() && isDateInRange(parsed);
+}
+
+int FluentDatePicker::getHeightForSize(FluentComponentSize size) const {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    switch (size) {
+        case FluentComponentSize::Small:
+            return theme.spacing("xxxl");  // 24px
+        case FluentComponentSize::Medium:
+            return theme.spacing("xxxl") + theme.spacing("s");  // 32px
+        case FluentComponentSize::Large:
+            return theme.spacing("huge");  // 40px
+        default:
+            return theme.spacing("xxxl") + theme.spacing("s");  // 32px default
+    }
+}
+
+QColor FluentDatePicker::getValidationColor(FluentValidationState state) const {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    switch (state) {
+        case FluentValidationState::Error:
+            return theme.color("semantic.error");
+        case FluentValidationState::Warning:
+            return theme.color("semantic.warning");
+        case FluentValidationState::Success:
+            return theme.color("semantic.success");
+        default:
+            return theme.color("text.primary");
+    }
 }
 
 }  // namespace FluentQt::Components

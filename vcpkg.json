@@ -10,11 +10,7 @@
     {
       "name": "qtbase",
       "default-features": false,
-      "features": [
-        "gui",
-        "widgets",
-        "printsupport"
-      ]
+      "features": ["gui", "widgets"]
     },
     {
       "name": "qtcharts",
@@ -31,15 +27,11 @@
   "features": {
     "charts": {
       "description": "Enable chart components using Qt6Charts",
-      "dependencies": [
-        "qtcharts"
-      ]
+      "dependencies": ["qtcharts"]
     },
     "multimedia": {
       "description": "Enable multimedia components using Qt6Multimedia",
-      "dependencies": [
-        "qtmultimedia"
-      ]
+      "dependencies": ["qtmultimedia"]
     },
     "network": {
       "description": "Enable network components using Qt6Network",
@@ -47,9 +39,7 @@
         {
           "name": "qtbase",
           "default-features": false,
-          "features": [
-            "network"
-          ]
+          "features": ["network"]
         }
       ]
     },
@@ -62,9 +52,7 @@
         {
           "name": "qtbase",
           "default-features": false,
-          "features": [
-            "testlib"
-          ]
+          "features": ["testlib"]
         }
       ]
     },

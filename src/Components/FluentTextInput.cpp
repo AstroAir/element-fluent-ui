@@ -40,10 +40,12 @@ FluentTextInput::~FluentTextInput() = default;
 void FluentTextInput::setupUI() {
     FLUENT_PROFILE("FluentTextInput::setupUI");
 
-    // Create main layout
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Create main layout with Fluent UI spacing
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainLayout->setSpacing(4);
+    m_mainLayout->setSpacing(theme.spacing("s"));
 
     // Create label
     m_label = new QLabel(this);
@@ -51,22 +53,49 @@ void FluentTextInput::setupUI() {
     m_label->hide();  // Initially hidden
     m_mainLayout->addWidget(m_label);
 
-    // Create input layout
+    // Create input layout with proper padding
     m_inputLayout = new QHBoxLayout();
-    m_inputLayout->setContentsMargins(0, 0, 0, 0);
-    m_inputLayout->setSpacing(0);
+    const QMargins inputPadding = theme.padding("medium");
+    m_inputLayout->setContentsMargins(inputPadding.left(), inputPadding.top(),
+                                      inputPadding.right(),
+                                      inputPadding.bottom());
+    m_inputLayout->setSpacing(theme.spacing("xs"));
+
+    // Create prefix label
+    m_prefixLabel = new QLabel(this);
+    m_prefixLabel->setObjectName("FluentTextInput_PrefixLabel");
+    m_prefixLabel->hide();
+    m_inputLayout->addWidget(m_prefixLabel);
 
     // Create line edit
     m_lineEdit = new QLineEdit(this);
     m_lineEdit->setObjectName("FluentTextInput_LineEdit");
     m_lineEdit->setFrame(false);
-    m_inputLayout->addWidget(m_lineEdit);
+    m_inputLayout->addWidget(m_lineEdit, 1);  // Give it stretch
 
-    // Create clear button
+    // Create suffix label
+    m_suffixLabel = new QLabel(this);
+    m_suffixLabel->setObjectName("FluentTextInput_SuffixLabel");
+    m_suffixLabel->hide();
+    m_inputLayout->addWidget(m_suffixLabel);
+
+    // Create password toggle button
+    m_passwordToggleButton = new QPushButton(this);
+    m_passwordToggleButton->setObjectName(
+        "FluentTextInput_PasswordToggleButton");
+    m_passwordToggleButton->setText("👁");
+    const QSize iconSize = theme.iconSize("medium");
+    m_passwordToggleButton->setFixedSize(iconSize.width() + 8,
+                                         iconSize.height() + 8);
+    m_passwordToggleButton->setFlat(true);
+    m_passwordToggleButton->hide();
+    m_inputLayout->addWidget(m_passwordToggleButton);
+
+    // Create clear button with theme-based sizing
     m_clearButton = new QPushButton(this);
     m_clearButton->setObjectName("FluentTextInput_ClearButton");
     m_clearButton->setText("×");
-    m_clearButton->setFixedSize(24, 24);
+    m_clearButton->setFixedSize(iconSize.width() + 8, iconSize.height() + 8);
     m_clearButton->setFlat(true);
     m_clearButton->hide();
     m_inputLayout->addWidget(m_clearButton);
@@ -85,8 +114,20 @@ void FluentTextInput::setupUI() {
     m_errorLabel->hide();
     m_mainLayout->addWidget(m_errorLabel);
 
-    // Set minimum height
-    setMinimumHeight(32);
+    // Create character counter label
+    m_characterCounterLabel = new QLabel(this);
+    m_characterCounterLabel->setObjectName(
+        "FluentTextInput_CharacterCounterLabel");
+    m_characterCounterLabel->setAlignment(Qt::AlignRight);
+    m_characterCounterLabel->hide();
+    m_mainLayout->addWidget(m_characterCounterLabel);
+
+    // Set minimum height using theme tokens
+    const int componentHeight = theme.componentHeight("medium");
+    setMinimumHeight(componentHeight);
+
+    // Setup accessibility
+    setupAccessibility();
 }
 
 void FluentTextInput::setupAnimations() {
@@ -130,6 +171,14 @@ void FluentTextInput::setupConnections() {
     // Connect clear button
     connect(m_clearButton, &QPushButton::clicked, this,
             &FluentTextInput::onClearButtonClicked);
+
+    // Connect password toggle button
+    connect(m_passwordToggleButton, &QPushButton::clicked, this, [this]() {
+        bool isVisible = m_lineEdit->echoMode() == QLineEdit::Normal;
+        m_lineEdit->setEchoMode(isVisible ? QLineEdit::Password
+                                          : QLineEdit::Normal);
+        m_passwordToggleButton->setText(isVisible ? "👁" : "🙈");
+    });
 
     // Connect theme changes
     connect(&Styling::FluentTheme::instance(),
@@ -261,16 +310,75 @@ void FluentTextInput::setReadOnly(bool readOnly) {
 
 bool FluentTextInput::isValid() const { return m_isValid; }
 
+// Enhanced Fluent UI property implementations
+bool FluentTextInput::isCharacterCounterVisible() const {
+    return m_characterCounterVisible;
+}
+
+void FluentTextInput::setCharacterCounterVisible(bool visible) {
+    if (m_characterCounterVisible != visible) {
+        m_characterCounterVisible = visible;
+        updateCharacterCounter();
+        emit characterCounterVisibleChanged(visible);
+    }
+}
+
+QString FluentTextInput::prefixText() const { return m_prefixText; }
+
+void FluentTextInput::setPrefixText(const QString& text) {
+    if (m_prefixText != text) {
+        m_prefixText = text;
+        updatePrefixSuffix();
+        emit prefixTextChanged(text);
+    }
+}
+
+QString FluentTextInput::suffixText() const { return m_suffixText; }
+
+void FluentTextInput::setSuffixText(const QString& text) {
+    if (m_suffixText != text) {
+        m_suffixText = text;
+        updatePrefixSuffix();
+        emit suffixTextChanged(text);
+    }
+}
+
+bool FluentTextInput::showPasswordToggle() const {
+    return m_showPasswordToggle;
+}
+
+void FluentTextInput::setShowPasswordToggle(bool show) {
+    if (m_showPasswordToggle != show) {
+        m_showPasswordToggle = show;
+        updatePasswordToggleButton();
+        emit showPasswordToggleChanged(show);
+    }
+}
+
+QString FluentTextInput::inputMask() const { return m_inputMask; }
+
+void FluentTextInput::setInputMask(const QString& mask) {
+    if (m_inputMask != mask) {
+        m_inputMask = mask;
+        m_lineEdit->setInputMask(mask);
+        emit inputMaskChanged(mask);
+    }
+}
+
 void FluentTextInput::validate() {
     bool wasValid = m_isValid;
     m_isValid = true;
+    bool hasWarning = false;
 
     const QString currentText = text();
 
     // Check required validation
     if (m_required && !validateRequired(currentText)) {
         m_isValid = false;
-        setErrorText(tr("This field is required"));
+        const QString errorMsg = m_customErrorMessage.isEmpty()
+                                     ? tr("This field is required")
+                                     : m_customErrorMessage;
+        setErrorText(errorMsg);
         return;
     }
 
@@ -280,7 +388,21 @@ void FluentTextInput::validate() {
         return;
     }
 
-    // Type-specific validation and any explicit validationType override
+    // Check character count for warning
+    if (maxLength() > 0 && currentText.length() > maxLength() * 0.9) {
+        hasWarning = true;
+    }
+
+    // Run custom validation rules first
+    for (const auto& rule : m_customValidationRules) {
+        if (!rule.second.first(currentText)) {
+            m_isValid = false;
+            setErrorText(rule.second.second);
+            return;
+        }
+    }
+
+    // Type-specific validation
     switch (m_inputType) {
         case FluentTextInputType::Email:
             if (!validateEmail(currentText)) {
@@ -328,7 +450,10 @@ void FluentTextInput::validate() {
             if (m_customValidator) {
                 if (!m_customValidator(currentText)) {
                     m_isValid = false;
-                    setErrorText(tr("Invalid value"));
+                    const QString errorMsg = m_customErrorMessage.isEmpty()
+                                                 ? tr("Invalid value")
+                                                 : m_customErrorMessage;
+                    setErrorText(errorMsg);
                 }
             }
             break;
@@ -336,6 +461,10 @@ void FluentTextInput::validate() {
 
     if (m_isValid) {
         clearValidation();
+        // Set warning state if applicable
+        if (hasWarning) {
+            setInputState(FluentTextInputState::Warning);
+        }
     }
 
     if (wasValid != m_isValid) {
@@ -348,6 +477,44 @@ void FluentTextInput::clearValidation() {
         setErrorText("");
         setInputState(FluentTextInputState::Normal);
     }
+}
+
+// Enhanced validation methods
+void FluentTextInput::setValidationMode(FluentValidationMode mode) {
+    m_validationMode = mode;
+}
+
+void FluentTextInput::setCustomErrorMessage(const QString& message) {
+    m_customErrorMessage = message;
+}
+
+void FluentTextInput::addCustomValidationRule(
+    const QString& name, std::function<bool(const QString&)> rule,
+    const QString& errorMessage) {
+    m_customValidationRules[name] = std::make_pair(rule, errorMessage);
+}
+
+void FluentTextInput::clearCustomValidationRules() {
+    m_customValidationRules.clear();
+}
+
+// Accessibility methods
+void FluentTextInput::setAccessibleName(const QString& name) {
+    m_accessibleName = name;
+    setAccessibleName(name);
+    setupAccessibility();
+}
+
+void FluentTextInput::setAccessibleDescription(const QString& description) {
+    m_accessibleDescription = description;
+    setAccessibleDescription(description);
+    setupAccessibility();
+}
+
+QString FluentTextInput::accessibleName() const { return m_accessibleName; }
+
+QString FluentTextInput::accessibleDescription() const {
+    return m_accessibleDescription;
 }
 
 // Focus management
@@ -405,16 +572,22 @@ void FluentTextInput::paintEvent(QPaintEvent* event) {
         case FluentTextInputState::Focused:
             backgroundColor = theme.color("controlFillInputActive");
             borderColor = theme.color("accent");
-            borderWidth = 2;
+            borderWidth = theme.strokeWidth("thick");
             break;
         case FluentTextInputState::Error:
             backgroundColor = theme.color("controlFillDefault");
             borderColor = theme.color("error");
-            borderWidth = 2;
+            borderWidth = theme.strokeWidth("thick");
+            break;
+        case FluentTextInputState::Warning:
+            backgroundColor = theme.color("controlFillDefault");
+            borderColor = theme.color("warning");
+            borderWidth = theme.strokeWidth("thick");
             break;
         case FluentTextInputState::Success:
             backgroundColor = theme.color("controlFillDefault");
             borderColor = theme.color("success");
+            borderWidth = theme.strokeWidth("medium");
             break;
         case FluentTextInputState::Disabled:
             backgroundColor = theme.color("controlFillDisabled");
@@ -454,8 +627,9 @@ void FluentTextInput::focusOutEvent(QFocusEvent* event) {
     }
     animateFocusChange(false);
 
-    // Trigger validation on focus out
-    if (!text().isEmpty() || m_required) {
+    // Trigger validation based on validation mode
+    if (m_validationMode == FluentValidationMode::OnBlur &&
+        (!text().isEmpty() || m_required)) {
         m_validationTimer->start();
     }
 }
@@ -486,15 +660,18 @@ void FluentTextInput::changeEvent(QEvent* event) {
 // Private slots
 void FluentTextInput::onTextChanged(const QString& text) {
     updateClearButton();
+    updatePasswordToggleButton();
+    updateCharacterCounter();
     emit textChanged(text);
 
     // Clear validation errors when user starts typing
-    if (m_inputState == FluentTextInputState::Error) {
+    if (m_inputState == FluentTextInputState::Error ||
+        m_inputState == FluentTextInputState::Warning) {
         clearValidation();
     }
 
-    // Start validation timer for real-time validation
-    if (!text.isEmpty()) {
+    // Start validation timer based on validation mode
+    if (m_validationMode == FluentValidationMode::RealTime && !text.isEmpty()) {
         m_validationTimer->start();
     }
 }
@@ -642,6 +819,47 @@ void FluentTextInput::updateClearButton() {
     m_clearButton->setVisible(shouldShow);
 }
 
+void FluentTextInput::updatePasswordToggleButton() {
+    const bool shouldShow = m_showPasswordToggle &&
+                            m_inputType == FluentTextInputType::Password &&
+                            !isReadOnly();
+    m_passwordToggleButton->setVisible(shouldShow);
+}
+
+void FluentTextInput::updateCharacterCounter() {
+    if (m_characterCounterVisible && maxLength() > 0) {
+        const int currentLength = text().length();
+        const int maxLen = maxLength();
+        const QString counterText =
+            QString("%1/%2").arg(currentLength).arg(maxLen);
+        m_characterCounterLabel->setText(counterText);
+        m_characterCounterLabel->setVisible(true);
+
+        // Change color based on character count
+        const auto& theme = Styling::FluentTheme::instance();
+        QPalette palette = m_characterCounterLabel->palette();
+        if (currentLength > maxLen * 0.9) {
+            palette.setColor(QPalette::WindowText, theme.color("warning"));
+        } else if (currentLength == maxLen) {
+            palette.setColor(QPalette::WindowText, theme.color("error"));
+        } else {
+            palette.setColor(QPalette::WindowText,
+                             theme.color("textSecondary"));
+        }
+        m_characterCounterLabel->setPalette(palette);
+    } else {
+        m_characterCounterLabel->setVisible(false);
+    }
+}
+
+void FluentTextInput::updatePrefixSuffix() {
+    m_prefixLabel->setText(m_prefixText);
+    m_prefixLabel->setVisible(!m_prefixText.isEmpty());
+
+    m_suffixLabel->setText(m_suffixText);
+    m_suffixLabel->setVisible(!m_suffixText.isEmpty());
+}
+
 void FluentTextInput::animateStateChange() {
     if (m_stateAnimation->state() == QAbstractAnimation::Running) {
         m_stateAnimation->stop();
@@ -695,6 +913,51 @@ bool FluentTextInput::validateNumber(const QString& text) const {
 
 bool FluentTextInput::validateRequired(const QString& text) const {
     return !text.trimmed().isEmpty();
+}
+
+void FluentTextInput::setupAccessibility() {
+#ifndef QT_NO_ACCESSIBILITY
+    // Set up accessibility properties for the main component
+    setAccessibleName(m_accessibleName.isEmpty() ? "Text Input"
+                                                 : m_accessibleName);
+    setAccessibleDescription(m_accessibleDescription.isEmpty()
+                                 ? "Enter text in this input field"
+                                 : m_accessibleDescription);
+
+    // Set up line edit accessibility
+    m_lineEdit->setAccessibleName(accessibleName());
+    m_lineEdit->setAccessibleDescription(accessibleDescription());
+
+    // Set up button accessibility
+    m_clearButton->setAccessibleName("Clear text");
+    m_clearButton->setAccessibleDescription(
+        "Clear all text from the input field");
+
+    m_passwordToggleButton->setAccessibleName("Toggle password visibility");
+    m_passwordToggleButton->setAccessibleDescription(
+        "Show or hide password characters");
+
+    // Set up label accessibility
+    if (m_label && !m_label->text().isEmpty()) {
+        m_lineEdit->setAccessibleName(m_label->text());
+    }
+
+    // Set ARIA-like properties
+    setProperty("role", "textbox");
+    setProperty("aria-required", m_required);
+    setProperty("aria-invalid", !m_isValid);
+    setProperty("aria-multiline", false);
+
+    // Set up keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+    setTabOrder(this, m_lineEdit);
+    if (m_clearButton->isVisible()) {
+        setTabOrder(m_lineEdit, m_clearButton);
+    }
+    if (m_passwordToggleButton->isVisible()) {
+        setTabOrder(m_lineEdit, m_passwordToggleButton);
+    }
+#endif
 }
 
 }  // namespace FluentQt::Components

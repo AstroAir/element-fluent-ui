@@ -77,12 +77,12 @@ struct FluentToastConfig {
     bool persistent{
         false};  // If true, ignores duration and requires manual dismissal
 
-    // Spacing and positioning
+    // Spacing and positioning (deprecated - use theme tokens instead)
     int margin{16};
     int spacing{8};
 
     // Animation settings
-    int animationDuration{300};
+    int animationDuration{300};  // 0 = use theme default
     QEasingCurve easingCurve{QEasingCurve::OutCubic};
 
     // Custom styling
@@ -92,6 +92,18 @@ struct FluentToastConfig {
     QIcon customIcon;
 
     bool autoCalculateColors{true};
+
+    // Enhanced Fluent UI features
+    bool useFluentMotion{true};       // Use Fluent Design motion principles
+    bool respectReducedMotion{true};  // Honor system reduced motion settings
+    bool enableKeyboardNavigation{true};  // Enable keyboard accessibility
+    bool useSemanticColors{true};         // Use semantic color tokens
+    bool autoElevation{true};  // Automatically apply elevation/shadows
+
+    // Accessibility enhancements
+    bool announceToScreenReader{true};  // Announce toast to screen readers
+    bool highContrastSupport{true};     // Support high contrast themes
+    QString customAriaLabel;            // Custom ARIA label override
 };
 
 class FluentToast : public Core::FluentComponent {
@@ -245,6 +257,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent* event) override;
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
@@ -296,6 +309,11 @@ private:
     QRect getCloseButtonRect() const;
     QRect getProgressRect() const;
     QSize calculateSizeHint() const;
+
+    // Enhanced Fluent UI compliance methods
+    void setupFluentStyling();
+    void updateElevation();
+    void applyColorsToElements();
 
 private:
     FluentToastConfig m_config;

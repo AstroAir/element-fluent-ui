@@ -275,6 +275,9 @@ signals:
     void dropdownAboutToHide();
     void dropdownHidden();
 
+    // Validation signals
+    void validationFailed(const QString& errorMessage);
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
@@ -347,6 +350,7 @@ private:
     bool eventFilter(QObject* object, QEvent* event) override;
     void handleKeyNavigation(QKeyEvent* event);
     void handleTextInput(QKeyEvent* event);
+    void handleDropdownNavigation(int direction);
 
     QString formatDisplayText() const;
     QString formatMultipleSelectionText() const;

@@ -43,45 +43,83 @@ FluentAccordion::~FluentAccordion() = default;
 void FluentAccordion::setupUI() {
     FLUENT_PROFILE("FluentAccordion::setupUI");
 
+    const auto& theme = Styling::FluentTheme::instance();
+
     // Create main layout
     m_mainLayout = new QVBoxLayout(this);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
 
-    // Create header widget
+    // Create header widget with Fluent Design height
     m_headerWidget = new QWidget(this);
     m_headerWidget->setObjectName("FluentAccordion_Header");
-    m_headerWidget->setFixedHeight(48);
+    m_headerWidget->setFixedHeight(
+        theme.spacing("component.accordion.header.height"));
 
-    // Create header layout
+    // Create header layout with Fluent Design spacing
     m_headerLayout = new QHBoxLayout(m_headerWidget);
-    m_headerLayout->setContentsMargins(16, 8, 16, 8);
-    m_headerLayout->setSpacing(12);
+    const int horizontalPadding =
+        theme.spacing("component.accordion.padding.horizontal");
+    const int verticalPadding =
+        theme.spacing("component.accordion.padding.vertical");
+    const int itemSpacing = theme.spacing("component.accordion.item.spacing");
 
-    // Create title label
-    m_titleLabel = new QLabel(m_headerWidget);
+    m_headerLayout->setContentsMargins(horizontalPadding, verticalPadding,
+                                       horizontalPadding, verticalPadding);
+    m_headerLayout->setSpacing(itemSpacing);
+
+    // Create title and description container
+    auto* textContainer = new QWidget(m_headerWidget);
+    auto* textLayout = new QVBoxLayout(textContainer);
+    textLayout->setContentsMargins(0, 0, 0, 0);
+    textLayout->setSpacing(theme.spacing("component.accordion.text.spacing"));
+
+    // Create title label with semantic typography
+    m_titleLabel = new QLabel(textContainer);
     m_titleLabel->setObjectName("FluentAccordion_Title");
-    m_headerLayout->addWidget(m_titleLabel);
+    m_titleLabel->setFont(theme.subtitleFont());
+    textLayout->addWidget(m_titleLabel);
+
+    // Create description label with semantic typography
+    m_descriptionLabel = new QLabel(textContainer);
+    m_descriptionLabel->setObjectName("FluentAccordion_Description");
+    m_descriptionLabel->setFont(theme.captionFont());
+    m_descriptionLabel->setVisible(false);  // Initially hidden
+    textLayout->addWidget(m_descriptionLabel);
+
+    m_headerLayout->addWidget(textContainer);
 
     // Add stretch to push chevron to the right
     m_headerLayout->addStretch();
 
     m_mainLayout->addWidget(m_headerWidget);
 
-    // Create content container
+    // Create content container with Fluent Design styling
     m_contentContainer = new QWidget(this);
     m_contentContainer->setObjectName("FluentAccordion_ContentContainer");
     m_contentContainer->setFixedHeight(0);
 
-    // Create content layout
+    // Create content layout with Fluent Design spacing
     m_contentLayout = new QVBoxLayout(m_contentContainer);
-    m_contentLayout->setContentsMargins(16, 8, 16, 16);
-    m_contentLayout->setSpacing(8);
+    const int contentPadding =
+        theme.spacing("component.accordion.content.padding");
+    const int contentSpacing =
+        theme.spacing("component.accordion.content.spacing");
+
+    m_contentLayout->setContentsMargins(contentPadding, contentSpacing,
+                                        contentPadding, contentPadding);
+    m_contentLayout->setSpacing(contentSpacing);
 
     m_mainLayout->addWidget(m_contentContainer);
 
-    // Set minimum height
-    setMinimumHeight(48);
+    // Set minimum height to header height
+    const int minHeight = theme.spacing("component.accordion.header.height");
+    setMinimumHeight(minHeight);
+
+    // Apply initial Fluent styling
+    updateFluentStyling();
+    applyElevationEffect();
+    updateAccessibilityAttributes();
 }
 
 void FluentAccordion::setupAnimations() {
@@ -95,17 +133,29 @@ void FluentAccordion::setupAnimations() {
     // Create animation group
     m_animationGroup = std::make_unique<QParallelAnimationGroup>(this);
 
-    // Create height animation
+    // Create height animation with Fluent Design specifications
     m_heightAnimation =
         std::make_unique<QPropertyAnimation>(this, "contentHeight");
-    m_heightAnimation->setDuration(250);
-    m_heightAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    m_heightAnimation->setDuration(
+        350);  // Fluent Design standard expansion duration
 
-    // Create opacity animation
+    // Use Fluent Design expansion curve (0.25, 0.46, 0.45, 0.94)
+    QEasingCurve expansionCurve(QEasingCurve::BezierSpline);
+    expansionCurve.addCubicBezierSegment(
+        QPointF(0.25, 0.46), QPointF(0.45, 0.94), QPointF(1.0, 1.0));
+    m_heightAnimation->setEasingCurve(expansionCurve);
+
+    // Create opacity animation with staggered timing for better visual
+    // hierarchy
     m_opacityAnimation =
         std::make_unique<QPropertyAnimation>(this, "contentOpacity");
-    m_opacityAnimation->setDuration(200);
-    m_opacityAnimation->setEasingCurve(QEasingCurve::OutQuad);
+    m_opacityAnimation->setDuration(250);  // Slightly shorter for fade effect
+
+    // Use Fluent Design fade curve
+    QEasingCurve fadeCurve(QEasingCurve::BezierSpline);
+    fadeCurve.addCubicBezierSegment(QPointF(0.33, 0.0), QPointF(0.67, 1.0),
+                                    QPointF(1.0, 1.0));
+    m_opacityAnimation->setEasingCurve(fadeCurve);
 
     m_animationGroup->addAnimation(m_heightAnimation.get());
     m_animationGroup->addAnimation(m_opacityAnimation.get());
@@ -132,6 +182,11 @@ QString FluentAccordion::description() const { return m_description; }
 void FluentAccordion::setDescription(const QString& description) {
     if (m_description != description) {
         m_description = description;
+        if (m_descriptionLabel) {
+            m_descriptionLabel->setText(description);
+            m_descriptionLabel->setVisible(m_showDescription &&
+                                           !description.isEmpty());
+        }
         m_sizeHintValid = false;
         updateGeometry();
         update();
@@ -175,6 +230,64 @@ void FluentAccordion::setCollapsible(bool collapsible) {
     if (m_collapsible != collapsible) {
         m_collapsible = collapsible;
         emit collapsibleChanged(collapsible);
+    }
+}
+
+int FluentAccordion::elevation() const { return m_elevation; }
+
+void FluentAccordion::setElevation(int elevation) {
+    if (m_elevation != elevation) {
+        m_elevation = elevation;
+        applyElevationEffect();
+        update();
+        emit elevationChanged(elevation);
+    }
+}
+
+bool FluentAccordion::showDescription() const { return m_showDescription; }
+
+void FluentAccordion::setShowDescription(bool show) {
+    if (m_showDescription != show) {
+        m_showDescription = show;
+        if (m_descriptionLabel) {
+            m_descriptionLabel->setVisible(show && !m_description.isEmpty());
+        }
+        m_sizeHintValid = false;
+        updateGeometry();
+        emit showDescriptionChanged(show);
+    }
+}
+
+bool FluentAccordion::showIcon() const { return m_showIcon; }
+
+void FluentAccordion::setShowIcon(bool show) {
+    if (m_showIcon != show) {
+        m_showIcon = show;
+        m_sizeHintValid = false;
+        updateGeometry();
+        update();
+        emit showIconChanged(show);
+    }
+}
+
+QString FluentAccordion::ariaLabel() const {
+    return m_ariaLabel.isEmpty() ? m_title : m_ariaLabel;
+}
+
+void FluentAccordion::setAriaLabel(const QString& label) {
+    if (m_ariaLabel != label) {
+        m_ariaLabel = label;
+        updateAccessibilityAttributes();
+        emit ariaLabelChanged(label);
+    }
+}
+
+bool FluentAccordion::reducedMotion() const { return m_reducedMotion; }
+
+void FluentAccordion::setReducedMotion(bool reduced) {
+    if (m_reducedMotion != reduced) {
+        m_reducedMotion = reduced;
+        emit reducedMotionChanged(reduced);
     }
 }
 
@@ -273,36 +386,48 @@ void FluentAccordion::paintEvent(QPaintEvent* event) {
 
 void FluentAccordion::paintHeader(QPainter& painter, const QRect& rect) {
     const auto& theme = Styling::FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
 
-    // Background color based on state
+    // Use Fluent Design semantic colors based on state
     QColor backgroundColor;
     switch (state()) {
         case Core::FluentState::Normal:
-            backgroundColor = palette.neutralLighter;
+            backgroundColor = theme.color("surface.primary");
             break;
         case Core::FluentState::Hovered:
-            backgroundColor = palette.neutralLight;
+            backgroundColor = theme.color("surface.primary.hover");
             break;
         case Core::FluentState::Pressed:
-            backgroundColor = palette.neutralQuaternaryAlt;
+            backgroundColor = theme.color("surface.primary.pressed");
+            break;
+        case Core::FluentState::Focused:
+            backgroundColor = theme.color("surface.primary.focused");
             break;
         case Core::FluentState::Disabled:
-            backgroundColor = palette.neutralLighter;
+            backgroundColor = theme.color("surface.primary.disabled");
             break;
         default:
-            backgroundColor = palette.neutralLighter;
+            backgroundColor = theme.color("surface.primary");
     }
 
-    // Create path with rounded corners
+    // Create path with Fluent Design corner radius
     QPainterPath path;
     const int radius = cornerRadius();
     path.addRoundedRect(rect, radius, radius);
 
     painter.fillPath(path, backgroundColor);
 
-    // Paint icon if present
-    if (!m_icon.isNull()) {
+    // Paint elevation shadow if enabled
+    if (m_elevation > 0) {
+        paintElevationShadow(painter, rect);
+    }
+
+    // Paint focus indicator if focused
+    if (state() == Core::FluentState::Focused) {
+        paintFocusIndicator(painter, rect);
+    }
+
+    // Paint icon if present and enabled
+    if (!m_icon.isNull() && m_showIcon) {
         paintIcon(painter, iconRect());
     }
 
@@ -460,7 +585,7 @@ void FluentAccordion::updateFonts() {
 }
 
 void FluentAccordion::startExpandAnimation() {
-    if (!isAnimated()) {
+    if (!isAnimated() || shouldUseReducedMotion()) {
         setContentHeight(m_expandedHeight);
         setContentOpacity(1.0);
         updateContentVisibility();
@@ -477,7 +602,7 @@ void FluentAccordion::startExpandAnimation() {
 }
 
 void FluentAccordion::startCollapseAnimation() {
-    if (!isAnimated()) {
+    if (!isAnimated() || shouldUseReducedMotion()) {
         setContentHeight(0);
         setContentOpacity(0.0);
         updateContentVisibility();
@@ -529,6 +654,115 @@ int FluentAccordion::calculateContentHeight() const {
     const int margins = m_contentLayout->contentsMargins().top() +
                         m_contentLayout->contentsMargins().bottom();
     return m_content->sizeHint().height() + margins;
+}
+
+QRect FluentAccordion::titleRect() const {
+    if (!m_titleLabel)
+        return QRect();
+    return m_titleLabel->geometry();
+}
+
+QRect FluentAccordion::descriptionRect() const {
+    if (!m_descriptionLabel)
+        return QRect();
+    return m_descriptionLabel->geometry();
+}
+
+void FluentAccordion::updateFluentStyling() {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Update typography
+    if (m_titleLabel) {
+        m_titleLabel->setFont(theme.subtitleFont());
+    }
+    if (m_descriptionLabel) {
+        m_descriptionLabel->setFont(theme.captionFont());
+    }
+
+    // Update colors based on current theme
+    updateColors();
+}
+
+void FluentAccordion::applyElevationEffect() {
+    // Apply shadow effect based on elevation level
+    if (m_elevation <= 0) {
+        setGraphicsEffect(nullptr);
+        return;
+    }
+
+    auto* shadowEffect = new QGraphicsDropShadowEffect(this);
+    shadowEffect->setBlurRadius(m_elevation * 2);
+    shadowEffect->setOffset(0, m_elevation);
+    shadowEffect->setColor(
+        QColor(0, 0, 0, 32));  // Fluent Design shadow opacity
+    setGraphicsEffect(shadowEffect);
+}
+
+void FluentAccordion::updateAccessibilityAttributes() {
+    // Set ARIA role and properties
+    setAccessibleName(ariaLabel());
+    setAccessibleDescription(m_description);
+
+    // Set expanded state for screen readers
+    const bool expanded = (m_accordionState == FluentAccordionState::Expanded);
+    setProperty("aria-expanded", expanded);
+    setProperty("aria-controls", m_contentContainer->objectName());
+
+    // Set role as button since it's clickable
+    setProperty("role", "button");
+}
+
+bool FluentAccordion::shouldUseReducedMotion() const {
+    // Check system preference or manual override
+    return m_reducedMotion ||
+           QApplication::testAttribute(Qt::AA_DisableWindowContextHelpButton);
+}
+
+void FluentAccordion::paintElevationShadow(QPainter& painter,
+                                           const QRect& rect) {
+    if (m_elevation <= 0)
+        return;
+
+    painter.save();
+
+    const auto& theme = Styling::FluentTheme::instance();
+    const int shadowBlur = m_elevation * 2;
+    const int shadowOffset = m_elevation;
+
+    // Create shadow color with appropriate opacity
+    QColor shadowColor = theme.color("shadow.primary");
+    shadowColor.setAlpha(32 +
+                         (m_elevation * 8));  // Increase opacity with elevation
+
+    // Draw shadow using gradient
+    QRadialGradient gradient(rect.center(), rect.width() / 2);
+    gradient.setColorAt(0, shadowColor);
+    gradient.setColorAt(1, Qt::transparent);
+
+    QPainterPath shadowPath;
+    shadowPath.addRoundedRect(rect.adjusted(0, shadowOffset, 0, shadowOffset),
+                              cornerRadius(), cornerRadius());
+
+    painter.fillPath(shadowPath, QBrush(gradient));
+    painter.restore();
+}
+
+void FluentAccordion::paintFocusIndicator(QPainter& painter,
+                                          const QRect& rect) {
+    painter.save();
+
+    const auto& theme = Styling::FluentTheme::instance();
+    QColor focusColor = theme.color("accent.primary");
+
+    QPen focusPen(focusColor, 2);
+    focusPen.setStyle(Qt::SolidLine);
+    painter.setPen(focusPen);
+
+    // Draw focus ring with slight inset
+    const QRect focusRect = rect.adjusted(1, 1, -1, -1);
+    painter.drawRoundedRect(focusRect, cornerRadius(), cornerRadius());
+
+    painter.restore();
 }
 
 }  // namespace FluentQt::Components

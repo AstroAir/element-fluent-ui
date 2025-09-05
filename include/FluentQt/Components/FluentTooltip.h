@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QGraphicsOpacityEffect>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QPropertyAnimation>
 #include <QTimer>
@@ -120,6 +121,7 @@ protected:
     void enterEvent(QEnterEvent* event) override;
     void leaveEvent(QEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
     bool eventFilter(QObject* object, QEvent* event) override;
 
 private slots:
@@ -132,6 +134,7 @@ private:
     void setupUI();
     void setupAnimations();
     void setupTimers();
+    void setupAccessibility();
     void updateContent();
     void updatePosition();
     void updateTheme();
@@ -185,13 +188,13 @@ private:
     QPoint m_targetPosition;
     FluentTooltipPosition m_actualPosition{FluentTooltipPosition::Top};
 
+    // Theme colors (set by updateTheme)
+    QColor m_currentBackgroundColor;
+    QColor m_currentBorderColor;
+    QColor m_currentTextColor;
+
     // Static instance for convenience methods
     static FluentTooltip* s_instance;
-
-    // Arrow properties
-    static constexpr int ARROW_SIZE = 8;
-    static constexpr int BORDER_RADIUS = 6;
-    static constexpr int PADDING = 12;
 };
 
 }  // namespace FluentQt::Components

@@ -14,11 +14,15 @@
 #include <QStyleOption>
 #include <QThread>
 #include <QTimer>
+#include "FluentQt/Animation/FluentAnimator.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 namespace FluentQt::Components {
 
-FluentFilePicker::FluentFilePicker(QWidget* parent) : QWidget(parent) {
+FluentFilePicker::FluentFilePicker(QWidget* parent)
+    : Core::FluentComponent(parent),
+      m_animator(std::make_unique<Animation::FluentAnimator>(this)) {
     setupUI();
     setupDropZone();
     setupFileList();
@@ -35,6 +39,19 @@ FluentFilePicker::FluentFilePicker(QWidget* parent) : QWidget(parent) {
         new QPropertyAnimation(m_dropZoneOpacity, "opacity", this);
     m_dropZoneAnimation->setDuration(200);
     m_dropZoneAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Connect to theme changes
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::themeChanged, this, [this]() {
+                updateUI();
+                updateDropZone();
+                updateFileList();
+                updateUploadControls();
+                emit themeChanged();
+            });
+
+    // Setup accessibility
+    setupAccessibility();
 }
 
 FluentFilePicker::~FluentFilePicker() = default;
@@ -73,8 +90,11 @@ void FluentFilePicker::setMaxFiles(int count) {
 }
 
 void FluentFilePicker::setMode(PickerMode mode) {
-    m_mode = mode;
-    updateUI();
+    if (m_mode != mode) {
+        m_mode = mode;
+        updateUI();
+        emit modeChanged(mode);
+    }
 }
 
 void FluentFilePicker::addFile(const QString& filePath) {
@@ -96,6 +116,11 @@ void FluentFilePicker::removeFile(int index) {
         animateFileRemoval(index);
         updateFileList();
         updateUI();
+
+        // Accessibility: Announce file removal
+        announceFileRemoved(removedFile);
+        updateAccessibilityInfo();
+
         emit fileRemoved(removedFile);
     }
 }
@@ -168,22 +193,31 @@ void FluentFilePicker::cancelUpload() {
 }
 
 void FluentFilePicker::setDropZoneText(const QString& text) {
-    m_dropZoneTextString = text;
-    if (m_dropZoneText) {
-        m_dropZoneText->setText(text);
+    if (m_dropZoneTextString != text) {
+        m_dropZoneTextString = text;
+        if (m_dropZoneText) {
+            m_dropZoneText->setText(text);
+        }
+        emit dropZoneTextChanged(text);
     }
 }
 
 void FluentFilePicker::setDropZoneIcon(const QIcon& icon) {
-    m_dropZoneIconValue = icon;
-    if (m_dropZoneIcon && !icon.isNull()) {
-        m_dropZoneIcon->setPixmap(icon.pixmap(48, 48));
+    if (m_dropZoneIconValue.cacheKey() != icon.cacheKey()) {
+        m_dropZoneIconValue = icon;
+        if (m_dropZoneIcon && !icon.isNull()) {
+            m_dropZoneIcon->setPixmap(icon.pixmap(48, 48));
+        }
+        emit dropZoneIconChanged(icon);
     }
 }
 
 void FluentFilePicker::setShowPreview(bool show) {
-    m_showPreview = show;
-    updateFileList();
+    if (m_showPreview != show) {
+        m_showPreview = show;
+        updateFileList();
+        emit showPreviewChanged(show);
+    }
 }
 
 void FluentFilePicker::openFileDialog() {
@@ -328,20 +362,38 @@ void FluentFilePicker::updateUploadProgress() {
 }
 
 void FluentFilePicker::setupUI() {
-    m_mainLayout = new QVBoxLayout(this);
-    m_mainLayout->setContentsMargins(10, 10, 10, 10);
-    m_mainLayout->setSpacing(10);
+    auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
 
+    m_mainLayout = new QVBoxLayout(this);
+
+    // Use FluentUI spacing tokens
+    int containerPadding = tokenUtils.getSpacing("m");  // 12px
+    int itemSpacing = tokenUtils.getSpacing("s");       // 8px
+
+    m_mainLayout->setContentsMargins(containerPadding, containerPadding,
+                                     containerPadding, containerPadding);
+    m_mainLayout->setSpacing(itemSpacing);
+
+    // Use reasonable minimum height for file picker
     setMinimumHeight(200);
 }
 
 void FluentFilePicker::setupDropZone() {
+    auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
+
     m_dropZone = new QWidget(this);
     m_dropZone->setObjectName("dropZone");
-    m_dropZone->setMinimumHeight(120);
+
+    // Use FluentUI sizing tokens for minimum height
+    int minHeight = tokenUtils.getSpacing("xl");  // 32px for larger components
+    m_dropZone->setMinimumHeight(minHeight * 4);  // 128px
 
     m_dropZoneLayout = new QVBoxLayout(m_dropZone);
     m_dropZoneLayout->setAlignment(Qt::AlignCenter);
+
+    // Use FluentUI spacing tokens
+    int itemSpacing = tokenUtils.getSpacing("s");  // 8px
+    m_dropZoneLayout->setSpacing(itemSpacing);
 
     // Drop zone icon
     m_dropZoneIcon = new QLabel(m_dropZone);
@@ -356,6 +408,13 @@ void FluentFilePicker::setupDropZone() {
     m_dropZoneText = new QLabel(m_dropZoneTextString, m_dropZone);
     m_dropZoneText->setAlignment(Qt::AlignCenter);
     m_dropZoneText->setWordWrap(true);
+
+    // Apply FluentUI typography tokens
+    auto& theme = Styling::FluentTheme::instance();
+    QFont bodyFont = theme.bodyFont();
+    bodyFont.setPointSize(14);  // Slightly larger for drop zone
+    m_dropZoneText->setFont(bodyFont);
+
     m_dropZoneLayout->addWidget(m_dropZoneText);
 
     // Browse button
@@ -377,6 +436,13 @@ void FluentFilePicker::setupFileList() {
 
     auto* fileListLabel = new QLabel("Selected Files:", m_fileListContainer);
     fileListLabel->setObjectName("fileListLabel");
+
+    // Apply FluentUI typography tokens for label
+    auto& theme = Styling::FluentTheme::instance();
+    QFont labelFont = theme.captionFont();
+    labelFont.setWeight(QFont::Medium);
+    fileListLabel->setFont(labelFont);
+
     fileListLayout->addWidget(fileListLabel);
 
     m_fileList = new QListWidget(m_fileListContainer);
@@ -389,10 +455,16 @@ void FluentFilePicker::setupFileList() {
 }
 
 void FluentFilePicker::setupUploadControls() {
+    auto& tokenUtils = Styling::FluentDesignTokenUtils::instance();
+
     m_uploadControls = new QWidget(this);
     m_uploadControls->setObjectName("uploadControls");
 
     m_uploadLayout = new QHBoxLayout(m_uploadControls);
+
+    // Use FluentUI spacing tokens
+    int buttonSpacing = tokenUtils.getSpacing("s");  // 8px
+    m_uploadLayout->setSpacing(buttonSpacing);
 
     m_uploadButton = new QPushButton("Upload Files", m_uploadControls);
     m_uploadButton->setObjectName("uploadButton");
@@ -424,6 +496,22 @@ void FluentFilePicker::setupUploadControls() {
 }
 
 void FluentFilePicker::updateUI() {
+    // Apply FluentUI 2.0 visual styling to the main component
+    auto& theme = Styling::FluentTheme::instance();
+
+    // Set modern FluentUI styling with elevation and corner radius
+    QString mainStyle = QString(
+                            "FluentFilePicker { "
+                            "background-color: %1; "
+                            "border: 1px solid %2; "
+                            "border-radius: 8px; "
+                            "padding: 4px; "
+                            "}")
+                            .arg(theme.isDarkMode() ? "#2d2d2d" : "#ffffff")
+                            .arg(theme.isDarkMode() ? "#484848" : "#e0e0e0");
+
+    setStyleSheet(mainStyle);
+
     // Update drop zone visibility
     bool showDropZone = m_files.isEmpty() || m_allowMultipleFiles;
     m_dropZone->setVisible(showDropZone);
@@ -446,14 +534,35 @@ void FluentFilePicker::updateUI() {
 }
 
 void FluentFilePicker::updateDropZone() {
+    auto& theme = Styling::FluentTheme::instance();
+
     if (m_dragActive) {
-        m_dropZone->setStyleSheet(
-            "QWidget#dropZone { border: 2px dashed #0078d4; background-color: "
-            "rgba(0, 120, 212, 0.1); }");
+        // Use FluentUI design tokens for active drag state
+        QColor accentColor = theme.accentColor();
+        QColor dragBackground = accentColor;
+        dragBackground.setAlphaF(0.1);
+
+        m_dropZone->setStyleSheet(QString("QWidget#dropZone { "
+                                          "border: 2px dashed %1; "
+                                          "background-color: %2; "
+                                          "border-radius: %3px; }")
+                                      .arg(accentColor.name())
+                                      .arg(dragBackground.name(QColor::HexArgb))
+                                      .arg(8));  // Medium border radius
     } else {
-        m_dropZone->setStyleSheet(
-            "QWidget#dropZone { border: 2px dashed #cccccc; background-color: "
-            "#f9f9f9; }");
+        // Use FluentUI design tokens for normal state
+        QColor borderColor =
+            theme.isDarkMode() ? QColor("#484848") : QColor("#cccccc");
+        QColor backgroundColor =
+            theme.isDarkMode() ? QColor("#2d2d2d") : QColor("#f9f9f9");
+
+        m_dropZone->setStyleSheet(QString("QWidget#dropZone { "
+                                          "border: 2px dashed %1; "
+                                          "background-color: %2; "
+                                          "border-radius: %3px; }")
+                                      .arg(borderColor.name())
+                                      .arg(backgroundColor.name())
+                                      .arg(8));  // Medium border radius
     }
 }
 
@@ -603,26 +712,59 @@ void FluentFilePicker::addFileInternal(const FluentFileInfo& fileInfo) {
     updateFileList();
     updateUI();
 
+    // Accessibility: Announce file addition
+    announceFileAdded(fileInfo);
+    updateAccessibilityInfo();
+
     emit filesAdded({fileInfo});
 }
 
 void FluentFilePicker::animateFileAddition(int index) {
     Q_UNUSED(index)
-    // Simple animation - could be enhanced
-    if (m_dropZoneAnimation) {
-        m_dropZoneAnimation->setStartValue(0.7);
-        m_dropZoneAnimation->setEndValue(1.0);
-        m_dropZoneAnimation->start();
+
+    // Use FluentAnimator for smooth file addition animation
+    if (isAnimated()) {
+        // Animate drop zone opacity for visual feedback
+        if (m_dropZoneAnimation) {
+            m_dropZoneAnimation->setStartValue(0.7);
+            m_dropZoneAnimation->setEndValue(1.0);
+            m_dropZoneAnimation->start();
+        }
+
+        // Use FluentAnimator for utility motion (micro-interaction)
+        auto utilityAnim = Animation::FluentAnimator::utilityMotion(this);
+        if (utilityAnim) {
+            utilityAnim->start();
+        }
+
+        // Animate file list expansion if visible
+        if (m_fileListContainer && m_fileListContainer->isVisible()) {
+            auto expandAnim =
+                Animation::FluentAnimator::primaryMotion(m_fileListContainer);
+            if (expandAnim) {
+                expandAnim->start();
+            }
+        }
     }
 }
 
 void FluentFilePicker::animateFileRemoval(int index) {
     Q_UNUSED(index)
-    // Simple animation - could be enhanced
-    if (m_dropZoneAnimation) {
-        m_dropZoneAnimation->setStartValue(1.0);
-        m_dropZoneAnimation->setEndValue(0.7);
-        m_dropZoneAnimation->start();
+
+    // Use FluentAnimator for smooth file removal animation
+    if (isAnimated()) {
+        // Animate drop zone opacity for visual feedback
+        if (m_dropZoneAnimation) {
+            m_dropZoneAnimation->setStartValue(1.0);
+            m_dropZoneAnimation->setEndValue(0.7);
+            m_dropZoneAnimation->start();
+        }
+
+        // Use FluentAnimator for secondary motion (supporting animation)
+        auto secondaryAnim = Animation::FluentAnimator::secondaryMotion(this);
+        if (secondaryAnim) {
+            secondaryAnim->start();
+        }
     }
 }
 
@@ -709,6 +851,101 @@ QString FluentFilePicker::formatFileSize(qint64 bytes) {
         return QString::number(double(bytes) / KB, 'f', 2) + " KB";
     } else {
         return QString::number(bytes) + " bytes";
+    }
+}
+
+// Accessibility methods implementation
+void FluentFilePicker::setupAccessibility() {
+    // Set basic accessibility properties
+    setAccessibleName(tr("File Picker"));
+    setAccessibleDescription(tr("Drag and drop files here or click to browse"));
+
+    // Enable focus policy for keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+
+    // Setup keyboard navigation
+    setupKeyboardNavigation();
+
+    // Set initial ARIA properties
+    updateAriaLabels();
+}
+
+void FluentFilePicker::setAccessibleName(const QString& name) {
+    QWidget::setAccessibleName(name);
+}
+
+void FluentFilePicker::setAccessibleDescription(const QString& description) {
+    QWidget::setAccessibleDescription(description);
+}
+
+QString FluentFilePicker::accessibleFileListDescription() const {
+    if (m_files.isEmpty()) {
+        return tr("No files selected");
+    }
+
+    QString description = tr("%1 file(s) selected: ").arg(m_files.size());
+    QStringList fileNames;
+    for (const auto& file : m_files) {
+        fileNames.append(file.fileName);
+    }
+    description += fileNames.join(", ");
+    return description;
+}
+
+void FluentFilePicker::announceFileAdded(const FluentFileInfo& fileInfo) {
+    QString announcement = tr("File added: %1, size: %2")
+                               .arg(fileInfo.fileName)
+                               .arg(formatFileSize(fileInfo.fileSize));
+
+    // Update accessible description for screen readers
+    setAccessibleDescription(announcement);
+}
+
+void FluentFilePicker::announceFileRemoved(const FluentFileInfo& fileInfo) {
+    QString announcement = tr("File removed: %1").arg(fileInfo.fileName);
+
+    // Update accessible description for screen readers
+    setAccessibleDescription(announcement);
+}
+
+void FluentFilePicker::updateAccessibilityInfo() {
+    // Update the accessible description with current state
+    QString description = accessibleFileListDescription();
+    setAccessibleDescription(description);
+
+    // Update ARIA labels
+    updateAriaLabels();
+}
+
+void FluentFilePicker::setupKeyboardNavigation() {
+    // Enable tab navigation
+    setTabOrder(m_browseButton, m_fileList);
+    if (m_uploadButton) {
+        setTabOrder(m_fileList, m_uploadButton);
+    }
+}
+
+void FluentFilePicker::updateAriaLabels() {
+    if (m_dropZone) {
+        m_dropZone->setAccessibleName(tr("Drop Zone"));
+        m_dropZone->setAccessibleDescription(m_dropZoneTextString);
+    }
+
+    if (m_browseButton) {
+        m_browseButton->setAccessibleName(tr("Browse Files Button"));
+        m_browseButton->setAccessibleDescription(
+            tr("Click to open file dialog"));
+    }
+
+    if (m_fileList) {
+        m_fileList->setAccessibleName(tr("Selected Files List"));
+        m_fileList->setAccessibleDescription(accessibleFileListDescription());
+    }
+
+    if (m_uploadButton) {
+        m_uploadButton->setAccessibleName(tr("Upload Files Button"));
+        m_uploadButton->setAccessibleDescription(
+            tr("Click to upload selected files"));
     }
 }
 

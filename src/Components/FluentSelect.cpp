@@ -3,6 +3,7 @@
 #include "FluentQt/Components/FluentSelectDropdown.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
+#include <QAccessible>
 #include <QApplication>
 #include <QCompleter>
 #include <QDebug>
@@ -542,23 +543,33 @@ QSize FluentSelect::minimumSizeHint() const {
 }
 
 QSize FluentSelect::calculateSizeHintInternal() const {
+    const auto& theme = FluentTheme::instance();
     const QFontMetrics metrics(getFont());
 
-    int width = 200;  // Base width
+    // Use theme-based minimum width
+    int width = theme.componentWidth("medium");
     int height = getItemHeight();
 
-    // Calculate width based on content
+    // Calculate width based on content with proper spacing
+    const int padding = theme.paddingValue("medium");
+    const int iconSpace = theme.iconSize("small").width();
+    const int buttonSpace = 24;  // Space for dropdown arrow
+    const int clearButtonSpace = m_config.clearable ? 20 : 0;
+
     if (m_selectModel && !m_selectModel->isEmpty()) {
         for (int i = 0; i < m_selectModel->itemCount(); ++i) {
             const FluentSelectItem item = m_selectModel->itemAt(i);
             const int textWidth = metrics.horizontalAdvance(item.text());
-            width =
-                qMax(width, textWidth + 60);  // Add space for icon and padding
+            const int itemWidth = textWidth + (padding * 2) + iconSpace +
+                                  buttonSpace + clearButtonSpace;
+            width = qMax(width, itemWidth);
         }
     }
 
-    // Add space for dropdown button
-    width += 32;
+    // Ensure minimum touch target size for accessibility
+    const int minTouchTarget = 44;  // Microsoft accessibility guidelines
+    height = qMax(height, minTouchTarget);
+    width = qMax(width, minTouchTarget * 3);  // Reasonable minimum width
 
     return QSize(width, height);
 }
@@ -818,43 +829,83 @@ void FluentSelect::updateLayout() {
 
 void FluentSelect::updateColors() {
     const auto& theme = FluentTheme::instance();
-    const auto& palette = theme.currentPalette();
 
+    // Use proper Fluent design tokens instead of hardcoded colors
     if (m_config.autoCalculateColors) {
-        m_backgroundColor = palette.neutralLightest;
-        m_textColor = palette.neutralPrimary;
-        m_borderColor = palette.neutralTertiary;
-        m_placeholderColor = palette.neutralSecondary;
-        m_focusColor = palette.accent;
+        m_backgroundColor = theme.color("controlFillDefault");
+        m_textColor = theme.color("textPrimary");
+        m_borderColor = theme.color("controlStrokeDefault");
+        m_placeholderColor = theme.color("textSecondary");
+        m_focusColor = theme.color("accent");
     } else {
+        // Allow custom colors but ensure they meet accessibility standards
         if (m_config.customBackgroundColor.isValid()) {
-            m_backgroundColor = m_config.customBackgroundColor;
+            m_backgroundColor =
+                theme.ensureContrast(m_config.customBackgroundColor,
+                                     theme.color("textPrimary"), 4.5);
         }
         if (m_config.customTextColor.isValid()) {
-            m_textColor = m_config.customTextColor;
+            m_textColor = theme.ensureContrast(m_config.customTextColor,
+                                               m_backgroundColor, 4.5);
         }
         if (m_config.customBorderColor.isValid()) {
             m_borderColor = m_config.customBorderColor;
         }
     }
 
-    // Apply colors to widgets
-    const QString styleSheet =
+    // Apply semantic colors to child widgets with proper Fluent styling
+    const QString labelStyle = QString(
+                                   "QLabel { "
+                                   "color: %1; "
+                                   "background: transparent; "
+                                   "padding: %2px %3px; "
+                                   "}")
+                                   .arg(m_textColor.name())
+                                   .arg(theme.paddingValue("small"))
+                                   .arg(theme.paddingValue("medium"));
+
+    const QString editStyle = QString(
+                                  "QLineEdit { "
+                                  "color: %1; "
+                                  "background: transparent; "
+                                  "border: none; "
+                                  "padding: %2px %3px; "
+                                  "selection-background-color: %4; "
+                                  "}")
+                                  .arg(m_textColor.name())
+                                  .arg(theme.paddingValue("small"))
+                                  .arg(theme.paddingValue("medium"))
+                                  .arg(theme.color("accent").name());
+
+    const QString buttonStyle =
         QString(
-            "QLabel { color: %1; background: transparent; }"
-            "QLineEdit { color: %1; background: transparent; border: none; }"
-            "QPushButton { color: %2; background: transparent; border: none; }")
-            .arg(m_textColor.name())
-            .arg(m_borderColor.name());
+            "QPushButton { "
+            "color: %1; "
+            "background: transparent; "
+            "border: none; "
+            "border-radius: %2px; "
+            "padding: %3px; "
+            "}"
+            "QPushButton:hover { "
+            "background: %4; "
+            "}"
+            "QPushButton:pressed { "
+            "background: %5; "
+            "}")
+            .arg(theme.color("textSecondary").name())
+            .arg(theme.borderRadius("small"))
+            .arg(theme.paddingValue("small"))
+            .arg(theme.color("controlFillSecondary").name())
+            .arg(theme.color("controlFillTertiary").name());
 
     if (m_displayLabel)
-        m_displayLabel->setStyleSheet(styleSheet);
+        m_displayLabel->setStyleSheet(labelStyle);
     if (m_searchEdit)
-        m_searchEdit->setStyleSheet(styleSheet);
+        m_searchEdit->setStyleSheet(editStyle);
     if (m_clearButton)
-        m_clearButton->setStyleSheet(styleSheet);
+        m_clearButton->setStyleSheet(buttonStyle);
     if (m_dropdownButton)
-        m_dropdownButton->setStyleSheet(styleSheet);
+        m_dropdownButton->setStyleSheet(buttonStyle);
 }
 
 void FluentSelect::updateFonts() {
@@ -907,11 +958,84 @@ void FluentSelect::updatePlaceholder() {
 }
 
 void FluentSelect::updateAccessibility() {
-    setAccessibleName(m_config.placeholderText.isEmpty()
-                          ? "Select"
-                          : m_config.placeholderText);
-    setAccessibleDescription(
-        QString("Select dropdown with %1 items").arg(count()));
+    // Set proper ARIA role
+    setAccessibleName(tr("Select ComboBox"));
+
+    // Set accessible name
+    QString accessibleName = m_config.placeholderText.isEmpty()
+                                 ? "Select"
+                                 : m_config.placeholderText;
+    setAccessibleName(accessibleName);
+
+    // Set comprehensive accessible description
+    QString description;
+    if (m_config.mode == FluentSelectMode::Single) {
+        description =
+            QString("Single selection dropdown with %1 items").arg(count());
+    } else {
+        const int selectedCount = selectedIndexes().size();
+        description =
+            QString("Multiple selection dropdown with %1 items, %2 selected")
+                .arg(count())
+                .arg(selectedCount);
+    }
+
+    if (m_config.searchable) {
+        description += ", searchable";
+    }
+    if (m_config.editable) {
+        description += ", editable";
+    }
+    if (!isEnabled()) {
+        description += ", disabled";
+    }
+
+    setAccessibleDescription(description);
+
+    // Set state properties
+    setProperty("aria-expanded", m_dropdownVisible);
+    setProperty("aria-haspopup", "listbox");
+    setProperty("aria-autocomplete", m_config.searchable ? "list" : "none");
+
+    // Set current selection for screen readers
+    if (m_config.mode == FluentSelectMode::Single) {
+        const QString currentText = this->currentText();
+        if (!currentText.isEmpty()) {
+            setProperty("aria-valuenow", currentIndex());
+            setProperty("aria-valuetext", currentText);
+        }
+    } else {
+        const QStringList selectedTexts = this->selectedTexts();
+        if (!selectedTexts.isEmpty()) {
+            setProperty("aria-valuetext", selectedTexts.join(", "));
+        }
+    }
+
+    // Set validation state
+    if (m_validator && !isValid()) {
+        setProperty("aria-invalid", "true");
+        setProperty("aria-errormessage", m_validationErrorMessage);
+    } else {
+        setProperty("aria-invalid", "false");
+        setProperty("aria-errormessage", QString());
+    }
+
+    // Update child widget accessibility
+    if (m_searchEdit) {
+        m_searchEdit->setAccessibleName("Search in " + accessibleName);
+        m_searchEdit->setAccessibleDescription("Type to search items");
+    }
+
+    if (m_clearButton) {
+        m_clearButton->setAccessibleName("Clear selection");
+        m_clearButton->setAccessibleDescription("Clear current selection");
+    }
+
+    if (m_dropdownButton) {
+        m_dropdownButton->setAccessibleName("Open dropdown");
+        m_dropdownButton->setAccessibleDescription(
+            m_dropdownVisible ? "Close dropdown" : "Open dropdown");
+    }
 }
 
 QString FluentSelect::formatDisplayText() const {
@@ -970,14 +1094,16 @@ void FluentSelect::resetSearchFilter() {
 }
 
 int FluentSelect::getItemHeight() const {
+    const auto& theme = FluentTheme::instance();
+
     switch (m_config.size) {
         case FluentSelectSize::Small:
-            return 28;
+            return theme.componentHeight("small");
         case FluentSelectSize::Large:
-            return 40;
+            return theme.componentHeight("large");
         case FluentSelectSize::Medium:
         default:
-            return 32;
+            return theme.componentHeight("medium");
     }
 }
 
@@ -1015,29 +1141,149 @@ QFont FluentSelect::getFont() const {
     }
 }
 
-// Event handler stubs (to be implemented)
+// Complete event handler implementations
 void FluentSelect::onDropdownItemActivated(const QModelIndex& index) {
-    Q_UNUSED(index)
-    // Implementation will be added later
+    if (!index.isValid() || !m_selectModel) {
+        return;
+    }
+
+    // Map proxy index to source if needed
+    QModelIndex sourceIndex = index;
+    if (m_proxyModel) {
+        sourceIndex = m_proxyModel->mapToSource(index);
+    }
+
+    const FluentSelectItem item = m_selectModel->itemAt(sourceIndex.row());
+
+    // Don't activate separators or groups
+    if (!item.isSelectable()) {
+        return;
+    }
+
+    // Handle selection based on mode
+    if (m_config.mode == FluentSelectMode::Single) {
+        setCurrentModelIndex(index);
+        hideDropdown();
+        emit activated(sourceIndex.row());
+        emit activated(item.text());
+    } else {
+        // For multiple selection, toggle the item
+        if (m_selectionModel) {
+            const bool isSelected = m_selectionModel->isSelected(index);
+            if (isSelected) {
+                m_selectionModel->select(index, QItemSelectionModel::Deselect);
+            } else {
+                m_selectionModel->select(index, QItemSelectionModel::Select);
+            }
+            updateDisplayText();
+            emit selectionChanged();
+        }
+    }
+
+    // Validate selection if validator is set
+    if (m_validator && !isValid()) {
+        // Revert selection if validation fails
+        if (m_config.mode == FluentSelectMode::Single) {
+            setCurrentIndex(-1);
+        }
+        emit validationFailed(m_validationErrorMessage);
+    }
 }
 
 void FluentSelect::onDropdownItemClicked(const QModelIndex& index) {
-    Q_UNUSED(index)
-    // Implementation will be added later
+    if (!index.isValid()) {
+        return;
+    }
+
+    // Highlight the item first
+    if (m_selectionModel) {
+        m_selectionModel->setCurrentIndex(index, QItemSelectionModel::NoUpdate);
+        emit highlighted(index.row());
+
+        QModelIndex sourceIndex = index;
+        if (m_proxyModel) {
+            sourceIndex = m_proxyModel->mapToSource(index);
+        }
+
+        if (sourceIndex.isValid() && m_selectModel) {
+            const FluentSelectItem item =
+                m_selectModel->itemAt(sourceIndex.row());
+            emit highlighted(item.text());
+        }
+    }
+
+    // Then activate the item
+    onDropdownItemActivated(index);
 }
 
 void FluentSelect::onDropdownSelectionChanged() {
-    // Implementation will be added later
+    updateDisplayText();
+
+    // Update clear button visibility
+    if (m_clearButton) {
+        m_clearButton->setVisible(m_config.clearable &&
+                                  !currentText().isEmpty());
+    }
+
+    // Emit selection changed signal
+    emit selectionChanged();
+
+    // Update accessibility information
+    updateAccessibility();
+
+    // Validate current selection
+    if (m_validator && !isValid()) {
+        setState(FluentState::Disabled);  // Visual indication of invalid state
+        emit validationFailed(m_validationErrorMessage);
+    } else {
+        if (state() == FluentState::Disabled && isEnabled()) {
+            setState(FluentState::Normal);
+        }
+    }
 }
 
 void FluentSelect::onSearchTextChanged(const QString& text) {
-    Q_UNUSED(text)
-    // Implementation will be added later
+    m_searchText = text;
+    m_searchActive = !text.isEmpty();
+
+    // Apply search filter
+    applySearchFilter();
+
+    // Show dropdown if search is active and has results
+    if (m_searchActive && m_proxyModel && m_proxyModel->rowCount() > 0) {
+        if (!m_dropdownVisible) {
+            showDropdown();
+        }
+    } else if (m_searchActive && m_proxyModel &&
+               m_proxyModel->rowCount() == 0) {
+        // Show "no results" message in dropdown
+        if (!m_dropdownVisible) {
+            showDropdown();
+        }
+    }
+
+    emit searchFilterChanged(text);
 }
 
 void FluentSelect::onSearchTextEdited(const QString& text) {
-    Q_UNUSED(text)
-    // Implementation will be added later
+    if (!m_config.editable) {
+        return;
+    }
+
+    // Handle text editing in editable mode
+    m_searchActive = true;
+    onSearchTextChanged(text);
+
+    // Try to find exact match and select it
+    if (!text.isEmpty()) {
+        const int exactMatch = findText(text, Qt::MatchExactly);
+        if (exactMatch >= 0) {
+            setCurrentIndex(exactMatch);
+        }
+    }
+
+    emit textEdited(text);
+    emit textChanged(text);
 }
 
 void FluentSelect::onClearButtonClicked() { clearSelection(); }
@@ -1081,6 +1327,91 @@ void FluentSelect::onThemeChanged() {
     update();
 }
 
+// Helper methods for improved keyboard navigation and accessibility
+void FluentSelect::handleDropdownNavigation(int direction) {
+    if (!m_selectionModel || !m_proxyModel) {
+        return;
+    }
+
+    const QModelIndex currentIndex = m_selectionModel->currentIndex();
+    int newRow = 0;
+
+    if (currentIndex.isValid()) {
+        newRow = currentIndex.row() + direction;
+    } else if (direction > 0) {
+        newRow = 0;
+    } else {
+        newRow = m_proxyModel->rowCount() - 1;
+    }
+
+    // Clamp to valid range
+    newRow = qMax(0, qMin(newRow, m_proxyModel->rowCount() - 1));
+
+    const QModelIndex newIndex = m_proxyModel->index(newRow, 0);
+    if (newIndex.isValid()) {
+        m_selectionModel->setCurrentIndex(newIndex,
+                                          QItemSelectionModel::NoUpdate);
+
+        // Scroll to ensure visibility
+        if (m_listView) {
+            m_listView->scrollTo(newIndex, QAbstractItemView::EnsureVisible);
+        }
+
+        // Emit highlighted signal
+        QModelIndex sourceIndex = newIndex;
+        if (m_proxyModel) {
+            sourceIndex = m_proxyModel->mapToSource(newIndex);
+        }
+
+        if (sourceIndex.isValid()) {
+            emit highlighted(sourceIndex.row());
+            if (m_selectModel) {
+                const FluentSelectItem item =
+                    m_selectModel->itemAt(sourceIndex.row());
+                emit highlighted(item.text());
+            }
+        }
+    }
+}
+
+void FluentSelect::handleTextInput(QKeyEvent* event) {
+    if (!event || event->text().isEmpty()) {
+        return;
+    }
+
+    const QString inputChar = event->text().toLower();
+
+    // Implement type-ahead search
+    static QString typeAheadBuffer;
+    static QTimer typeAheadTimer;
+
+    // Reset buffer after 1 second of inactivity
+    if (!typeAheadTimer.isActive()) {
+        typeAheadBuffer.clear();
+    }
+
+    typeAheadBuffer += inputChar;
+
+    // Find matching item
+    if (m_selectModel) {
+        for (int i = 0; i < m_selectModel->itemCount(); ++i) {
+            const FluentSelectItem item = m_selectModel->itemAt(i);
+            if (item.text().toLower().startsWith(typeAheadBuffer)) {
+                setCurrentIndex(i);
+                emit highlighted(i);
+                emit highlighted(item.text());
+                break;
+            }
+        }
+    }
+
+    // Set timer to clear buffer
+    typeAheadTimer.setSingleShot(true);
+    typeAheadTimer.start(1000);
+
+    event->accept();
+}
+
 // Event handling methods
 bool FluentSelect::eventFilter(QObject* object, QEvent* event) {
     Q_UNUSED(object)
@@ -1119,35 +1450,106 @@ void FluentSelect::wheelEvent(QWheelEvent* event) {
 }
 
 void FluentSelect::keyPressEvent(QKeyEvent* event) {
+    // Handle different key combinations for comprehensive navigation
+    const bool ctrlPressed = event->modifiers() & Qt::ControlModifier;
+    const bool shiftPressed = event->modifiers() & Qt::ShiftModifier;
+
     switch (event->key()) {
         case Qt::Key_Space:
         case Qt::Key_Return:
         case Qt::Key_Enter:
             if (m_dropdown && m_dropdown->isVisible()) {
-                hideDropdown();
+                // If dropdown is open, activate current highlighted item
+                if (m_selectionModel && m_selectionModel->hasSelection()) {
+                    const QModelIndex current =
+                        m_selectionModel->currentIndex();
+                    if (current.isValid()) {
+                        onDropdownItemActivated(current);
+                    }
+                } else {
+                    hideDropdown();
+                }
             } else {
                 showDropdown();
             }
             event->accept();
             break;
+
         case Qt::Key_Up:
-            if (count() > 0) {
+            if (m_dropdown && m_dropdown->isVisible()) {
+                // Navigate in dropdown
+                handleDropdownNavigation(-1);
+            } else if (count() > 0) {
+                // Navigate in closed dropdown
                 int current = currentIndex();
                 if (current > 0) {
                     setCurrentIndex(current - 1);
+                    emit highlighted(current - 1);
                 }
             }
             event->accept();
             break;
+
         case Qt::Key_Down:
-            if (count() > 0) {
-                int current = currentIndex();
-                if (current < count() - 1) {
-                    setCurrentIndex(current + 1);
+            if (m_dropdown && m_dropdown->isVisible()) {
+                // Navigate in dropdown
+                handleDropdownNavigation(1);
+            } else if (count() > 0) {
+                // Navigate in closed dropdown or open it
+                if (!m_dropdownVisible) {
+                    showDropdown();
+                } else {
+                    int current = currentIndex();
+                    if (current < count() - 1) {
+                        setCurrentIndex(current + 1);
+                        emit highlighted(current + 1);
+                    }
                 }
             }
             event->accept();
             break;
+
+        case Qt::Key_Home:
+            if (count() > 0) {
+                setCurrentIndex(0);
+                emit highlighted(0);
+            }
+            event->accept();
+            break;
+
+        case Qt::Key_End:
+            if (count() > 0) {
+                setCurrentIndex(count() - 1);
+                emit highlighted(count() - 1);
+            }
+            event->accept();
+            break;
+
+        case Qt::Key_PageUp:
+            if (m_dropdown && m_dropdown->isVisible()) {
+                handleDropdownNavigation(-m_config.maxVisibleItems);
+            } else if (count() > 0) {
+                int current = currentIndex();
+                int newIndex = qMax(0, current - m_config.maxVisibleItems);
+                setCurrentIndex(newIndex);
+                emit highlighted(newIndex);
+            }
+            event->accept();
+            break;
+
+        case Qt::Key_PageDown:
+            if (m_dropdown && m_dropdown->isVisible()) {
+                handleDropdownNavigation(m_config.maxVisibleItems);
+            } else if (count() > 0) {
+                int current = currentIndex();
+                int newIndex =
+                    qMin(count() - 1, current + m_config.maxVisibleItems);
+                setCurrentIndex(newIndex);
+                emit highlighted(newIndex);
+            }
+            event->accept();
+            break;
+
         case Qt::Key_Escape:
             if (m_dropdown && m_dropdown->isVisible()) {
                 hideDropdown();
@@ -1156,8 +1558,39 @@ void FluentSelect::keyPressEvent(QKeyEvent* event) {
                 FluentComponent::keyPressEvent(event);
             }
             break;
-        default:
+
+        case Qt::Key_Tab:
+        case Qt::Key_Backtab:
+            // Allow normal tab navigation
             FluentComponent::keyPressEvent(event);
+            break;
+
+        case Qt::Key_A:
+            if (ctrlPressed && m_config.mode != FluentSelectMode::Single) {
+                selectAll();
+                event->accept();
+            } else {
+                handleTextInput(event);
+            }
+            break;
+
+        case Qt::Key_Delete:
+        case Qt::Key_Backspace:
+            if (m_config.clearable) {
+                clearSelection();
+                event->accept();
+            } else {
+                FluentComponent::keyPressEvent(event);
+            }
+            break;
+
+        default:
+            // Handle type-ahead search for printable characters
+            if (event->text().length() == 1 && event->text().at(0).isPrint()) {
+                handleTextInput(event);
+            } else {
+                FluentComponent::keyPressEvent(event);
+            }
             break;
     }
 }
@@ -1182,55 +1615,131 @@ void FluentSelect::paintEvent(QPaintEvent* event) {
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
 
     const QRect rect = this->rect();
     const auto& theme = FluentTheme::instance();
 
-    // Draw background
+    // Get proper spacing and sizing from theme
+    const int borderRadius = theme.borderRadius("medium");
+    const int padding = theme.paddingValue("medium");
+    const int smallPadding = theme.paddingValue("small");
+
+    // Draw background with proper state colors
     QColor backgroundColor = theme.color("controlFillDefault");
-    if (state() == FluentState::Hovered) {
-        backgroundColor = theme.color("controlFillSecondary");
+    if (!isEnabled()) {
+        backgroundColor = theme.color("controlFillDisabled");
     } else if (state() == FluentState::Pressed) {
         backgroundColor = theme.color("controlFillTertiary");
+    } else if (state() == FluentState::Hovered) {
+        backgroundColor = theme.color("controlFillSecondary");
     } else if (state() == FluentState::Focused) {
         backgroundColor = theme.color("controlFillInputActive");
     }
 
+    // Add subtle elevation for the component
+    if (isEnabled() && state() != FluentState::Pressed) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 10));  // Subtle shadow
+        painter.drawRoundedRect(rect.adjusted(1, 1, 1, 1), borderRadius,
+                                borderRadius);
+    }
+
     painter.fillRect(rect, backgroundColor);
 
-    // Draw border
+    // Draw border with proper focus ring
     QPen borderPen(theme.color("controlStrokeDefault"));
-    if (state() == FluentState::Focused) {
-        borderPen.setColor(theme.color("accent"));
-        borderPen.setWidth(2);
-    }
-    painter.setPen(borderPen);
-    painter.drawRoundedRect(rect.adjusted(0, 0, -1, -1), 4, 4);
+    int borderWidth = 1;
 
-    // Draw text
+    if (!isEnabled()) {
+        borderPen.setColor(theme.color("controlStrokeDisabled"));
+    } else if (state() == FluentState::Focused) {
+        borderPen.setColor(theme.color("accent"));
+        borderWidth = 2;
+
+        // Draw focus ring
+        QPen focusRingPen(theme.color("accent"));
+        focusRingPen.setWidth(1);
+        focusRingPen.setStyle(Qt::DashLine);
+        painter.setPen(focusRingPen);
+        painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), borderRadius + 2,
+                                borderRadius + 2);
+    }
+
+    borderPen.setWidth(borderWidth);
+    painter.setPen(borderPen);
+    painter.drawRoundedRect(rect.adjusted(0, 0, -borderWidth, -borderWidth),
+                            borderRadius, borderRadius);
+
+    // Draw text with proper typography
     QString displayText = currentText();
-    if (displayText.isEmpty()) {
+    QColor textColor = theme.color("textPrimary");
+
+    if (!isEnabled()) {
+        textColor = theme.color("textDisabled");
+    } else if (displayText.isEmpty()) {
         displayText = m_config.placeholderText;
-        painter.setPen(theme.color("textSecondary"));
-    } else {
-        painter.setPen(theme.color("textPrimary"));
+        textColor = theme.color("textSecondary");
     }
 
     if (!displayText.isEmpty()) {
-        painter.setFont(font());
-        QRect textRect = rect.adjusted(12, 0, -32, 0);
+        painter.setPen(textColor);
+        painter.setFont(getFont());
+
+        // Use proper text rectangle with theme spacing
+        QRect textRect = rect.adjusted(padding, 0, -(padding + 24), 0);
+
+        // Handle text elision for long text
+        QFontMetrics fm(getFont());
+        const QString elidedText =
+            fm.elidedText(displayText, Qt::ElideRight, textRect.width());
+
         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter,
-                         displayText);
+                         elidedText);
     }
 
-    // Draw dropdown arrow
-    QRect arrowRect(rect.right() - 24, rect.top() + (rect.height() - 12) / 2,
-                    12, 12);
-    painter.setPen(QPen(theme.color("textSecondary"), 2));
-    painter.drawLine(arrowRect.left() + 2, arrowRect.top() + 4,
-                     arrowRect.center().x(), arrowRect.bottom() - 2);
-    painter.drawLine(arrowRect.center().x(), arrowRect.bottom() - 2,
-                     arrowRect.right() - 2, arrowRect.top() + 4);
+    // Draw dropdown arrow with proper Fluent styling
+    const int arrowSize = 8;
+    const int arrowPadding = padding;
+    QRect arrowRect(rect.right() - arrowPadding - arrowSize,
+                    rect.center().y() - arrowSize / 2, arrowSize, arrowSize);
+
+    QColor arrowColor = theme.color("textSecondary");
+    if (!isEnabled()) {
+        arrowColor = theme.color("textDisabled");
+    } else if (state() == FluentState::Hovered ||
+               state() == FluentState::Pressed) {
+        arrowColor = theme.color("textPrimary");
+    }
+
+    painter.setPen(
+        QPen(arrowColor, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+
+    // Draw chevron down arrow
+    const QPointF arrowPoints[] = {
+        QPointF(arrowRect.left() + 2, arrowRect.top() + 3),
+        QPointF(arrowRect.center().x(), arrowRect.bottom() - 2),
+        QPointF(arrowRect.right() - 2, arrowRect.top() + 3)};
+
+    painter.drawPolyline(arrowPoints, 3);
+
+    // Draw clear button if visible and clearable
+    if (m_config.clearable && !currentText().isEmpty() && isEnabled()) {
+        const int clearButtonSize = 16;
+        QRect clearRect(rect.right() - arrowPadding - arrowSize -
+                            clearButtonSize - smallPadding,
+                        rect.center().y() - clearButtonSize / 2,
+                        clearButtonSize, clearButtonSize);
+
+        painter.setPen(QPen(theme.color("textSecondary"), 1.5, Qt::SolidLine,
+                            Qt::RoundCap));
+
+        // Draw X for clear button
+        painter.drawLine(clearRect.topLeft() + QPoint(4, 4),
+                         clearRect.bottomRight() - QPoint(4, 4));
+        painter.drawLine(clearRect.topRight() + QPoint(-4, 4),
+                         clearRect.bottomLeft() + QPoint(4, -4));
+    }
 }
 
 void FluentSelect::resizeEvent(QResizeEvent* event) {

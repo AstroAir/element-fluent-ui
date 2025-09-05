@@ -1,6 +1,8 @@
 // src/Components/FluentResizable.cpp
 #include "FluentQt/Components/FluentResizable.h"
+#include "FluentQt/Animation/FluentAnimator.h"
 #include "FluentQt/Core/FluentPerformance.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 #include "FluentQt/Styling/FluentTheme.h"
 
 #include <QAccessible>
@@ -9,6 +11,7 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QTouchEvent>
 #include <QVBoxLayout>
 #include <QtMath>
@@ -23,29 +26,87 @@ public:
     explicit FluentResizeHandleWidget(FluentResizeHandle handleType,
                                       QWidget* parent = nullptr)
         : QWidget(parent), m_handleType(handleType) {
-        setFixedSize(8, 8);
+        setFixedSize(10, 10);  // Slightly larger for better touch targets
         setAttribute(Qt::WA_Hover, true);
         setMouseTracking(true);
+        setFocusPolicy(Qt::StrongFocus);  // Enable keyboard focus
+
+        // Initialize animations for smooth transitions using FluentUI
+        // specifications
+        m_hoverAnimation =
+            std::make_unique<QPropertyAnimation>(this, "opacity");
+        m_hoverAnimation->setDuration(
+            150);  // FluentUI secondary motion duration
+        m_hoverAnimation->setEasingCurve(
+            QEasingCurve::OutCubic);  // FluentUI standard easing
+
+        m_pressAnimation =
+            std::make_unique<QPropertyAnimation>(this, "geometry");
+        m_pressAnimation->setDuration(100);  // FluentUI utility motion duration
+        m_pressAnimation->setEasingCurve(
+            QEasingCurve::OutCubic);  // FluentUI standard easing
     }
 
     FluentResizeHandle handleType() const { return m_handleType; }
 
 signals:
     void hoverChanged(bool hovered);
+    void pressedChanged(bool pressed);
+    void focusChanged(bool focused);
 
 protected:
     void enterEvent(QEnterEvent* event) override {
         Q_UNUSED(event)
-        m_hovered = true;
-        emit hoverChanged(true);
-        update();
+        if (!m_hovered) {
+            m_hovered = true;
+            startHoverAnimation(true);
+            emit hoverChanged(true);
+            update();
+        }
     }
 
     void leaveEvent(QEvent* event) override {
         Q_UNUSED(event)
-        m_hovered = false;
-        emit hoverChanged(false);
+        if (m_hovered) {
+            m_hovered = false;
+            startHoverAnimation(false);
+            emit hoverChanged(false);
+            update();
+        }
+    }
+
+    void mousePressEvent(QMouseEvent* event) override {
+        if (event->button() == Qt::LeftButton) {
+            m_pressed = true;
+            startPressAnimation(true);
+            emit pressedChanged(true);
+            update();
+        }
+        QWidget::mousePressEvent(event);
+    }
+
+    void mouseReleaseEvent(QMouseEvent* event) override {
+        if (event->button() == Qt::LeftButton && m_pressed) {
+            m_pressed = false;
+            startPressAnimation(false);
+            emit pressedChanged(false);
+            update();
+        }
+        QWidget::mouseReleaseEvent(event);
+    }
+
+    void focusInEvent(QFocusEvent* event) override {
+        m_focused = true;
+        emit focusChanged(true);
         update();
+        QWidget::focusInEvent(event);
+    }
+
+    void focusOutEvent(QFocusEvent* event) override {
+        m_focused = false;
+        emit focusChanged(false);
+        update();
+        QWidget::focusOutEvent(event);
     }
 
     void paintEvent(QPaintEvent* event) override {
@@ -54,17 +115,85 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing);
 
         const QRect rect = this->rect();
-        const QColor handleColor =
-            m_hovered ? QColor(0, 120, 215) : QColor(100, 100, 100);
+
+        // Use FluentUI design for handles - rounded rectangles instead of
+        // circles
+        const int cornerRadius = 2;  // Small corner radius for handles
+        QPainterPath path;
+        path.addRoundedRect(rect, cornerRadius, cornerRadius);
+
+        // Get proper FluentUI colors based on state
+        const auto& theme = FluentQt::Styling::FluentTheme::instance();
+        QColor handleColor;
+        QColor borderColor;
+
+        if (m_pressed) {
+            handleColor = theme.color("controlFillColorTertiary");
+            borderColor = theme.color("controlStrokeColorDefault");
+        } else if (m_focused) {
+            handleColor = theme.color("controlFillColorSecondary");
+            borderColor = theme.color("accentFillColorDefault");
+        } else if (m_hovered) {
+            handleColor = theme.color("controlFillColorSecondary");
+            borderColor = theme.color("controlStrokeColorSecondary");
+        } else {
+            handleColor = theme.color("controlFillColorDefault");
+            borderColor = theme.color("controlStrokeColorDefault");
+        }
+
+        // Apply border for visual definition
+        painter.setPen(QPen(borderColor, 1));
 
         painter.setBrush(handleColor);
-        painter.setPen(Qt::NoPen);
-        painter.drawEllipse(rect);
+        painter.drawPath(path);
     }
 
 private:
+    void startHoverAnimation(bool hovering) {
+        if (!m_hoverAnimation)
+            return;
+
+        m_hoverAnimation->stop();
+        if (hovering) {
+            m_hoverAnimation->setStartValue(1.0);
+            m_hoverAnimation->setEndValue(0.9);  // Slight scale down on hover
+        } else {
+            m_hoverAnimation->setStartValue(0.9);
+            m_hoverAnimation->setEndValue(1.0);
+        }
+        m_hoverAnimation->start();
+    }
+
+    void startPressAnimation(bool pressing) {
+        if (!m_pressAnimation)
+            return;
+
+        const QRect currentGeometry = geometry();
+        m_pressAnimation->stop();
+
+        if (pressing) {
+            // Slight shrink on press
+            const QRect pressedGeometry =
+                currentGeometry.adjusted(1, 1, -1, -1);
+            m_pressAnimation->setStartValue(currentGeometry);
+            m_pressAnimation->setEndValue(pressedGeometry);
+        } else {
+            // Return to normal size
+            const QRect normalGeometry = currentGeometry.adjusted(-1, -1, 1, 1);
+            m_pressAnimation->setStartValue(currentGeometry);
+            m_pressAnimation->setEndValue(normalGeometry);
+        }
+        m_pressAnimation->start();
+    }
+
     FluentResizeHandle m_handleType;
     bool m_hovered{false};
+    bool m_pressed{false};
+    bool m_focused{false};
+
+    // Animation support
+    std::unique_ptr<QPropertyAnimation> m_hoverAnimation;
+    std::unique_ptr<QPropertyAnimation> m_pressAnimation;
 };
 
 // Helper class for resize preview
@@ -91,11 +220,22 @@ protected:
         painter.setRenderHint(QPainter::Antialiasing);
 
         const QRect rect = this->rect();
-        const QColor previewColor = QColor(0, 120, 215, 80);
+
+        // Use FluentUI design for preview - rounded corners and proper colors
+        const auto& theme = FluentQt::Styling::FluentTheme::instance();
+        const QColor accentColor = theme.color("accentFillColorDefault");
+        const QColor previewColor =
+            QColor(accentColor.red(), accentColor.green(), accentColor.blue(),
+                   60);  // Semi-transparent
+
+        const int cornerRadius = 4;  // Medium corner radius for preview
+        QPainterPath path;
+        path.addRoundedRect(rect.adjusted(1, 1, -1, -1), cornerRadius,
+                            cornerRadius);
 
         painter.setBrush(previewColor);
-        painter.setPen(QPen(QColor(0, 120, 215), 2, Qt::DashLine));
-        painter.drawRect(rect.adjusted(1, 1, -1, -1));
+        painter.setPen(QPen(accentColor, 2, Qt::SolidLine));
+        painter.drawPath(path);
     }
 };
 
@@ -115,6 +255,9 @@ FluentResizable::FluentResizable(QWidget* parent)
 
     setMinimumSize(m_minimumSize);
     setMaximumSize(m_maximumSize);
+
+    // Initialize visual enhancements
+    updateShadowEffect();
 }
 
 FluentResizable::FluentResizable(QWidget* contentWidget, QWidget* parent)
@@ -133,6 +276,9 @@ FluentResizable::FluentResizable(QWidget* contentWidget, QWidget* parent)
 
     setMinimumSize(m_minimumSize);
     setMaximumSize(m_maximumSize);
+
+    // Initialize visual enhancements
+    updateShadowEffect();
 
     setContentWidget(contentWidget);
 }
@@ -236,6 +382,29 @@ void FluentResizable::setMaintainAspectRatio(bool maintain) {
     m_maintainAspectRatio = maintain;
 }
 
+void FluentResizable::setEnableShadows(bool enable) {
+    if (m_enableShadows != enable) {
+        m_enableShadows = enable;
+        updateShadowEffect();
+        emit enableShadowsChanged(enable);
+    }
+}
+
+void FluentResizable::setElevationLevel(const QString& level) {
+    if (m_elevationLevel != level) {
+        m_elevationLevel = level;
+        updateShadowEffect();
+        emit elevationLevelChanged(level);
+    }
+}
+
+void FluentResizable::setEnableHandleAnimations(bool enable) {
+    if (m_enableHandleAnimations != enable) {
+        m_enableHandleAnimations = enable;
+        emit enableHandleAnimationsChanged(enable);
+    }
+}
+
 QSize FluentResizable::sizeHint() const {
     if (!m_sizeHintValid) {
         if (m_contentWidget) {
@@ -299,8 +468,14 @@ void FluentResizable::setupHandles() {
     for (size_t i = 0; i < m_handles.size(); ++i) {
         m_handles[i] =
             std::make_unique<FluentResizeHandleWidget>(handleTypes[i], this);
+
+        // Connect to all handle state signals for enhanced interaction
         connect(m_handles[i].get(), &FluentResizeHandleWidget::hoverChanged,
                 this, &FluentResizable::onHandleHoverChanged);
+        connect(m_handles[i].get(), &FluentResizeHandleWidget::pressedChanged,
+                this, &FluentResizable::onHandlePressedChanged);
+        connect(m_handles[i].get(), &FluentResizeHandleWidget::focusChanged,
+                this, &FluentResizable::onHandleFocusChanged);
     }
 
     updateHandlePositions();
@@ -308,23 +483,49 @@ void FluentResizable::setupHandles() {
 }
 
 void FluentResizable::setupAnimations() {
-    m_resizeAnimation->setDuration(200);
-    m_resizeAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    // Use FluentUI standard animation timing
+    m_resizeAnimation->setDuration(250);  // FluentUI primary motion duration
+    m_resizeAnimation->setEasingCurve(
+        QEasingCurve::OutCubic);  // FluentUI standard easing
 
     connect(m_resizeAnimation.get(), &QPropertyAnimation::valueChanged, this,
             &FluentResizable::onResizeAnimationValueChanged);
     connect(m_resizeAnimation.get(), &QPropertyAnimation::finished, this,
             &FluentResizable::onResizeAnimationFinished);
+
+    // Initialize handle entrance/exit animations
+    setupHandleAnimations();
+}
+
+void FluentResizable::setupHandleAnimations() {
+    // Handle animations are now managed within each FluentResizeHandleWidget
+    // This method can be used for coordinated handle animations in the future
+
+    // Set up entrance/exit animations for handle visibility
+    // These will be triggered when handles are shown/hidden
 }
 
 void FluentResizable::setupAccessibility() {
     setAccessibleName("Resizable Container");
     setAccessibleDescription(
         "A resizable container that can be adjusted by dragging the resize "
-        "handles");
+        "handles or using keyboard shortcuts. Use arrow keys to resize, "
+        "Shift+arrow keys for larger steps, Escape to cancel resize.");
 
     // Set focus policy to enable keyboard navigation
     setFocusPolicy(Qt::StrongFocus);
+
+    // Set ARIA attributes for better screen reader support
+    setProperty("role", "widget");
+    setProperty("aria-label", "Resizable container");
+    setProperty("aria-describedby", "Use drag handles or arrow keys to resize");
+
+    // Enable high contrast mode detection
+    // Note: QApplication doesn't have paletteChanged signal, we'll use theme
+    // changes instead
+
+    // Check for reduced motion preferences
+    updateMotionPreferences();
 }
 
 void FluentResizable::paintEvent(QPaintEvent* event) {
@@ -481,39 +682,67 @@ void FluentResizable::keyPressEvent(QKeyEvent* event) {
         return;
     }
 
+    // Enhanced keyboard navigation with accessibility improvements
     const int step = event->modifiers() & Qt::ShiftModifier ? 10 : 1;
+    const int largeStep = event->modifiers() & Qt::ControlModifier ? 50 : step;
     QSize newSize = size();
+    bool handled = true;
 
     switch (event->key()) {
         case Qt::Key_Left:
             newSize.setWidth(
-                qMax(m_minimumSize.width(), newSize.width() - step));
+                qMax(m_minimumSize.width(), newSize.width() - largeStep));
             break;
         case Qt::Key_Right:
             newSize.setWidth(
-                qMin(m_maximumSize.width(), newSize.width() + step));
+                qMin(m_maximumSize.width(), newSize.width() + largeStep));
             break;
         case Qt::Key_Up:
             newSize.setHeight(
-                qMax(m_minimumSize.height(), newSize.height() - step));
+                qMax(m_minimumSize.height(), newSize.height() - largeStep));
             break;
         case Qt::Key_Down:
             newSize.setHeight(
-                qMin(m_maximumSize.height(), newSize.height() + step));
+                qMin(m_maximumSize.height(), newSize.height() + largeStep));
             break;
         case Qt::Key_Escape:
             if (m_resizing) {
                 cancelResize();
+            } else {
+                clearFocus();  // Allow focus to move away
             }
             break;
+        case Qt::Key_Home:
+            // Reset to minimum size
+            newSize = m_minimumSize;
+            break;
+        case Qt::Key_End:
+            // Reset to maximum size (or reasonable maximum)
+            newSize = QSize(qMin(m_maximumSize.width(), 800),
+                            qMin(m_maximumSize.height(), 600));
+            break;
+        case Qt::Key_Space:
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            // Toggle handle visibility for better accessibility
+            toggleHandleVisibility();
+            break;
         default:
-            Core::FluentComponent::keyPressEvent(event);
-            return;
+            handled = false;
+            break;
     }
 
-    if (newSize != size()) {
-        resizeToSize(newSize, false);
+    if (handled) {
+        if (newSize != size()) {
+            // Announce size change for screen readers
+            setAccessibleDescription(QString("Resized to %1 by %2 pixels")
+                                         .arg(newSize.width())
+                                         .arg(newSize.height()));
+            resizeToSize(newSize, m_smoothResize);
+        }
         event->accept();
+    } else {
+        Core::FluentComponent::keyPressEvent(event);
     }
 }
 
@@ -550,7 +779,46 @@ void FluentResizable::onHandleHoverChanged(bool hovered) {
     update();
 }
 
-void FluentResizable::onThemeChanged() { updateStateStyle(); }
+void FluentResizable::onHandlePressedChanged(bool pressed) {
+    Q_UNUSED(pressed)
+    // Handle press state changes for enhanced visual feedback
+    update();
+}
+
+void FluentResizable::onHandleFocusChanged(bool focused) {
+    Q_UNUSED(focused)
+    // Handle focus state changes for accessibility
+    update();
+}
+
+void FluentResizable::onThemeChanged() {
+    updateStateStyle();
+    updateShadowEffect();      // Refresh shadow effects when theme changes
+    onSystemPaletteChanged();  // Check for high contrast mode changes
+}
+
+void FluentResizable::onSystemPaletteChanged() {
+    // Check if high contrast mode is enabled and adjust accordingly
+    // High contrast mode detection would be implemented here
+    // For now, we rely on the theme system to handle this
+    update();
+}
+
+void FluentResizable::updateMotionPreferences() {
+    // Check system preferences for reduced motion
+    // This would typically check system accessibility settings
+    // Disable animations if reduced motion is preferred
+    bool reducedMotion = false;  // Would be set based on system preferences
+
+    if (reducedMotion) {
+        m_enableHandleAnimations = false;
+        m_smoothResize = false;
+        // Disable all animations for accessibility
+        if (m_resizeAnimation) {
+            m_resizeAnimation->setDuration(0);
+        }
+    }
+}
 
 // Handle management methods
 void FluentResizable::updateHandlePositions() {
@@ -559,7 +827,7 @@ void FluentResizable::updateHandlePositions() {
     }
 
     const QRect rect = this->rect();
-    const int handleSize = m_handleSize;
+    const int handleSize = 10;  // Use fixed size for FluentUI handles
     const int halfHandle = handleSize / 2;
 
     // Position handles around the perimeter
@@ -603,7 +871,15 @@ void FluentResizable::updateHandleVisibility() {
             const FluentResizeHandle handleType =
                 static_cast<FluentResizeHandle>(1 << i);
             const bool handleEnabled = (m_enabledHandles & handleType) != 0;
-            m_handles[i]->setVisible(visible && handleEnabled);
+            const bool shouldBeVisible = visible && handleEnabled;
+
+            // Add smooth entrance/exit animations for handle visibility
+            if (m_enableHandleAnimations &&
+                shouldBeVisible != m_handles[i]->isVisible()) {
+                animateHandleVisibility(m_handles[i].get(), shouldBeVisible);
+            } else {
+                m_handles[i]->setVisible(shouldBeVisible);
+            }
         }
     }
 }
@@ -845,8 +1121,15 @@ void FluentResizable::animateToSize(const QSize& targetSize) {
         m_resizeAnimation->stop();
     }
 
+    // Use FluentUI primary motion for main content transitions
     m_resizeAnimation->setStartValue(geometry());
     m_resizeAnimation->setEndValue(QRect(pos(), targetSize));
+
+    // Apply FluentUI motion hierarchy - primary motion for main content
+    m_resizeAnimation->setDuration(250);  // FluentUI primary motion duration
+    m_resizeAnimation->setEasingCurve(
+        QEasingCurve::OutCubic);  // FluentUI standard easing
+
     m_resizeAnimation->start();
 }
 
@@ -856,17 +1139,61 @@ void FluentResizable::updateResizePreview(const QSize& previewSize) {
     }
 }
 
+void FluentResizable::animateHandleVisibility(QWidget* handle, bool visible) {
+    if (!handle)
+        return;
+
+    // Create a fade animation for smooth handle entrance/exit
+    auto* fadeAnimation = new QPropertyAnimation(handle, "windowOpacity", this);
+    fadeAnimation->setDuration(150);  // FluentUI secondary motion duration
+    fadeAnimation->setEasingCurve(
+        QEasingCurve::OutCubic);  // FluentUI standard easing
+
+    if (visible) {
+        // Fade in animation
+        handle->setVisible(true);
+        handle->setWindowOpacity(0.0);
+        fadeAnimation->setStartValue(0.0);
+        fadeAnimation->setEndValue(1.0);
+    } else {
+        // Fade out animation
+        fadeAnimation->setStartValue(1.0);
+        fadeAnimation->setEndValue(0.0);
+
+        // Hide the handle when animation finishes
+        connect(fadeAnimation, &QPropertyAnimation::finished, [handle]() {
+            handle->setVisible(false);
+            handle->setWindowOpacity(1.0);  // Reset for next time
+        });
+    }
+
+    fadeAnimation->start(QPropertyAnimation::DeleteWhenStopped);
+}
+
 // Painting methods
 void FluentResizable::paintBackground(QPainter& painter, const QRect& rect) {
     const QColor backgroundColor = getBackgroundColor();
-    painter.fillRect(rect, backgroundColor);
+    const int cornerRadius = getCornerRadius();
+
+    // Create rounded rectangle path for FluentUI design
+    QPainterPath path;
+    path.addRoundedRect(rect, cornerRadius, cornerRadius);
+
+    painter.fillPath(path, backgroundColor);
 }
 
 void FluentResizable::paintBorder(QPainter& painter, const QRect& rect) {
     const QPen borderPen = getBorderPen();
+    const int cornerRadius = getCornerRadius();
+
     painter.setPen(borderPen);
     painter.setBrush(Qt::NoBrush);
-    painter.drawRect(rect.adjusted(0, 0, -1, -1));
+
+    // Draw rounded border for FluentUI design
+    QPainterPath path;
+    path.addRoundedRect(rect.adjusted(0, 0, -1, -1), cornerRadius,
+                        cornerRadius);
+    painter.drawPath(path);
 }
 
 void FluentResizable::paintGridLines(QPainter& painter) {
@@ -917,6 +1244,63 @@ QPen FluentResizable::getBorderPen() const {
     return QPen(borderColor, 1);
 }
 
+QColor FluentResizable::getHandlePressedColor() const {
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    return theme.color("controlFillColorTertiary");
+}
+
+QColor FluentResizable::getHandleFocusedColor() const {
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    return theme.color("accentFillColorDefault");
+}
+
+QString FluentResizable::getShadowStyle() const {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    return tokenUtils.getShadow(m_elevationLevel);
+}
+
+int FluentResizable::getCornerRadius() const {
+    const auto& tokenUtils =
+        FluentQt::Styling::FluentDesignTokenUtils::instance();
+    return tokenUtils.getBorderRadius("medium");
+}
+
+QGraphicsDropShadowEffect* FluentResizable::createShadowEffect() const {
+    if (!m_enableShadows) {
+        return nullptr;
+    }
+
+    auto* effect = new QGraphicsDropShadowEffect();
+
+    // Use FluentUI shadow specifications
+    if (m_elevationLevel == "low") {
+        effect->setBlurRadius(4);
+        effect->setOffset(0, 1);
+        effect->setColor(QColor(0, 0, 0, 28));
+    } else if (m_elevationLevel == "medium") {
+        effect->setBlurRadius(8);
+        effect->setOffset(0, 2);
+        effect->setColor(QColor(0, 0, 0, 35));
+    } else if (m_elevationLevel == "high") {
+        effect->setBlurRadius(16);
+        effect->setOffset(0, 4);
+        effect->setColor(QColor(0, 0, 0, 42));
+    }
+
+    return effect;
+}
+
+void FluentResizable::updateShadowEffect() {
+    if (m_enableShadows) {
+        m_shadowEffect.reset(createShadowEffect());
+        setGraphicsEffect(m_shadowEffect.get());
+    } else {
+        setGraphicsEffect(nullptr);
+        m_shadowEffect.reset();
+    }
+}
+
 // Utility methods
 void FluentResizable::updateContentGeometry() {
     if (!m_contentWidget) {
@@ -924,10 +1308,41 @@ void FluentResizable::updateContentGeometry() {
     }
 
     const QRect rect = this->rect();
-    const int margin = m_showHandles ? m_handleSize / 2 : 0;
+    const int margin =
+        m_showHandles ? 5 : 0;  // Use consistent margin for FluentUI
     const QRect contentRect = rect.adjusted(margin, margin, -margin, -margin);
 
     m_contentWidget->setGeometry(contentRect);
+
+    // Validate geometry constraints for consistency
+    validateGeometry();
+}
+
+void FluentResizable::validateGeometry() {
+    // Ensure the component maintains FluentUI design consistency
+    const QSize currentSize = size();
+
+    // Validate minimum size compliance
+    if (currentSize.width() < m_minimumSize.width() ||
+        currentSize.height() < m_minimumSize.height()) {
+        qWarning() << "FluentResizable: Size below minimum constraints";
+    }
+
+    // Validate maximum size compliance
+    if (currentSize.width() > m_maximumSize.width() ||
+        currentSize.height() > m_maximumSize.height()) {
+        qWarning() << "FluentResizable: Size exceeds maximum constraints";
+    }
+
+    // Validate aspect ratio if maintained
+    if (m_maintainAspectRatio && m_aspectRatio > 0.0) {
+        const qreal currentRatio =
+            static_cast<qreal>(currentSize.width()) / currentSize.height();
+        const qreal tolerance = 0.1;  // 10% tolerance
+        if (qAbs(currentRatio - m_aspectRatio) > tolerance) {
+            qWarning() << "FluentResizable: Aspect ratio deviation detected";
+        }
+    }
 }
 
 }  // namespace FluentQt::Components

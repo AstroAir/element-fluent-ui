@@ -210,23 +210,54 @@ QSize FluentButton::sizeHint() const {
     const int horizontalPadding = 2 * getHorizontalPadding();
     const int verticalPadding = 2 * getVerticalPadding();
 
-    // Minimum size constraints
+    // Minimum size constraints using design tokens
     int minWidth = 32;  // Minimum touch target
     int minHeight = 32;
 
-    switch (m_buttonSize) {
-        case FluentButtonSize::Small:
-            minHeight = 24;
-            break;
-        case FluentButtonSize::Medium:
-            minHeight = 32;
-            break;
-        case FluentButtonSize::Large:
-            minHeight = 40;
-            break;
-        case FluentButtonSize::ExtraLarge:
-            minHeight = 48;
-            break;
+    if (m_useDesignTokens) {
+        QString sizeStr;
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                sizeStr = "small";
+                break;
+            case FluentButtonSize::Medium:
+                sizeStr = "medium";
+                break;
+            case FluentButtonSize::Large:
+                sizeStr = "large";
+                break;
+            case FluentButtonSize::ExtraLarge:
+                sizeStr = "extraLarge";
+                break;
+            default:
+                sizeStr = "medium";
+        }
+
+        int tokenHeight =
+            getTokenSize(QString("button.size.%1.height").arg(sizeStr));
+        int tokenWidth =
+            getTokenSize(QString("button.size.%1.minWidth").arg(sizeStr));
+
+        if (tokenHeight > 0)
+            minHeight = tokenHeight;
+        if (tokenWidth > 0)
+            minWidth = tokenWidth;
+    } else {
+        // Fallback to hardcoded values
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                minHeight = 24;
+                break;
+            case FluentButtonSize::Medium:
+                minHeight = 32;
+                break;
+            case FluentButtonSize::Large:
+                minHeight = 40;
+                break;
+            case FluentButtonSize::ExtraLarge:
+                minHeight = 48;
+                break;
+        }
     }
 
     const QSize result(std::max(minWidth, contentWidth + horizontalPadding),
@@ -285,6 +316,22 @@ void FluentButton::paintBackground(QPainter& painter, const QRect& rect) {
     const QColor backgroundColor = getBackgroundColor();
 
     if (backgroundColor.alpha() == 0) {
+        // For Text buttons, we might want to show a subtle background on
+        // hover/press
+        if (m_buttonStyle == FluentButtonStyle::Text &&
+            (state() == Core::FluentState::Hovered ||
+             state() == Core::FluentState::Pressed)) {
+            const auto& theme = Styling::FluentTheme::instance();
+            const auto& palette = theme.currentPalette();
+
+            QColor subtleBackground = palette.neutralLight;
+            subtleBackground.setAlphaF(0.1);
+
+            QPainterPath path;
+            const int radius = cornerRadius();
+            path.addRoundedRect(rect, radius, radius);
+            painter.fillPath(path, subtleBackground);
+        }
         return;
     }
 
@@ -297,9 +344,10 @@ void FluentButton::paintBackground(QPainter& painter, const QRect& rect) {
     QColor finalColor = backgroundColor;
     finalColor.setAlphaF(finalColor.alphaF() * m_backgroundOpacity);
 
-    // Add subtle gradient for depth
+    // Add subtle gradient for depth (Primary, Accent, and Split buttons)
     if (m_buttonStyle == FluentButtonStyle::Primary ||
-        m_buttonStyle == FluentButtonStyle::Accent) {
+        m_buttonStyle == FluentButtonStyle::Accent ||
+        m_buttonStyle == FluentButtonStyle::Split) {
         QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
         gradient.setColorAt(0.0, finalColor.lighter(105));
         gradient.setColorAt(1.0, finalColor.darker(105));
@@ -311,7 +359,8 @@ void FluentButton::paintBackground(QPainter& painter, const QRect& rect) {
     // Add subtle shadow for elevated buttons
     if (state() == Core::FluentState::Hovered &&
         (m_buttonStyle == FluentButtonStyle::Default ||
-         m_buttonStyle == FluentButtonStyle::Primary)) {
+         m_buttonStyle == FluentButtonStyle::Primary ||
+         m_buttonStyle == FluentButtonStyle::Split)) {
         painter.save();
         painter.setPen(Qt::NoPen);
 
@@ -321,6 +370,23 @@ void FluentButton::paintBackground(QPainter& painter, const QRect& rect) {
         QPainterPath shadowPath;
         shadowPath.addRoundedRect(rect.adjusted(0, 1, 0, 1), radius, radius);
         painter.fillPath(shadowPath, shadowColor);
+
+        painter.restore();
+    }
+
+    // Special handling for Split buttons - add dropdown indicator
+    if (m_buttonStyle == FluentButtonStyle::Split && !m_icon.isNull()) {
+        painter.save();
+
+        // Draw separator line for split button
+        const int separatorX = rect.right() - 24;  // 24px from right edge
+        QColor separatorColor = getTextColor();
+        separatorColor.setAlphaF(0.3);
+
+        QPen separatorPen(separatorColor, 1);
+        painter.setPen(separatorPen);
+        painter.drawLine(separatorX, rect.top() + 6, separatorX,
+                         rect.bottom() - 6);
 
         painter.restore();
     }
@@ -693,6 +759,27 @@ QColor FluentButton::getBackgroundColor() const {
         case FluentButtonStyle::Hyperlink:
             return Qt::transparent;
 
+        case FluentButtonStyle::Text:
+            return Qt::transparent;  // Text buttons have no background
+
+        case FluentButtonStyle::Split:
+            // Split buttons use the same background as Default but with special
+            // handling
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return effectivePressed ? palette.neutralQuaternaryAlt
+                                            : palette.neutralLighter;
+                case Core::FluentState::Hovered:
+                    return effectivePressed ? palette.neutralQuaternary
+                                            : palette.neutralLight;
+                case Core::FluentState::Pressed:
+                    return palette.neutralQuaternaryAlt;
+                case Core::FluentState::Disabled:
+                    return palette.neutralLighter;
+                default:
+                    return palette.neutralLighter;
+            }
+
         default:  // FluentButtonStyle::Default
             switch (state()) {
                 case Core::FluentState::Normal:
@@ -737,6 +824,30 @@ QColor FluentButton::getTextColor() const {
                     return palette.neutralTertiary;
                 default:
                     return palette.accent;
+            }
+
+        case FluentButtonStyle::Text:
+            // Text buttons use accent color for text
+            switch (state()) {
+                case Core::FluentState::Normal:
+                    return palette.accent;
+                case Core::FluentState::Hovered:
+                    return palette.accentLight1;
+                case Core::FluentState::Pressed:
+                    return palette.accentDark1;
+                case Core::FluentState::Disabled:
+                    return palette.neutralTertiary;
+                default:
+                    return palette.accent;
+            }
+
+        case FluentButtonStyle::Split:
+            // Split buttons use standard text color
+            switch (state()) {
+                case Core::FluentState::Disabled:
+                    return palette.neutralTertiary;
+                default:
+                    return palette.neutralPrimary;
             }
 
         default:
@@ -793,6 +904,29 @@ QFont FluentButton::getFont() const {
 
 // Size and spacing calculations
 int FluentButton::getHorizontalPadding() const {
+    if (m_useDesignTokens) {
+        QString sizeStr;
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                sizeStr = "small";
+                break;
+            case FluentButtonSize::Medium:
+                sizeStr = "medium";
+                break;
+            case FluentButtonSize::Large:
+                sizeStr = "large";
+                break;
+            case FluentButtonSize::ExtraLarge:
+                sizeStr = "extraLarge";
+                break;
+            default:
+                sizeStr = "medium";
+        }
+        return getTokenSize(
+            QString("button.size.%1.padding.horizontal").arg(sizeStr));
+    }
+
+    // Fallback to hardcoded values
     switch (m_buttonSize) {
         case FluentButtonSize::Small:
             return 8;
@@ -808,6 +942,29 @@ int FluentButton::getHorizontalPadding() const {
 }
 
 int FluentButton::getVerticalPadding() const {
+    if (m_useDesignTokens) {
+        QString sizeStr;
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                sizeStr = "small";
+                break;
+            case FluentButtonSize::Medium:
+                sizeStr = "medium";
+                break;
+            case FluentButtonSize::Large:
+                sizeStr = "large";
+                break;
+            case FluentButtonSize::ExtraLarge:
+                sizeStr = "extraLarge";
+                break;
+            default:
+                sizeStr = "medium";
+        }
+        return getTokenSize(
+            QString("button.size.%1.padding.vertical").arg(sizeStr));
+    }
+
+    // Fallback to hardcoded values
     switch (m_buttonSize) {
         case FluentButtonSize::Small:
             return 4;
@@ -823,6 +980,29 @@ int FluentButton::getVerticalPadding() const {
 }
 
 int FluentButton::getIconTextSpacing() const {
+    if (m_useDesignTokens) {
+        QString sizeStr;
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                sizeStr = "small";
+                break;
+            case FluentButtonSize::Medium:
+                sizeStr = "medium";
+                break;
+            case FluentButtonSize::Large:
+                sizeStr = "large";
+                break;
+            case FluentButtonSize::ExtraLarge:
+                sizeStr = "extraLarge";
+                break;
+            default:
+                sizeStr = "medium";
+        }
+        return getTokenSpacing(
+            QString("button.size.%1.iconSpacing").arg(sizeStr));
+    }
+
+    // Fallback to hardcoded values
     switch (m_buttonSize) {
         case FluentButtonSize::Small:
             return 4;
@@ -939,21 +1119,51 @@ QSize FluentButton::calculateIconSize() const {
     }
 
     int iconSize;
-    switch (m_buttonSize) {
-        case FluentButtonSize::Small:
-            iconSize = 12;
-            break;
-        case FluentButtonSize::Medium:
-            iconSize = 16;
-            break;
-        case FluentButtonSize::Large:
-            iconSize = 20;
-            break;
-        case FluentButtonSize::ExtraLarge:
-            iconSize = 24;
-            break;
-        default:
-            iconSize = 16;
+    if (m_useDesignTokens) {
+        QString sizeStr;
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                sizeStr = "small";
+                break;
+            case FluentButtonSize::Medium:
+                sizeStr = "medium";
+                break;
+            case FluentButtonSize::Large:
+                sizeStr = "large";
+                break;
+            case FluentButtonSize::ExtraLarge:
+                sizeStr = "extraLarge";
+                break;
+            default:
+                sizeStr = "medium";
+        }
+        iconSize =
+            getTokenSize(QString("button.size.%1.iconSize").arg(sizeStr));
+        if (iconSize <= 0) {
+            // Fallback to hardcoded values if token not found
+            iconSize = (m_buttonSize == FluentButtonSize::Small)    ? 12
+                       : (m_buttonSize == FluentButtonSize::Medium) ? 16
+                       : (m_buttonSize == FluentButtonSize::Large)  ? 20
+                                                                    : 24;
+        }
+    } else {
+        // Fallback to hardcoded values
+        switch (m_buttonSize) {
+            case FluentButtonSize::Small:
+                iconSize = 12;
+                break;
+            case FluentButtonSize::Medium:
+                iconSize = 16;
+                break;
+            case FluentButtonSize::Large:
+                iconSize = 20;
+                break;
+            case FluentButtonSize::ExtraLarge:
+                iconSize = 24;
+                break;
+            default:
+                iconSize = 16;
+        }
     }
 
     return QSize(iconSize, iconSize);
@@ -986,8 +1196,22 @@ void FluentButton::createBackgroundAnimation() {
     }
 
     m_backgroundAnimation->stop();
-    m_backgroundAnimation->setDuration(150);
-    m_backgroundAnimation->setEasingCurve(QEasingCurve::OutCubic);
+
+    // Use FluentUI 2.0 standard duration and easing
+    if (m_useDesignTokens) {
+        int duration = getTokenSize(
+            "animation.duration.normal");  // 200ms for FluentUI 2.0
+        m_backgroundAnimation->setDuration(duration > 0 ? duration : 200);
+    } else {
+        m_backgroundAnimation->setDuration(200);  // FluentUI 2.0 standard
+    }
+
+    // Use FluentUI 2.0 standard easing curve (0.1, 0.9, 0.2, 1.0)
+    QEasingCurve fluentCurve(QEasingCurve::BezierSpline);
+    fluentCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
+                                      QPointF(1.0, 1.0));
+    m_backgroundAnimation->setEasingCurve(fluentCurve);
+
     m_backgroundAnimation->setStartValue(m_backgroundOpacity);
     m_backgroundAnimation->setEndValue(1.0);
     m_backgroundAnimation->start();
@@ -1076,34 +1300,50 @@ void FluentButton::animateClickVisual() {
 
         auto clickAnim =
             std::make_unique<QPropertyAnimation>(this, "backgroundOpacity");
-        clickAnim->setDuration(100);  // Fluent Design micro-interaction timing
+
+        // Use FluentUI 2.0 micro-interaction timing (80ms for press)
+        int pressDuration = 80;
+        if (m_useDesignTokens) {
+            pressDuration = getTokenSize("animation.duration.fast");
+            if (pressDuration <= 0)
+                pressDuration = 80;
+        }
+        clickAnim->setDuration(pressDuration);
         clickAnim->setStartValue(originalOpacity);
         clickAnim->setEndValue(0.7);
 
-        // Use Fluent button curve for press feedback
-        QEasingCurve buttonCurve(QEasingCurve::BezierSpline);
-        buttonCurve.addCubicBezierSegment(QPointF(0.1, 0.9), QPointF(0.2, 1.0),
-                                          QPointF(1.0, 1.0));
-        clickAnim->setEasingCurve(buttonCurve);
+        // Use FluentUI 2.0 accelerate curve for press (0.7, 0.0, 1.0, 0.5)
+        QEasingCurve pressCurve(QEasingCurve::BezierSpline);
+        pressCurve.addCubicBezierSegment(QPointF(0.7, 0.0), QPointF(1.0, 0.5),
+                                         QPointF(1.0, 1.0));
+        clickAnim->setEasingCurve(pressCurve);
 
-        connect(clickAnim.get(), &QPropertyAnimation::finished,
-                [this, originalOpacity]() {
-                    auto restoreAnim = std::make_unique<QPropertyAnimation>(
-                        this, "backgroundOpacity");
-                    restoreAnim->setDuration(
-                        150);  // Slightly longer restore for smooth feel
-                    restoreAnim->setStartValue(0.7);
-                    restoreAnim->setEndValue(originalOpacity);
+        connect(
+            clickAnim.get(), &QPropertyAnimation::finished,
+            [this, originalOpacity]() {
+                auto restoreAnim = std::make_unique<QPropertyAnimation>(
+                    this, "backgroundOpacity");
 
-                    // Use Fluent standard curve for restore
-                    QEasingCurve restoreCurve(QEasingCurve::BezierSpline);
-                    restoreCurve.addCubicBezierSegment(QPointF(0.8, 0.0),
-                                                       QPointF(0.2, 1.0),
-                                                       QPointF(1.0, 1.0));
-                    restoreAnim->setEasingCurve(restoreCurve);
+                // Use FluentUI 2.0 restore timing (120ms)
+                int restoreDuration = 120;
+                if (m_useDesignTokens) {
+                    restoreDuration = getTokenSize("animation.duration.normal");
+                    if (restoreDuration <= 0)
+                        restoreDuration = 120;
+                }
+                restoreAnim->setDuration(restoreDuration);
+                restoreAnim->setStartValue(0.7);
+                restoreAnim->setEndValue(originalOpacity);
 
-                    restoreAnim->start();
-                });
+                // Use FluentUI 2.0 decelerate curve for restore (0.1, 0.9,
+                // 0.2, 1.0)
+                QEasingCurve restoreCurve(QEasingCurve::BezierSpline);
+                restoreCurve.addCubicBezierSegment(
+                    QPointF(0.1, 0.9), QPointF(0.2, 1.0), QPointF(1.0, 1.0));
+                restoreAnim->setEasingCurve(restoreCurve);
+
+                restoreAnim->start();
+            });
 
         clickAnim->start();
         m_clickTimer->start();
@@ -1137,10 +1377,13 @@ void FluentButton::updateGeometry() {
 }
 
 void FluentButton::updateAccessibility() {
-    Accessibility::setAccessibleName(this,
-                                     m_text.isEmpty() ? "Button" : m_text);
+    QString name = m_accessibleName.isEmpty()
+                       ? (m_text.isEmpty() ? "Button" : m_text)
+                       : m_accessibleName;
+    Accessibility::setAccessibleName(this, name);
 
-    QString description = m_text;
+    QString description =
+        m_accessibleDescription.isEmpty() ? m_text : m_accessibleDescription;
     if (m_checkable) {
         description += m_checked ? " (checked)" : " (unchecked)";
     }
@@ -1149,8 +1392,54 @@ void FluentButton::updateAccessibility() {
     }
 
     Accessibility::setAccessibleDescription(this, description);
-    Accessibility::setAccessibleRole(
-        this, m_checkable ? QAccessible::CheckBox : QAccessible::Button);
+    Accessibility::setAccessibleRole(this, m_accessibleRole);
+}
+
+// Shortcut key support implementation
+void FluentButton::setShortcut(const QKeySequence& shortcut) {
+    if (m_shortcut != shortcut) {
+        m_shortcut = shortcut;
+        setToolTip(m_shortcut.isEmpty() ? QString() : m_shortcut.toString());
+    }
+}
+
+void FluentButton::setShortcut(QKeySequence::StandardKey key) {
+    setShortcut(QKeySequence(key));
+}
+
+// Enhanced accessibility methods
+QString FluentButton::accessibleName() const {
+    return m_accessibleName.isEmpty() ? (m_text.isEmpty() ? "Button" : m_text)
+                                      : m_accessibleName;
+}
+
+void FluentButton::setAccessibleName(const QString& name) {
+    if (m_accessibleName != name) {
+        m_accessibleName = name;
+        updateAccessibility();
+    }
+}
+
+QString FluentButton::accessibleDescription() const {
+    return m_accessibleDescription;
+}
+
+void FluentButton::setAccessibleDescription(const QString& description) {
+    if (m_accessibleDescription != description) {
+        m_accessibleDescription = description;
+        updateAccessibility();
+    }
+}
+
+QAccessible::Role FluentButton::accessibleRole() const {
+    return m_accessibleRole;
+}
+
+void FluentButton::setAccessibleRole(QAccessible::Role role) {
+    if (m_accessibleRole != role) {
+        m_accessibleRole = role;
+        updateAccessibility();
+    }
 }
 
 // Static convenience methods
@@ -1168,12 +1457,53 @@ FluentButton* FluentButton::createAccentButton(const QString& text,
     return button;
 }
 
+FluentButton* FluentButton::createSubtleButton(const QString& text,
+                                               QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Subtle);
+    return button;
+}
+
+FluentButton* FluentButton::createTextButton(const QString& text,
+                                             QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Text);
+    return button;
+}
+
+FluentButton* FluentButton::createOutlineButton(const QString& text,
+                                                QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Outline);
+    return button;
+}
+
 FluentButton* FluentButton::createIconButton(const QIcon& icon,
                                              QWidget* parent) {
     auto* button = new FluentButton(parent);
     button->setIcon(icon);
     button->setButtonStyle(FluentButtonStyle::Icon);
     button->setFlat(true);
+    return button;
+}
+
+FluentButton* FluentButton::createToggleButton(const QString& text,
+                                               QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Toggle);
+    button->setCheckable(true);
+    return button;
+}
+
+FluentButton* FluentButton::createSplitButton(const QString& text,
+                                              const QIcon& dropdownIcon,
+                                              QWidget* parent) {
+    auto* button = new FluentButton(text, parent);
+    button->setButtonStyle(FluentButtonStyle::Split);
+    if (!dropdownIcon.isNull()) {
+        button->setIcon(dropdownIcon);
+        button->setIconPosition(FluentIconPosition::Right);
+    }
     return button;
 }
 
@@ -1278,6 +1608,44 @@ void FluentButton::updateCacheIfNeeded() const {
                 ~FluentButtonDirtyRegions(FluentButtonDirtyRegion::Content);
         }
     }
+}
+
+// Design token integration methods
+void FluentButton::setUseDesignTokens(bool use) {
+    if (m_useDesignTokens != use) {
+        m_useDesignTokens = use;
+        if (use) {
+            refreshFromDesignTokens();
+        }
+        invalidateCache(FluentButtonDirtyRegion::All);
+        updateStateStyle();
+    }
+}
+
+void FluentButton::refreshFromDesignTokens() {
+    if (m_useDesignTokens) {
+        // Invalidate size hint cache to recalculate with new tokens
+        m_sizeHintValid = false;
+        invalidateCache(FluentButtonDirtyRegion::All);
+        updateGeometry();
+        update();
+    }
+}
+
+QColor FluentButton::getTokenColor(const QString& tokenName) const {
+    return Styling::FluentDesignTokenUtils::instance().getColor(tokenName);
+}
+
+QFont FluentButton::getTokenFont(const QString& tokenName) const {
+    return Styling::FluentDesignTokenUtils::instance().getFont(tokenName);
+}
+
+int FluentButton::getTokenSize(const QString& tokenName) const {
+    return Styling::FluentDesignTokenUtils::instance().getSize(tokenName);
+}
+
+int FluentButton::getTokenSpacing(const QString& tokenName) const {
+    return Styling::FluentDesignTokenUtils::instance().getSpacing(tokenName);
 }
 
 }  // namespace FluentQt::Components

@@ -2,71 +2,100 @@
 #include "FluentQt/Components/FluentScrollArea.h"
 #include "FluentQt/Core/FluentPerformance.h"
 #include "FluentQt/Styling/FluentTheme.h"
+#include "FluentScrollAreaPrivate.h"
 
 #include <QAccessible>
+#include <QAccessibleInterface>
+#include <QAccessibleWidget>
 #include <QApplication>
 #include <QDebug>
+#include <QEasingCurve>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPropertyAnimation>
 #include <QScrollBar>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QtMath>
 
 namespace FluentQt::Components {
 
-// Custom scroll bar implementation
-class FluentScrollBar : public QScrollBar {
-    Q_OBJECT
+// FluentScrollBar implementation
+FluentScrollBar::FluentScrollBar(Qt::Orientation orientation, QWidget* parent)
+    : QScrollBar(orientation, parent) {
+    setStyleSheet(getFluentScrollBarStyle());
+    setAttribute(Qt::WA_Hover, true);
+    setAttribute(Qt::WA_AccessibleRole, QAccessible::ScrollBar);
 
-public:
-    explicit FluentScrollBar(Qt::Orientation orientation,
-                             QWidget* parent = nullptr)
-        : QScrollBar(orientation, parent) {
-        setStyleSheet(getFluentScrollBarStyle());
-        setAttribute(Qt::WA_Hover, true);
+    // Cache theme colors for performance
+    updateThemeColors();
+
+    // Connect to theme changes
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentScrollBar::updateThemeColors);
+}
+
+void FluentScrollBar::setFluentOpacity(qreal opacity) {
+    m_opacity = qBound(0.0, opacity, 1.0);
+    update();
+}
+
+qreal FluentScrollBar::fluentOpacity() const { return m_opacity; }
+
+// Accessibility support
+void FluentScrollBar::setAccessibleDescription(const QString& description) {
+    m_accessibleDescription = description;
+    if (QAccessibleInterface* iface =
+            QAccessible::queryAccessibleInterface(this)) {
+        QAccessible::updateAccessibility(
+            QAccessibleEvent(QAccessible::DescriptionChanged, this, 0));
     }
+}
 
-    void setFluentOpacity(qreal opacity) {
-        m_opacity = opacity;
-        update();
-    }
+void FluentScrollBar::paintEvent(QPaintEvent* event) {
+    Q_UNUSED(event)
 
-    qreal fluentOpacity() const { return m_opacity; }
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setOpacity(m_opacity);
 
-protected:
-    void paintEvent(QPaintEvent* event) override {
-        Q_UNUSED(event)
+    const QRect grooveRect = getGrooveRect();
+    const QRect handleRect = getHandleRect();
 
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setOpacity(m_opacity);
+    // Paint groove with theme colors
+    painter.fillRect(grooveRect, m_grooveColor);
 
-        const QRect grooveRect = getGrooveRect();
-        const QRect handleRect = getHandleRect();
+    // Paint handle with state-based theme colors
+    QColor handleColor = getHandleColor();
+    painter.setBrush(handleColor);
+    painter.setPen(Qt::NoPen);
 
-        // Paint groove
-        const QColor grooveColor = QColor(200, 200, 200, 50);
-        painter.fillRect(grooveRect, grooveColor);
+    // Use theme corner radius
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    const int radius = theme.borderRadius("small");
+    painter.drawRoundedRect(handleRect, radius, radius);
+}
 
-        // Paint handle
-        QColor handleColor = QColor(100, 100, 100);
-        if (underMouse()) {
-            handleColor = QColor(0, 120, 215);
-        }
+void FluentScrollBar::updateThemeColors() {
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
 
-        painter.setBrush(handleColor);
-        painter.setPen(Qt::NoPen);
+    // Cache theme colors for performance
+    m_grooveColor = theme.color("strokeColorDefault");
+    m_grooveColor.setAlpha(50);  // Semi-transparent groove
 
-        const int radius = qMin(handleRect.width(), handleRect.height()) / 2;
-        painter.drawRoundedRect(handleRect, radius, radius);
-    }
+    m_handleColor = theme.color("fillColorSecondary");
+    m_handleHoverColor = theme.color("accentFillColorDefault");
+    m_handlePressedColor = theme.color("accentFillColorSecondary");
+    m_handleDisabledColor = theme.color("fillColorDisabled");
 
-private:
-    QString getFluentScrollBarStyle() const {
-        return R"(
+    update();
+}
+QString getFluentScrollBarStyle() const {
+    return R"(
             QScrollBar {
                 background: transparent;
                 border: none;
@@ -80,94 +109,165 @@ private:
                 border: none;
             }
         )";
+}
+
+QColor getHandleColor() const {
+    if (!isEnabled()) {
+        return m_handleDisabledColor;
     }
 
-    QRect getGrooveRect() const {
-        const QRect rect = this->rect();
-        if (orientation() == Qt::Horizontal) {
-            return rect.adjusted(0, 2, 0, -2);
-        } else {
-            return rect.adjusted(2, 0, -2, 0);
-        }
+    if (underMouse()) {
+        return m_handleHoverColor;
     }
 
-    QRect getHandleRect() const {
-        const QRect rect = this->rect();
-        const int handleSize = qRound(
-            static_cast<qreal>(maximum() - minimum() + pageStep()) /
-            qMax(1, maximum() - minimum() + pageStep()) *
-            (orientation() == Qt::Horizontal ? rect.width() : rect.height()));
-
-        const int handlePos = qRound(
-            static_cast<qreal>(value() - minimum()) /
-            qMax(1, maximum() - minimum()) *
-            ((orientation() == Qt::Horizontal ? rect.width() : rect.height()) -
-             handleSize));
-
-        if (orientation() == Qt::Horizontal) {
-            return QRect(handlePos, 2, handleSize, rect.height() - 4);
-        } else {
-            return QRect(2, handlePos, rect.width() - 4, handleSize);
-        }
+    // Check if pressed (this is a simplified check)
+    if (QApplication::mouseButtons() & Qt::LeftButton) {
+        return m_handlePressedColor;
     }
+
+    return m_handleNormalColor;
+}
+
+QRect getGrooveRect() const {
+    const QRect rect = this->rect();
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    const int padding = theme.spacing("xs");
+
+    if (orientation() == Qt::Horizontal) {
+        return rect.adjusted(0, padding, 0, -padding);
+    } else {
+        return rect.adjusted(padding, 0, -padding, 0);
+    }
+}
+
+QRect getHandleRect() const {
+    const QRect rect = this->rect();
+    const int range = maximum() - minimum();
+    if (range <= 0) {
+        return QRect();
+    }
+
+    const int handleSize = qRound(
+        static_cast<qreal>(pageStep()) / (range + pageStep()) *
+        (orientation() == Qt::Horizontal ? rect.width() : rect.height()));
+
+    const int handlePos = qRound(
+        static_cast<qreal>(value() - minimum()) / range *
+        ((orientation() == Qt::Horizontal ? rect.width() : rect.height()) -
+         handleSize));
+
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    const int padding = theme.spacing("xs");
+
+    if (orientation() == Qt::Horizontal) {
+        return QRect(handlePos, padding, handleSize,
+                     rect.height() - 2 * padding);
+    } else {
+        return QRect(padding, handlePos, rect.width() - 2 * padding,
+                     handleSize);
+    }
+}
 
 private:
-    qreal m_opacity{1.0};
+qreal m_opacity{1.0};
+QString m_accessibleDescription;
+
+// Cached theme colors for performance
+QColor m_grooveColor;
+QColor m_handleNormalColor;
+QColor m_handleHoverColor;
+QColor m_handlePressedColor;
+QColor m_handleDisabledColor;
 };
 
-// Scroll position indicator
-class FluentScrollIndicator : public QWidget {
-public:
-    explicit FluentScrollIndicator(QWidget* parent = nullptr)
-        : QWidget(parent) {
-        setAttribute(Qt::WA_TransparentForMouseEvents);
-        setAttribute(Qt::WA_NoSystemBackground);
-        setVisible(false);
+// FluentScrollIndicator implementation
+explicit FluentScrollIndicator(QWidget* parent = nullptr) : QWidget(parent) {
+    setAttribute(Qt::WA_TransparentForMouseEvents);
+    setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_AccessibleRole, QAccessible::StaticText);
+    setVisible(false);
+
+    // Cache theme colors and properties
+    updateThemeProperties();
+
+    // Connect to theme changes
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::themeChanged, this,
+            &FluentScrollIndicator::updateThemeProperties);
+}
+
+void showIndicator(const QString& text, const QPoint& position) {
+    m_text = text;
+    move(position);
+    setVisible(true);
+
+    // Update accessible description for screen readers
+    setAccessibleDescription(tr("Scroll position: %1").arg(text));
+
+    if (!m_hideTimer) {
+        m_hideTimer = new QTimer(this);
+        m_hideTimer->setSingleShot(true);
+        connect(m_hideTimer, &QTimer::timeout, this, &QWidget::hide);
     }
 
-    void showIndicator(const QString& text, const QPoint& position) {
-        m_text = text;
-        move(position);
-        setVisible(true);
-
-        if (!m_hideTimer) {
-            m_hideTimer = new QTimer(this);
-            m_hideTimer->setSingleShot(true);
-            connect(m_hideTimer, &QTimer::timeout, this, &QWidget::hide);
-        }
-
-        m_hideTimer->start(1000);
-        update();
-    }
+    // Use theme-based timing
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    const int hideDelay = theme.m_reducedMotionMode ? 2000 : 1000;
+    m_hideTimer->start(hideDelay);
+    update();
+}
 
 protected:
-    void paintEvent(QPaintEvent* event) override {
-        Q_UNUSED(event)
+void paintEvent(QPaintEvent* event) override {
+    Q_UNUSED(event)
 
-        QPainter painter(this);
-        painter.setRenderHint(QPainter::Antialiasing);
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
-        const QRect rect = this->rect();
-        const QColor backgroundColor = QColor(0, 0, 0, 180);
-        const QColor textColor = Qt::white;
+    const QRect rect = this->rect();
 
-        painter.setBrush(backgroundColor);
-        painter.setPen(Qt::NoPen);
-        painter.drawRoundedRect(rect, 4, 4);
+    // Use theme colors
+    painter.setBrush(m_backgroundColor);
+    painter.setPen(Qt::NoPen);
+    painter.drawRoundedRect(rect, m_cornerRadius, m_cornerRadius);
 
-        painter.setPen(textColor);
-        painter.drawText(rect, Qt::AlignCenter, m_text);
-    }
+    painter.setPen(m_textColor);
+    painter.setFont(m_font);
+    painter.drawText(rect, Qt::AlignCenter, m_text);
+}
 
-    QSize sizeHint() const override {
-        const QFontMetrics fm(font());
-        return fm.boundingRect(m_text).size() + QSize(16, 8);
-    }
+QSize sizeHint() const override {
+    const QFontMetrics fm(m_font);
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+    const int padding = theme.spacing("s");
+    return fm.boundingRect(m_text).size() + QSize(padding * 2, padding);
+}
+
+private slots:
+void updateThemeProperties() {
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+
+    // Cache theme properties for performance
+    m_backgroundColor = theme.color("layerFillColorAlt");
+    m_backgroundColor.setAlpha(220);  // Semi-transparent
+
+    m_textColor = theme.color("textFillColorPrimary");
+    m_font = theme.captionFont();
+    m_cornerRadius = theme.borderRadius("medium");
+
+    update();
+}
 
 private:
-    QString m_text;
-    QTimer* m_hideTimer{nullptr};
-};
+QString m_text;
+QTimer* m_hideTimer{nullptr};
+
+// Cached theme properties for performance
+QColor m_backgroundColor;
+QColor m_textColor;
+QFont m_font;
+int m_cornerRadius{4};
+}
 
 FluentScrollArea::FluentScrollArea(QWidget* parent)
     : Core::FluentComponent(parent),
@@ -179,15 +279,23 @@ FluentScrollArea::FluentScrollArea(QWidget* parent)
       m_scrollAnimation(
           std::make_unique<QPropertyAnimation>(this, "scrollPosition")),
       m_autoHideTimer(std::make_unique<QTimer>(this)) {
+    // Initialize theme-based properties first
+    initializeThemeProperties();
+
     setupScrollArea();
     setupScrollBars();
     setupAnimations();
     setupAccessibility();
 
-    // Connect to theme changes
+    // Connect to theme changes for dynamic updates
     connect(&FluentQt::Styling::FluentTheme::instance(),
             &FluentQt::Styling::FluentTheme::themeChanged, this,
             &FluentScrollArea::onThemeChanged);
+
+    // Connect to accessibility mode changes
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::highContrastModeChanged, this,
+            &FluentScrollArea::onAccessibilityModeChanged);
 }
 
 FluentScrollArea::FluentScrollArea(QWidget* widget, QWidget* parent)
@@ -200,15 +308,23 @@ FluentScrollArea::FluentScrollArea(QWidget* widget, QWidget* parent)
       m_scrollAnimation(
           std::make_unique<QPropertyAnimation>(this, "scrollPosition")),
       m_autoHideTimer(std::make_unique<QTimer>(this)) {
+    // Initialize theme-based properties first
+    initializeThemeProperties();
+
     setupScrollArea();
     setupScrollBars();
     setupAnimations();
     setupAccessibility();
 
-    // Connect to theme changes
+    // Connect to theme changes for dynamic updates
     connect(&FluentQt::Styling::FluentTheme::instance(),
             &FluentQt::Styling::FluentTheme::themeChanged, this,
             &FluentScrollArea::onThemeChanged);
+
+    // Connect to accessibility mode changes
+    connect(&FluentQt::Styling::FluentTheme::instance(),
+            &FluentQt::Styling::FluentTheme::highContrastModeChanged, this,
+            &FluentScrollArea::onAccessibilityModeChanged);
 
     setWidget(widget);
 }
@@ -306,6 +422,30 @@ void FluentScrollArea::setScrollBarOpacity(qreal opacity) {
         m_scrollBarOpacity = qBound(0.0, opacity, 1.0);
         m_horizontalScrollBar->setFluentOpacity(m_scrollBarOpacity);
         m_verticalScrollBar->setFluentOpacity(m_scrollBarOpacity);
+    }
+}
+
+void FluentScrollArea::setHighContrastMode(bool enabled) {
+    if (m_highContrastMode != enabled) {
+        m_highContrastMode = enabled;
+        onAccessibilityModeChanged();
+    }
+}
+
+void FluentScrollArea::setReducedMotionMode(bool enabled) {
+    if (m_reducedMotionMode != enabled) {
+        m_reducedMotionMode = enabled;
+
+        // Update animation settings based on reduced motion preference
+        if (enabled) {
+            m_smoothScrolling = false;
+            m_scrollAnimation->setDuration(0);
+        } else {
+            m_smoothScrolling = true;
+            m_scrollAnimation->setDuration(300);
+        }
+
+        emit accessibilityModeChanged();
     }
 }
 
@@ -526,10 +666,35 @@ void FluentScrollArea::setupAnimations() {
 }
 
 void FluentScrollArea::setupAccessibility() {
-    setAccessibleName("Scroll Area");
+    // Enhanced accessibility setup following Fluent UI standards
+    setAccessibleName(tr("Scroll Area"));
     setAccessibleDescription(
-        "A scrollable area that can contain content larger than the visible "
-        "area");
+        tr("A scrollable area that can contain content larger than the visible "
+           "area. "
+           "Use arrow keys to scroll, Page Up/Down for page scrolling, "
+           "Home/End for edges."));
+
+    // Set proper ARIA role
+    setAttribute(Qt::WA_AccessibleRole, QAccessible::ScrollArea);
+
+    // Configure scroll bar accessibility
+    if (m_horizontalScrollBar) {
+        m_horizontalScrollBar->setAccessibleName(tr("Horizontal Scroll Bar"));
+        m_horizontalScrollBar->setAccessibleDescription(
+            tr("Scroll horizontally through the content"));
+    }
+
+    if (m_verticalScrollBar) {
+        m_verticalScrollBar->setAccessibleName(tr("Vertical Scroll Bar"));
+        m_verticalScrollBar->setAccessibleDescription(
+            tr("Scroll vertically through the content"));
+    }
+
+    // Enable keyboard focus for accessibility
+    setFocusPolicy(Qt::StrongFocus);
+
+    // Set up live region for scroll position announcements
+    setAttribute(Qt::WA_AccessibleRole, QAccessible::ScrollArea);
 }
 
 // Event handling
@@ -706,7 +871,18 @@ void FluentScrollArea::onScrollAnimationFinished() { emit scrollFinished(); }
 void FluentScrollArea::onScrollBarValueChanged(int value) {
     Q_UNUSED(value)
     updateContentGeometry();
-    emit scrollPositionChanged(scrollPosition());
+
+    const QPoint currentPos = scrollPosition();
+    emit scrollPositionChanged(currentPos);
+
+    // Announce scroll position for accessibility if significant change
+    static QPoint lastAnnouncedPos;
+    const int threshold = 50;  // Announce every 50 pixels of movement
+
+    if ((currentPos - lastAnnouncedPos).manhattanLength() > threshold) {
+        announceScrollPosition();
+        lastAnnouncedPos = currentPos;
+    }
 }
 
 void FluentScrollArea::onScrollBarRangeChanged(int min, int max) {
@@ -723,8 +899,14 @@ void FluentScrollArea::onAutoHideTimer() {
 }
 
 void FluentScrollArea::onThemeChanged() {
+    // Update cached theme properties
+    initializeThemeProperties();
+
     updateScrollBarStyles();
     updateStateStyle();
+
+    // Emit signal for external listeners
+    emit themeColorsChanged();
 }
 
 // Utility methods
@@ -874,19 +1056,65 @@ void FluentScrollArea::applyKineticScrolling(const QPoint& velocity) {
 }
 
 void FluentScrollArea::paintBackground(QPainter& painter, const QRect& rect) {
-    const QColor backgroundColor = getBackgroundColor();
-    painter.fillRect(rect, backgroundColor);
+    // Use cached background color for performance
+    painter.fillRect(rect, m_cachedBackgroundColor);
+
+    // Paint subtle border if enabled in theme
+    if (m_showBorder) {
+        painter.setPen(QPen(m_cachedBorderColor, 1));
+        painter.drawRect(rect.adjusted(0, 0, -1, -1));
+    }
 }
 
 void FluentScrollArea::paintScrollIndicators(QPainter& painter) {
-    // Paint scroll position indicators if needed
-    Q_UNUSED(painter)
-    // Implementation can be added for visual scroll position indicators
+    // Enhanced scroll position indicators with theme integration
+    if (!m_showIndicators || (!m_horizontalScrollBar->isVisible() &&
+                              !m_verticalScrollBar->isVisible())) {
+        return;
+    }
+
+    const QRect rect = this->rect();
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+
+    // Paint scroll position indicators in corners
+    const int indicatorSize = theme.spacing("xs");
+    const QColor indicatorColor = theme.color("fillColorTertiary");
+
+    painter.setBrush(indicatorColor);
+    painter.setPen(Qt::NoPen);
+
+    // Vertical scroll indicator
+    if (m_verticalScrollBar->isVisible() &&
+        m_verticalScrollBar->maximum() > 0) {
+        const qreal progress =
+            static_cast<qreal>(m_verticalScrollBar->value()) /
+            m_verticalScrollBar->maximum();
+        const int indicatorY =
+            rect.top() +
+            static_cast<int>(progress * (rect.height() - indicatorSize));
+        const QRect vIndicator(rect.right() - indicatorSize - 2, indicatorY,
+                               indicatorSize, indicatorSize);
+        painter.drawEllipse(vIndicator);
+    }
+
+    // Horizontal scroll indicator
+    if (m_horizontalScrollBar->isVisible() &&
+        m_horizontalScrollBar->maximum() > 0) {
+        const qreal progress =
+            static_cast<qreal>(m_horizontalScrollBar->value()) /
+            m_horizontalScrollBar->maximum();
+        const int indicatorX =
+            rect.left() +
+            static_cast<int>(progress * (rect.width() - indicatorSize));
+        const QRect hIndicator(indicatorX, rect.bottom() - indicatorSize - 2,
+                               indicatorSize, indicatorSize);
+        painter.drawEllipse(hIndicator);
+    }
 }
 
 QColor FluentScrollArea::getBackgroundColor() const {
-    const auto& theme = FluentQt::Styling::FluentTheme::instance();
-    return theme.color("layerFillColorDefault");
+    // Return cached color for performance
+    return m_cachedBackgroundColor;
 }
 
 void FluentScrollArea::updateContentGeometry() {
@@ -959,6 +1187,93 @@ bool FluentScrollArea::needsVerticalScrollBar() const {
     const QSize viewportSize = size();
 
     return contentSize.height() > viewportSize.height();
+}
+
+// New methods for enhanced Fluent UI compliance and accessibility
+void FluentScrollArea::initializeThemeProperties() {
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+
+    // Cache theme colors for performance
+    m_cachedBackgroundColor = theme.color("layerFillColorDefault");
+    m_cachedBorderColor = theme.color("strokeColorDefault");
+
+    // Initialize theme-based properties
+    m_showBorder =
+        theme.variant() != FluentQt::Styling::FluentThemeVariant::Default;
+
+    // Set scroll bar width from theme if available
+    const int themeScrollBarWidth = theme.componentWidth("scrollBar");
+    if (themeScrollBarWidth > 0) {
+        m_scrollBarWidth = themeScrollBarWidth;
+    }
+}
+
+void FluentScrollArea::onAccessibilityModeChanged() {
+    // Update accessibility features when high contrast mode changes
+    const auto& theme = FluentQt::Styling::FluentTheme::instance();
+
+    if (theme.isHighContrastMode()) {
+        // Enhance visibility in high contrast mode
+        m_scrollBarOpacity = 1.0;
+        m_showIndicators = true;
+        m_autoHideScrollBars = false;
+    } else {
+        // Restore normal appearance
+        m_scrollBarOpacity = 0.8;
+        m_showIndicators = true;
+        m_autoHideScrollBars = true;
+    }
+
+    // Update scroll bar opacity
+    m_horizontalScrollBar->setFluentOpacity(m_scrollBarOpacity);
+    m_verticalScrollBar->setFluentOpacity(m_scrollBarOpacity);
+
+    updateScrollBarVisibility();
+    update();
+
+    emit accessibilityModeChanged();
+}
+
+void FluentScrollArea::announceScrollPosition() {
+    // Announce scroll position for screen readers
+    if (!m_contentWidget) {
+        return;
+    }
+
+    const QPoint pos = scrollPosition();
+    const QSize range = scrollRange();
+
+    if (range.width() > 0 || range.height() > 0) {
+        QString announcement;
+
+        if (range.height() > 0) {
+            const int percentage = static_cast<int>(
+                (static_cast<qreal>(pos.y()) / range.height()) * 100);
+            announcement += tr("Vertical position: %1%").arg(percentage);
+        }
+
+        if (range.width() > 0) {
+            const int percentage = static_cast<int>(
+                (static_cast<qreal>(pos.x()) / range.width()) * 100);
+            if (!announcement.isEmpty()) {
+                announcement += ", ";
+            }
+            announcement += tr("Horizontal position: %1%").arg(percentage);
+        }
+
+        // Use accessibility API to announce the position
+        if (QAccessibleInterface* iface =
+                QAccessible::queryAccessibleInterface(this)) {
+            QAccessible::updateAccessibility(
+                QAccessibleEvent(QAccessible::LocationChanged, this, 0));
+        }
+
+        // Show visual indicator if enabled
+        if (m_showIndicators) {
+            const QPoint indicatorPos = mapToGlobal(rect().center());
+            m_scrollIndicator->showIndicator(announcement, indicatorPos);
+        }
+    }
 }
 
 }  // namespace FluentQt::Components

@@ -11,7 +11,10 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <memory>
+#include "FluentQt/Accessibility/FluentAccessibilityCompliance.h"
+#include "FluentQt/Components/FluentButton.h"
 #include "FluentQt/Core/FluentComponent.h"
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 
 namespace FluentQt::Components {
 
@@ -58,6 +61,22 @@ class FluentImageView : public Core::FluentComponent {
                    showControlsChanged)
     Q_PROPERTY(QString placeholderText READ placeholderText WRITE
                    setPlaceholderText NOTIFY placeholderTextChanged)
+    Q_PROPERTY(
+        int elevation READ elevation WRITE setElevation NOTIFY elevationChanged)
+    Q_PROPERTY(bool loading READ isLoading NOTIFY loadingChanged)
+    Q_PROPERTY(
+        QString errorMessage READ errorMessage NOTIFY errorMessageChanged)
+    Q_PROPERTY(QString accessibleName READ accessibleName WRITE
+                   setAccessibleName NOTIFY accessibleNameChanged)
+    Q_PROPERTY(QString accessibleDescription READ accessibleDescription WRITE
+                   setAccessibleDescription NOTIFY accessibleDescriptionChanged)
+    Q_PROPERTY(bool keyboardNavigationEnabled READ isKeyboardNavigationEnabled
+                   WRITE setKeyboardNavigationEnabled NOTIFY
+                       keyboardNavigationEnabledChanged)
+    Q_PROPERTY(int rotationAngle READ rotationAngle WRITE setRotationAngle
+                   NOTIFY rotationAngleChanged)
+    Q_PROPERTY(
+        qreal zoomStep READ zoomStep WRITE setZoomStep NOTIFY zoomStepChanged)
 
 public:
     explicit FluentImageView(QWidget* parent = nullptr);
@@ -102,6 +121,33 @@ public:
     QString placeholderText() const;
     void setPlaceholderText(const QString& text);
 
+    // Elevation and visual properties
+    int elevation() const;
+    void setElevation(int elevation);
+
+    // Loading and error state
+    bool isLoading() const;
+    QString errorMessage() const;
+
+    // Validation methods
+    bool isValidImageSource(const QString& source) const;
+    bool isValidImageFormat(const QString& filePath) const;
+    QStringList supportedImageFormats() const;
+
+    // Accessibility properties
+    QString accessibleName() const;
+    void setAccessibleName(const QString& name);
+
+    QString accessibleDescription() const;
+    void setAccessibleDescription(const QString& description);
+
+    bool isKeyboardNavigationEnabled() const;
+    void setKeyboardNavigationEnabled(bool enabled);
+
+    // Enhanced manipulation properties
+    int rotationAngle() const;
+    qreal zoomStep() const;
+
     // Animation support
     bool isAnimated() const;
     void setMovie(QMovie* movie);
@@ -121,6 +167,10 @@ public slots:
     void rotateRight();
     void flipHorizontal();
     void flipVertical();
+    void setRotationAngle(int angle);
+    void rotateToAngle(int angle);
+    void setZoomStep(qreal step);
+    void zoomToPoint(const QPoint& point, qreal factor);
 
 signals:
     void pixmapChanged(const QPixmap& pixmap);
@@ -134,6 +184,16 @@ signals:
     void maxZoomFactorChanged(qreal factor);
     void showControlsChanged(bool show);
     void placeholderTextChanged(const QString& text);
+    void elevationChanged(int elevation);
+    void loadingChanged(bool loading);
+    void errorMessageChanged(const QString& message);
+    void accessibleNameChanged(const QString& name);
+    void accessibleDescriptionChanged(const QString& description);
+    void keyboardNavigationEnabledChanged(bool enabled);
+    void rotationAngleChanged(int angle);
+    void zoomStepChanged(qreal step);
+    void imageLoadFailed(const QString& source, const QString& error);
+    void imageValidationFailed(const QString& source, const QString& reason);
     void imageClicked();
     void imageDoubleClicked();
 
@@ -144,6 +204,9 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent* event) override;
     void wheelEvent(QWheelEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void focusInEvent(QFocusEvent* event) override;
+    void focusOutEvent(QFocusEvent* event) override;
 
     // State management
     void updateStateStyle() override;
@@ -170,6 +233,9 @@ private:
     void paintImage(QPainter& painter, const QRect& rect);
     void paintPlaceholder(QPainter& painter, const QRect& rect);
     void paintBorder(QPainter& painter, const QRect& rect);
+    void paintElevation(QPainter& painter, const QRect& rect);
+    void paintLoadingIndicator(QPainter& painter, const QRect& rect);
+    void paintErrorState(QPainter& painter, const QRect& rect);
 
     // Utility methods
     QPixmap getScaledPixmap(const QSize& targetSize) const;
@@ -178,6 +244,13 @@ private:
     Qt::Alignment getQtAlignment() const;
     void updateControlsVisibility();
     void updateImageDisplay();
+
+    // Accessibility methods
+    void setupAccessibility();
+    void updateAccessibility();
+    bool handleKeyboardNavigation(QKeyEvent* event);
+    void setupTabOrder();
+    void updateTabOrder();
 
 private:
     // Image data
@@ -205,18 +278,34 @@ private:
     bool m_showControls{false};
     QString m_placeholderText{"No image"};
 
+    // Visual properties
+    int m_elevation{2};  // Default elevation level
+
+    // State properties
+    bool m_loading{false};
+    QString m_errorMessage;
+
+    // Accessibility properties
+    QString m_accessibleName;
+    QString m_accessibleDescription;
+    bool m_keyboardNavigationEnabled{true};
+
+    // Enhanced manipulation properties
+    int m_rotationAngle{0};  // Current rotation angle in degrees
+    qreal m_zoomStep{0.1};   // Zoom step increment (10% by default)
+
     // UI components
     QVBoxLayout* m_mainLayout{nullptr};
     QLabel* m_imageLabel{nullptr};
     QScrollArea* m_scrollArea{nullptr};
     QWidget* m_controlsWidget{nullptr};
     QHBoxLayout* m_controlsLayout{nullptr};
-    QPushButton* m_zoomInButton{nullptr};
-    QPushButton* m_zoomOutButton{nullptr};
-    QPushButton* m_zoomToFitButton{nullptr};
-    QPushButton* m_actualSizeButton{nullptr};
-    QPushButton* m_rotateLeftButton{nullptr};
-    QPushButton* m_rotateRightButton{nullptr};
+    FluentButton* m_zoomInButton{nullptr};
+    FluentButton* m_zoomOutButton{nullptr};
+    FluentButton* m_zoomToFitButton{nullptr};
+    FluentButton* m_actualSizeButton{nullptr};
+    FluentButton* m_rotateLeftButton{nullptr};
+    FluentButton* m_rotateRightButton{nullptr};
 
     // Cached values
     mutable QSize m_cachedSizeHint;

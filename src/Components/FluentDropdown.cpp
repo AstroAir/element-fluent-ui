@@ -27,11 +27,27 @@ FluentDropdown::FluentDropdown(QWidget* parent)
     setAttribute(Qt::WA_Hover);
     setObjectName("FluentDropdown");
 
+    // Initialize search timer for debounced search
+    m_searchTimer = new QTimer(this);
+    m_searchTimer->setSingleShot(true);
+    m_searchTimer->setInterval(300);  // 300ms debounce
+    connect(m_searchTimer, &QTimer::timeout, this,
+            [this]() { filterItems(m_currentSearchText); });
+
     setupUI();
     setupDropdown();
     setupAnimations();
+    setupShadowEffect();
+    setupAccessibility();
+    setupSearchFunctionality();
+
+    // Apply Fluent Design tokens
+    applyFluentDesignTokens();
+
     updateColors();
     updateFonts();
+    updateComponentSize();
+    updateComponentStyle();
 
     // Connect to theme changes
     connect(&Styling::FluentTheme::instance(),
@@ -44,10 +60,13 @@ FluentDropdown::~FluentDropdown() = default;
 void FluentDropdown::setupUI() {
     FLUENT_PROFILE("FluentDropdown::setupUI");
 
-    // Create main layout
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Create main layout with theme-based padding
     m_mainLayout = new QHBoxLayout(this);
-    m_mainLayout->setContentsMargins(8, 4, 8, 4);
-    m_mainLayout->setSpacing(8);
+    const auto padding = getComponentPadding();
+    m_mainLayout->setContentsMargins(padding);
+    m_mainLayout->setSpacing(theme.spacing("m"));
 
     // Create display label
     m_displayLabel = new QLabel(this);
@@ -56,32 +75,86 @@ void FluentDropdown::setupUI() {
     m_displayLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_mainLayout->addWidget(m_displayLabel, 1);
 
-    // Set minimum height
-    setMinimumHeight(32);
-    setFixedHeight(32);
+    // Create error label (initially hidden)
+    m_errorLabel = new QLabel(this);
+    m_errorLabel->setObjectName("FluentDropdown_ErrorLabel");
+    m_errorLabel->setVisible(false);
+    m_errorLabel->setStyleSheet("color: " +
+                                theme.currentPalette().error.name());
+
+    // Create loading label (initially hidden)
+    m_loadingLabel = new QLabel(this);
+    m_loadingLabel->setObjectName("FluentDropdown_LoadingLabel");
+    m_loadingLabel->setText("Loading...");
+    m_loadingLabel->setVisible(false);
+
+    // Set component height based on size
+    updateComponentSize();
 }
 
 void FluentDropdown::setupDropdown() {
     FLUENT_PROFILE("FluentDropdown::setupDropdown");
 
-    // Create dropdown container
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Create dropdown container with proper styling
     m_dropdownContainer = new QWidget(this);
     m_dropdownContainer->setObjectName("FluentDropdown_Container");
     m_dropdownContainer->setWindowFlags(Qt::Popup);
     m_dropdownContainer->hide();
 
-    // Create dropdown layout
+    // Create dropdown layout with theme-based margins
     auto* dropdownLayout = new QVBoxLayout(m_dropdownContainer);
-    dropdownLayout->setContentsMargins(1, 1, 1, 1);
+    dropdownLayout->setContentsMargins(theme.spacing("xs"), theme.spacing("xs"),
+                                       theme.spacing("xs"),
+                                       theme.spacing("xs"));
     dropdownLayout->setSpacing(0);
 
-    // Create list widget
+    // Add search edit if search is enabled
+    if (m_searchEnabled) {
+        m_searchEdit = new QLineEdit(m_dropdownContainer);
+        m_searchEdit->setObjectName("FluentDropdown_SearchEdit");
+        m_searchEdit->setPlaceholderText(m_searchPlaceholder);
+        m_searchEdit->setVisible(m_searchEnabled);
+        dropdownLayout->addWidget(m_searchEdit);
+
+        // Connect search functionality
+        connect(m_searchEdit, &QLineEdit::textChanged, this,
+                [this](const QString& text) {
+                    m_currentSearchText = text;
+                    m_searchTimer->start();  // Debounced search
+                    emit searchTextChanged(text);
+                });
+    }
+
+    // Create list widget with enhanced styling
     m_listWidget = new QListWidget(m_dropdownContainer);
     m_listWidget->setObjectName("FluentDropdown_List");
     m_listWidget->setFrameStyle(QFrame::NoFrame);
     m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    // Apply theme-based styling to list widget
+    const int itemHeight = theme.componentHeight("small");
+    m_listWidget->setStyleSheet(
+        QString("QListWidget::item { "
+                "  height: %1px; "
+                "  padding: %2px %3px; "
+                "  border: none; "
+                "} "
+                "QListWidget::item:hover { "
+                "  background-color: %4; "
+                "} "
+                "QListWidget::item:selected { "
+                "  background-color: %5; "
+                "}")
+            .arg(itemHeight)
+            .arg(theme.spacing("s"))
+            .arg(theme.spacing("m"))
+            .arg(theme.currentPalette().hover.name())
+            .arg(theme.currentPalette().selected.name()));
+
     dropdownLayout->addWidget(m_listWidget);
 
     // Connect list signals
@@ -380,28 +453,40 @@ QSize FluentDropdown::sizeHint() const {
         return m_cachedSizeHint;
     }
 
-    const QFontMetrics fm(m_displayLabel->font());
+    const auto& theme = Styling::FluentTheme::instance();
+    const QFontMetrics fm(m_displayLabel ? m_displayLabel->font()
+                                         : theme.bodyFont());
     int maxWidth = fm.horizontalAdvance(m_placeholderText);
 
     // Find the widest item text
     for (const auto& item : m_items) {
-        if (!item.separator) {
+        if (!item.separator && !item.isGroupHeader) {
             const int itemWidth = fm.horizontalAdvance(item.text);
             maxWidth = std::max(maxWidth, itemWidth);
         }
     }
 
-    // Add padding and chevron space
+    // Add padding and chevron space using theme tokens
+    const auto padding = getComponentPadding();
+    const int chevronSpace =
+        theme.iconSize("medium").width() + theme.spacing("m");
     const int totalWidth =
-        maxWidth + 40;  // 16 padding + 16 chevron + 8 spacing
+        maxWidth + padding.left() + padding.right() + chevronSpace;
 
-    m_cachedSizeHint = QSize(totalWidth, 32);
+    const int height = getComponentHeight();
+
+    m_cachedSizeHint = QSize(totalWidth, height);
     m_sizeHintValid = true;
 
     return m_cachedSizeHint;
 }
 
-QSize FluentDropdown::minimumSizeHint() const { return QSize(100, 32); }
+QSize FluentDropdown::minimumSizeHint() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    const int minWidth = theme.componentWidth("small");
+    const int height = getComponentHeight();
+    return QSize(minWidth, height);
+}
 
 void FluentDropdown::showDropdown() { setDropdownVisible(true); }
 
@@ -441,26 +526,64 @@ void FluentDropdown::paintBackground(QPainter& painter, const QRect& rect) {
     const auto& palette = theme.currentPalette();
 
     QColor backgroundColor;
-    switch (state()) {
-        case Core::FluentState::Normal:
-            backgroundColor = palette.neutralLighter;
-            break;
-        case Core::FluentState::Hovered:
-            backgroundColor = palette.neutralLight;
-            break;
-        case Core::FluentState::Pressed:
-            backgroundColor = palette.neutralQuaternaryAlt;
-            break;
-        case Core::FluentState::Disabled:
-            backgroundColor = palette.neutralLighter;
-            break;
-        default:
-            backgroundColor = palette.neutralLighter;
+
+    // Handle error state first
+    if (m_hasError) {
+        backgroundColor = palette.errorLight;
+    } else if (m_isLoading) {
+        backgroundColor = palette.neutralQuaternaryAlt;
+    } else {
+        // Apply style-specific background colors
+        switch (m_style) {
+            case FluentDropdownStyle::Outline:
+                switch (state()) {
+                    case Core::FluentState::Normal:
+                        backgroundColor = palette.surface;
+                        break;
+                    case Core::FluentState::Hovered:
+                        backgroundColor = palette.neutralLighter;
+                        break;
+                    case Core::FluentState::Pressed:
+                        backgroundColor = palette.neutralLight;
+                        break;
+                    case Core::FluentState::Disabled:
+                        backgroundColor = palette.neutralLighter;
+                        break;
+                    default:
+                        backgroundColor = palette.surface;
+                }
+                break;
+
+            case FluentDropdownStyle::Filled:
+                switch (state()) {
+                    case Core::FluentState::Normal:
+                        backgroundColor = palette.neutralLighter;
+                        break;
+                    case Core::FluentState::Hovered:
+                        backgroundColor = palette.neutralLight;
+                        break;
+                    case Core::FluentState::Pressed:
+                        backgroundColor = palette.neutralQuaternaryAlt;
+                        break;
+                    case Core::FluentState::Disabled:
+                        backgroundColor = palette.neutralQuaternaryAlt;
+                        break;
+                    default:
+                        backgroundColor = palette.neutralLighter;
+                }
+                break;
+
+            case FluentDropdownStyle::Underlined:
+                // Underlined style has transparent background
+                backgroundColor = Qt::transparent;
+                break;
+        }
     }
 
-    // Create path with rounded corners
+    // Create path with rounded corners (except for underlined style)
     QPainterPath path;
-    const int radius = cornerRadius();
+    const int radius =
+        (m_style == FluentDropdownStyle::Underlined) ? 0 : getBorderRadius();
     path.addRoundedRect(rect, radius, radius);
 
     painter.fillPath(path, backgroundColor);
@@ -473,31 +596,63 @@ void FluentDropdown::paintBorder(QPainter& painter, const QRect& rect) {
     painter.save();
 
     QColor borderColor;
-    switch (state()) {
-        case Core::FluentState::Normal:
-            borderColor = palette.neutralSecondary;
-            break;
-        case Core::FluentState::Hovered:
-            borderColor = palette.neutralPrimary;
-            break;
-        case Core::FluentState::Pressed:
-        case Core::FluentState::Focused:
-            borderColor = palette.accent;
-            break;
-        case Core::FluentState::Disabled:
-            borderColor = palette.neutralTertiaryAlt;
-            break;
-        default:
-            borderColor = palette.neutralSecondary;
+    int borderWidth = 1;
+
+    // Handle error state first
+    if (m_hasError) {
+        borderColor = palette.error;
+        borderWidth = 2;  // Thicker border for error state
+    } else {
+        // Apply style and state-specific border colors
+        switch (state()) {
+            case Core::FluentState::Normal:
+                borderColor = (m_style == FluentDropdownStyle::Filled)
+                                  ? Qt::transparent
+                                  : palette.neutralSecondary;
+                break;
+            case Core::FluentState::Hovered:
+                borderColor = palette.neutralPrimary;
+                break;
+            case Core::FluentState::Pressed:
+            case Core::FluentState::Focused:
+                borderColor = palette.accent;
+                borderWidth = 2;  // Thicker border for focus
+                break;
+            case Core::FluentState::Disabled:
+                borderColor = palette.neutralTertiaryAlt;
+                break;
+            default:
+                borderColor = palette.neutralSecondary;
+        }
     }
 
-    QPen borderPen(borderColor, 1);
-    painter.setPen(borderPen);
+    // Handle different styles
+    switch (m_style) {
+        case FluentDropdownStyle::Outline:
+        case FluentDropdownStyle::Filled: {
+            if (borderColor != Qt::transparent) {
+                QPen borderPen(borderColor, borderWidth);
+                painter.setPen(borderPen);
 
-    const int radius = cornerRadius();
-    const QRectF borderRect = QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5);
+                const int radius = getBorderRadius();
+                const QRectF borderRect =
+                    QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5);
 
-    painter.drawRoundedRect(borderRect, radius, radius);
+                painter.drawRoundedRect(borderRect, radius, radius);
+            }
+            break;
+        }
+
+        case FluentDropdownStyle::Underlined: {
+            // Draw only bottom border for underlined style
+            QPen borderPen(borderColor, borderWidth);
+            painter.setPen(borderPen);
+
+            const int y = rect.bottom() - borderWidth / 2;
+            painter.drawLine(rect.left(), y, rect.right(), y);
+            break;
+        }
+    }
 
     painter.restore();
 }
@@ -764,6 +919,377 @@ int FluentDropdown::calculateDropdownHeight() const {
         std::min(m_maxVisibleItems, static_cast<int>(m_items.size()));
     const int borderHeight = 2;
     return (visibleItems * itemHeight) + borderHeight;
+}
+
+// FluentDropdownItem factory methods
+FluentDropdownItem FluentDropdownItem::createSeparator() {
+    FluentDropdownItem item;
+    item.separator = true;
+    item.text = "";
+    item.enabled = false;
+    return item;
+}
+
+FluentDropdownItem FluentDropdownItem::createGroupHeader(const QString& title) {
+    FluentDropdownItem item;
+    item.text = title;
+    item.isGroupHeader = true;
+    item.enabled = false;
+    return item;
+}
+
+// Enhanced FluentDropdown methods
+FluentDropdownSize FluentDropdown::size() const { return m_size; }
+
+void FluentDropdown::setSize(FluentDropdownSize size) {
+    if (m_size != size) {
+        m_size = size;
+        updateComponentSize();
+        m_sizeHintValid = false;
+        updateGeometry();
+        emit sizeChanged(size);
+    }
+}
+
+FluentDropdownStyle FluentDropdown::style() const { return m_style; }
+
+void FluentDropdown::setStyle(FluentDropdownStyle style) {
+    if (m_style != style) {
+        m_style = style;
+        updateComponentStyle();
+        update();
+        emit styleChanged(style);
+    }
+}
+
+bool FluentDropdown::hasError() const { return m_hasError; }
+
+void FluentDropdown::setHasError(bool hasError) {
+    if (m_hasError != hasError) {
+        m_hasError = hasError;
+        updateErrorState();
+        updateAccessibility();
+        emit errorChanged(hasError);
+    }
+}
+
+QString FluentDropdown::errorMessage() const { return m_errorMessage; }
+
+void FluentDropdown::setErrorMessage(const QString& message) {
+    if (m_errorMessage != message) {
+        m_errorMessage = message;
+        updateErrorState();
+        updateAccessibility();
+        emit errorMessageChanged(message);
+    }
+}
+
+bool FluentDropdown::isLoading() const { return m_isLoading; }
+
+void FluentDropdown::setLoading(bool loading) {
+    if (m_isLoading != loading) {
+        m_isLoading = loading;
+        updateLoadingState();
+        updateAccessibility();
+        emit loadingChanged(loading);
+    }
+}
+
+bool FluentDropdown::isSearchEnabled() const { return m_searchEnabled; }
+
+void FluentDropdown::setSearchEnabled(bool enabled) {
+    if (m_searchEnabled != enabled) {
+        m_searchEnabled = enabled;
+        setupSearchFunctionality();
+        emit searchEnabledChanged(enabled);
+    }
+}
+
+QString FluentDropdown::searchPlaceholder() const {
+    return m_searchPlaceholder;
+}
+
+void FluentDropdown::setSearchPlaceholder(const QString& placeholder) {
+    if (m_searchPlaceholder != placeholder) {
+        m_searchPlaceholder = placeholder;
+        if (m_searchEdit) {
+            m_searchEdit->setPlaceholderText(placeholder);
+        }
+        emit searchPlaceholderChanged(placeholder);
+    }
+}
+
+bool FluentDropdown::isGroupingEnabled() const { return m_groupingEnabled; }
+
+void FluentDropdown::setGroupingEnabled(bool enabled) {
+    if (m_groupingEnabled != enabled) {
+        m_groupingEnabled = enabled;
+        // Refresh the list to apply grouping
+        // TODO: Implement grouping logic
+        emit groupingEnabledChanged(enabled);
+    }
+}
+
+QString FluentDropdown::accessibleName() const { return m_accessibleName; }
+
+void FluentDropdown::setAccessibleName(const QString& name) {
+    if (m_accessibleName != name) {
+        m_accessibleName = name;
+        updateAccessibility();
+    }
+}
+
+QString FluentDropdown::accessibleDescription() const {
+    return m_accessibleDescription;
+}
+
+void FluentDropdown::setAccessibleDescription(const QString& description) {
+    if (m_accessibleDescription != description) {
+        m_accessibleDescription = description;
+        updateAccessibility();
+    }
+}
+
+// Enhanced private methods implementation
+void FluentDropdown::setupAccessibility() {
+    // Set up comprehensive accessibility support
+    setAccessibleName(m_accessibleName.isEmpty() ? "Dropdown"
+                                                 : m_accessibleName);
+    setAccessibleDescription(m_accessibleDescription.isEmpty()
+                                 ? "Select an item from the dropdown list"
+                                 : m_accessibleDescription);
+
+    // Set ARIA properties
+    setProperty("role", "combobox");
+    setProperty("aria-haspopup", "listbox");
+    setProperty("aria-expanded", m_dropdownVisible);
+    setProperty("aria-required", false);
+    setProperty("aria-invalid", m_hasError);
+
+    // Enable keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+    setTabOrder(this, m_listWidget);
+}
+
+void FluentDropdown::updateAccessibility() {
+    // Update accessibility properties based on current state
+    setProperty("aria-expanded", m_dropdownVisible);
+    setProperty("aria-invalid", m_hasError);
+
+    if (m_hasError && !m_errorMessage.isEmpty()) {
+        setProperty("aria-describedby", "error-message");
+        if (m_errorLabel) {
+            m_errorLabel->setAccessibleName("Error: " + m_errorMessage);
+        }
+    }
+
+    if (m_isLoading) {
+        setProperty("aria-busy", true);
+        setAccessibleDescription("Loading items...");
+    } else {
+        setProperty("aria-busy", false);
+        setAccessibleDescription(m_accessibleDescription.isEmpty()
+                                     ? "Select an item from the dropdown list"
+                                     : m_accessibleDescription);
+    }
+
+    // Update current selection accessibility
+    if (m_currentIndex >= 0 && m_currentIndex < m_items.size()) {
+        const QString currentText = m_items[m_currentIndex].text;
+        setProperty("aria-activedescendant", currentText);
+        setAccessibleName(QString("Dropdown, %1 selected").arg(currentText));
+    }
+
+    emit accessibilityChanged();
+}
+
+void FluentDropdown::setupShadowEffect() {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Create shadow effect for dropdown elevation
+    m_shadowEffect = new QGraphicsDropShadowEffect(this);
+    m_shadowEffect->setBlurRadius(getElevation());
+    m_shadowEffect->setColor(theme.currentPalette().shadowMedium);
+    m_shadowEffect->setOffset(0, 2);
+
+    if (m_dropdownContainer) {
+        m_dropdownContainer->setGraphicsEffect(m_shadowEffect);
+    }
+}
+
+void FluentDropdown::updateShadowEffect() {
+    if (m_shadowEffect) {
+        const auto& theme = Styling::FluentTheme::instance();
+        m_shadowEffect->setBlurRadius(getElevation());
+        m_shadowEffect->setColor(theme.currentPalette().shadowMedium);
+    }
+}
+
+void FluentDropdown::setupSearchFunctionality() {
+    if (m_searchEnabled && m_dropdownContainer && !m_searchEdit) {
+        // Create search edit if it doesn't exist
+        m_searchEdit = new QLineEdit(m_dropdownContainer);
+        m_searchEdit->setObjectName("FluentDropdown_SearchEdit");
+        m_searchEdit->setPlaceholderText(m_searchPlaceholder);
+
+        // Insert at the beginning of the dropdown layout
+        auto* layout =
+            qobject_cast<QVBoxLayout*>(m_dropdownContainer->layout());
+        if (layout) {
+            layout->insertWidget(0, m_searchEdit);
+        }
+
+        // Connect search functionality
+        connect(m_searchEdit, &QLineEdit::textChanged, this,
+                [this](const QString& text) {
+                    m_currentSearchText = text;
+                    m_searchTimer->start();  // Debounced search
+                    emit searchTextChanged(text);
+                });
+    } else if (!m_searchEnabled && m_searchEdit) {
+        // Hide search edit if search is disabled
+        m_searchEdit->setVisible(false);
+    }
+
+    if (m_searchEdit) {
+        m_searchEdit->setVisible(m_searchEnabled);
+    }
+}
+
+void FluentDropdown::updateComponentSize() {
+    const int height = getComponentHeight();
+    setMinimumHeight(height);
+    setFixedHeight(height);
+
+    // Update font size based on component size
+    const auto& theme = Styling::FluentTheme::instance();
+    QFont font;
+    switch (m_size) {
+        case FluentDropdownSize::Small:
+            font = theme.bodySmallFont();
+            break;
+        case FluentDropdownSize::Medium:
+            font = theme.bodyFont();
+            break;
+        case FluentDropdownSize::Large:
+            font = theme.bodyLargeFont();
+            break;
+    }
+
+    if (m_displayLabel) {
+        m_displayLabel->setFont(font);
+    }
+}
+
+void FluentDropdown::updateComponentStyle() {
+    // Update visual style based on m_style
+    // This will be handled in paintBackground method
+    update();
+}
+
+void FluentDropdown::updateErrorState() {
+    if (m_errorLabel) {
+        m_errorLabel->setVisible(m_hasError && !m_errorMessage.isEmpty());
+        m_errorLabel->setText(m_errorMessage);
+
+        const auto& theme = Styling::FluentTheme::instance();
+        m_errorLabel->setStyleSheet("color: " +
+                                    theme.currentPalette().error.name());
+    }
+
+    // Update border color and styling will be handled in paintBorder
+    update();
+}
+
+void FluentDropdown::updateLoadingState() {
+    if (m_loadingLabel) {
+        m_loadingLabel->setVisible(m_isLoading);
+    }
+
+    // Disable interaction during loading
+    setEnabled(!m_isLoading);
+
+    if (m_listWidget) {
+        m_listWidget->setEnabled(!m_isLoading);
+    }
+}
+
+void FluentDropdown::filterItems(const QString& searchText) {
+    if (!m_listWidget)
+        return;
+
+    int visibleCount = 0;
+    const bool hasSearch = !searchText.isEmpty();
+
+    for (int i = 0; i < m_listWidget->count(); ++i) {
+        QListWidgetItem* item = m_listWidget->item(i);
+        if (!item)
+            continue;
+
+        bool visible = true;
+        if (hasSearch) {
+            const QString itemText = item->text();
+            visible = itemText.contains(searchText, Qt::CaseInsensitive);
+        }
+
+        item->setHidden(!visible);
+        if (visible) {
+            visibleCount++;
+        }
+    }
+
+    emit itemsFiltered(visibleCount);
+    updateDropdownSize();
+}
+
+void FluentDropdown::applyFluentDesignTokens() {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Apply corner radius
+    setCornerRadius(getBorderRadius());
+
+    // Update cached size hint
+    m_sizeHintValid = false;
+}
+
+int FluentDropdown::getComponentHeight() const {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    switch (m_size) {
+        case FluentDropdownSize::Small:
+            return theme.componentHeight("small");  // 24px
+        case FluentDropdownSize::Medium:
+            return theme.componentHeight("medium");  // 32px
+        case FluentDropdownSize::Large:
+            return theme.componentHeight("large");  // 40px
+        default:
+            return theme.componentHeight("medium");
+    }
+}
+
+QMargins FluentDropdown::getComponentPadding() const {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    switch (m_size) {
+        case FluentDropdownSize::Small:
+            return theme.padding("small");  // 4px all around
+        case FluentDropdownSize::Medium:
+            return theme.padding("medium");  // 8px all around
+        case FluentDropdownSize::Large:
+            return theme.padding("large");  // 12px all around
+        default:
+            return theme.padding("medium");
+    }
+}
+
+int FluentDropdown::getBorderRadius() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    return theme.borderRadius("input");  // 4px for input components
+}
+
+int FluentDropdown::getElevation() const {
+    const auto& theme = Styling::FluentTheme::instance();
+    return theme.elevation("dropdown");  // 8px shadow blur for dropdowns
 }
 
 }  // namespace FluentQt::Components

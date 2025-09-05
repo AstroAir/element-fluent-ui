@@ -1,8 +1,10 @@
 // src/Components/FluentTooltip.cpp
 #include "FluentQt/Components/FluentTooltip.h"
+#include <QAccessible>
 #include <QApplication>
 #include <QEnterEvent>
 #include <QGraphicsOpacityEffect>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPaintEvent>
@@ -13,6 +15,7 @@
 #include <QScreen>
 #include <QTimer>
 #include <QVBoxLayout>
+#include "FluentQt/Styling/FluentDesignTokenUtils.h"
 
 namespace FluentQt::Components {
 
@@ -25,12 +28,17 @@ FluentTooltip::FluentTooltip(QWidget* parent)
     setupUI();
     setupAnimations();
     setupTimers();
+    setupAccessibility();
     updateTheme();
 
     setWindowFlags(Qt::ToolTip | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_ShowWithoutActivating);
-    setFocusPolicy(Qt::NoFocus);
+    setFocusPolicy(Qt::StrongFocus);  // Enable keyboard focus for accessibility
+
+    // Enable keyboard events
+    setFocusPolicy(Qt::StrongFocus);
+    installEventFilter(this);
 }
 
 FluentTooltip::FluentTooltip(const QString& text, QWidget* parent)
@@ -203,31 +211,60 @@ QSize FluentTooltip::sizeHint() const {
 }
 
 void FluentTooltip::setupUI() {
-    m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(PADDING, PADDING, PADDING, PADDING);
-    m_layout->setSpacing(4);
+    using namespace FluentQt::Styling;
 
+    // Use Fluent design tokens for spacing
+    int padding = TokenUtils::spacing("m");  // 8px standard padding
+    int spacing = TokenUtils::spacing("s");  // 4px internal spacing
+
+    m_layout = new QVBoxLayout(this);
+    m_layout->setContentsMargins(padding, padding, padding, padding);
+    m_layout->setSpacing(spacing);
+
+    // Title label with Fluent typography
     m_titleLabel = new QLabel(this);
     m_titleLabel->setWordWrap(true);
+    m_titleLabel->setFont(
+        TokenUtils::bodyFont(true));  // Strong body font for title
     m_titleLabel->hide();
     m_layout->addWidget(m_titleLabel);
 
+    // Text label with Fluent typography
     m_textLabel = new QLabel(this);
     m_textLabel->setWordWrap(true);
+    m_textLabel->setFont(
+        TokenUtils::bodyFont(false));  // Regular body font for text
     m_layout->addWidget(m_textLabel);
 }
 
 void FluentTooltip::setupAnimations() {
+    using namespace FluentQt::Animation;
+
     m_opacityEffect = new QGraphicsOpacityEffect(this);
     setGraphicsEffect(m_opacityEffect);
 
+    // Use FluentAnimator for proper Fluent Design animations
+    // Tooltips use utility motion (100ms, subtle easing)
+    FluentAnimationConfig showConfig;
+    showConfig.duration =
+        std::chrono::milliseconds(100);  // Utility motion duration
+    showConfig.easing =
+        FluentEasing::FluentSubtle;          // Subtle easing for tooltips
+    showConfig.respectReducedMotion = true;  // Accessibility support
+
+    FluentAnimationConfig hideConfig;
+    hideConfig.duration =
+        std::chrono::milliseconds(75);  // Faster hide for responsiveness
+    hideConfig.easing = FluentEasing::FluentSubtle;
+    hideConfig.respectReducedMotion = true;
+
     m_showAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
-    m_showAnimation->setDuration(200);
+    m_animator->setupAnimation(m_showAnimation, showConfig);
     m_showAnimation->setStartValue(0.0);
     m_showAnimation->setEndValue(1.0);
 
     m_hideAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
-    m_hideAnimation->setDuration(150);
+    m_animator->setupAnimation(m_hideAnimation, hideConfig);
     m_hideAnimation->setStartValue(1.0);
     m_hideAnimation->setEndValue(0.0);
 
@@ -245,6 +282,21 @@ void FluentTooltip::setupTimers() {
     m_hideTimer = new QTimer(this);
     m_hideTimer->setSingleShot(true);
     connect(m_hideTimer, &QTimer::timeout, this, &FluentTooltip::onHideTimer);
+}
+
+void FluentTooltip::setupAccessibility() {
+    // Set accessibility properties
+    setAccessibleName("Tooltip");
+    setAccessibleDescription("Contextual information tooltip");
+
+    // Set ARIA role
+    if (QAccessible::isActive()) {
+        setAttribute(Qt::WA_AccessibleRole, QAccessible::ToolTip);
+    }
+
+    // Enable keyboard navigation
+    setFocusPolicy(Qt::StrongFocus);
+    setTabOrder(this, nullptr);  // Remove from tab order by default
 }
 
 void FluentTooltip::updateContent() {
@@ -269,45 +321,95 @@ void FluentTooltip::updatePosition() {
 }
 
 void FluentTooltip::updateTheme() {
-    // Apply theme-based styling
-    QString styleSheet;
-    if (m_tooltipTheme == FluentTooltipTheme::Dark) {
-        styleSheet = "QLabel { color: white; }";
+    using namespace FluentQt::Styling;
+
+    // Get theme-appropriate colors using Fluent design tokens
+    QColor textColor;
+    QColor backgroundColor;
+    QColor borderColor;
+
+    if (m_tooltipTheme == FluentTooltipTheme::Auto) {
+        // Use semantic colors that adapt to system theme
+        textColor = TokenUtils::color("color.text.primary");
+        backgroundColor = TokenUtils::color("color.background.primary");
+        borderColor = TokenUtils::color("color.border.primary");
+    } else if (m_tooltipTheme == FluentTooltipTheme::Dark) {
+        textColor = TokenUtils::neutralColor(0);         // White
+        backgroundColor = TokenUtils::neutralColor(48);  // Dark gray
+        borderColor = TokenUtils::neutralColor(40);      // Lighter dark gray
     } else {
-        styleSheet = "QLabel { color: black; }";
+        textColor = TokenUtils::neutralColor(54);       // Black
+        backgroundColor = TokenUtils::neutralColor(0);  // White
+        borderColor = TokenUtils::neutralColor(20);     // Light gray
     }
-    setStyleSheet(styleSheet);
+
+    // Apply colors to labels
+    if (m_titleLabel) {
+        m_titleLabel->setStyleSheet(
+            QString("QLabel { color: %1; }").arg(textColor.name()));
+    }
+    if (m_textLabel) {
+        m_textLabel->setStyleSheet(
+            QString("QLabel { color: %1; }").arg(textColor.name()));
+    }
+
+    // Store colors for painting
+    m_currentBackgroundColor = backgroundColor;
+    m_currentBorderColor = borderColor;
+    m_currentTextColor = textColor;
+
     update();
 }
 
 QPoint FluentTooltip::calculatePosition(const QPoint& targetPos,
                                         const QSize& targetSize,
                                         FluentTooltipPosition pos) {
+    using namespace FluentQt::Styling;
+
     QSize tooltipSize = sizeHint();
     QPoint result = targetPos;
 
-    // Position relative to target size
+    // Use design token for arrow size
+    int arrowSize = TokenUtils::spacing("m");  // 8px arrow size
+
+    // Position relative to target size with complete implementation
     switch (pos) {
         case FluentTooltipPosition::Top:
-            result.ry() -= tooltipSize.height() + ARROW_SIZE;
+            result.ry() -= tooltipSize.height() + arrowSize;
             result.rx() += (targetSize.width() - tooltipSize.width()) / 2;
             break;
         case FluentTooltipPosition::Bottom:
-            result.ry() += targetSize.height() + ARROW_SIZE;
+            result.ry() += targetSize.height() + arrowSize;
             result.rx() += (targetSize.width() - tooltipSize.width()) / 2;
             break;
         case FluentTooltipPosition::Left:
-            result.rx() -= tooltipSize.width() + ARROW_SIZE;
+            result.rx() -= tooltipSize.width() + arrowSize;
             result.ry() += (targetSize.height() - tooltipSize.height()) / 2;
             break;
         case FluentTooltipPosition::Right:
-            result.rx() += targetSize.width() + ARROW_SIZE;
+            result.rx() += targetSize.width() + arrowSize;
             result.ry() += (targetSize.height() - tooltipSize.height()) / 2;
             break;
-        default:
-            // Auto positioning - default to top
-            result.ry() -= tooltipSize.height() + ARROW_SIZE;
+        case FluentTooltipPosition::TopLeft:
+            result.ry() -= tooltipSize.height() + arrowSize;
+            result.rx() -= tooltipSize.width() / 4;
             break;
+        case FluentTooltipPosition::TopRight:
+            result.ry() -= tooltipSize.height() + arrowSize;
+            result.rx() += targetSize.width() - (tooltipSize.width() * 3 / 4);
+            break;
+        case FluentTooltipPosition::BottomLeft:
+            result.ry() += targetSize.height() + arrowSize;
+            result.rx() -= tooltipSize.width() / 4;
+            break;
+        case FluentTooltipPosition::BottomRight:
+            result.ry() += targetSize.height() + arrowSize;
+            result.rx() += targetSize.width() - (tooltipSize.width() * 3 / 4);
+            break;
+        default:
+            // Auto positioning - use optimal position calculation
+            calculateOptimalPosition(targetPos, targetSize);
+            return calculatePosition(targetPos, targetSize, m_actualPosition);
     }
 
     return result;
@@ -348,53 +450,67 @@ void FluentTooltip::paintEvent(QPaintEvent* event) {
 }
 
 void FluentTooltip::drawTooltip(QPainter& painter) {
+    using namespace FluentQt::Styling;
+
     QRect rect = this->rect().adjusted(1, 1, -1, -1);
 
-    // Background
-    QColor bgColor = (m_tooltipTheme == FluentTooltipTheme::Dark)
-                         ? QColor(45, 45, 45)
-                         : QColor(255, 255, 255);
-    QColor borderColor = (m_tooltipTheme == FluentTooltipTheme::Dark)
-                             ? QColor(70, 70, 70)
-                             : QColor(200, 200, 200);
+    // Use design tokens for border radius
+    int borderRadius = TokenUtils::spacing("s");  // 4px border radius
 
-    painter.setBrush(bgColor);
-    painter.setPen(QPen(borderColor, 1));
-    painter.drawRoundedRect(rect, BORDER_RADIUS, BORDER_RADIUS);
+    // Use the colors set by updateTheme()
+    painter.setBrush(m_currentBackgroundColor);
+    painter.setPen(QPen(m_currentBorderColor, 1));
+    painter.drawRoundedRect(rect, borderRadius, borderRadius);
 
     // Draw arrow if needed
     drawArrow(painter, rect);
 }
 
 void FluentTooltip::drawArrow(QPainter& painter, const QRect& rect) {
-    // Simple arrow drawing - can be enhanced
-    QColor bgColor = (m_tooltipTheme == FluentTooltipTheme::Dark)
-                         ? QColor(45, 45, 45)
-                         : QColor(255, 255, 255);
+    using namespace FluentQt::Styling;
 
-    painter.setBrush(bgColor);
+    // Use design token for arrow size
+    int arrowSize = TokenUtils::spacing("m");  // 8px arrow size
+
+    painter.setBrush(m_currentBackgroundColor);
     painter.setPen(Qt::NoPen);
 
-    // Draw a simple triangle arrow based on position
-    // This is a basic implementation
+    // Draw arrow based on position with complete implementation
     QPolygon arrow;
     switch (m_actualPosition) {
         case FluentTooltipPosition::Top:
+        case FluentTooltipPosition::TopLeft:
+        case FluentTooltipPosition::TopRight:
             arrow << QPoint(rect.center().x(), rect.bottom())
-                  << QPoint(rect.center().x() - ARROW_SIZE,
-                            rect.bottom() + ARROW_SIZE)
-                  << QPoint(rect.center().x() + ARROW_SIZE,
-                            rect.bottom() + ARROW_SIZE);
+                  << QPoint(rect.center().x() - arrowSize,
+                            rect.bottom() + arrowSize)
+                  << QPoint(rect.center().x() + arrowSize,
+                            rect.bottom() + arrowSize);
             break;
         case FluentTooltipPosition::Bottom:
+        case FluentTooltipPosition::BottomLeft:
+        case FluentTooltipPosition::BottomRight:
             arrow << QPoint(rect.center().x(), rect.top())
-                  << QPoint(rect.center().x() - ARROW_SIZE,
-                            rect.top() - ARROW_SIZE)
-                  << QPoint(rect.center().x() + ARROW_SIZE,
-                            rect.top() - ARROW_SIZE);
+                  << QPoint(rect.center().x() - arrowSize,
+                            rect.top() - arrowSize)
+                  << QPoint(rect.center().x() + arrowSize,
+                            rect.top() - arrowSize);
+            break;
+        case FluentTooltipPosition::Left:
+            arrow << QPoint(rect.right(), rect.center().y())
+                  << QPoint(rect.right() + arrowSize,
+                            rect.center().y() - arrowSize)
+                  << QPoint(rect.right() + arrowSize,
+                            rect.center().y() + arrowSize);
+            break;
+        case FluentTooltipPosition::Right:
+            arrow << QPoint(rect.left(), rect.center().y())
+                  << QPoint(rect.left() - arrowSize,
+                            rect.center().y() - arrowSize)
+                  << QPoint(rect.left() - arrowSize,
+                            rect.center().y() + arrowSize);
             break;
         default:
-            // No arrow for other positions in this basic implementation
             break;
     }
 
@@ -430,7 +546,24 @@ void FluentTooltip::mousePressEvent(QMouseEvent* event) {
 }
 
 bool FluentTooltip::eventFilter(QObject* object, QEvent* event) {
+    if (event->type() == QEvent::KeyPress) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        if (keyEvent->key() == Qt::Key_Escape) {
+            // Hide tooltip on Escape key for accessibility
+            hide();
+            return true;
+        }
+    }
     return QWidget::eventFilter(object, event);
+}
+
+void FluentTooltip::keyPressEvent(QKeyEvent* event) {
+    if (event->key() == Qt::Key_Escape) {
+        hide();
+        event->accept();
+        return;
+    }
+    QWidget::keyPressEvent(event);
 }
 
 void FluentTooltip::calculateOptimalPosition(const QPoint& targetPos,

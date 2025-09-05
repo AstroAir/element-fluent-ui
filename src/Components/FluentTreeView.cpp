@@ -87,6 +87,7 @@ FluentTreeView::FluentTreeView(QWidget* parent)
     : Core::FluentComponent(parent) {
     setupTreeWidget();
     setupFilterBar();
+    setupAccessibility();
     updateTreeStyling();
 
     // Setup filter debounce timer
@@ -94,13 +95,19 @@ FluentTreeView::FluentTreeView(QWidget* parent)
     connect(&m_filterDebounceTimer, &QTimer::timeout, this,
             [this]() { this->filterItems(m_currentFilter); });
 
-    // Setup advanced virtualization timer
+    // Setup hover effect timer
+    m_hoverEffectTimer.setSingleShot(true);
+    m_hoverEffectTimer.setInterval(16);  // ~60fps for smooth effects
+    connect(&m_hoverEffectTimer, &QTimer::timeout, this, [this]() {
+        update();  // Trigger repaint for hover effects
+    });
+
+    // Setup advanced virtualization timer (simplified)
     m_virtualizationUpdateTimer.setSingleShot(true);
     m_virtualizationUpdateTimer.setInterval(16);  // ~60fps
     connect(&m_virtualizationUpdateTimer, &QTimer::timeout, this, [this]() {
         updateVirtualizationWindow();
         updateVirtualizationCache();
-        optimizeVirtualizationPerformance();
     });
 
     // Hook scroll events for virtualization
@@ -118,9 +125,26 @@ FluentTreeView::FluentTreeView(QWidget* parent)
                 }
             });
 
+    // Connect to theme changes
     connect(&Styling::FluentTheme::instance(),
             &Styling::FluentTheme::themeChanged, this,
             &FluentTreeView::updateTreeStyling);
+
+    // Connect to theme accessibility changes
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::highContrastModeChanged, this,
+            [this](bool enabled) {
+                if (!m_highContrastModeOverride) {
+                    updateTreeStyling();
+                }
+            });
+
+    connect(&Styling::FluentTheme::instance(),
+            &Styling::FluentTheme::reducedMotionModeChanged, this,
+            [this](bool enabled) { setAnimationsEnabled(!enabled); });
+
+    // Apply initial theme variant
+    applyThemeVariant();
 }
 
 void FluentTreeView::setSelectionMode(FluentTreeSelectionMode mode) {
@@ -377,15 +401,25 @@ void FluentTreeView::paintEvent(QPaintEvent* event) {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
 
-    // Paint background
-    painter.fillRect(rect(), palette.neutralLightest);
+    // Use semantic colors with high contrast support
+    const bool highContrast =
+        m_highContrastModeOverride || theme.isHighContrastMode();
+    const QColor backgroundColor =
+        highContrast ? palette.highContrastBackground : palette.surface;
+    const QColor borderColor =
+        highContrast ? palette.borderFocus : palette.border;
 
-    // Paint border
+    // Paint background
+    painter.fillRect(rect(), backgroundColor);
+
+    // Paint reveal effect if enabled and mouse is over the component
+    if (m_revealEffectEnabled && rect().contains(m_lastMousePos)) {
+        paintRevealEffect(&painter, rect());
+    }
+
+    // Paint focus indicator with proper accessibility support
     if (hasFocus()) {
-        QPen pen(palette.accent, 2);
-        painter.setPen(pen);
-        painter.drawRoundedRect(rect().adjusted(1, 1, -1, -1), cornerRadius(),
-                                cornerRadius());
+        paintFocusIndicator(&painter, rect());
     }
 
     Core::FluentComponent::paintEvent(event);
@@ -421,6 +455,65 @@ void FluentTreeView::resizeEvent(QResizeEvent* event) {
                 }
             }
         }
+    }
+}
+
+void FluentTreeView::keyPressEvent(QKeyEvent* event) {
+    // Handle keyboard navigation first
+    handleKeyboardNavigation(event);
+
+    // If not handled by keyboard navigation, pass to base class
+    if (!event->isAccepted()) {
+        Core::FluentComponent::keyPressEvent(event);
+    }
+}
+
+void FluentTreeView::focusInEvent(QFocusEvent* event) {
+    Core::FluentComponent::focusInEvent(event);
+
+    // Set initial focus item if none is set
+    if (!m_focusItem && m_treeWidget->topLevelItemCount() > 0) {
+        if (auto* item =
+                dynamic_cast<FluentTreeItem*>(m_treeWidget->topLevelItem(0))) {
+            setFocusItem(item);
+        }
+    }
+
+    // Announce focus to screen readers
+    if (m_focusItem) {
+        announceToScreenReader(QString("Focused on tree view, current item: %1")
+                                   .arg(m_focusItem->text(0)));
+    }
+
+    update();  // Trigger repaint for focus indicator
+}
+
+void FluentTreeView::focusOutEvent(QFocusEvent* event) {
+    Core::FluentComponent::focusOutEvent(event);
+    update();  // Trigger repaint to remove focus indicator
+}
+
+void FluentTreeView::mouseMoveEvent(QMouseEvent* event) {
+    Core::FluentComponent::mouseMoveEvent(event);
+
+    // Update mouse position for reveal effects
+    m_lastMousePos = event->pos();
+
+    // Update hover effects if enabled
+    if (m_revealEffectEnabled) {
+        updateHoverEffects(event->pos());
+        m_hoverEffectTimer.start();  // Trigger smooth hover effect updates
+    }
+}
+
+void FluentTreeView::leaveEvent(QEvent* event) {
+    Core::FluentComponent::leaveEvent(event);
+
+    // Clear mouse position and hover effects
+    m_lastMousePos = QPoint(-1, -1);
+
+    if (m_revealEffectEnabled) {
+        update();  // Trigger repaint to clear hover effects
     }
 }
 
@@ -554,8 +647,14 @@ void FluentTreeView::updateTreeStyling() {
     const auto& theme = Styling::FluentTheme::instance();
     const auto& palette = theme.currentPalette();
 
-    // Build a cache key from palette colors and corner radius
-    const QString key = QString("%1|%2|%3|%4|%5|%6|%7|%8|%9")
+    // Check for high contrast mode
+    const bool highContrast =
+        m_highContrastModeOverride || theme.isHighContrastMode();
+    const bool compactMode = m_compactMode;
+    const bool touchMode = m_touchMode;
+
+    // Build a cache key including theme variant information
+    const QString key = QString("%1|%2|%3|%4|%5|%6|%7|%8|%9|%10|%11|%12")
                             .arg(palette.neutralLightest.name())
                             .arg(palette.neutralQuaternary.name())
                             .arg(QString::number(cornerRadius()))
@@ -564,7 +663,10 @@ void FluentTreeView::updateTreeStyling() {
                             .arg(palette.neutralLight.name())
                             .arg(palette.neutralLight.name())
                             .arg(palette.accentDark1.name())
-                            .arg(palette.neutralLighter.name());
+                            .arg(palette.neutralLighter.name())
+                            .arg(highContrast ? "hc" : "normal")
+                            .arg(compactMode ? "compact" : "normal")
+                            .arg(touchMode ? "touch" : "normal");
 
     if (key == m_cachedStyleKey && !m_cachedTreeStyle.isEmpty() &&
         !m_cachedFilterStyle.isEmpty()) {
@@ -573,7 +675,29 @@ void FluentTreeView::updateTreeStyling() {
         return;
     }
 
-    // Recompute and cache styles
+    // Use design tokens for spacing and sizing
+    const int itemPadding = compactMode ? theme.paddingValue("xs")
+                            : touchMode ? theme.paddingValue("lg")
+                                        : theme.paddingValue("sm");
+    const int borderRadius = theme.borderRadius("medium");
+    const int headerPadding = compactMode ? theme.paddingValue("xs")
+                              : touchMode ? theme.paddingValue("md")
+                                          : theme.paddingValue("sm");
+
+    // Use semantic colors with high contrast support
+    const QColor backgroundColor =
+        highContrast ? palette.highContrastBackground : palette.surface;
+    const QColor textColor =
+        highContrast ? palette.highContrastText : palette.neutralPrimary;
+    const QColor borderColor =
+        highContrast ? palette.borderFocus : palette.border;
+    const QColor hoverColor =
+        highContrast ? palette.hover : palette.neutralLight;
+    const QColor selectionColor =
+        highContrast ? palette.focusIndicator : palette.accent;
+    const QColor selectionTextColor = palette.neutralLightest;
+
+    // Recompute and cache styles using design tokens
     QString styleSheet =
         QString(R"(
         QTreeWidget {
@@ -583,20 +707,27 @@ void FluentTreeView::updateTreeStyling() {
             outline: none;
             selection-background-color: %4;
             selection-color: %5;
+            font-family: %6;
+            font-size: %7px;
         }
         QTreeWidget::item {
-            padding: 8px;
-            border-bottom: 1px solid %6;
+            padding: %8px;
+            border-bottom: 1px solid %9;
+            min-height: %10px;
         }
         QTreeWidget::item:hover {
-            background-color: %7;
+            background-color: %11;
         }
         QTreeWidget::item:selected {
             background-color: %4;
             color: %5;
         }
         QTreeWidget::item:selected:active {
-            background-color: %8;
+            background-color: %12;
+        }
+        QTreeWidget::item:focus {
+            outline: 2px solid %13;
+            outline-offset: -2px;
         }
         QTreeWidget::branch {
             background: transparent;
@@ -619,23 +750,33 @@ void FluentTreeView::updateTreeStyling() {
             image: url(:/icons/chevron-down.png);
         }
         QHeaderView::section {
-            background-color: %9;
-            padding: 8px;
+            background-color: %14;
+            padding: %15px;
             border: none;
             border-bottom: 2px solid %2;
             font-weight: 600;
+            font-family: %16;
         }
     )")
-            .arg(palette.neutralLightest.name(),    // background
-                 palette.neutralQuaternary.name(),  // border
-                 QString::number(cornerRadius()),   // border radius
-                 palette.accent.name(),             // selection background
-                 palette.neutralLightest.name(),    // selection text
-                 palette.neutralLight.name(),       // item border
-                 palette.neutralLight.name(),       // hover background
-                 palette.accentDark1.name(),        // active selection
-                 palette.neutralLighter.name()      // header background
-            );
+            .arg(backgroundColor.name())         // 1: background
+            .arg(borderColor.name())             // 2: border
+            .arg(QString::number(borderRadius))  // 3: border radius
+            .arg(selectionColor.name())          // 4: selection background
+            .arg(selectionTextColor.name())      // 5: selection text
+            .arg(theme.bodyFont().family())      // 6: font family
+            .arg(QString::number(theme.bodyFont().pointSize()))  // 7: font size
+            .arg(QString::number(itemPadding))         // 8: item padding
+            .arg(palette.neutralQuaternaryAlt.name())  // 9: item border
+            .arg(QString::number(touchMode     ? 44
+                                 : compactMode ? 28
+                                               : 32))  // 10: min height
+            .arg(hoverColor.name())                    // 11: hover background
+            .arg(palette.accentDark1.name())           // 12: active selection
+            .arg(palette.focusIndicator.name())        // 13: focus outline
+            .arg(palette.surfaceSecondary.name())      // 14: header background
+            .arg(QString::number(headerPadding))       // 15: header padding
+            .arg(theme.subtitleFont().family())        // 16: header font family
+        ;
 
     QString filterStyle =
         QString(R"(
@@ -643,16 +784,38 @@ void FluentTreeView::updateTreeStyling() {
             background-color: %1;
             border: 2px solid %2;
             border-radius: %3px;
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: %4px %5px;
+            font-size: %6px;
+            font-family: %7;
+            color: %8;
+            min-height: %9px;
         }
         QLineEdit:focus {
-            border-color: %4;
+            border-color: %10;
+            outline: none;
+        }
+        QLineEdit:hover {
+            border-color: %11;
+        }
+        QLineEdit::placeholder {
+            color: %12;
         }
     )")
-            .arg(palette.neutralLightest.name(),
-                 palette.neutralQuaternary.name(),
-                 QString::number(cornerRadius()), palette.accent.name());
+            .arg(backgroundColor.name())            // 1: background
+            .arg(borderColor.name())                // 2: border
+            .arg(QString::number(borderRadius))     // 3: border radius
+            .arg(QString::number(itemPadding))      // 4: vertical padding
+            .arg(QString::number(itemPadding + 4))  // 5: horizontal padding
+            .arg(QString::number(theme.bodyFont().pointSize()))  // 6: font size
+            .arg(theme.bodyFont().family())  // 7: font family
+            .arg(textColor.name())           // 8: text color
+            .arg(QString::number(touchMode     ? 44
+                                 : compactMode ? 32
+                                               : 36))  // 9: min height
+            .arg(selectionColor.name())                // 10: focus border
+            .arg(palette.borderHover.name())           // 11: hover border
+            .arg(palette.neutralTertiary.name())       // 12: placeholder color
+        ;
 
     m_treeWidget->setStyleSheet(styleSheet);
     m_filterEdit->setStyleSheet(filterStyle);
@@ -876,6 +1039,375 @@ void FluentTreeView::optimizeVirtualizationPerformance() {
 
     // Adjust overscan based on scroll speed
     // This could be enhanced with scroll velocity detection
+}
+
+// Helper Methods Implementation
+
+void FluentTreeView::setupAccessibility() {
+    // Set up basic accessibility attributes
+    setAccessibleName("Tree View");
+    setAccessibleDescription("Hierarchical tree view component");
+
+    // Set ARIA role for the tree
+    m_treeWidget->setAccessibleName("tree");
+    m_treeWidget->setAccessibleDescription(
+        "Tree widget with hierarchical data");
+
+    // Enable focus policy for keyboard navigation
+    m_treeWidget->setFocusPolicy(Qt::StrongFocus);
+    setFocusPolicy(Qt::StrongFocus);
+
+    // Set up initial accessibility attributes
+    updateAccessibilityAttributes();
+}
+
+void FluentTreeView::updateAccessibilityAttributes() {
+    if (!m_accessibleName.isEmpty()) {
+        QWidget::setAccessibleName(m_accessibleName);
+        m_treeWidget->setAccessibleName(m_accessibleName);
+    }
+
+    if (!m_accessibleDescription.isEmpty()) {
+        QWidget::setAccessibleDescription(m_accessibleDescription);
+        m_treeWidget->setAccessibleDescription(m_accessibleDescription);
+    }
+}
+
+void FluentTreeView::announceToScreenReader(const QString& message) {
+    // Use QAccessible to announce changes to screen readers
+    if (QAccessible::isActive()) {
+        QAccessibleEvent event(this, QAccessible::Alert);
+        event.setText(message);
+        QAccessible::updateAccessibility(&event);
+    }
+}
+
+void FluentTreeView::handleKeyboardNavigation(QKeyEvent* event) {
+    if (!m_keyboardNavigationEnabled) {
+        return;
+    }
+
+    switch (event->key()) {
+        case Qt::Key_Up:
+            moveFocusUp();
+            event->accept();
+            break;
+        case Qt::Key_Down:
+            moveFocusDown();
+            event->accept();
+            break;
+        case Qt::Key_Left:
+            if (m_focusItem && m_focusItem->isExpanded()) {
+                collapseItem(m_focusItem);
+            } else {
+                moveFocusToParent();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Right:
+            if (m_focusItem && !m_focusItem->isExpanded() &&
+                m_focusItem->childCount() > 0) {
+                expandItem(m_focusItem);
+            } else {
+                moveFocusToFirstChild();
+            }
+            event->accept();
+            break;
+        case Qt::Key_Home:
+            if (m_treeWidget->topLevelItemCount() > 0) {
+                if (auto* item = dynamic_cast<FluentTreeItem*>(
+                        m_treeWidget->topLevelItem(0))) {
+                    setFocusItem(item);
+                }
+            }
+            event->accept();
+            break;
+        case Qt::Key_End:
+            // Find the last visible item
+            if (m_treeWidget->topLevelItemCount() > 0) {
+                QTreeWidgetItem* lastItem = nullptr;
+                QTreeWidgetItemIterator it(m_treeWidget);
+                while (*it) {
+                    if (!(*it)->isHidden()) {
+                        lastItem = *it;
+                    }
+                    ++it;
+                }
+                if (auto* item = dynamic_cast<FluentTreeItem*>(lastItem)) {
+                    setFocusItem(item);
+                }
+            }
+            event->accept();
+            break;
+        case Qt::Key_Space:
+        case Qt::Key_Return:
+        case Qt::Key_Enter:
+            if (m_focusItem) {
+                emit itemClicked(m_focusItem, 0);
+                if (m_focusItem->isCheckable()) {
+                    Qt::CheckState newState =
+                        m_focusItem->checkState(0) == Qt::Checked
+                            ? Qt::Unchecked
+                            : Qt::Checked;
+                    m_focusItem->setCheckState(0, newState);
+                }
+            }
+            event->accept();
+            break;
+        default:
+            // Let the base class handle other keys
+            break;
+    }
+}
+
+void FluentTreeView::selectItemWithKeyboard(FluentTreeItem* item) {
+    if (item && m_keyboardNavigationEnabled) {
+        setCurrentItem(item);
+        setFocusItem(item);
+
+        // Announce selection to screen readers
+        announceToScreenReader(QString("Selected: %1").arg(item->text(0)));
+    }
+}
+
+void FluentTreeView::applyThemeVariant() {
+    // Apply spacing adjustments based on theme variant
+    updateSpacingForVariant();
+
+    // Update mouse tracking for touch mode
+    if (m_touchMode) {
+        setMouseTracking(true);
+        m_treeWidget->setMouseTracking(true);
+    }
+}
+
+void FluentTreeView::updateSpacingForVariant() {
+    const auto& theme = Styling::FluentTheme::instance();
+
+    // Adjust layout margins based on variant
+    int margin = m_compactMode ? theme.marginsValue("xs")
+                 : m_touchMode ? theme.marginsValue("lg")
+                               : theme.marginsValue("sm");
+
+    m_layout->setContentsMargins(margin, margin, margin, margin);
+
+    // Adjust spacing between filter and tree
+    int spacing = m_compactMode ? theme.spacing("xs")
+                  : m_touchMode ? theme.spacing("lg")
+                                : theme.spacing("sm");
+
+    m_layout->setSpacing(spacing);
+}
+
+void FluentTreeView::paintRevealEffect(QPainter* painter, const QRect& rect) {
+    if (!m_revealEffectEnabled || m_lastMousePos.x() < 0) {
+        return;
+    }
+
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+
+    // Create a subtle radial gradient for the reveal effect
+    QRadialGradient gradient(m_lastMousePos, 100);
+    QColor revealColor = palette.accent;
+    revealColor.setAlpha(20);  // Very subtle effect
+
+    gradient.setColorAt(0, revealColor);
+    gradient.setColorAt(1, Qt::transparent);
+
+    painter->save();
+    painter->setBrush(QBrush(gradient));
+    painter->setPen(Qt::NoPen);
+    painter->drawRect(rect);
+    painter->restore();
+}
+
+void FluentTreeView::paintFocusIndicator(QPainter* painter, const QRect& rect) {
+    const auto& theme = Styling::FluentTheme::instance();
+    const auto& palette = theme.currentPalette();
+
+    // Use high contrast focus indicator if needed
+    const bool highContrast =
+        m_highContrastModeOverride || theme.isHighContrastMode();
+    const QColor focusColor =
+        highContrast ? palette.focusIndicator : palette.accent;
+
+    painter->save();
+    QPen focusPen(focusColor, 2);
+    focusPen.setStyle(Qt::SolidLine);
+    painter->setPen(focusPen);
+    painter->setBrush(Qt::NoBrush);
+
+    // Draw focus rectangle with rounded corners
+    const int radius = cornerRadius();
+    painter->drawRoundedRect(rect.adjusted(1, 1, -1, -1), radius, radius);
+    painter->restore();
+}
+
+void FluentTreeView::updateHoverEffects(const QPoint& mousePos) {
+    // This method can be used to update hover effects on specific items
+    // For now, we just store the mouse position for the reveal effect
+    Q_UNUSED(mousePos);
+
+    // Future enhancement: could highlight specific tree items under the mouse
+}
+
+// Accessibility Methods
+QString FluentTreeView::accessibleName() const {
+    return m_accessibleName.isEmpty() ? QWidget::accessibleName()
+                                      : m_accessibleName;
+}
+
+void FluentTreeView::setAccessibleName(const QString& name) {
+    if (m_accessibleName != name) {
+        m_accessibleName = name;
+        updateAccessibilityAttributes();
+        emit accessibleNameChanged(name);
+    }
+}
+
+QString FluentTreeView::accessibleDescription() const {
+    return m_accessibleDescription;
+}
+
+void FluentTreeView::setAccessibleDescription(const QString& description) {
+    if (m_accessibleDescription != description) {
+        m_accessibleDescription = description;
+        updateAccessibilityAttributes();
+        emit accessibleDescriptionChanged(description);
+    }
+}
+
+bool FluentTreeView::isKeyboardNavigationEnabled() const {
+    return m_keyboardNavigationEnabled;
+}
+
+void FluentTreeView::setKeyboardNavigationEnabled(bool enabled) {
+    if (m_keyboardNavigationEnabled != enabled) {
+        m_keyboardNavigationEnabled = enabled;
+        emit keyboardNavigationEnabledChanged(enabled);
+    }
+}
+
+// Theme Variant Methods
+bool FluentTreeView::isCompactMode() const { return m_compactMode; }
+
+void FluentTreeView::setCompactMode(bool enabled) {
+    if (m_compactMode != enabled) {
+        m_compactMode = enabled;
+        applyThemeVariant();
+        updateTreeStyling();
+        emit compactModeChanged(enabled);
+    }
+}
+
+bool FluentTreeView::isTouchMode() const { return m_touchMode; }
+
+void FluentTreeView::setTouchMode(bool enabled) {
+    if (m_touchMode != enabled) {
+        m_touchMode = enabled;
+        applyThemeVariant();
+        updateTreeStyling();
+        emit touchModeChanged(enabled);
+    }
+}
+
+bool FluentTreeView::isHighContrastMode() const {
+    return m_highContrastModeOverride;
+}
+
+void FluentTreeView::setHighContrastMode(bool enabled) {
+    if (m_highContrastModeOverride != enabled) {
+        m_highContrastModeOverride = enabled;
+        updateTreeStyling();
+        emit highContrastModeChanged(enabled);
+    }
+}
+
+// Visual Effect Methods
+bool FluentTreeView::isRevealEffectEnabled() const {
+    return m_revealEffectEnabled;
+}
+
+void FluentTreeView::setRevealEffectEnabled(bool enabled) {
+    if (m_revealEffectEnabled != enabled) {
+        m_revealEffectEnabled = enabled;
+        emit revealEffectEnabledChanged(enabled);
+    }
+}
+
+bool FluentTreeView::areAnimationsEnabled() const {
+    return m_animationsEnabled;
+}
+
+void FluentTreeView::setAnimationsEnabled(bool enabled) {
+    if (m_animationsEnabled != enabled) {
+        m_animationsEnabled = enabled;
+        setAnimated(enabled);
+        emit animationsEnabledChanged(enabled);
+    }
+}
+
+// Focus Management Methods
+void FluentTreeView::setFocusItem(FluentTreeItem* item) {
+    if (m_focusItem != item) {
+        m_focusItem = item;
+        if (item) {
+            m_treeWidget->setCurrentItem(item);
+            m_treeWidget->scrollToItem(item);
+        }
+        emit focusItemChanged(item);
+    }
+}
+
+FluentTreeItem* FluentTreeView::focusItem() const { return m_focusItem; }
+
+void FluentTreeView::moveFocusUp() {
+    if (!m_keyboardNavigationEnabled || !m_focusItem)
+        return;
+
+    auto* item = m_treeWidget->itemAbove(m_focusItem);
+    if (item) {
+        if (auto* fluentItem = dynamic_cast<FluentTreeItem*>(item)) {
+            setFocusItem(fluentItem);
+        }
+    }
+}
+
+void FluentTreeView::moveFocusDown() {
+    if (!m_keyboardNavigationEnabled || !m_focusItem)
+        return;
+
+    auto* item = m_treeWidget->itemBelow(m_focusItem);
+    if (item) {
+        if (auto* fluentItem = dynamic_cast<FluentTreeItem*>(item)) {
+            setFocusItem(fluentItem);
+        }
+    }
+}
+
+void FluentTreeView::moveFocusToParent() {
+    if (!m_keyboardNavigationEnabled || !m_focusItem)
+        return;
+
+    auto* parent = m_focusItem->parent();
+    if (parent) {
+        if (auto* fluentParent = dynamic_cast<FluentTreeItem*>(parent)) {
+            setFocusItem(fluentParent);
+        }
+    }
+}
+
+void FluentTreeView::moveFocusToFirstChild() {
+    if (!m_keyboardNavigationEnabled || !m_focusItem)
+        return;
+
+    if (m_focusItem->childCount() > 0) {
+        auto* child = m_focusItem->child(0);
+        if (auto* fluentChild = dynamic_cast<FluentTreeItem*>(child)) {
+            setFocusItem(fluentChild);
+        }
+    }
 }
 
 }  // namespace FluentQt::Components

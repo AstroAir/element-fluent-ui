@@ -179,48 +179,51 @@ void FluentCheckBoxTest::testTristate() {
 }
 
 void FluentCheckBoxTest::testEnabled() {
-    QSignalSpy enabledSpy(m_checkBox, &FluentCheckBox::enabledChanged);
-
+    // Test enabled/disabled state - no specific signal for this in
+    // FluentCheckBox
     m_checkBox->setEnabled(false);
     QVERIFY(!m_checkBox->isEnabled());
-    QCOMPARE(enabledSpy.count(), 1);
 
     m_checkBox->setEnabled(true);
     QVERIFY(m_checkBox->isEnabled());
-    QCOMPARE(enabledSpy.count(), 2);
 }
 
 void FluentCheckBoxTest::testCheckBoxStyle() {
-    QSignalSpy styleSpy(m_checkBox, &FluentCheckBox::checkBoxStyleChanged);
+    // FluentCheckBox doesn't have style property, test autoExclusive instead
+    QSignalSpy autoExclusiveSpy(m_checkBox,
+                                &FluentCheckBox::autoExclusiveChanged);
 
-    m_checkBox->setCheckBoxStyle(FluentCheckBoxStyle::Switch);
-    QCOMPARE(m_checkBox->checkBoxStyle(), FluentCheckBoxStyle::Switch);
-    QCOMPARE(styleSpy.count(), 1);
+    m_checkBox->setAutoExclusive(true);
+    QVERIFY(m_checkBox->autoExclusive());
+    QCOMPARE(autoExclusiveSpy.count(), 1);
 
-    m_checkBox->setCheckBoxStyle(FluentCheckBoxStyle::Standard);
-    QCOMPARE(m_checkBox->checkBoxStyle(), FluentCheckBoxStyle::Standard);
-    QCOMPARE(styleSpy.count(), 2);
+    m_checkBox->setAutoExclusive(false);
+    QVERIFY(!m_checkBox->autoExclusive());
+    QCOMPARE(autoExclusiveSpy.count(), 2);
 }
 
 void FluentCheckBoxTest::testCheckBoxSize() {
-    QSignalSpy sizeSpy(m_checkBox, &FluentCheckBox::checkBoxSizeChanged);
+    // FluentCheckBox doesn't have size property, test iconSize instead
+    QSignalSpy iconSizeSpy(m_checkBox, &FluentCheckBox::iconSizeChanged);
 
-    m_checkBox->setCheckBoxSize(FluentCheckBoxSize::Large);
-    QCOMPARE(m_checkBox->checkBoxSize(), FluentCheckBoxSize::Large);
-    QCOMPARE(sizeSpy.count(), 1);
+    QSize largeSize(32, 32);
+    m_checkBox->setIconSize(largeSize);
+    QCOMPARE(m_checkBox->iconSize(), largeSize);
+    QCOMPARE(iconSizeSpy.count(), 1);
 
-    m_checkBox->setCheckBoxSize(FluentCheckBoxSize::Small);
-    QCOMPARE(m_checkBox->checkBoxSize(), FluentCheckBoxSize::Small);
-    QCOMPARE(sizeSpy.count(), 2);
+    QSize smallSize(16, 16);
+    m_checkBox->setIconSize(smallSize);
+    QCOMPARE(m_checkBox->iconSize(), smallSize);
+    QCOMPARE(iconSizeSpy.count(), 2);
 }
 
 void FluentCheckBoxTest::testMouseInteraction() {
     m_testWidget->show();
-    QTest::qWaitForWindowExposed(m_testWidget);
+    QVERIFY(QTest::qWaitForWindowExposed(m_testWidget));
 
     QSignalSpy clickedSpy(m_checkBox, &FluentCheckBox::clicked);
     QSignalSpy toggledSpy(m_checkBox, &FluentCheckBox::toggled);
-    QSignalSpy checkedSpy(m_checkBox, &FluentCheckBox::checkedChanged);
+    QSignalSpy checkStateSpy(m_checkBox, &FluentCheckBox::checkStateChanged);
 
     // Test mouse click
     QVERIFY(!m_checkBox->isChecked());
@@ -229,7 +232,7 @@ void FluentCheckBoxTest::testMouseInteraction() {
     QVERIFY(m_checkBox->isChecked());
     QCOMPARE(clickedSpy.count(), 1);
     QCOMPARE(toggledSpy.count(), 1);
-    QCOMPARE(checkedSpy.count(), 1);
+    QCOMPARE(checkStateSpy.count(), 1);
 
     // Click again to uncheck
     QTest::mouseClick(m_checkBox, Qt::LeftButton);
@@ -237,12 +240,12 @@ void FluentCheckBoxTest::testMouseInteraction() {
     QVERIFY(!m_checkBox->isChecked());
     QCOMPARE(clickedSpy.count(), 2);
     QCOMPARE(toggledSpy.count(), 2);
-    QCOMPARE(checkedSpy.count(), 2);
+    QCOMPARE(checkStateSpy.count(), 2);
 }
 
 void FluentCheckBoxTest::testKeyboardInteraction() {
     m_testWidget->show();
-    QTest::qWaitForWindowExposed(m_testWidget);
+    QVERIFY(QTest::qWaitForWindowExposed(m_testWidget));
     m_checkBox->setFocus();
 
     QSignalSpy clickedSpy(m_checkBox, &FluentCheckBox::clicked);
@@ -266,7 +269,7 @@ void FluentCheckBoxTest::testKeyboardInteraction() {
 
 void FluentCheckBoxTest::testToggle() {
     QSignalSpy toggledSpy(m_checkBox, &FluentCheckBox::toggled);
-    QSignalSpy checkedSpy(m_checkBox, &FluentCheckBox::checkedChanged);
+    QSignalSpy checkStateSpy(m_checkBox, &FluentCheckBox::checkStateChanged);
 
     // Test toggle method
     QVERIFY(!m_checkBox->isChecked());
@@ -274,13 +277,13 @@ void FluentCheckBoxTest::testToggle() {
 
     QVERIFY(m_checkBox->isChecked());
     QCOMPARE(toggledSpy.count(), 1);
-    QCOMPARE(checkedSpy.count(), 1);
+    QCOMPARE(checkStateSpy.count(), 1);
 
     m_checkBox->toggle();
 
     QVERIFY(!m_checkBox->isChecked());
     QCOMPARE(toggledSpy.count(), 2);
-    QCOMPARE(checkedSpy.count(), 2);
+    QCOMPARE(checkStateSpy.count(), 2);
 
     // Test toggle with tristate
     m_checkBox->setTristate(true);
@@ -293,11 +296,16 @@ void FluentCheckBoxTest::testToggle() {
 
 void FluentCheckBoxTest::testAnimations() {
     m_testWidget->show();
-    QTest::qWaitForWindowExposed(m_testWidget);
+    QVERIFY(QTest::qWaitForWindowExposed(m_testWidget));
 
-    // Test that animations don't crash
-    m_checkBox->setAnimationEnabled(true);
-    QVERIFY(m_checkBox->animationEnabled());
+    // Test that animations don't crash - FluentCheckBox doesn't have animation
+    // control Test checkProgress property instead which is related to
+    // animations
+    QSignalSpy progressSpy(m_checkBox, &FluentCheckBox::checkProgressChanged);
+
+    m_checkBox->setCheckProgress(0.5);
+    QCOMPARE(m_checkBox->checkProgress(), 0.5);
+    QCOMPARE(progressSpy.count(), 1);
 
     // Trigger state changes that should animate
     m_checkBox->setChecked(true);
@@ -314,73 +322,65 @@ void FluentCheckBoxTest::testAnimations() {
     m_checkBox->setFocus();
     QTest::qWait(50);
 
-    // Disable animations
-    m_checkBox->setAnimationEnabled(false);
-    QVERIFY(!m_checkBox->animationEnabled());
+    // Test full progress
+    m_checkBox->setCheckProgress(1.0);
+    QCOMPARE(m_checkBox->checkProgress(), 1.0);
+    QCOMPARE(progressSpy.count(), 2);
 }
 
 void FluentCheckBoxTest::testSignalEmission() {
     QSignalSpy textSpy(m_checkBox, &FluentCheckBox::textChanged);
-    QSignalSpy iconSpy(m_checkBox, &FluentCheckBox::iconChanged);
+    QSignalSpy iconSizeSpy(m_checkBox, &FluentCheckBox::iconSizeChanged);
     QSignalSpy checkStateSpy(m_checkBox, &FluentCheckBox::checkStateChanged);
-    QSignalSpy checkedSpy(m_checkBox, &FluentCheckBox::checkedChanged);
     QSignalSpy toggledSpy(m_checkBox, &FluentCheckBox::toggled);
     QSignalSpy clickedSpy(m_checkBox, &FluentCheckBox::clicked);
     QSignalSpy tristateSpy(m_checkBox, &FluentCheckBox::tristateChanged);
-    QSignalSpy enabledSpy(m_checkBox, &FluentCheckBox::enabledChanged);
-    QSignalSpy styleSpy(m_checkBox, &FluentCheckBox::checkBoxStyleChanged);
-    QSignalSpy sizeSpy(m_checkBox, &FluentCheckBox::checkBoxSizeChanged);
+    QSignalSpy autoExclusiveSpy(m_checkBox,
+                                &FluentCheckBox::autoExclusiveChanged);
+    QSignalSpy progressSpy(m_checkBox, &FluentCheckBox::checkProgressChanged);
 
     // Test all signals
     m_checkBox->setText("Test");
-    m_checkBox->setIcon(QIcon());
+    m_checkBox->setIconSize(QSize(24, 24));
     m_checkBox->setCheckState(FluentCheckState::Checked);
     m_checkBox->setChecked(false);
     m_checkBox->toggle();
     m_checkBox->click();
     m_checkBox->setTristate(true);
-    m_checkBox->setEnabled(false);
-    m_checkBox->setCheckBoxStyle(FluentCheckBoxStyle::Switch);
-    m_checkBox->setCheckBoxSize(FluentCheckBoxSize::Large);
+    m_checkBox->setAutoExclusive(true);
+    m_checkBox->setCheckProgress(0.75);
 
     QCOMPARE(textSpy.count(), 1);
-    QCOMPARE(iconSpy.count(), 1);
+    QCOMPARE(iconSizeSpy.count(), 1);
     QCOMPARE(checkStateSpy.count(), 3);  // setCheckState, setChecked, toggle
-    QCOMPARE(checkedSpy.count(), 2);     // setChecked, toggle
     QCOMPARE(toggledSpy.count(), 2);     // toggle, click
     QCOMPARE(clickedSpy.count(), 1);
     QCOMPARE(tristateSpy.count(), 1);
-    QCOMPARE(enabledSpy.count(), 1);
-    QCOMPARE(styleSpy.count(), 1);
-    QCOMPARE(sizeSpy.count(), 1);
+    QCOMPARE(autoExclusiveSpy.count(), 1);
+    QCOMPARE(progressSpy.count(), 1);
 }
 
 void FluentCheckBoxTest::testValidation() {
-    // Test validation functionality if available
-    m_checkBox->setRequired(true);
-    QVERIFY(m_checkBox->isRequired());
+    // FluentCheckBox doesn't have validation functionality
+    // Test basic functionality instead
+    QVERIFY(m_checkBox != nullptr);
 
-    // Unchecked required checkbox should be invalid
+    // Test that the checkbox can be checked and unchecked
     m_checkBox->setChecked(false);
-    QVERIFY(!m_checkBox->isValid());
+    QVERIFY(!m_checkBox->isChecked());
 
-    // Checked required checkbox should be valid
     m_checkBox->setChecked(true);
-    QVERIFY(m_checkBox->isValid());
+    QVERIFY(m_checkBox->isChecked());
 
-    // Non-required checkbox should always be valid
-    m_checkBox->setRequired(false);
-    m_checkBox->setChecked(false);
-    QVERIFY(m_checkBox->isValid());
+    // Test tristate functionality
+    m_checkBox->setTristate(true);
+    QVERIFY(m_checkBox->isTristate());
 
-    // Test validation state change signal
-    QSignalSpy validationSpy(m_checkBox,
-                             &FluentCheckBox::validationStateChanged);
-    m_checkBox->setRequired(true);
-    m_checkBox->setChecked(false);
-    m_checkBox->setChecked(true);
-
-    QVERIFY(validationSpy.count() >= 1);
+    m_checkBox->setCheckState(FluentCheckState::PartiallyChecked);
+    QCOMPARE(m_checkBox->checkState(), FluentCheckState::PartiallyChecked);
+    QVERIFY(
+        !m_checkBox
+             ->isChecked());  // Partially checked is not considered "checked"
 }
 
 QTEST_MAIN(FluentCheckBoxTest)

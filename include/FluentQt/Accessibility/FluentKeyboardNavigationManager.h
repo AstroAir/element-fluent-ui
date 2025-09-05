@@ -219,6 +219,7 @@ private slots:
     void onWidgetDestroyed(QObject* widget);
     void onApplicationFocusChanged(QWidget* old, QWidget* now);
     void updateFocusIndicators();
+    void initializeTimer();
 
 private:
     FluentKeyboardNavigationManager();

@@ -18,24 +18,18 @@ FluentScreenReaderManager& FluentScreenReaderManager::instance() {
     return instance;
 }
 
-FluentScreenReaderManager::FluentScreenReaderManager() {
+FluentScreenReaderManager::FluentScreenReaderManager()
+    : m_announcementTimer(nullptr) {
     // Initialize announcement timer only if we have a proper event loop
+    // and we're in the main thread
     if (QApplication::instance() &&
-        QThread::currentThread() == QApplication::instance()->thread()) {
-        m_announcementTimer = new QTimer(this);
-        m_announcementTimer->setSingleShot(true);
-        connect(m_announcementTimer, &QTimer::timeout, this,
-                &FluentScreenReaderManager::processAnnouncementQueue);
+        QThread::currentThread() == QApplication::instance()->thread() &&
+        QApplication::instance()->thread()->eventDispatcher()) {
+        initializeTimer();
     } else {
-        // Defer timer creation until we're in the main thread
-        QTimer::singleShot(0, this, [this]() {
-            if (!m_announcementTimer) {
-                m_announcementTimer = new QTimer(this);
-                m_announcementTimer->setSingleShot(true);
-                connect(m_announcementTimer, &QTimer::timeout, this,
-                        &FluentScreenReaderManager::processAnnouncementQueue);
-            }
-        });
+        // Defer timer creation until we're in the main thread with event loop
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
     }
 
     // Defer screen reader detection to avoid blocking UI thread during startup
@@ -48,6 +42,49 @@ FluentScreenReaderManager::FluentScreenReaderManager() {
     }
 
     qDebug() << "FluentScreenReaderManager initialized";
+}
+
+void FluentScreenReaderManager::initializeTimer() {
+    if (m_announcementTimer) {
+        return;  // Already initialized
+    }
+
+    if (!QApplication::instance()) {
+        qDebug() << "FluentScreenReaderManager: No QApplication instance for "
+                    "timer initialization";
+        return;
+    }
+
+    if (QThread::currentThread() != QApplication::instance()->thread()) {
+        qDebug() << "FluentScreenReaderManager: Not in main thread for timer "
+                    "initialization";
+        // Retry from main thread
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
+        return;
+    }
+
+    if (!QApplication::instance()->thread()->eventDispatcher()) {
+        qDebug() << "FluentScreenReaderManager: No event dispatcher available";
+        // Retry later when event loop is ready
+        QTimer::singleShot(100, this,
+                           &FluentScreenReaderManager::initializeTimer);
+        return;
+    }
+
+    try {
+        m_announcementTimer = new QTimer(this);
+        m_announcementTimer->setSingleShot(true);
+        connect(m_announcementTimer, &QTimer::timeout, this,
+                &FluentScreenReaderManager::processAnnouncementQueue);
+        qDebug() << "FluentScreenReaderManager timer initialized successfully";
+    } catch (const std::exception& e) {
+        qWarning() << "FluentScreenReaderManager: Exception creating timer:"
+                   << e.what();
+    } catch (...) {
+        qWarning()
+            << "FluentScreenReaderManager: Unknown exception creating timer";
+    }
 }
 
 FluentScreenReaderInfo FluentScreenReaderManager::detectScreenReader() {

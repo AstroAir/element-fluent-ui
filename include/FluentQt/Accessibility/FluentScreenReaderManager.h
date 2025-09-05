@@ -330,6 +330,7 @@ private slots:
     void processAnnouncementQueue();
     void onWidgetDestroyed(QObject* widget);
     void onSystemAccessibilityChanged();
+    void initializeTimer();
 
 private:
     FluentScreenReaderManager();

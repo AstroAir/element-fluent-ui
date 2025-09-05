@@ -19,6 +19,10 @@
 
 namespace FluentQt::Components {
 
+// Constants for tooltip appearance
+static constexpr int ARROW_SIZE = 8;
+static constexpr int BORDER_RADIUS = 4;
+
 // Static instance for convenience methods
 FluentTooltip* FluentTooltip::s_instance = nullptr;
 
@@ -258,15 +262,17 @@ void FluentTooltip::setupAnimations() {
     hideConfig.easing = FluentEasing::FluentSubtle;
     hideConfig.respectReducedMotion = true;
 
-    m_showAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
-    m_animator->setupAnimation(m_showAnimation, showConfig);
-    m_showAnimation->setStartValue(0.0);
-    m_showAnimation->setEndValue(1.0);
+    // Use FluentAnimator's public fadeIn/fadeOut methods
+    auto showAnim = FluentAnimator::fadeIn(this, showConfig);
+    auto hideAnim = FluentAnimator::fadeOut(this, hideConfig);
 
-    m_hideAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
-    m_animator->setupAnimation(m_hideAnimation, hideConfig);
-    m_hideAnimation->setStartValue(1.0);
-    m_hideAnimation->setEndValue(0.0);
+    // Take ownership of the animations
+    m_showAnimation = showAnim.release();
+    m_hideAnimation = hideAnim.release();
+
+    // Set parent to manage memory
+    m_showAnimation->setParent(this);
+    m_hideAnimation->setParent(this);
 
     connect(m_showAnimation, &QPropertyAnimation::finished, this,
             &FluentTooltip::onAnimationFinished);
@@ -289,10 +295,8 @@ void FluentTooltip::setupAccessibility() {
     setAccessibleName("Tooltip");
     setAccessibleDescription("Contextual information tooltip");
 
-    // Set ARIA role
-    if (QAccessible::isActive()) {
-        setAttribute(Qt::WA_AccessibleRole, QAccessible::ToolTip);
-    }
+    // Note: Qt6 handles tooltip accessibility role automatically for
+    // Qt::ToolTip windows
 
     // Enable keyboard navigation
     setFocusPolicy(Qt::StrongFocus);

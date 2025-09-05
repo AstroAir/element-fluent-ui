@@ -459,9 +459,7 @@ public:
      * @brief Gets the progress indicator for customization
      * @return Pointer to the progress indicator, or nullptr if not created
      */
-    QProgressBar* progressIndicator() const noexcept {
-        return m_progressIndicator;
-    }
+    QWidget* progressIndicator() const noexcept { return m_progressIndicator; }
 
     // Enhanced control and state methods
 
@@ -943,7 +941,9 @@ private:
     // UI controls
     FluentButton* m_playPauseButton{nullptr};
     FluentButton* m_stopButton{nullptr};
-    QProgressBar* m_progressIndicator{nullptr};
+    QWidget* m_progressIndicator{
+        nullptr};  // Changed from QProgressBar* to QWidget* to support custom
+                   // progress widgets
     QProgressBar* m_progressBar{nullptr};
     QLabel* m_timeLabel{nullptr};
     QWidget* m_controlsContainer{nullptr};

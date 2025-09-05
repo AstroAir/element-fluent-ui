@@ -25,7 +25,9 @@ void FluentComponentValidator::validateAllComponents() {
 
         // Layout Components (available)
         "FluentCard", "FluentNavigationView", "FluentTabView",
-        "FluentScrollArea", "FluentSplitter",
+        // "FluentScrollArea",  // Temporarily disabled due to compilation
+        // errors
+        "FluentSplitter",
         // Note: FluentPanel temporarily disabled in CMake
 
         // Feedback Components (available)
@@ -405,8 +407,9 @@ QWidget* FluentComponentValidator::createComponent(
             return new Components::FluentNavigationView();
         if (componentName == "FluentTabView")
             return new Components::FluentTabView();
-        if (componentName == "FluentScrollArea")
-            return new Components::FluentScrollArea();
+        // if (componentName == "FluentScrollArea")
+        //     return new Components::FluentScrollArea();  // Temporarily
+        //     disabled
         if (componentName == "FluentSplitter")
             return new Components::FluentSplitter();
 

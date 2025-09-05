@@ -417,6 +417,9 @@ private:
     double calculateImpactScore(AccessibilityIssueType type, QWidget* widget);
     QStringList getAffectedUserTypes(AccessibilityIssueType type);
 
+private slots:
+    void initializeTimer();
+
 private:
     WcagLevel m_wcagLevel{WcagLevel::AA};
     bool m_highContrastMode{false};

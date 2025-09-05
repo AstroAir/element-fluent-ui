@@ -14,6 +14,7 @@
 #include <QApplication>
 #include <QDebug>
 #include <QSettings>
+#include <QThread>
 #include <QTimer>
 #include <QWidget>
 #include <memory>
@@ -31,19 +32,83 @@ namespace FluentQt::Accessibility {
 
 // FluentAccessibleInterface Implementation
 FluentAccessibleInterface::FluentAccessibleInterface(QWidget* widget)
-    : QAccessibleWidget(widget,
-                        QAccessible::Client)  // Use safe default role initially
-{
-    // Validate widget parameter
+    : QAccessibleWidget(widget, QAccessible::Client) {
+    // Validate widget parameter first
     if (!widget) {
         qWarning()
             << "FluentAccessibleInterface: Null widget passed to constructor";
         return;
     }
 
-    // Additional initialization if needed
-    qDebug() << "FluentAccessibleInterface created for widget:"
-             << widget->objectName();
+    // Check if accessibility should be skipped
+    if (qEnvironmentVariableIsSet("FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
+        qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+        (qEnvironmentVariableIsSet("QT_ACCESSIBILITY") &&
+         qEnvironmentVariable("QT_ACCESSIBILITY") == "0")) {
+        qDebug() << "FluentAccessibleInterface: Accessibility disabled, "
+                    "minimal initialization";
+        return;
+    }
+
+    // Ensure we're in a safe context
+    if (!QApplication::instance()) {
+        qDebug() << "FluentAccessibleInterface: No QApplication instance, "
+                    "deferring initialization";
+        return;
+    }
+
+    if (QThread::currentThread() != QApplication::instance()->thread()) {
+        qDebug() << "FluentAccessibleInterface: Not in main thread, deferring "
+                    "initialization";
+        return;
+    }
+
+    // Safe initialization
+    try {
+        initializeAccessibleInterface();
+    } catch (const std::exception& e) {
+        qWarning()
+            << "FluentAccessibleInterface: Exception during initialization:"
+            << e.what();
+    } catch (...) {
+        qWarning() << "FluentAccessibleInterface: Unknown exception during "
+                      "initialization";
+    }
+}
+
+void FluentAccessibleInterface::initializeAccessibleInterface() {
+    QWidget* widget = safeWidget();
+    if (!widget) {
+        return;
+    }
+
+    // Set up basic accessibility properties
+    QString widgetName = widget->objectName();
+    if (widgetName.isEmpty()) {
+        widgetName = widget->metaObject()->className();
+    }
+
+    qDebug() << "FluentAccessibleInterface initialized for widget:"
+             << widgetName;
+
+    // Additional FluentQt-specific initialization can be added here
+    setupFluentAccessibility();
+}
+
+void FluentAccessibleInterface::setupFluentAccessibility() {
+    QWidget* widget = safeWidget();
+    if (!widget) {
+        return;
+    }
+
+    // Set up FluentQt-specific accessibility features
+    // This is where we can add Fluent Design specific accessibility
+    // enhancements
+
+    // For now, just ensure basic accessibility is working
+    if (widget->accessibleName().isEmpty() && !widget->objectName().isEmpty()) {
+        widget->setAccessibleName(widget->objectName());
+    }
 }
 
 // Safe object access helper methods
@@ -63,13 +128,40 @@ QWidget* FluentAccessibleInterface::safeWidget() const {
         return nullptr;
     }
 
-    QWidget* widget = qobject_cast<QWidget*>(obj);
-    if (!widget) {
-        qWarning() << "FluentAccessibleInterface: object is not a QWidget";
+    // Additional safety check - ensure object is still valid
+    try {
+        // Test if we can safely access the object
+        if (obj->thread() != QThread::currentThread()) {
+            qWarning()
+                << "FluentAccessibleInterface: object is in different thread";
+            return nullptr;
+        }
+
+        QWidget* widget = qobject_cast<QWidget*>(obj);
+        if (!widget) {
+            qWarning() << "FluentAccessibleInterface: object is not a QWidget";
+            return nullptr;
+        }
+
+        // Additional safety check - ensure widget is still valid
+        if (widget->isWindow() && !widget->isVisible() &&
+            widget->parent() == nullptr) {
+            // This might be a deleted widget
+            qWarning()
+                << "FluentAccessibleInterface: widget appears to be deleted";
+            return nullptr;
+        }
+
+        return widget;
+    } catch (const std::exception& e) {
+        qWarning() << "FluentAccessibleInterface: Exception in safeWidget:"
+                   << e.what();
+        return nullptr;
+    } catch (...) {
+        qWarning()
+            << "FluentAccessibleInterface: Unknown exception in safeWidget";
         return nullptr;
     }
-
-    return widget;
 }
 
 bool FluentAccessibleInterface::isObjectValid() const {
@@ -336,32 +428,53 @@ QAccessible::Role FluentAccessibleInterface::getFluentRole() const {
 
     QWidget* widget = safeWidget();
     if (widget) {
-        const QString className = widget->metaObject()->className();
-        qDebug() << "FluentAccessibleInterface::getFluentRole: className ="
-                 << className;
+        try {
+            // Safe access to metaObject
+            const QMetaObject* metaObj = widget->metaObject();
+            if (!metaObj) {
+                qWarning() << "FluentAccessibleInterface::getFluentRole: "
+                              "metaObject is null";
+                return QAccessible::Client;
+            }
 
-        if (className.contains("FluentButton")) {
-            const bool checkable = widget->property("checkable").toBool();
-            return checkable ? QAccessible::CheckBox : QAccessible::PushButton;
-        } else if (className.contains("FluentCard")) {
-            return QAccessible::Grouping;
-        } else if (className.contains("FluentNavigationView")) {
-            return QAccessible::PageTabList;
-        } else if (className.contains("FluentListView")) {
-            return QAccessible::List;
-        } else if (className.contains("FluentTextInput") ||
-                   className.contains("FluentTextBox")) {
-            return QAccessible::EditableText;
-        } else if (className.contains("FluentSlider")) {
-            return QAccessible::Slider;
-        } else if (className.contains("FluentProgressBar")) {
-            return QAccessible::ProgressBar;
-        } else if (className.contains("FluentCheckBox")) {
-            return QAccessible::CheckBox;
-        } else if (className.contains("FluentRadioButton")) {
-            return QAccessible::RadioButton;
-        } else if (className.contains("FluentComboBox")) {
-            return QAccessible::ComboBox;
+            const QString className = QString::fromLatin1(metaObj->className());
+            qDebug() << "FluentAccessibleInterface::getFluentRole: className ="
+                     << className;
+
+            if (className.contains("FluentButton")) {
+                const bool checkable = widget->property("checkable").toBool();
+                return checkable ? QAccessible::CheckBox
+                                 : QAccessible::PushButton;
+            } else if (className.contains("FluentCard")) {
+                return QAccessible::Grouping;
+            } else if (className.contains("FluentNavigationView")) {
+                return QAccessible::PageTabList;
+            } else if (className.contains("FluentListView")) {
+                return QAccessible::List;
+            } else if (className.contains("FluentTextInput") ||
+                       className.contains("FluentTextBox")) {
+                return QAccessible::EditableText;
+            } else if (className.contains("FluentSlider")) {
+                return QAccessible::Slider;
+            } else if (className.contains("FluentProgressBar")) {
+                return QAccessible::ProgressBar;
+            } else if (className.contains("FluentCheckBox")) {
+                return QAccessible::CheckBox;
+            } else if (className.contains("FluentRadioButton")) {
+                return QAccessible::RadioButton;
+            } else if (className.contains("FluentComboBox")) {
+                return QAccessible::ComboBox;
+            } else if (className.contains("FluentBadge")) {
+                return QAccessible::StaticText;  // Badge is like a label
+            }
+        } catch (const std::exception& e) {
+            qWarning() << "FluentAccessibleInterface::getFluentRole: Exception:"
+                       << e.what();
+            return QAccessible::Client;
+        } catch (...) {
+            qWarning() << "FluentAccessibleInterface::getFluentRole: Unknown "
+                          "exception";
+            return QAccessible::Client;
         }
     }
 
@@ -715,6 +828,15 @@ class FluentAccessibleFactory {
 public:
     static QAccessibleInterface* create(const QString& classname,
                                         QObject* object) {
+        // Check if accessibility should be completely disabled
+        if (qEnvironmentVariableIsSet(
+                "FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
+            qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+            (qEnvironmentVariableIsSet("QT_ACCESSIBILITY") &&
+             qEnvironmentVariable("QT_ACCESSIBILITY") == "0")) {
+            return nullptr;  // Don't create any accessibility interfaces
+        }
+
         // Enhanced validation
         if (!object) {
             return nullptr;  // Don't log for null objects as this is common
@@ -758,108 +880,81 @@ public:
     }
 };
 
-// Initialize enhanced accessibility support
-void initializeAccessibility() {
-    static bool initialized = false;
-    if (initialized)
-        return;
+// Safe accessibility initialization
+class AccessibilityInitializer {
+public:
+    static AccessibilityInitializer& instance() {
+        static AccessibilityInitializer instance;
+        return instance;
+    }
 
-    initialized = true;
-
-    // Check if we're running in offscreen mode or other headless environments
-    // In these cases, skip full accessibility initialization to avoid deadlocks
-    if (QApplication::instance()) {
-        // Check for offscreen platform via environment variable or command line
-        QString platformName = qgetenv("QT_QPA_PLATFORM");
-        if (platformName.isEmpty()) {
-            // Try to get from application arguments
-            QStringList args = QApplication::arguments();
-            for (int i = 0; i < args.size() - 1; ++i) {
-                if (args[i] == "-platform") {
-                    platformName = args[i + 1];
-                    break;
-                }
-            }
+    void initializeSafely() {
+        if (m_initialized) {
+            return;
         }
 
-        if (platformName == "offscreen" || platformName == "minimal" ||
-            qEnvironmentVariableIsSet("FLUENTQT_TEST_MODE") ||
-            qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION")) {
-            qDebug()
-                << "Skipping full accessibility initialization for platform:"
-                << platformName;
-            // Only install the factory for basic accessibility support
-            QAccessible::installFactory(FluentAccessibleFactory::create);
-            QAccessible::setActive(true);
-            qDebug() << "Basic FluentQt accessibility initialized for"
-                     << platformName << "platform";
+        // Check if accessibility should be completely disabled
+        if (shouldSkipAccessibility()) {
+            qDebug() << "Accessibility initialization skipped (environment "
+                        "override)";
+            m_initialized = true;
             return;
+        }
+
+        // Ensure we have a proper Qt context
+        if (!isQtContextReady()) {
+            qDebug() << "Qt context not ready, deferring accessibility "
+                        "initialization";
+            deferInitialization();
+            return;
+        }
+
+        performSafeInitialization();
+        m_initialized = true;
+    }
+
+private:
+    bool m_initialized = false;
+
+    bool shouldSkipAccessibility() const {
+        return qEnvironmentVariableIsSet(
+                   "FLUENTQT_SKIP_ACCESSIBILITY_DETECTION") ||
+               qEnvironmentVariableIsSet("FLUENTQT_SKIP_PROCESS_DETECTION") ||
+               (qEnvironmentVariableIsSet("QT_ACCESSIBILITY") &&
+                qEnvironmentVariable("QT_ACCESSIBILITY") == "0");
+    }
+
+    bool isQtContextReady() const {
+        return QApplication::instance() &&
+               QThread::currentThread() == QApplication::instance()->thread() &&
+               QApplication::instance()->thread()->eventDispatcher();
+    }
+
+    void deferInitialization() {
+        if (QApplication::instance()) {
+            QTimer::singleShot(100, [this]() { initializeSafely(); });
         }
     }
 
-    // Install the factory
-    QAccessible::installFactory(FluentAccessibleFactory::create);
-
-    // Always enable accessibility for FluentQt components
-    // This ensures accessibility works even without assistive technology
-    QAccessible::setActive(true);
-
-    // Initialize enhanced accessibility managers
-    auto& accessibilityManager =
-        FluentQt::Accessibility::FluentAccessibilityManager::instance();
-    // Note: detectSystemAccessibilitySettings() is already called in
-    // constructor and applySystemSettings() calls it again, so no need to call
-    // it here explicitly
-    Q_UNUSED(accessibilityManager);
-
-    qDebug() << "FluentQt accessibility initialized";
-
-    // Initialize screen reader support asynchronously to avoid blocking startup
-    auto& screenReaderManager =
-        FluentQt::Accessibility::FluentScreenReaderManager::instance();
-    // Defer screen reader detection to avoid blocking UI thread
-    QTimer::singleShot(200, [&screenReaderManager]() {
-        screenReaderManager.detectScreenReader();
-    });
-
-    // Initialize keyboard navigation
-    auto& keyboardManager =
-        FluentQt::Accessibility::FluentKeyboardNavigationManager::instance();
-    FluentQt::Accessibility::FluentKeyboardConfig config;
-    config.enableArrowNavigation = true;
-    config.enableSkipLinks = true;
-    config.enableFocusTrapping = true;
-    keyboardManager.setNavigationConfig(config);
-
-    qDebug() << "Enhanced FluentQt accessibility initialized";
-
-    // Additional check for assistive technology (deferred to avoid blocking)
-    QTimer::singleShot(500, []() {
-        const bool hasAT = []() {
-#ifdef Q_OS_WIN
-            // Check for common Windows screen readers
-            return FindWindow(L"JAWS", nullptr) != nullptr ||
-                   FindWindow(L"NVDAHelperWindow", nullptr) != nullptr ||
-                   FindWindow(L"NVDA_controllerClient32", nullptr) != nullptr;
-#endif
-#ifdef Q_OS_MAC
-            // Check for VoiceOver
-            Boolean keyExists = false;
-            Boolean voiceOverEnabled = CFPreferencesGetAppBooleanValue(
-                CFSTR("voiceOverOnOffKey"), CFSTR("com.apple.universalaccess"),
-                &keyExists);
-            return keyExists && voiceOverEnabled;
-#endif
-            return false;
-        }();
-
-        if (hasAT) {
-            qDebug() << "Assistive technology detected";
+    void performSafeInitialization() {
+        try {
+            // Install the factory only if we're in a safe context
+            QAccessible::installFactory(FluentAccessibleFactory::create);
+            QAccessible::setActive(true);
+            qDebug() << "FluentQt accessibility factory installed safely";
+        } catch (const std::exception& e) {
+            qWarning() << "Exception during accessibility initialization:"
+                       << e.what();
+        } catch (...) {
+            qWarning()
+                << "Unknown exception during accessibility initialization";
         }
-    });
+    }
+};
 
-    qDebug() << "FluentQt accessibility initialized - Active:"
-             << QAccessible::isActive();
+// Initialize enhanced accessibility support
+void initializeAccessibility() {
+    AccessibilityInitializer::instance().initializeSafely();
 }
 
 // Safe initialization function that can be called explicitly
@@ -905,7 +1000,7 @@ bool initializeAccessibilitySafe(bool forceFullInit) {
     }
 }
 
-// Auto-initialize accessibility when the module is loaded
+// Safe auto-initialization that defers to event loop
 Q_CONSTRUCTOR_FUNCTION(initializeAccessibility)
 
 }  // namespace FluentQt::Accessibility

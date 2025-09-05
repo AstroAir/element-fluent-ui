@@ -171,9 +171,9 @@ void FluentAutoCarouselEnhancedTest::testControlButtonStyle() {
     QCOMPARE(spy.count(), 1);
     QCOMPARE(m_carousel->controlButtonStyle(), FluentButtonStyle::Accent);
 
-    // Test Standard style
-    m_carousel->setControlButtonStyle(FluentButtonStyle::Standard);
-    QCOMPARE(m_carousel->controlButtonStyle(), FluentButtonStyle::Standard);
+    // Test Default style
+    m_carousel->setControlButtonStyle(FluentButtonStyle::Default);
+    QCOMPARE(m_carousel->controlButtonStyle(), FluentButtonStyle::Default);
 }
 
 void FluentAutoCarouselEnhancedTest::testElevationEffects() {
@@ -425,12 +425,12 @@ void FluentAutoCarouselEnhancedTest::testNewFactoryMethods() {
     FluentAutoCarousel* accessibleCarousel =
         FluentAutoCarousel::createAccessible(2000);
     QVERIFY(accessibleCarousel != nullptr);
-    QVERIFY(accessibleCarousel->isShowPlayControls());
-    QVERIFY(accessibleCarousel->isShowProgressIndicator());
+    QVERIFY(accessibleCarousel->showPlayControls());
+    QVERIFY(accessibleCarousel->showProgressIndicator());
     QCOMPARE(accessibleCarousel->progressStyle(),
              FluentAutoCarouselProgressStyle::Bar);
     QCOMPARE(accessibleCarousel->controlButtonStyle(),
-             FluentButtonStyle::Standard);
+             FluentButtonStyle::Default);
     QVERIFY(accessibleCarousel->isElevationEnabled());
     delete accessibleCarousel;
 
@@ -442,8 +442,8 @@ void FluentAutoCarouselEnhancedTest::testNewFactoryMethods() {
     QCOMPARE(customCarousel->progressStyle(),
              FluentAutoCarouselProgressStyle::Circular);
     QCOMPARE(customCarousel->controlButtonStyle(), FluentButtonStyle::Accent);
-    QVERIFY(customCarousel->isShowPlayControls());
-    QVERIFY(customCarousel->isShowProgressIndicator());
+    QVERIFY(customCarousel->showPlayControls());
+    QVERIFY(customCarousel->showProgressIndicator());
     delete customCarousel;
 
     // Test parameter validation in factory methods

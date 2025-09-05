@@ -37,13 +37,9 @@ void FluentDotProgress::initializeComponent() {
     connect(m_indeterminateTimer.get(), &QTimer::timeout, this,
             &FluentDotProgress::onIndeterminateTimer);
 
-    // Update animation duration from theme
-    auto& theme = Styling::FluentTheme::instance();
+    // Set default animation duration
     if (m_animationDuration <= 0) {
-        m_animationDuration = theme.duration("normal");
-        if (m_animationDuration <= 0) {
-            m_animationDuration = 200;  // Fallback
-        }
+        m_animationDuration = 200;  // Default Fluent UI animation duration
     }
     m_progressAnimation->setDuration(m_animationDuration);
     m_progressAnimation->setEasingCurve(QEasingCurve::OutCubic);

@@ -1076,8 +1076,8 @@ void FluentTreeView::updateAccessibilityAttributes() {
 void FluentTreeView::announceToScreenReader(const QString& message) {
     // Use QAccessible to announce changes to screen readers
     if (QAccessible::isActive()) {
-        QAccessibleEvent event(this, QAccessible::Alert);
-        event.setText(message);
+        // In Qt6, we use QAccessibleTextUpdateEvent for text announcements
+        QAccessibleTextUpdateEvent event(this, 0, message, message);
         QAccessible::updateAccessibility(&event);
     }
 }

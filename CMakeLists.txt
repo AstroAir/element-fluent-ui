@@ -212,24 +212,26 @@ set(FLUENTQT_COMPONENT_SOURCES
     src/Components/FluentButton.cpp
     src/Components/FluentCard.cpp
     src/Components/FluentComboBox.cpp
+    src/Components/FluentCircularProgress.cpp
+    src/Components/FluentDotProgress.cpp
     src/Components/FluentCalendar.cpp
     src/Components/FluentImageView.cpp
     src/Components/FluentNavigationView.cpp
     src/Components/FluentRichTextEditor.cpp
     src/Components/FluentTabView.cpp
-    # src/Components/FluentTreeView.cpp  # Temporarily disabled due to compilation errors
+    src/Components/FluentTreeView.cpp
     src/Components/FluentContextMenu.cpp
     src/Components/FluentSplitter.cpp
     src/Components/FluentCarousel.cpp
     src/Components/FluentBasicCarousel.cpp
-    # src/Components/FluentAutoCarousel.cpp  # Temporarily disabled due to compilation errors
+    src/Components/FluentAutoCarousel.cpp
     src/Components/FluentIndicatorCarousel.cpp
     src/Components/FluentTouchCarousel.cpp
     src/Components/FluentTimeline.cpp
     src/Components/FluentTimelineItem.cpp
     src/Components/FluentToast.cpp
     src/Components/FluentToastManager.cpp
-    # src/Components/FluentTooltip.cpp  # Temporarily disabled due to compilation errors
+    src/Components/FluentTooltip.cpp
     src/Components/FluentSelect.cpp
     src/Components/FluentSelectItem.cpp
     src/Components/FluentSelectDropdown.cpp
@@ -313,24 +315,26 @@ set(FLUENTQT_COMPONENT_HEADERS
     include/FluentQt/Components/FluentButton.h
     include/FluentQt/Components/FluentCard.h
     include/FluentQt/Components/FluentComboBox.h
+    include/FluentQt/Components/FluentCircularProgress.h
+    include/FluentQt/Components/FluentDotProgress.h
     include/FluentQt/Components/FluentCalendar.h
     include/FluentQt/Components/FluentImageView.h
     include/FluentQt/Components/FluentNavigationView.h
     include/FluentQt/Components/FluentRichTextEditor.h
     include/FluentQt/Components/FluentTabView.h
-    # include/FluentQt/Components/FluentTreeView.h  # Temporarily disabled due to compilation errors
+    include/FluentQt/Components/FluentTreeView.h
     include/FluentQt/Components/FluentContextMenu.h
     include/FluentQt/Components/FluentSplitter.h
     include/FluentQt/Components/FluentCarousel.h
     include/FluentQt/Components/FluentBasicCarousel.h
-    # include/FluentQt/Components/FluentAutoCarousel.h  # Temporarily disabled due to compilation errors
+    include/FluentQt/Components/FluentAutoCarousel.h
     include/FluentQt/Components/FluentIndicatorCarousel.h
     include/FluentQt/Components/FluentTouchCarousel.h
     include/FluentQt/Components/FluentTimeline.h
     include/FluentQt/Components/FluentTimelineItem.h
     include/FluentQt/Components/FluentToast.h
     include/FluentQt/Components/FluentToastManager.h
-    # include/FluentQt/Components/FluentTooltip.h  # Temporarily disabled due to compilation errors
+    include/FluentQt/Components/FluentTooltip.h
     include/FluentQt/Components/FluentSelect.h
     include/FluentQt/Components/FluentSelectItem.h
     include/FluentQt/Components/FluentSelectDropdown.h
@@ -622,6 +626,55 @@ if(FLUENTQT_BUILD_EXAMPLES)
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
     )
 
+    # FluentGallery - Complete Components Gallery
+    add_executable(FluentGallery examples/FluentGallery.cpp)
+    target_link_libraries(FluentGallery FluentQt::FluentQt)
+    set_target_properties(FluentGallery PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # FluentGallerySimple - Simplified Working Components Gallery
+    add_executable(FluentGallerySimple examples/FluentGallerySimple.cpp)
+    target_link_libraries(FluentGallerySimple FluentQt::FluentQt)
+    set_target_properties(FluentGallerySimple PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # FluentGalleryFixed - Fixed Gallery without accessibility issues
+    add_executable(FluentGalleryFixed examples/FluentGalleryFixed.cpp)
+    target_link_libraries(FluentGalleryFixed FluentQt::FluentQt)
+    set_target_properties(FluentGalleryFixed PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # MinimalTest - Minimal test without FluentQt components
+    add_executable(MinimalTest examples/MinimalTest.cpp)
+    target_link_libraries(MinimalTest Qt6::Core Qt6::Widgets)
+    set_target_properties(MinimalTest PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # ThemeOnlyTest - Test FluentQt theme system only
+    add_executable(ThemeOnlyTest examples/ThemeOnlyTest.cpp)
+    target_link_libraries(ThemeOnlyTest FluentQt::FluentQt)
+    set_target_properties(ThemeOnlyTest PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # FluentGalleryComplete - Complete Gallery with fixed accessibility
+    add_executable(FluentGalleryComplete examples/FluentGalleryComplete.cpp)
+    target_link_libraries(FluentGalleryComplete FluentQt::FluentQt)
+    set_target_properties(FluentGalleryComplete PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
+    # SingleButtonTest - Test single FluentButton
+    add_executable(SingleButtonTest examples/SingleButtonTest.cpp)
+    target_link_libraries(SingleButtonTest FluentQt::FluentQt)
+    set_target_properties(SingleButtonTest PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples"
+    )
+
 
 
 
@@ -668,6 +721,10 @@ if(FLUENTQT_BUILD_EXAMPLES)
             TimelineShowcase
             SimpleTimeline
             ToastAndSelectDemo
+            FluentGallery
+            FluentGallerySimple
+            FluentGalleryFixed
+            FluentGalleryComplete
             DESTINATION ${CMAKE_INSTALL_BINDIR}/examples
         )
     endif()

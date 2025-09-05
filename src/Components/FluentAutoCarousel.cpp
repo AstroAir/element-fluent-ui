@@ -79,7 +79,8 @@ void FluentAutoCarousel::initializeAutoCarousel() {
         m_autoPlayTimer->setSingleShot(true);
 
         // Use Fluent Design timing tokens for smooth animation
-        auto& theme = Styling::FluentTheme::instance();
+        // auto& theme = Styling::FluentTheme::instance();  // Commented out to
+        // avoid unused variable warning
         int progressUpdateInterval = 150;  // Fast animation timing (150ms)
         if (progressUpdateInterval <= 0)
             progressUpdateInterval = 50;  // Fallback
@@ -161,22 +162,24 @@ void FluentAutoCarousel::createProgressIndicator() {
         case FluentAutoCarouselProgressStyle::Bar:
         case FluentAutoCarouselProgressStyle::Line:
         case FluentAutoCarouselProgressStyle::Minimal:
-        case FluentAutoCarouselProgressStyle::Segmented:
+        case FluentAutoCarouselProgressStyle::Segmented: {
             // Use standard QProgressBar for linear styles
-            m_progressIndicator = new QProgressBar(m_progressContainer);
-            m_progressIndicator->setObjectName("autoCarouselProgress");
-            m_progressIndicator->setRange(0, 100);
-            m_progressIndicator->setValue(0);
-            m_progressIndicator->setTextVisible(false);
+            auto* progressBar = new QProgressBar(m_progressContainer);
+            m_progressIndicator = progressBar;
+            progressBar->setObjectName("autoCarouselProgress");
+            progressBar->setRange(0, 100);
+            progressBar->setValue(0);
+            progressBar->setTextVisible(false);
 
             if (m_progressStyle == FluentAutoCarouselProgressStyle::Line ||
                 m_progressStyle == FluentAutoCarouselProgressStyle::Minimal) {
-                m_progressIndicator->setOrientation(Qt::Horizontal);
-                m_progressIndicator->setMaximumHeight(2);
+                progressBar->setOrientation(Qt::Horizontal);
+                progressBar->setMaximumHeight(2);
             } else {
-                m_progressIndicator->setOrientation(Qt::Horizontal);
+                progressBar->setOrientation(Qt::Horizontal);
             }
             break;
+        }
 
         case FluentAutoCarouselProgressStyle::Circular:
         case FluentAutoCarouselProgressStyle::Ring: {
@@ -1037,9 +1040,11 @@ void FluentAutoCarousel::updateControlsLayout() {
     auto& theme = Styling::FluentTheme::instance();
 
     // Use Fluent Design spacing tokens
-    int smallSpacing = theme.spacing("small");    // 4px
+    // int smallSpacing = theme.spacing("small");    // 4px - commented out to
+    // avoid unused variable warning
     int mediumSpacing = theme.spacing("medium");  // 8px
-    int largeSpacing = theme.spacing("large");    // 16px
+    // int largeSpacing = theme.spacing("large");    // 16px - commented out to
+    // avoid unused variable warning
 
     // Apply consistent margins following Fluent Design principles
     int margin = mediumSpacing;

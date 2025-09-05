@@ -118,9 +118,11 @@ add_fluent_test(FluentFormComponentsTest FluentFormComponentsTest.cpp)
 
 # Basic UI Components
 add_fluent_test(FluentButtonTest Components/FluentButtonTest.cpp)
-# add_fluent_test(FluentCheckBoxTest Components/FluentCheckBoxTest.cpp)  # Disabled due to extensive API mismatches
+add_fluent_test(FluentCheckBoxTest Components/FluentCheckBoxTest.cpp)  # Re-enabled for testing
+add_fluent_test(FluentCheckBoxTestSimple Components/FluentCheckBoxTestSimple.cpp)  # Simplified test without signals
+add_fluent_test(FluentSearchBoxTestSimple Components/FluentSearchBoxTestSimple.cpp)  # Simplified test without signals
 add_fluent_test(FluentRadioButtonTest Components/FluentRadioButtonTest.cpp)
-# add_fluent_test(FluentToggleSwitchTest Components/FluentToggleSwitchTest.cpp)  # Disabled due to missing implementations
+# add_fluent_test(FluentToggleSwitchTest Components/FluentToggleSwitchTest.cpp)  # Disabled - not compiled in main library
 add_fluent_test(FluentSliderTest Components/FluentSliderTest.cpp)
 # add_fluent_test(FluentSpinBoxTest Components/FluentSpinBoxTest.cpp)  # Disabled due to missing implementations
 

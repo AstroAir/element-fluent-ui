@@ -16,25 +16,18 @@ FluentKeyboardNavigationManager& FluentKeyboardNavigationManager::instance() {
     return instance;
 }
 
-FluentKeyboardNavigationManager::FluentKeyboardNavigationManager() {
+FluentKeyboardNavigationManager::FluentKeyboardNavigationManager()
+    : m_focusUpdateTimer(nullptr) {
     // Initialize focus update timer only if we have a proper event loop
+    // and we're in the main thread
     if (QApplication::instance() &&
-        QThread::currentThread() == QApplication::instance()->thread()) {
-        m_focusUpdateTimer = new QTimer(this);
-        connect(m_focusUpdateTimer, &QTimer::timeout, this,
-                &FluentKeyboardNavigationManager::updateFocusIndicators);
-        m_focusUpdateTimer->start(100);  // Update every 100ms
+        QThread::currentThread() == QApplication::instance()->thread() &&
+        QApplication::instance()->thread()->eventDispatcher()) {
+        initializeTimer();
     } else {
-        // Defer timer creation until we're in the main thread
-        QTimer::singleShot(0, this, [this]() {
-            if (!m_focusUpdateTimer) {
-                m_focusUpdateTimer = new QTimer(this);
-                connect(
-                    m_focusUpdateTimer, &QTimer::timeout, this,
-                    &FluentKeyboardNavigationManager::updateFocusIndicators);
-                m_focusUpdateTimer->start(100);  // Update every 100ms
-            }
-        });
+        // Defer timer creation until we're in the main thread with event loop
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
     }
 
     // Connect to application focus changes (only if QApplication exists)
@@ -48,6 +41,52 @@ FluentKeyboardNavigationManager::FluentKeyboardNavigationManager() {
     }
 
     qDebug() << "FluentKeyboardNavigationManager initialized";
+}
+
+void FluentKeyboardNavigationManager::initializeTimer() {
+    if (m_focusUpdateTimer) {
+        return;  // Already initialized
+    }
+
+    if (!QApplication::instance()) {
+        qDebug() << "FluentKeyboardNavigationManager: No QApplication instance "
+                    "for timer initialization";
+        return;
+    }
+
+    if (QThread::currentThread() != QApplication::instance()->thread()) {
+        qDebug() << "FluentKeyboardNavigationManager: Not in main thread for "
+                    "timer initialization";
+        // Retry from main thread
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
+        return;
+    }
+
+    if (!QApplication::instance()->thread()->eventDispatcher()) {
+        qDebug()
+            << "FluentKeyboardNavigationManager: No event dispatcher available";
+        // Retry later when event loop is ready
+        QTimer::singleShot(100, this,
+                           &FluentKeyboardNavigationManager::initializeTimer);
+        return;
+    }
+
+    try {
+        m_focusUpdateTimer = new QTimer(this);
+        connect(m_focusUpdateTimer, &QTimer::timeout, this,
+                &FluentKeyboardNavigationManager::updateFocusIndicators);
+        m_focusUpdateTimer->start(100);  // Update every 100ms
+        qDebug()
+            << "FluentKeyboardNavigationManager timer initialized successfully";
+    } catch (const std::exception& e) {
+        qWarning()
+            << "FluentKeyboardNavigationManager: Exception creating timer:"
+            << e.what();
+    } catch (...) {
+        qWarning() << "FluentKeyboardNavigationManager: Unknown exception "
+                      "creating timer";
+    }
 }
 
 void FluentKeyboardNavigationManager::setNavigationConfig(

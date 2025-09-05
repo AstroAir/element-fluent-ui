@@ -32,6 +32,10 @@ protected:
     QObject* safeObject() const;
     QWidget* safeWidget() const;
     bool isObjectValid() const;
+
+    // Initialization methods
+    void initializeAccessibleInterface();
+    void setupFluentAccessibility();
 };
 
 // Accessibility helper functions

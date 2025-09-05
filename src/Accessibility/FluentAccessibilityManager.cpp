@@ -13,24 +13,18 @@ FluentAccessibilityManager& FluentAccessibilityManager::instance() {
     return instance;
 }
 
-FluentAccessibilityManager::FluentAccessibilityManager() {
+FluentAccessibilityManager::FluentAccessibilityManager()
+    : m_announcementTimer(nullptr) {
     // Initialize announcement queue timer only if we have a proper event loop
+    // and we're in the main thread
     if (QApplication::instance() &&
-        QThread::currentThread() == QApplication::instance()->thread()) {
-        m_announcementTimer = new QTimer(this);
-        m_announcementTimer->setSingleShot(true);
-        connect(m_announcementTimer, &QTimer::timeout, this,
-                &FluentAccessibilityManager::processAnnouncementQueue);
+        QThread::currentThread() == QApplication::instance()->thread() &&
+        QApplication::instance()->thread()->eventDispatcher()) {
+        initializeTimer();
     } else {
-        // Defer timer creation until we're in the main thread
-        QTimer::singleShot(0, this, [this]() {
-            if (!m_announcementTimer) {
-                m_announcementTimer = new QTimer(this);
-                m_announcementTimer->setSingleShot(true);
-                connect(m_announcementTimer, &QTimer::timeout, this,
-                        &FluentAccessibilityManager::processAnnouncementQueue);
-            }
-        });
+        // Defer timer creation until we're in the main thread with event loop
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
     }
 
     // Detect system accessibility settings unless explicitly skipped for
@@ -50,6 +44,49 @@ FluentAccessibilityManager::FluentAccessibilityManager() {
     }
 
     qDebug() << "FluentAccessibilityManager initialized";
+}
+
+void FluentAccessibilityManager::initializeTimer() {
+    if (m_announcementTimer) {
+        return;  // Already initialized
+    }
+
+    if (!QApplication::instance()) {
+        qDebug() << "FluentAccessibilityManager: No QApplication instance for "
+                    "timer initialization";
+        return;
+    }
+
+    if (QThread::currentThread() != QApplication::instance()->thread()) {
+        qDebug() << "FluentAccessibilityManager: Not in main thread for timer "
+                    "initialization";
+        // Retry from main thread
+        QMetaObject::invokeMethod(this, "initializeTimer",
+                                  Qt::QueuedConnection);
+        return;
+    }
+
+    if (!QApplication::instance()->thread()->eventDispatcher()) {
+        qDebug() << "FluentAccessibilityManager: No event dispatcher available";
+        // Retry later when event loop is ready
+        QTimer::singleShot(100, this,
+                           &FluentAccessibilityManager::initializeTimer);
+        return;
+    }
+
+    try {
+        m_announcementTimer = new QTimer(this);
+        m_announcementTimer->setSingleShot(true);
+        connect(m_announcementTimer, &QTimer::timeout, this,
+                &FluentAccessibilityManager::processAnnouncementQueue);
+        qDebug() << "FluentAccessibilityManager timer initialized successfully";
+    } catch (const std::exception& e) {
+        qWarning() << "FluentAccessibilityManager: Exception creating timer:"
+                   << e.what();
+    } catch (...) {
+        qWarning()
+            << "FluentAccessibilityManager: Unknown exception creating timer";
+    }
 }
 
 // Global accessibility settings
